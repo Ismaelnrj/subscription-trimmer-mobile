@@ -20,7 +20,8 @@
     },
     "production": {
       "android": {
-        "buildType": "app-bundle"
+        "buildType": "app-bundle",
+        "withoutCredentials": false
       }
     }
   }

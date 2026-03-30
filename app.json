@@ -1,5 +1,6 @@
 {
   "expo": {
+    "projectId": "trimio",
     "name": "SubTrimmer",
     "slug": "subtrimmer",
     "version": "1.0.0",
@@ -26,7 +27,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -48,7 +50,11 @@
       ]
     ],
     "extra": {
-      "apiUrl": "https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer"
-    }
+      "apiUrl": "https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer",
+      "eas": {
+        "projectId": "18a3e059-0c9c-49df-b485-21240d7e283a"
+      }
+    },
+    "owner": "ismaelnrj"
   }
 }
