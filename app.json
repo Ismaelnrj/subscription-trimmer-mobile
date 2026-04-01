@@ -1,6 +1,5 @@
 {
   "expo": {
-    "projectId": "trimio",
     "name": "SubTrimmer",
     "slug": "subtrimmer",
     "version": "1.0.0",
@@ -16,7 +15,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTabletMode": true
+      "bundleIdentifier": "com.ismaelnrj.subtrimmer"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,7 +46,8 @@
         {
           "cameraPermission": "Allow SubTrimmer to access your camera"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "apiUrl": "https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer",
