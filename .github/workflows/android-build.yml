@@ -13,6 +13,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Verify repository structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          if [ ! -f "package.json" ]; then
+            echo "ERROR: package.json not found!"
+            exit 1
+          fi
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,7 +46,7 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       
       - name: Run expo prebuild
         run: pnpm exec expo prebuild --clean
