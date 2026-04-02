@@ -15,33 +15,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Flatten nested directory structure
+      - name: Fix nested directory structure
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Directory listing:"
+          echo "=== Current working directory ==="
+          pwd
+          echo ""
+          echo "=== Current directory contents ==="
           ls -la
+          echo ""
           
-          # Check if there's a nested subscription-trimmer-mobile directory
-          if [ -d "subscription-trimmer-mobile" ] && [ -f "subscription-trimmer-mobile/package.json" ]; then
-            echo "Found nested directory, flattening..."
-            # Move all contents up one level
-            mv subscription-trimmer-mobile/* .
-            mv subscription-trimmer-mobile/.github .
-            mv subscription-trimmer-mobile/.gitignore .
-            mv subscription-trimmer-mobile/.eas .
-            mv subscription-trimmer-mobile/.expo .
-            # Remove the now-empty nested directory
-            rmdir subscription-trimmer-mobile
-            echo "Flattened successfully"
-          else
-            echo "No nested directory found, proceeding with current structure"
+          # GitHub clones into /work/repo-name/repo-name/
+          # Check if we're in the nested folder
+          if [ ! -f "package.json" ] || [ ! -d "android" ]; then
+            echo "Not at project root, moving up one level..."
+            cd ..
+            echo "New working directory:"
+            pwd
+            echo ""
+            echo "Contents after moving up:"
+            ls -la
           fi
           
-          echo "After flattening:"
-          ls -la
-          echo "Verifying package.json exists:"
+          echo ""
+          echo "=== Verification ==="
           [ -f "package.json" ] && echo "✓ package.json found" || echo "✗ package.json NOT found"
-          echo "Verifying android directory exists:"
           [ -d "android" ] && echo "✓ android directory found" || echo "✗ android directory NOT found"
       
       - name: Setup Node.js
@@ -64,18 +61,31 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          # Ensure we're in the right directory
+          if [ ! -f "package.json" ]; then
+            cd ..
+          fi
+          pnpm install
       
       - name: Decode keystore
         run: |
+          # Ensure we're in the right directory
+          if [ ! -f "package.json" ]; then
+            cd ..
+          fi
           mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           echo "Keystore created at:"
           ls -la android/app/release.keystore
       
       - name: Build Android App Bundle
-        working-directory: ./android
         run: |
+          # Ensure we're in the right directory
+          if [ ! -f "package.json" ]; then
+            cd ..
+          fi
+          cd android
           chmod +x gradlew
           ./gradlew bundleRelease
         env:
