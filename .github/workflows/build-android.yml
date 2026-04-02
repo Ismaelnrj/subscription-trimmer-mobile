@@ -15,15 +15,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Find project root
-        id: find_root
+      - name: Flatten nested directory structure
         run: |
-          PROJECT_ROOT=$(find . -not -path '*/node_modules/*' -name "package.json" -type f | head -1 | xargs dirname)
-          echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_OUTPUT
-          echo "Found project at: $PROJECT_ROOT"
-          ls -la "$PROJECT_ROOT"
-          echo "Checking for android directory:"
-          ls -la "$PROJECT_ROOT/android" || echo "Android directory not found"
+          echo "Current directory: $(pwd)"
+          echo "Directory listing:"
+          ls -la
+          
+          # Check if there's a nested subscription-trimmer-mobile directory
+          if [ -d "subscription-trimmer-mobile" ] && [ -f "subscription-trimmer-mobile/package.json" ]; then
+            echo "Found nested directory, flattening..."
+            # Move all contents up one level
+            mv subscription-trimmer-mobile/* .
+            mv subscription-trimmer-mobile/.github .
+            mv subscription-trimmer-mobile/.gitignore .
+            mv subscription-trimmer-mobile/.eas .
+            mv subscription-trimmer-mobile/.expo .
+            # Remove the now-empty nested directory
+            rmdir subscription-trimmer-mobile
+            echo "Flattened successfully"
+          else
+            echo "No nested directory found, proceeding with current structure"
+          fi
+          
+          echo "After flattening:"
+          ls -la
+          echo "Verifying package.json exists:"
+          [ -f "package.json" ] && echo "✓ package.json found" || echo "✗ package.json NOT found"
+          echo "Verifying android directory exists:"
+          [ -d "android" ] && echo "✓ android directory found" || echo "✗ android directory NOT found"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -45,21 +64,18 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: |
-          cd "${{ steps.find_root.outputs.PROJECT_ROOT }}"
-          pnpm install
+        run: pnpm install
       
       - name: Decode keystore
         run: |
-          PROJECT_ROOT="${{ steps.find_root.outputs.PROJECT_ROOT }}"
-          mkdir -p "$PROJECT_ROOT/android/app"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$PROJECT_ROOT/android/app/release.keystore"
-          ls -la "$PROJECT_ROOT/android/app/release.keystore"
+          mkdir -p android/app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "Keystore created at:"
+          ls -la android/app/release.keystore
       
       - name: Build Android App Bundle
+        working-directory: ./android
         run: |
-          PROJECT_ROOT="${{ steps.find_root.outputs.PROJECT_ROOT }}"
-          cd "$PROJECT_ROOT/android"
           chmod +x gradlew
           ./gradlew bundleRelease
         env:
@@ -73,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: '**/app-release.aab'
+          path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
       
       - name: Create Release
@@ -100,6 +116,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: '**/app-release.aab'
+          asset_path: android/app/build/outputs/bundle/release/app-release.aab
           asset_name: app-release.aab
           asset_content_type: application/octet-stream
