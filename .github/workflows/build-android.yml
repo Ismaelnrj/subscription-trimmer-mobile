@@ -60,8 +60,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       
-      - name: Run expo prebuild
-        run: pnpm exec expo prebuild --clean
+      # Skip expo prebuild - use pre-generated Android code from repo
+      # - name: Run expo prebuild
+      #   run: pnpm exec expo prebuild --clean
       
       - name: Decode keystore
         run: |
