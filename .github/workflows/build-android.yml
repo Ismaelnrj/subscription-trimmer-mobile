@@ -18,10 +18,12 @@ jobs:
       - name: Find project root
         id: find_root
         run: |
-          PROJECT_ROOT=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          PROJECT_ROOT=$(find . -not -path '*/node_modules/*' -name "package.json" -type f | head -1 | xargs dirname)
           echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_OUTPUT
           echo "Found project at: $PROJECT_ROOT"
           ls -la "$PROJECT_ROOT"
+          echo "Checking for android directory:"
+          ls -la "$PROJECT_ROOT/android" || echo "Android directory not found"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
