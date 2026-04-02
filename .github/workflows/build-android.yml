@@ -15,6 +15,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Fix nested directory structure
+        run: |
+          if [ -d "subscription-trimmer-mobile" ] && [ -f "subscription-trimmer-mobile/package.json" ]; then
+            echo "Found nested directory, moving contents to root..."
+            mv subscription-trimmer-mobile/* .
+            mv subscription-trimmer-mobile/.* . 2>/dev/null || true
+            rmdir subscription-trimmer-mobile
+          fi
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
