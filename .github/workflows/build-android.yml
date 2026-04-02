@@ -15,31 +15,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Fix nested directory structure
+      - name: Verify project structure
         run: |
-          echo "=== Current working directory ==="
-          pwd
-          echo ""
-          echo "=== Current directory contents ==="
+          echo "Current directory: $(pwd)"
+          echo "Contents:"
           ls -la
-          echo ""
           
-          # GitHub clones into /work/repo-name/repo-name/
           # Check if we're in the nested folder
-          if [ ! -f "package.json" ] || [ ! -d "android" ]; then
-            echo "Not at project root, moving up one level..."
+          if [ -f "package.json" ] && [ -d "android" ]; then
+            echo "✓ Already at project root"
+            echo "PROJECT_DIR=$(pwd)" >> $GITHUB_ENV
+          else
+            echo "In nested folder, moving up..."
             cd ..
-            echo "New working directory:"
-            pwd
-            echo ""
-            echo "Contents after moving up:"
-            ls -la
+            echo "✓ Moved to parent directory"
+            echo "PROJECT_DIR=$(pwd)" >> $GITHUB_ENV
           fi
           
           echo ""
-          echo "=== Verification ==="
-          [ -f "package.json" ] && echo "✓ package.json found" || echo "✗ package.json NOT found"
-          [ -d "android" ] && echo "✓ android directory found" || echo "✗ android directory NOT found"
+          echo "Final project directory: $PROJECT_DIR"
+          [ -f "$PROJECT_DIR/package.json" ] && echo "✓ package.json found" || echo "✗ package.json NOT found"
+          [ -d "$PROJECT_DIR/android" ] && echo "✓ android directory found" || echo "✗ android directory NOT found"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -61,31 +57,19 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: |
-          # Ensure we're in the right directory
-          if [ ! -f "package.json" ]; then
-            cd ..
-          fi
-          pnpm install
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: pnpm install
       
       - name: Decode keystore
+        working-directory: ${{ env.PROJECT_DIR }}
         run: |
-          # Ensure we're in the right directory
-          if [ ! -f "package.json" ]; then
-            cd ..
-          fi
           mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
-          echo "Keystore created at:"
           ls -la android/app/release.keystore
       
       - name: Build Android App Bundle
+        working-directory: ${{ env.PROJECT_DIR }}/android
         run: |
-          # Ensure we're in the right directory
-          if [ ! -f "package.json" ]; then
-            cd ..
-          fi
-          cd android
           chmod +x gradlew
           ./gradlew bundleRelease
         env:
@@ -99,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
       
       - name: Create Release
@@ -126,6 +110,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/bundle/release/app-release.aab
+          asset_path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
           asset_name: app-release.aab
           asset_content_type: application/octet-stream
