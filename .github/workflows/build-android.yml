@@ -51,7 +51,7 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
       
       - name: Run expo prebuild
         run: pnpm exec expo prebuild --clean
