@@ -15,14 +15,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Fix nested directory structure
+      - name: Debug directory structure
         run: |
-          if [ -d "subscription-trimmer-mobile" ] && [ -f "subscription-trimmer-mobile/package.json" ]; then
-            echo "Found nested directory, moving contents to root..."
-            mv subscription-trimmer-mobile/* .
-            mv subscription-trimmer-mobile/.* . 2>/dev/null || true
-            rmdir subscription-trimmer-mobile
-          fi
+          echo "Current working directory:"
+          pwd
+          echo ""
+          echo "Directory contents:"
+          ls -la
+          echo ""
+          echo "Looking for package.json..."
+          find . -name "package.json" -type f | head -5
+      
+      - name: Navigate to project root
+        run: |
+          # Find the directory containing package.json
+          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          echo "Found project at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          pwd > /tmp/project_dir.txt
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -58,19 +68,16 @@ jobs:
         uses: android-actions/setup-android@v3
       
       - name: Install dependencies
-        run: pnpm install
-      
-      # Skip expo prebuild - use pre-generated Android code from repo
-      # - name: Run expo prebuild
-      #   run: pnpm exec expo prebuild --clean
-      
-      - name: Decode keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          cd "$PROJECT_DIR"
+          pnpm install
       
       - name: Build Android App Bundle
-        working-directory: ./android
         run: |
+          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          cd "$PROJECT_DIR"
+          cd android
           chmod +x gradlew
           ./gradlew bundleRelease
         env:
@@ -80,11 +87,17 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       
+      - name: Decode keystore
+        run: |
+          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          cd "$PROJECT_DIR"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+      
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: '**/android/app/build/outputs/bundle/release/app-release.aab'
           retention-days: 30
       
       - name: Create Release
@@ -111,6 +124,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: android/app/build/outputs/bundle/release/app-release.aab
+          asset_path: '**/android/app/build/outputs/bundle/release/app-release.aab'
           asset_name: app-release.aab
           asset_content_type: application/octet-stream
