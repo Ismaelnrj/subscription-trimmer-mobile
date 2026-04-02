@@ -15,24 +15,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Debug directory structure
+      - name: Find project root
+        id: find_root
         run: |
-          echo "Current working directory:"
-          pwd
-          echo ""
-          echo "Directory contents:"
-          ls -la
-          echo ""
-          echo "Looking for package.json..."
-          find . -name "package.json" -type f | head -5
-      
-      - name: Navigate to project root
-        run: |
-          # Find the directory containing package.json
-          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-          echo "Found project at: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-          pwd > /tmp/project_dir.txt
+          PROJECT_ROOT=$(find . -name "package.json" -type f | head -1 | xargs dirname)
+          echo "PROJECT_ROOT=$PROJECT_ROOT" >> $GITHUB_OUTPUT
+          echo "Found project at: $PROJECT_ROOT"
+          ls -la "$PROJECT_ROOT"
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -43,20 +32,6 @@ jobs:
         uses: pnpm/action-setup@v2
         with:
           version: 8
-      
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-      
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
       
       - name: Setup Java (JDK 17)
         uses: actions/setup-java@v4
@@ -69,15 +44,20 @@ jobs:
       
       - name: Install dependencies
         run: |
-          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-          cd "$PROJECT_DIR"
+          cd "${{ steps.find_root.outputs.PROJECT_ROOT }}"
           pnpm install
+      
+      - name: Decode keystore
+        run: |
+          PROJECT_ROOT="${{ steps.find_root.outputs.PROJECT_ROOT }}"
+          mkdir -p "$PROJECT_ROOT/android/app"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$PROJECT_ROOT/android/app/release.keystore"
+          ls -la "$PROJECT_ROOT/android/app/release.keystore"
       
       - name: Build Android App Bundle
         run: |
-          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-          cd "$PROJECT_DIR"
-          cd android
+          PROJECT_ROOT="${{ steps.find_root.outputs.PROJECT_ROOT }}"
+          cd "$PROJECT_ROOT/android"
           chmod +x gradlew
           ./gradlew bundleRelease
         env:
@@ -87,17 +67,11 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       
-      - name: Decode keystore
-        run: |
-          PROJECT_DIR=$(find . -name "package.json" -type f | head -1 | xargs dirname)
-          cd "$PROJECT_DIR"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
-      
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: '**/android/app/build/outputs/bundle/release/app-release.aab'
+          path: '**/app-release.aab'
           retention-days: 30
       
       - name: Create Release
@@ -124,6 +98,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: '**/android/app/build/outputs/bundle/release/app-release.aab'
+          asset_path: '**/app-release.aab'
           asset_name: app-release.aab
           asset_content_type: application/octet-stream
