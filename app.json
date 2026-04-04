@@ -3,52 +3,15 @@
     "name": "SubTrimmer",
     "slug": "subtrimmer",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+
     "assetBundlePatterns": [
       "**/*"
     ],
-    "ios": {
-      "bundleIdentifier": "com.ismaelnrj.subtrimmer"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "com.subtrimmer.app",
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
-      ]
-    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#4F46E5"
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow SubTrimmer to access your camera"
-        }
-      ],
-      "expo-font"
-    ],
+
     "extra": {
       "apiUrl": "https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer",
       "eas": {
