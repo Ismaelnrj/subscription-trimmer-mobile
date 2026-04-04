@@ -4,14 +4,7 @@ pluginManagement {
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  try {
-    def pluginPath = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute().text.trim()
-    if (pluginPath && !pluginPath.isEmpty()) {
-      includeBuild(new File(pluginPath).getParentFile().toString())
-    }
-  } catch (Exception e) {
-    println("Warning: Could not resolve @react-native/gradle-plugin path: " + e.message)
-  }
+  includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim()).getParentFile().toString())
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
     includeBuild("react-settings-plugin")
   }
@@ -56,46 +49,18 @@ rootProject.name = 'SubTrimmer'
 dependencyResolutionManagement {
   versionCatalogs {
     reactAndroidLibs {
-      try {
-      def rnPath = ["node", "--print", "require.resolve('react-native/package.json')"].execute().text.trim()
-      if (rnPath && !rnPath.isEmpty()) {
-        from(files(new File(rnPath, "../gradle/libs.versions.toml")))
-      }
-    } catch (Exception e) {
-      println("Warning: Could not resolve react-native libs.versions.toml path: " + e.message)
-    }
+      from(files(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../gradle/libs.versions.toml")))
     }
   }
 }
 
-try {
-  def expoPath = ["node", "--print", "require.resolve('expo/package.json')"].execute().text.trim()
-  if (expoPath && !expoPath.isEmpty()) {
-    apply from: new File(expoPath, "../scripts/autolinking.gradle")
-  }
-} catch (Exception e) {
-  println("Warning: Could not resolve expo autolinking.gradle path: " + e.message)
-}
+apply from: new File(["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle");
 useExpoModules()
 
 if (getRNMinorVersion() < 75) {
-  try {
-    def cliPath = ["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute().text.trim()
-    if (cliPath && !cliPath.isEmpty()) {
-      apply from: new File(cliPath, "../native_modules.gradle")
-    }
-  } catch (Exception e) {
-    println("Warning: Could not resolve native_modules.gradle path: " + e.message)
-  }
+  apply from: new File(["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), "../native_modules.gradle");
   applyNativeModulesSettingsGradle(settings)
 }
 
 include ':app'
-  try {
-    def pluginPath = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute().text.trim()
-    if (pluginPath && !pluginPath.isEmpty()) {
-      includeBuild(new File(pluginPath).getParentFile())
-    }
-  } catch (Exception e) {
-    println("Warning: Could not resolve @react-native/gradle-plugin path: " + e.message)
-  }
+includeBuild(new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile())

@@ -19,13 +19,13 @@ importers:
         version: 6.1.18(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
       '@tanstack/react-query':
         specifier: ^4.32.0
-        version: 4.43.0(react-dom@18.3.1(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
+        version: 4.43.0(react-dom@18.2.0(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
       '@trpc/client':
         specifier: ^10.45.1
         version: 10.45.4(@trpc/server@10.45.4)
       '@trpc/react-query':
         specifier: ^10.45.1
-        version: 10.45.4(@tanstack/react-query@4.43.0(react-dom@18.3.1(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))(@trpc/client@10.45.4(@trpc/server@10.45.4))(@trpc/server@10.45.4)(react-dom@18.3.1(react@18.2.0))(react@18.2.0)
+        version: 10.45.4(@tanstack/react-query@4.43.0(react-dom@18.2.0(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))(@trpc/client@10.45.4(@trpc/server@10.45.4))(@trpc/server@10.45.4)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       axios:
         specifier: ^1.6.2
         version: 1.14.0
@@ -76,7 +76,7 @@ importers:
         version: 18.2.0
       react-dom:
         specifier: ^18.2.0
-        version: 18.3.1(react@18.2.0)
+        version: 18.2.0(react@18.2.0)
       react-native:
         specifier: 0.74.5
         version: 0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0)
@@ -3498,10 +3498,10 @@ packages:
   react-devtools-core@5.3.2:
     resolution: {integrity: sha512-crr9HkVrDiJ0A4zot89oS0Cgv0Oa4OG1Em4jit3P3ZxZSKPMYyMjfwMqgcJna9o625g8oN87rBm8SWWrSTBZxg==}
 
-  react-dom@18.3.1:
-    resolution: {integrity: sha512-5m4nQKp+rZRb09LNH59GM4BxTh9251/ylbKIbpe7TpGxfJ+9kv6BLkLBXIjjspbgbnIBNqlI23tRnTWT0snUIw==}
+  react-dom@18.2.0:
+    resolution: {integrity: sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==}
     peerDependencies:
-      react: ^18.3.1
+      react: ^18.2.0
 
   react-fast-compare@3.2.2:
     resolution: {integrity: sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==}
@@ -6255,26 +6255,26 @@ snapshots:
 
   '@tanstack/query-core@4.43.0': {}
 
-  '@tanstack/react-query@4.43.0(react-dom@18.3.1(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)':
+  '@tanstack/react-query@4.43.0(react-dom@18.2.0(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)':
     dependencies:
       '@tanstack/query-core': 4.43.0
       react: 18.2.0
       use-sync-external-store: 1.6.0(react@18.2.0)
     optionalDependencies:
-      react-dom: 18.3.1(react@18.2.0)
+      react-dom: 18.2.0(react@18.2.0)
       react-native: 0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0)
 
   '@trpc/client@10.45.4(@trpc/server@10.45.4)':
     dependencies:
       '@trpc/server': 10.45.4
 
-  '@trpc/react-query@10.45.4(@tanstack/react-query@4.43.0(react-dom@18.3.1(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))(@trpc/client@10.45.4(@trpc/server@10.45.4))(@trpc/server@10.45.4)(react-dom@18.3.1(react@18.2.0))(react@18.2.0)':
+  '@trpc/react-query@10.45.4(@tanstack/react-query@4.43.0(react-dom@18.2.0(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))(@trpc/client@10.45.4(@trpc/server@10.45.4))(@trpc/server@10.45.4)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)':
     dependencies:
-      '@tanstack/react-query': 4.43.0(react-dom@18.3.1(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
+      '@tanstack/react-query': 4.43.0(react-dom@18.2.0(react@18.2.0))(react-native@0.74.5(@babel/core@7.29.0)(@babel/preset-env@7.29.2(@babel/core@7.29.0))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
       '@trpc/client': 10.45.4(@trpc/server@10.45.4)
       '@trpc/server': 10.45.4
       react: 18.2.0
-      react-dom: 18.3.1(react@18.2.0)
+      react-dom: 18.2.0(react@18.2.0)
 
   '@trpc/server@10.45.4': {}
 
@@ -8735,7 +8735,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  react-dom@18.3.1(react@18.2.0):
+  react-dom@18.2.0(react@18.2.0):
     dependencies:
       loose-envify: 1.4.0
       react: 18.2.0
