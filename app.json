@@ -8,6 +8,10 @@
       "**/*"
     ],
 
+    "android": {
+      "package": "com.subtrimmer.app"
+    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
