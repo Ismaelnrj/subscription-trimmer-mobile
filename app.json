@@ -12,6 +12,10 @@
       "package": "com.subtrimmer.app"
     },
 
+    "ios": {
+      "bundleIdentifier": "com.subtrimmer.app"
+    },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
