@@ -4,22 +4,28 @@ pluginManagement {
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  // Fix: Use absolute path to gradle plugin instead of require.resolve
-  def gradlePluginDir = new File(rootDir, "node_modules/.pnpm/@react-native+gradle-plugin@0.74.87/node_modules/@react-native/gradle-plugin")
-  if (gradlePluginDir.exists()) {
-    includeBuild(gradlePluginDir.toString())
-  } else {
-    // Fallback: try to find any version of the gradle plugin
-    def gradlePluginParent = new File(rootDir, "node_modules/.pnpm")
-    gradlePluginParent.eachDir { dir ->
-      if (dir.name.startsWith("@react-native+gradle-plugin")) {
-        def pluginDir = new File(dir, "node_modules/@react-native/gradle-plugin")
-        if (pluginDir.exists()) {
-          includeBuild(pluginDir.toString())
+  // Fix: Search for gradle plugin in node_modules without assuming pnpm structure
+  def gradlePluginDir = null
+  def nodeModulesDir = new File(rootDir, "node_modules")
+  
+  if (nodeModulesDir.exists()) {
+    // Try direct path first
+    def directPath = new File(nodeModulesDir, "@react-native/gradle-plugin")
+    if (directPath.exists()) {
+      gradlePluginDir = directPath
+    } else {
+      // Search recursively for gradle-plugin
+      nodeModulesDir.traverse { file ->
+        if (file.name == "gradle-plugin" && file.parent.name == "@react-native") {
+          gradlePluginDir = file
           return
         }
       }
     }
+  }
+  
+  if (gradlePluginDir && gradlePluginDir.exists()) {
+    includeBuild(gradlePluginDir.toString())
   }
   
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
@@ -66,17 +72,22 @@ rootProject.name = 'SubTrimmer'
 dependencyResolutionManagement {
   versionCatalogs {
     reactAndroidLibs {
-      // Use absolute path to react-native gradle libs
-      def reactNativeDir = new File(rootDir, "node_modules/.pnpm/react-native@0.74.5_*/node_modules/react-native")
+      // Search for react-native gradle libs
       def libsFile = null
+      def nodeModulesDir = new File(rootDir, "node_modules")
       
-      // Find the actual react-native directory (with hash suffix)
-      new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
-        if (dir.name.startsWith("react-native@0.74.5")) {
-          def candidate = new File(dir, "node_modules/react-native/gradle/libs.versions.toml")
-          if (candidate.exists()) {
-            libsFile = candidate
-            return
+      if (nodeModulesDir.exists()) {
+        // Try direct path first
+        def directPath = new File(nodeModulesDir, "react-native/gradle/libs.versions.toml")
+        if (directPath.exists()) {
+          libsFile = directPath
+        } else {
+          // Search recursively
+          nodeModulesDir.traverse { file ->
+            if (file.name == "libs.versions.toml" && file.parent.name == "gradle") {
+              libsFile = file
+              return
+            }
           }
         }
       }
@@ -88,37 +99,53 @@ dependencyResolutionManagement {
   }
 }
 
-// Use absolute path to expo autolinking script
+// Search for expo autolinking script
 def expoDir = null
-new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
-  if (dir.name.startsWith("expo@")) {
-    def candidate = new File(dir, "node_modules/expo/scripts/autolinking.gradle")
-    if (candidate.exists()) {
-      expoDir = candidate.getParentFile().getParentFile()
-      return
+def nodeModulesDir = new File(rootDir, "node_modules")
+
+if (nodeModulesDir.exists()) {
+  // Try direct path first
+  def directPath = new File(nodeModulesDir, "expo/scripts/autolinking.gradle")
+  if (directPath.exists()) {
+    expoDir = directPath.getParentFile().getParentFile()
+  } else {
+    // Search recursively
+    nodeModulesDir.traverse { file ->
+      if (file.name == "autolinking.gradle" && file.parent.name == "scripts") {
+        expoDir = file.getParentFile().getParentFile()
+        return
+      }
     }
   }
 }
 
-if (expoDir) {
+if (expoDir && expoDir.exists()) {
   apply from: new File(expoDir, "scripts/autolinking.gradle");
   useExpoModules()
 }
 
 if (getRNMinorVersion() < 75) {
-  // Use absolute path to native modules script
+  // Search for native modules script
   def nativeModulesDir = null
-  new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
-    if (dir.name.startsWith("@react-native-community+cli-platform-android")) {
-      def candidate = new File(dir, "node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-      if (candidate.exists()) {
-        nativeModulesDir = candidate.getParentFile().getParentFile()
-        return
+  def nodeModulesDir2 = new File(rootDir, "node_modules")
+  
+  if (nodeModulesDir2.exists()) {
+    // Try direct path first
+    def directPath = new File(nodeModulesDir2, "@react-native-community/cli-platform-android/native_modules.gradle")
+    if (directPath.exists()) {
+      nativeModulesDir = directPath.getParentFile().getParentFile()
+    } else {
+      // Search recursively
+      nodeModulesDir2.traverse { file ->
+        if (file.name == "native_modules.gradle") {
+          nativeModulesDir = file.getParentFile().getParentFile()
+          return
+        }
       }
     }
   }
   
-  if (nativeModulesDir) {
+  if (nativeModulesDir && nativeModulesDir.exists()) {
     apply from: new File(nativeModulesDir, "native_modules.gradle");
     applyNativeModulesSettingsGradle(settings)
   }
@@ -126,19 +153,26 @@ if (getRNMinorVersion() < 75) {
 
 include ':app'
 
-// Use absolute path for gradle plugin includeBuild
-def gradlePluginBuildDir = new File(rootDir, "node_modules/.pnpm/@react-native+gradle-plugin@0.74.87/node_modules/@react-native/gradle-plugin")
-if (gradlePluginBuildDir.exists()) {
-  includeBuild(gradlePluginBuildDir.toString())
-} else {
-  // Fallback: find any version
-  new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
-    if (dir.name.startsWith("@react-native+gradle-plugin")) {
-      def pluginDir = new File(dir, "node_modules/@react-native/gradle-plugin")
-      if (pluginDir.exists()) {
-        includeBuild(pluginDir.toString())
+// Search for gradle plugin for includeBuild
+def gradlePluginBuildDir = null
+def nodeModulesDir3 = new File(rootDir, "node_modules")
+
+if (nodeModulesDir3.exists()) {
+  // Try direct path first
+  def directPath = new File(nodeModulesDir3, "@react-native/gradle-plugin")
+  if (directPath.exists()) {
+    gradlePluginBuildDir = directPath
+  } else {
+    // Search recursively
+    nodeModulesDir3.traverse { file ->
+      if (file.name == "gradle-plugin" && file.parent.name == "@react-native") {
+        gradlePluginBuildDir = file
         return
       }
     }
   }
+}
+
+if (gradlePluginBuildDir && gradlePluginBuildDir.exists()) {
+  includeBuild(gradlePluginBuildDir.toString())
 }
