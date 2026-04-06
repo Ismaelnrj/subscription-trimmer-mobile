@@ -21,7 +21,8 @@
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "withoutCredentials": false
+        "withoutCredentials": false,
+        "nativeBuilding": false
       }
     }
   }
