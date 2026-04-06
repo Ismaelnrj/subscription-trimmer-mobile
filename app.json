@@ -13,7 +13,8 @@
       "gradleProperties": {
         "android.useAndroidX": true,
         "android.enableJetifier": true
-      }
+      },
+      "jsEngine": "jsc"
     },
 
     "ios": {
