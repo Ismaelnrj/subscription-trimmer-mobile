@@ -1,0 +1,138 @@
+pluginManagement {
+  def version = providers.exec {
+    commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
+  }.standardOutput.asText.get().trim()
+  def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
+
+  // Fix: Safely resolve @react-native/gradle-plugin path
+  def gradlePluginPath = null
+  try {
+    def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir)
+    result.waitFor()
+    if (result.exitValue() == 0) {
+      gradlePluginPath = result.text.trim()
+    }
+  } catch (Exception e) {
+    println("Warning: Failed to resolve @react-native/gradle-plugin: ${e.message}")
+  }
+  
+  if (gradlePluginPath) {
+    includeBuild(new File(gradlePluginPath).getParentFile().toString())
+  }
+  
+  if(reactNativeMinor == 74 && reactNativePatch <= 3){
+    includeBuild("react-settings-plugin")
+  }
+}
+
+plugins { id("com.facebook.react.settings") }
+
+def getRNMinorVersion() {
+  def version = providers.exec {
+    commandLine("node", "-e", "console.log(require('react-native/package.json').version);")
+  }.standardOutput.asText.get().trim()
+
+  def coreVersion = version.split("-")[0]
+  def (major, minor, patch) = coreVersion.tokenize('.').collect { it.toInteger() }
+
+  return minor
+}
+
+if (getRNMinorVersion() >= 75) {
+  extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    if (System.getenv('EXPO_UNSTABLE_CORE_AUTOLINKING') == '1') {
+      println('\u001B[32mUsing expo-modules-autolinking as core autolinking source\u001B[0m')
+      def command = [
+        'node',
+        '--no-warnings',
+        '--eval',
+        'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
+        'react-native-config',
+        '--json',
+        '--platform',
+        'android'
+      ].toList()
+      ex.autolinkLibrariesFromCommand(command)
+    } else {
+      ex.autolinkLibrariesFromCommand()
+    }
+  }
+}
+
+rootProject.name = 'SubTrimmer'
+
+dependencyResolutionManagement {
+  versionCatalogs {
+    reactAndroidLibs {
+      // Fix: Safely resolve react-native libs.versions.toml path
+      def reactNativePackagePath = null
+      try {
+        def result = ["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir)
+        result.waitFor()
+        if (result.exitValue() == 0) {
+          reactNativePackagePath = result.text.trim()
+        }
+      } catch (Exception e) {
+        println("Warning: Failed to resolve react-native package: ${e.message}")
+      }
+      
+      if (reactNativePackagePath) {
+        from(files(new File(reactNativePackagePath, "../gradle/libs.versions.toml")))
+      }
+    }
+  }
+}
+
+// Fix: Safely resolve expo autolinking script path
+def expoPackagePath = null
+try {
+  def result = ["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir)
+  result.waitFor()
+  if (result.exitValue() == 0) {
+    expoPackagePath = result.text.trim()
+  }
+} catch (Exception e) {
+  println("Warning: Failed to resolve expo package: ${e.message}")
+}
+
+if (expoPackagePath) {
+  apply from: new File(expoPackagePath, "../scripts/autolinking.gradle");
+  useExpoModules()
+}
+
+if (getRNMinorVersion() < 75) {
+  // Fix: Safely resolve native modules script path
+  def nativeModulesPath = null
+  try {
+    def result = ["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
+    result.waitFor()
+    if (result.exitValue() == 0) {
+      nativeModulesPath = result.text.trim()
+    }
+  } catch (Exception e) {
+    println("Warning: Failed to resolve native modules: ${e.message}")
+  }
+  
+  if (nativeModulesPath) {
+    apply from: new File(nativeModulesPath, "../native_modules.gradle");
+    applyNativeModulesSettingsGradle(settings)
+  }
+}
+
+include ':app'
+
+// Fix: Safely resolve @react-native/gradle-plugin for includeBuild
+def gradlePluginBuildPath = null
+try {
+  def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
+  result.waitFor()
+  if (result.exitValue() == 0) {
+    gradlePluginBuildPath = result.text.trim()
+  }
+} catch (Exception e) {
+  println("Warning: Failed to resolve @react-native/gradle-plugin for includeBuild: ${e.message}")
+}
+
+if (gradlePluginBuildPath) {
+  includeBuild(new File(gradlePluginBuildPath).getParentFile())
+}
