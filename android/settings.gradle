@@ -4,28 +4,18 @@ pluginManagement {
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  // Fix: Search for gradle plugin in node_modules without assuming pnpm structure
-  def gradlePluginDir = null
-  def nodeModulesDir = new File(rootDir, "node_modules")
-  
-  if (nodeModulesDir.exists()) {
-    // Try direct path first
-    def directPath = new File(nodeModulesDir, "@react-native/gradle-plugin")
-    if (directPath.exists()) {
-      gradlePluginDir = directPath
+  // Safely execute gradle plugin resolution with error handling
+  try {
+    def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir)
+    result.waitFor()
+    def output = result.text.trim()
+    if (output && result.exitValue() == 0) {
+      includeBuild(new File(output).getParentFile().toString())
     } else {
-      // Search recursively for gradle-plugin
-      nodeModulesDir.traverse { file ->
-        if (file.name == "gradle-plugin" && file.parent.name == "@react-native") {
-          gradlePluginDir = file
-          return
-        }
-      }
+      println("Warning: Could not resolve @react-native/gradle-plugin")
     }
-  }
-  
-  if (gradlePluginDir && gradlePluginDir.exists()) {
-    includeBuild(gradlePluginDir.toString())
+  } catch (Exception e) {
+    println("Warning: Error resolving @react-native/gradle-plugin: ${e.message}")
   }
   
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
@@ -72,107 +62,67 @@ rootProject.name = 'SubTrimmer'
 dependencyResolutionManagement {
   versionCatalogs {
     reactAndroidLibs {
-      // Search for react-native gradle libs
-      def libsFile = null
-      def nodeModulesDir = new File(rootDir, "node_modules")
-      
-      if (nodeModulesDir.exists()) {
-        // Try direct path first
-        def directPath = new File(nodeModulesDir, "react-native/gradle/libs.versions.toml")
-        if (directPath.exists()) {
-          libsFile = directPath
+      // Safely resolve react-native libs.versions.toml
+      try {
+        def result = ["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir)
+        result.waitFor()
+        def output = result.text.trim()
+        if (output && result.exitValue() == 0) {
+          from(files(new File(output, "../gradle/libs.versions.toml")))
         } else {
-          // Search recursively
-          nodeModulesDir.traverse { file ->
-            if (file.name == "libs.versions.toml" && file.parent.name == "gradle") {
-              libsFile = file
-              return
-            }
-          }
+          println("Warning: Could not resolve react-native/package.json")
         }
-      }
-      
-      if (libsFile && libsFile.exists()) {
-        from(files(libsFile))
+      } catch (Exception e) {
+        println("Warning: Error resolving react-native: ${e.message}")
       }
     }
   }
 }
 
-// Search for expo autolinking script
-def expoDir = null
-def nodeModulesDir = new File(rootDir, "node_modules")
-
-if (nodeModulesDir.exists()) {
-  // Try direct path first
-  def directPath = new File(nodeModulesDir, "expo/scripts/autolinking.gradle")
-  if (directPath.exists()) {
-    expoDir = directPath.getParentFile().getParentFile()
+// Safely resolve expo autolinking script
+try {
+  def result = ["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir)
+  result.waitFor()
+  def output = result.text.trim()
+  if (output && result.exitValue() == 0) {
+    apply from: new File(output, "../scripts/autolinking.gradle");
+    useExpoModules()
   } else {
-    // Search recursively
-    nodeModulesDir.traverse { file ->
-      if (file.name == "autolinking.gradle" && file.parent.name == "scripts") {
-        expoDir = file.getParentFile().getParentFile()
-        return
-      }
-    }
+    println("Warning: Could not resolve expo/package.json")
   }
-}
-
-if (expoDir && expoDir.exists()) {
-  apply from: new File(expoDir, "scripts/autolinking.gradle");
-  useExpoModules()
+} catch (Exception e) {
+  println("Warning: Error resolving expo: ${e.message}")
 }
 
 if (getRNMinorVersion() < 75) {
-  // Search for native modules script
-  def nativeModulesDir = null
-  def nodeModulesDir2 = new File(rootDir, "node_modules")
-  
-  if (nodeModulesDir2.exists()) {
-    // Try direct path first
-    def directPath = new File(nodeModulesDir2, "@react-native-community/cli-platform-android/native_modules.gradle")
-    if (directPath.exists()) {
-      nativeModulesDir = directPath.getParentFile().getParentFile()
+  // Safely resolve native modules script
+  try {
+    def result = ["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
+    result.waitFor()
+    def output = result.text.trim()
+    if (output && result.exitValue() == 0) {
+      apply from: new File(output, "../native_modules.gradle");
+      applyNativeModulesSettingsGradle(settings)
     } else {
-      // Search recursively
-      nodeModulesDir2.traverse { file ->
-        if (file.name == "native_modules.gradle") {
-          nativeModulesDir = file.getParentFile().getParentFile()
-          return
-        }
-      }
+      println("Warning: Could not resolve @react-native-community/cli-platform-android")
     }
-  }
-  
-  if (nativeModulesDir && nativeModulesDir.exists()) {
-    apply from: new File(nativeModulesDir, "native_modules.gradle");
-    applyNativeModulesSettingsGradle(settings)
+  } catch (Exception e) {
+    println("Warning: Error resolving native modules: ${e.message}")
   }
 }
 
 include ':app'
 
-// Search for gradle plugin for includeBuild
-def gradlePluginBuildDir = null
-def nodeModulesDir3 = new File(rootDir, "node_modules")
-
-if (nodeModulesDir3.exists()) {
-  // Try direct path first
-  def directPath = new File(nodeModulesDir3, "@react-native/gradle-plugin")
-  if (directPath.exists()) {
-    gradlePluginBuildDir = directPath
+// Safely resolve gradle plugin for includeBuild
+try {
+  def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
+  result.waitFor()
+  def output = result.text.trim()
+  if (output && result.exitValue() == 0) {
+    includeBuild(new File(output).getParentFile())
   } else {
-    // Search recursively
-    nodeModulesDir3.traverse { file ->
-      if (file.name == "gradle-plugin" && file.parent.name == "@react-native") {
-        gradlePluginBuildDir = file
-        return
-      }
-    }
+    println("Warning: Could not resolve @react-native/gradle-plugin for includeBuild")
   }
-}
-
-if (gradlePluginBuildDir && gradlePluginBuildDir.exists()) {
-  includeBuild(gradlePluginBuildDir.toString())
+} catch (Exception e) {
+  println("Warning: Error resolving gradle plugin for includeBuild: ${e.message}")
 }
