@@ -9,12 +9,7 @@
     ],
 
     "android": {
-      "package": "com.subtrimmer.app",
-      "gradleProperties": {
-        "android.useAndroidX": true,
-        "android.enableJetifier": true
-      },
-      "jsEngine": "jsc"
+      "package": "com.subtrimmer.app"
     },
 
     "ios": {
