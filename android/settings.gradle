@@ -4,20 +4,22 @@ pluginManagement {
   }.standardOutput.asText.get().trim()
   def (_, reactNativeMinor, reactNativePatch) = version.split("-")[0].tokenize('.').collect { it.toInteger() }
 
-  // Fix: Safely resolve @react-native/gradle-plugin path
-  def gradlePluginPath = null
-  try {
-    def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir)
-    result.waitFor()
-    if (result.exitValue() == 0) {
-      gradlePluginPath = result.text.trim()
+  // Fix: Use absolute path to gradle plugin instead of require.resolve
+  def gradlePluginDir = new File(rootDir, "node_modules/.pnpm/@react-native+gradle-plugin@0.74.87/node_modules/@react-native/gradle-plugin")
+  if (gradlePluginDir.exists()) {
+    includeBuild(gradlePluginDir.toString())
+  } else {
+    // Fallback: try to find any version of the gradle plugin
+    def gradlePluginParent = new File(rootDir, "node_modules/.pnpm")
+    gradlePluginParent.eachDir { dir ->
+      if (dir.name.startsWith("@react-native+gradle-plugin")) {
+        def pluginDir = new File(dir, "node_modules/@react-native/gradle-plugin")
+        if (pluginDir.exists()) {
+          includeBuild(pluginDir.toString())
+          return
+        }
+      }
     }
-  } catch (Exception e) {
-    println("Warning: Failed to resolve @react-native/gradle-plugin: ${e.message}")
-  }
-  
-  if (gradlePluginPath) {
-    includeBuild(new File(gradlePluginPath).getParentFile().toString())
   }
   
   if(reactNativeMinor == 74 && reactNativePatch <= 3){
@@ -64,75 +66,79 @@ rootProject.name = 'SubTrimmer'
 dependencyResolutionManagement {
   versionCatalogs {
     reactAndroidLibs {
-      // Fix: Safely resolve react-native libs.versions.toml path
-      def reactNativePackagePath = null
-      try {
-        def result = ["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir)
-        result.waitFor()
-        if (result.exitValue() == 0) {
-          reactNativePackagePath = result.text.trim()
+      // Use absolute path to react-native gradle libs
+      def reactNativeDir = new File(rootDir, "node_modules/.pnpm/react-native@0.74.5_*/node_modules/react-native")
+      def libsFile = null
+      
+      // Find the actual react-native directory (with hash suffix)
+      new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
+        if (dir.name.startsWith("react-native@0.74.5")) {
+          def candidate = new File(dir, "node_modules/react-native/gradle/libs.versions.toml")
+          if (candidate.exists()) {
+            libsFile = candidate
+            return
+          }
         }
-      } catch (Exception e) {
-        println("Warning: Failed to resolve react-native package: ${e.message}")
       }
       
-      if (reactNativePackagePath) {
-        from(files(new File(reactNativePackagePath, "../gradle/libs.versions.toml")))
+      if (libsFile && libsFile.exists()) {
+        from(files(libsFile))
       }
     }
   }
 }
 
-// Fix: Safely resolve expo autolinking script path
-def expoPackagePath = null
-try {
-  def result = ["node", "--print", "require.resolve('expo/package.json')"].execute(null, rootDir)
-  result.waitFor()
-  if (result.exitValue() == 0) {
-    expoPackagePath = result.text.trim()
+// Use absolute path to expo autolinking script
+def expoDir = null
+new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
+  if (dir.name.startsWith("expo@")) {
+    def candidate = new File(dir, "node_modules/expo/scripts/autolinking.gradle")
+    if (candidate.exists()) {
+      expoDir = candidate.getParentFile().getParentFile()
+      return
+    }
   }
-} catch (Exception e) {
-  println("Warning: Failed to resolve expo package: ${e.message}")
 }
 
-if (expoPackagePath) {
-  apply from: new File(expoPackagePath, "../scripts/autolinking.gradle");
+if (expoDir) {
+  apply from: new File(expoDir, "scripts/autolinking.gradle");
   useExpoModules()
 }
 
 if (getRNMinorVersion() < 75) {
-  // Fix: Safely resolve native modules script path
-  def nativeModulesPath = null
-  try {
-    def result = ["node", "--print", "require.resolve('@react-native-community/cli-platform-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
-    result.waitFor()
-    if (result.exitValue() == 0) {
-      nativeModulesPath = result.text.trim()
+  // Use absolute path to native modules script
+  def nativeModulesDir = null
+  new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
+    if (dir.name.startsWith("@react-native-community+cli-platform-android")) {
+      def candidate = new File(dir, "node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+      if (candidate.exists()) {
+        nativeModulesDir = candidate.getParentFile().getParentFile()
+        return
+      }
     }
-  } catch (Exception e) {
-    println("Warning: Failed to resolve native modules: ${e.message}")
   }
   
-  if (nativeModulesPath) {
-    apply from: new File(nativeModulesPath, "../native_modules.gradle");
+  if (nativeModulesDir) {
+    apply from: new File(nativeModulesDir, "native_modules.gradle");
     applyNativeModulesSettingsGradle(settings)
   }
 }
 
 include ':app'
 
-// Fix: Safely resolve @react-native/gradle-plugin for includeBuild
-def gradlePluginBuildPath = null
-try {
-  def result = ["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir)
-  result.waitFor()
-  if (result.exitValue() == 0) {
-    gradlePluginBuildPath = result.text.trim()
+// Use absolute path for gradle plugin includeBuild
+def gradlePluginBuildDir = new File(rootDir, "node_modules/.pnpm/@react-native+gradle-plugin@0.74.87/node_modules/@react-native/gradle-plugin")
+if (gradlePluginBuildDir.exists()) {
+  includeBuild(gradlePluginBuildDir.toString())
+} else {
+  // Fallback: find any version
+  new File(rootDir, "node_modules/.pnpm").eachDir { dir ->
+    if (dir.name.startsWith("@react-native+gradle-plugin")) {
+      def pluginDir = new File(dir, "node_modules/@react-native/gradle-plugin")
+      if (pluginDir.exists()) {
+        includeBuild(pluginDir.toString())
+        return
+      }
+    }
   }
-} catch (Exception e) {
-  println("Warning: Failed to resolve @react-native/gradle-plugin for includeBuild: ${e.message}")
-}
-
-if (gradlePluginBuildPath) {
-  includeBuild(new File(gradlePluginBuildPath).getParentFile())
 }
