@@ -1,20 +1,21 @@
 #!/bin/bash
 
 # Fix Gradle compatibility issues for Expo SDK 50
-# Fixes Java 17 + Gradle 7.6.3 compatibility issues
+# Uses Gradle 7.5.1 - most stable version for Expo SDK 50 + Java 17
 
 set -e
 
 echo "🔧 Applying Gradle compatibility fixes for Expo SDK 50..."
 
-# Fix 1: Downgrade Gradle to 7.6.3
-echo "📦 Downgrading Gradle to 7.6.3..."
-sed -i 's/gradle-8.3-all.zip/gradle-7.6.3-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
-sed -i 's/gradle-8.2-all.zip/gradle-7.6.3-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
-sed -i 's/gradle-8.1-all.zip/gradle-7.6.3-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+# Fix 1: Downgrade Gradle to 7.5.1 (most stable)
+echo "📦 Downgrading Gradle to 7.5.1 (most stable for Expo SDK 50)..."
+sed -i 's/gradle-8.3-all.zip/gradle-7.5.1-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+sed -i 's/gradle-8.2-all.zip/gradle-7.5.1-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+sed -i 's/gradle-8.1-all.zip/gradle-7.5.1-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
+sed -i 's/gradle-7.6.3-all.zip/gradle-7.5.1-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties
 
-if grep -q "gradle-7.6.3-all.zip" android/gradle/wrapper/gradle-wrapper.properties; then
-  echo "✅ Gradle downgraded to 7.6.3"
+if grep -q "gradle-7.5.1-all.zip" android/gradle/wrapper/gradle-wrapper.properties; then
+  echo "✅ Gradle downgraded to 7.5.1"
 else
   echo "❌ Failed to downgrade Gradle"
   exit 1
@@ -29,10 +30,12 @@ else
   echo "✅ gradlePluginPortal() already present"
 fi
 
-# Fix 3: Update gradle.properties - REMOVE Java toolchain to avoid conflicts
+# Fix 3: Update gradle.properties
 echo "⚙️  Updating gradle.properties..."
 sed -i '/org.gradle.java.installations/d' android/gradle.properties
 sed -i '/org.gradle.jvmargs/d' android/gradle.properties
+sed -i '/org.gradle.caching/d' android/gradle.properties
+sed -i '/org.gradle.parallel/d' android/gradle.properties
 
 {
   echo ""
@@ -40,11 +43,10 @@ sed -i '/org.gradle.jvmargs/d' android/gradle.properties
   echo "org.gradle.caching=true"
   echo "org.gradle.parallel=true"
   echo "org.gradle.java.installations.auto-download=false"
-  echo "org.gradle.java.installations.fromEnv=JAVA_HOME"
 } >> android/gradle.properties
 echo "✅ Updated gradle.properties"
 
-# Fix 4: Remove javaToolchain conflicts from build.gradle
+# Fix 4: Remove javaToolchain conflicts
 if grep -q "javaToolchain" android/build.gradle; then
   sed -i '/javaToolchain/,/}/s/^/\/\/ /' android/build.gradle
   echo "✅ Removed conflicting javaToolchain settings"
@@ -56,4 +58,7 @@ echo "✅ Gradle cache cleared"
 
 echo ""
 echo "✅ All Gradle fixes applied successfully!"
-echo "Ready to build APK! 🚀"
+echo "Configuration Summary:"
+echo "  Gradle version: 7.5.1 (most stable)"
+echo "  Java version: 17"
+echo "  Ready to build APK! 🚀"
