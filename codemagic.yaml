@@ -16,6 +16,9 @@ workflows:
       - name: Prebuild native Android
         script: |
           npx expo prebuild --platform android --clean
+      - name: Apply Gradle compatibility fixes
+        script: |
+          bash fix-gradle.sh
       - name: Build Android APK with Gradle
         script: |
           cd android
