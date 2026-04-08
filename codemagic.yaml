@@ -6,9 +6,14 @@ workflows:
     environment:
       node: 18
       java: 11
-      android_sdk: 34
       groups:
         - expo_credentials
+    triggering:
+      events:
+        - push
+      branch:
+        include_patterns:
+          - master
     scripts:
       - name: Install dependencies
         script: |
@@ -35,9 +40,14 @@ workflows:
     environment:
       node: 18
       java: 11
-      android_sdk: 34
       groups:
         - expo_credentials
+    triggering:
+      events:
+        - push
+      branch:
+        include_patterns:
+          - master
     scripts:
       - name: Install dependencies
         script: |
