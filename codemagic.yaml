@@ -13,8 +13,13 @@ workflows:
         script: |
           npm install -g eas-cli
           pnpm install
-      - name: Build Android APK
+      - name: Prebuild native Android
         script: |
-          eas build --platform android --profile preview --non-interactive
+          npx expo prebuild --platform android --clean
+      - name: Build Android APK with Gradle
+        script: |
+          cd android
+          ./gradlew assembleRelease
+          cd ..
     artifacts:
-      - build/**/*.apk
+      - android/app/build/outputs/apk/release/*.apk
