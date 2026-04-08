@@ -16,10 +16,3 @@ workflows:
           eas build --platform android --profile preview --non-interactive
     artifacts:
       - build/**/*.apk
-    publishing:
-      email:
-        recipients:
-          - $CODEMAGIC_EMAIL
-        notify:
-          success: true
-          failure: true
