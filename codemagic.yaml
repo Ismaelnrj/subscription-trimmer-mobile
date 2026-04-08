@@ -22,7 +22,7 @@ workflows:
           ./gradlew assembleRelease
           cd ..
     artifacts:
-      - android/app/build/outputs/apk/release/*.apk
+      - app/build/outputs/**/*.apk
     publishing:
       scripts:
         - name: Generate Download URL
