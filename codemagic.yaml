@@ -6,6 +6,8 @@ workflows:
     environment:
       node: 18
       java: 11
+      groups:
+        - expo_credentials
     scripts:
       - name: Install dependencies
         script: |
