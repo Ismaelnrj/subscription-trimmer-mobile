@@ -5,7 +5,7 @@ workflows:
     max_build_duration: 120
     environment:
       node: 18
-      java: 11
+      java: 17
       groups:
         - expo_credentials
     scripts:
