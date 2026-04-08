@@ -23,3 +23,16 @@ workflows:
           cd ..
     artifacts:
       - android/app/build/outputs/apk/release/*.apk
+    publishing:
+      scripts:
+        - name: Generate Download URL
+          script: |
+            echo "Build completed successfully!"
+            echo "Artifacts available at: $CM_ARTIFACT_LINKS"
+            # Extract APK URL from artifact links
+            APK_URL=$(echo $CM_ARTIFACT_LINKS | grep -oP '(?<="url":")[^"]*apk[^"]*' | head -1)
+            if [ -z "$APK_URL" ]; then
+              echo "APK URL: Check Codemagic dashboard for artifacts"
+            else
+              echo "APK Download URL: $APK_URL"
+            fi
