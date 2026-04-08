@@ -1,0 +1,57 @@
+workflows:
+  android-workflow:
+    name: Android Build
+    instance_type: linux_x2
+    max_build_duration: 120
+    environment:
+      node: 18
+      java: 11
+      android_sdk: 34
+      groups:
+        - expo_credentials
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g eas-cli
+          pnpm install
+      - name: Build Android APK
+        script: |
+          eas build --platform android --profile preview --non-interactive
+    artifacts:
+      - build/**/*.apk
+      - build/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - $CODEMAGIC_EMAIL
+        notify:
+          success: true
+          failure: true
+
+  android-production:
+    name: Android Production Build
+    instance_type: linux_x2
+    max_build_duration: 120
+    environment:
+      node: 18
+      java: 11
+      android_sdk: 34
+      groups:
+        - expo_credentials
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install -g eas-cli
+          pnpm install
+      - name: Build Android App Bundle
+        script: |
+          eas build --platform android --profile production --non-interactive
+    artifacts:
+      - build/**/*.aab
+    publishing:
+      email:
+        recipients:
+          - $CODEMAGIC_EMAIL
+        notify:
+          success: true
+          failure: true
