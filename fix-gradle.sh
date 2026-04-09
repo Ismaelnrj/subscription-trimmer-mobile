@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fix Gradle compatibility issues for Expo SDK 50
-# Uses Gradle 8.1.1 with proper plugin resolution
+# Adds missing compileSdkVersion and configures Gradle 8.1.1
 
 set -e
 
@@ -21,11 +21,24 @@ else
   exit 1
 fi
 
-# Fix 2: Add gradlePluginPortal to settings.gradle (for plugin resolution )
+# Fix 2: Add compileSdkVersion to android/app/build.gradle
+echo "🔧 Adding compileSdkVersion to build.gradle..."
+if [ -f "android/app/build.gradle" ]; then
+  if ! grep -q "compileSdkVersion" android/app/build.gradle; then
+    # Add compileSdkVersion after android {
+    sed -i '/^android {/a\    compileSdkVersion 34' android/app/build.gradle
+    echo "✅ Added compileSdkVersion 34"
+  else
+    echo "✅ compileSdkVersion already present"
+  fi
+else
+  echo "⚠️  android/app/build.gradle not found"
+fi
+
+# Fix 3: Add gradlePluginPortal to settings.gradle
 echo "🔌 Adding gradlePluginPortal to settings.gradle..."
 if [ -f "android/settings.gradle" ]; then
-  if ! grep -q "gradlePluginPortal()" android/settings.gradle; then
-    # Find the pluginManagement block and add gradlePluginPortal
+  if ! grep -q "gradlePluginPortal( )" android/settings.gradle; then
     sed -i '/repositories {/a\        gradlePluginPortal()' android/settings.gradle
     echo "✅ Added gradlePluginPortal() to settings.gradle"
   else
@@ -35,16 +48,20 @@ else
   echo "⚠️  settings.gradle not found"
 fi
 
-# Fix 3: Also add to build.gradle for regular dependencies
+# Fix 4: Add gradlePluginPortal to build.gradle
 echo "🔌 Adding gradlePluginPortal to build.gradle..."
-if ! grep -q "gradlePluginPortal()" android/build.gradle; then
-  sed -i '/mavenCentral()/a\        gradlePluginPortal()' android/build.gradle
-  echo "✅ Added gradlePluginPortal() to build.gradle"
+if [ -f "android/build.gradle" ]; then
+  if ! grep -q "gradlePluginPortal()" android/build.gradle; then
+    sed -i '/mavenCentral()/a\        gradlePluginPortal()' android/build.gradle
+    echo "✅ Added gradlePluginPortal() to build.gradle"
+  else
+    echo "✅ gradlePluginPortal() already in build.gradle"
+  fi
 else
-  echo "✅ gradlePluginPortal() already in build.gradle"
+  echo "⚠️  build.gradle not found"
 fi
 
-# Fix 4: Configure gradle.properties for Java 17
+# Fix 5: Configure gradle.properties for Java 17
 echo "⚙️  Configuring gradle.properties..."
 sed -i '/org.gradle.java.installations/d' android/gradle.properties
 sed -i '/org.gradle.jvmargs/d' android/gradle.properties
@@ -62,7 +79,7 @@ sed -i '/org.gradle.parallel/d' android/gradle.properties
 
 echo "✅ Configured gradle.properties"
 
-# Fix 5: Clear Gradle cache
+# Fix 6: Clear Gradle cache
 echo "🗑️  Clearing Gradle cache..."
 rm -rf android/.gradle
 echo "✅ Gradle cache cleared"
@@ -71,6 +88,6 @@ echo ""
 echo "✅ All Gradle fixes applied successfully!"
 echo "Configuration Summary:"
 echo "  Gradle version: 8.1.1"
+echo "  compileSdkVersion: 34"
 echo "  Java version: 17"
-echo "  Plugin resolution: Enabled"
 echo "  Ready to build APK! 🚀"
