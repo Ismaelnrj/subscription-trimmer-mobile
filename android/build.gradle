@@ -1,0 +1,110 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext {
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
+
+        ndkVersion = "26.1.10909125"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath('com.android.tools.build:gradle')
+        classpath('com.facebook.react:react-native-gradle-plugin')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    }
+}
+
+// Gradle 8 compatibility: re-declare SDK versions at the root project ext level.
+// In Gradle 8, buildscript { ext {} } properties may not be visible to submodules
+// via rootProject.ext.has() / rootProject.ext.get(). Declaring them here at the
+// top-level ext ensures they are always reachable by safeExtGet() calls in expo
+// and other library modules.
+ext {
+    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
+    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '34')
+    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')
+    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
+    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'
+    ndkVersion        = "26.1.10909125"
+}
+
+apply plugin: "com.facebook.react.rootproject"
+
+allprojects {
+    repositories {
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url(new File(['node', '--print', "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), '../android'))
+        }
+        maven {
+            // Android JSC is installed from npm
+            url(new File(['node', '--print', "require.resolve('jsc-android/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim(), '../dist'))
+        }
+
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+    }
+}
+
+// Gradle 8 compatibility: patch all Android library submodules so that:
+//
+//  1. compileSdkVersion is always set (fallback to root ext if a module missed it).
+//  2. The maven-publish 'release' SoftwareComponent is wired up via the safe
+//     findByName() API instead of the dynamic property access `components.release`
+//     which throws "Could not get unknown property 'release' for
+//     SoftwareComponentContainer" in Gradle 8.
+//
+// This afterEvaluate callback is registered on each subproject from the root
+// project, so it runs before the subproject's own afterEvaluate callbacks
+// (e.g. the one inside useExpoPublishing()). We therefore only create the
+// 'release' publication here when the release component is already available at
+// this point; for modules such as expo that create it themselves in a later
+// afterEvaluate the check `publications.findByName("release") == null` will
+// prevent a duplicate-publication conflict.
+subprojects {
+    afterEvaluate { subproject ->
+        // Fix 1 – compileSdkVersion: any android library that slipped through
+        // without a compileSdk value picks it up from the root ext block above.
+        if (subproject.plugins.hasPlugin("com.android.library")) {
+            if (!subproject.android.compileSdkVersion) {
+                subproject.android {
+                    compileSdkVersion rootProject.ext.compileSdkVersion
+                }
+            }
+        }
+
+        // Fix 2 – release SoftwareComponent: configure maven-publish using the
+        // Gradle 8-safe findByName() method instead of the broken dynamic
+        // property access.  We only act when:
+        //   a) both maven-publish and com.android.library plugins are present,
+        //   b) the 'release' publication does not exist yet (to avoid conflicts
+        //      with useExpoPublishing() which creates it in its own afterEvaluate),
+        //   c) the 'release' SoftwareComponent is already registered by AGP.
+        if (subproject.plugins.hasPlugin("maven-publish") &&
+                subproject.plugins.hasPlugin("com.android.library")) {
+            if (subproject.publishing.publications.findByName("release") == null) {
+                def releaseComponent = subproject.components.findByName("release")
+                if (releaseComponent != null) {
+                    subproject.publishing {
+                        publications {
+                            release(MavenPublication) {
+                                from releaseComponent
+                            }
+                        }
+                        repositories {
+                            maven { url = mavenLocal().url }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
