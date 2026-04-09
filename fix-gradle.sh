@@ -11,6 +11,11 @@
 #             Root cause: Groovy dynamic property access (components.release) no
 #             longer works on SoftwareComponentContainer in Gradle 8.
 #
+# NOTE: do NOT add a subprojects { afterEvaluate {} } block to android/build.gradle.
+#       In Gradle 8.8+, calling afterEvaluate on an already-evaluated project throws
+#       "Cannot run Project.afterEvaluate(Closure) when the project is already evaluated."
+#       The two fixes below are sufficient on their own.
+#
 # Safe to run multiple times — every step is idempotent.
 
 set -e
@@ -38,7 +43,7 @@ fi
 # rootProject.ext.has() / rootProject.ext.get(), which expo's safeExtGet()
 # helper relies on.  Declaring the same values in a root-level ext {} block
 # guarantees they are always visible to every submodule.
-echo "[1/4] Patching android/build.gradle — top-level ext {} ..."
+echo "[1/3] Patching android/build.gradle — top-level ext {} ..."
 
 python3 - "$ANDROID/build.gradle" << 'PYEOF'
 import sys
@@ -76,73 +81,12 @@ with open(path, 'w') as f:
 print("      OK   — top-level ext {} added")
 PYEOF
 
-# ── Fix 2: Add subprojects {} block to android/build.gradle ──────────────────
-# Defense-in-depth:
-#   a) Ensures compileSdkVersion falls back to root ext for any library module
-#      that still doesn't have it set.
-#   b) Wires the maven-publish 'release' publication via findByName() for any
-#      module not already covered by Fix 3 below.
-echo "[2/4] Patching android/build.gradle — subprojects {} block ..."
-
-python3 - "$ANDROID/build.gradle" << 'PYEOF'
-import sys
-
-path = sys.argv[1]
-with open(path) as f:
-    content = f.read()
-
-if 'subprojects {' in content:
-    print("      SKIP — subprojects {} already present")
-    sys.exit(0)
-
-block = """
-// Gradle 8 compatibility: patch every Android library submodule.
-subprojects {
-    afterEvaluate { subproject ->
-        // (a) Ensure compileSdkVersion is set; fall back to root ext if missing.
-        if (subproject.plugins.hasPlugin("com.android.library")) {
-            if (!subproject.android.compileSdkVersion) {
-                subproject.android {
-                    compileSdkVersion rootProject.ext.compileSdkVersion
-                }
-            }
-        }
-        // (b) Wire the maven-publish 'release' publication using the Gradle 8-safe
-        //     findByName() API instead of the broken dynamic property accessor.
-        //     Guard prevents duplicate-publication conflicts with useExpoPublishing().
-        if (subproject.plugins.hasPlugin("maven-publish") &&
-                subproject.plugins.hasPlugin("com.android.library")) {
-            if (subproject.publishing.publications.findByName("release") == null) {
-                def releaseComponent = subproject.components.findByName("release")
-                if (releaseComponent != null) {
-                    subproject.publishing {
-                        publications {
-                            release(MavenPublication) {
-                                from releaseComponent
-                            }
-                        }
-                        repositories {
-                            maven { url = mavenLocal().url }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-"""
-
-with open(path, 'a') as f:
-    f.write(block)
-print("      OK   — subprojects {} block appended")
-PYEOF
-
-# ── Fix 3: Patch ExpoModulesCorePlugin.gradle ─────────────────────────────────
+# ── Fix 2: Patch ExpoModulesCorePlugin.gradle ────────────────────────────────
 # This is the root cause of Error 2.  The useExpoPublishing() function uses
 # `from components.release` inside afterEvaluate.  In Gradle 8 this Groovy
 # dynamic property lookup throws MissingPropertyException.  Replace it with
-# the explicit components.findByName("release") which returns null on miss.
-echo "[3/4] Patching ExpoModulesCorePlugin.gradle ..."
+# components.findByName("release") which returns null instead of throwing.
+echo "[2/3] Patching ExpoModulesCorePlugin.gradle ..."
 
 PLUGIN_FILE=$(find "$NODE_MODULES" \
     -path "*/expo-modules-core/android/ExpoModulesCorePlugin.gradle" \
@@ -214,17 +158,17 @@ print("      OK   — patched (components.release -> components.findByName())")
 PYEOF
 fi
 
-# ── Fix 4: JVM tuning in gradle.properties ────────────────────────────────────
-echo "[4/4] Tuning android/gradle.properties ..."
+# ── Fix 3: JVM tuning in gradle.properties ───────────────────────────────────
+echo "[3/3] Tuning android/gradle.properties ..."
 
 GRADLE_PROPS="$ANDROID/gradle.properties"
 if [ -f "$GRADLE_PROPS" ]; then
     # Remove the lines we are about to re-add (idempotent)
     sed -i.bak \
-        -e '/^org\.gradle\.jvmargs/d'                       \
-        -e '/^org\.gradle\.caching/d'                       \
-        -e '/^org\.gradle\.parallel/d'                      \
-        -e '/^org\.gradle\.workers\.max/d'                  \
+        -e '/^org\.gradle\.jvmargs/d'                            \
+        -e '/^org\.gradle\.caching/d'                            \
+        -e '/^org\.gradle\.parallel/d'                           \
+        -e '/^org\.gradle\.workers\.max/d'                       \
         -e '/^org\.gradle\.java\.installations\.auto-download/d' \
         "$GRADLE_PROPS"
     rm -f "$GRADLE_PROPS.bak"
@@ -243,14 +187,13 @@ else
     echo "      WARN — $GRADLE_PROPS not found; skipping"
 fi
 
-# ── Gradle local cache clear ──────────────────────────────────────────────────
 rm -rf "$ANDROID/.gradle"
 echo "      OK   — android/.gradle cache cleared"
 
 echo ""
 echo "All fixes applied."
 echo ""
-echo "  android/build.gradle          top-level ext {} + subprojects {} added"
+echo "  android/build.gradle          top-level ext {} added"
 echo "  ExpoModulesCorePlugin.gradle  components.release -> components.findByName()"
 echo "  android/gradle.properties     JVM heap 4 GB, G1GC, parallel builds"
 echo "  android/.gradle               cache cleared"
