@@ -53,3 +53,16 @@ allprojects {
         maven { url 'https://www.jitpack.io' }
     }
 }
+
+// Gradle 8 compatibility: ensure compileSdk is always set for every Android
+// library submodule. This hook fires when the com.android.library plugin is
+// applied (during project evaluation, NOT in afterEvaluate), so it is safe
+// under Gradle 8.8 which forbids afterEvaluate on already-evaluated projects.
+// Using compileSdk (the non-deprecated API) guarantees AGP 7/8 compatibility.
+allprojects {
+    plugins.withId("com.android.library") {
+        android {
+            compileSdk 34
+        }
+    }
+}

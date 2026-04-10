@@ -3,18 +3,25 @@
 # fix-gradle.sh
 # Fixes two Gradle 8 build errors in Expo SDK 50 / React Native 0.73+ projects:
 #
-#   Error 1 — "compileSdkVersion is not specified on the :expo module"
-#             Root cause: in Gradle 8, buildscript { ext {} } properties are not
+#   Error 1 — "compileSdkVersion is not specified. Please add it to build.gradle"
+#             Root cause A: in Gradle 8, buildscript { ext {} } properties are not
 #             visible to submodules via rootProject.ext.has() / .get().
+#             Root cause B: AGP's compileSdkVersion() method may be silently ignored.
 #
 #   Error 2 — "Could not get unknown property 'release' for SoftwareComponentContainer"
 #             Root cause: Groovy dynamic property access (components.release) no
-#             longer works on SoftwareComponentContainer in Gradle 8.
+#             longer resolves named software components in Gradle 8.
 #
-# NOTE: do NOT add a subprojects { afterEvaluate {} } block to android/build.gradle.
-#       In Gradle 8.8+, calling afterEvaluate on an already-evaluated project throws
-#       "Cannot run Project.afterEvaluate(Closure) when the project is already evaluated."
-#       The two fixes below are sufficient on their own.
+# What this script does
+#   Fix 1 — adds a root-level ext {} block to android/build.gradle so that
+#            compileSdkVersion is always on rootProject.ext for safeExtGet().
+#   Fix 2 — adds an allprojects { plugins.withId("com.android.library") {} }
+#            block to android/build.gradle that forcibly sets compileSdk 34 on
+#            every android library module (Gradle 8 safe; no afterEvaluate).
+#   Fix 3 — patches every ExpoModulesCorePlugin.gradle found in node_modules:
+#            replaces the single "from components.release" line with a null-safe
+#            components.findByName("release") call (works across all versions).
+#   Fix 4 — tunes gradle.properties (JVM heap, G1GC, parallel builds).
 #
 # Safe to run multiple times — every step is idempotent.
 
@@ -38,12 +45,10 @@ if [ ! -d "$ANDROID" ]; then
   exit 1
 fi
 
-# ── Fix 1: Add top-level ext {} to android/build.gradle ──────────────────────
-# In Gradle 8, properties inside buildscript { ext {} } may not be returned by
-# rootProject.ext.has() / rootProject.ext.get(), which expo's safeExtGet()
-# helper relies on.  Declaring the same values in a root-level ext {} block
-# guarantees they are always visible to every submodule.
-echo "[1/3] Patching android/build.gradle — top-level ext {} ..."
+# ── Fix 1: Root-level ext {} in android/build.gradle ─────────────────────────
+# Ensures compileSdkVersion is on rootProject.ext so that expo's safeExtGet()
+# can read it via rootProject.ext.has() / .get().
+echo "[1/4] Patching android/build.gradle — root-level ext {} ..."
 
 python3 - "$ANDROID/build.gradle" << 'PYEOF'
 import sys
@@ -52,15 +57,14 @@ path = sys.argv[1]
 with open(path) as f:
     content = f.read()
 
-# Idempotency: already patched?
 if '\next {' in content or content.startswith('ext {'):
-    print("      SKIP — top-level ext {} already present")
+    print("      SKIP — root-level ext {} already present")
     sys.exit(0)
 
 ext_block = (
-    "// Gradle 8 compatibility: re-declare SDK versions at the root project ext\n"
-    "// level so that submodule safeExtGet() calls can find them via\n"
-    "// rootProject.ext (buildscript { ext {} } is not always visible in Gradle 8).\n"
+    "// Gradle 8 compatibility: expose SDK versions on rootProject.ext so that\n"
+    "// submodule safeExtGet() calls find them via rootProject.ext.has()/.get().\n"
+    "// In Gradle 8, buildscript { ext {} } is not always visible that way.\n"
     "ext {\n"
     "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')\n"
     "    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '34')\n"
@@ -73,97 +77,103 @@ ext_block = (
 
 marker = 'apply plugin: "com.facebook.react.rootproject"'
 if marker not in content:
-    print("      WARN — marker not found in " + path + "; ext {} not added")
+    print("      WARN — marker not found; ext {} not added")
     sys.exit(0)
 
 with open(path, 'w') as f:
     f.write(content.replace(marker, ext_block + marker, 1))
-print("      OK   — top-level ext {} added")
+print("      OK   — root-level ext {} added")
 PYEOF
 
-# ── Fix 2: Patch ExpoModulesCorePlugin.gradle ────────────────────────────────
-# This is the root cause of Error 2.  The useExpoPublishing() function uses
-# `from components.release` inside afterEvaluate.  In Gradle 8 this Groovy
-# dynamic property lookup throws MissingPropertyException.  Replace it with
-# components.findByName("release") which returns null instead of throwing.
-echo "[2/3] Patching ExpoModulesCorePlugin.gradle ..."
+# ── Fix 2: allprojects compileSdk hook in android/build.gradle ───────────────
+# Forces compileSdk = 34 on every android library module via plugins.withId(),
+# which fires during project evaluation (Gradle 8 safe — no afterEvaluate).
+# Uses the non-deprecated compileSdk property instead of compileSdkVersion().
+echo "[2/4] Patching android/build.gradle — allprojects compileSdk hook ..."
 
-PLUGIN_FILE=$(find "$NODE_MODULES" \
-    -path "*/expo-modules-core/android/ExpoModulesCorePlugin.gradle" \
-    2>/dev/null | head -1)
-
-if [ -z "$PLUGIN_FILE" ]; then
-    echo "      WARN — ExpoModulesCorePlugin.gradle not found; skipping"
-else
-    python3 - "$PLUGIN_FILE" << 'PYEOF'
+python3 - "$ANDROID/build.gradle" << 'PYEOF'
 import sys
 
 path = sys.argv[1]
 with open(path) as f:
     content = f.read()
 
-# Idempotency check
-if 'components.findByName("release")' in content:
-    print("      SKIP — already patched")
+marker = 'plugins.withId("com.android.library")'
+if marker in content:
+    print("      SKIP — allprojects compileSdk hook already present")
     sys.exit(0)
 
-old = (
-    "  project.afterEvaluate {\n"
-    "    publishing {\n"
-    "      publications {\n"
-    "        release(MavenPublication) {\n"
-    "          from components.release\n"
+hook = (
+    "\n"
+    "// Gradle 8 compatibility: forcibly set compileSdk on every android library\n"
+    "// module. The plugins.withId hook fires when the plugin is applied (during\n"
+    "// project evaluation) — Gradle 8 safe, unlike afterEvaluate.\n"
+    "allprojects {\n"
+    "    plugins.withId(\"com.android.library\") {\n"
+    "        android {\n"
+    "            compileSdk 34\n"
     "        }\n"
-    "      }\n"
-    "      repositories {\n"
-    "        maven {\n"
-    "          url = mavenLocal().url\n"
-    "        }\n"
-    "      }\n"
     "    }\n"
-    "  }"
+    "}\n"
 )
 
-new = (
-    "  project.afterEvaluate {\n"
-    "    // Gradle 8 fix: 'components.release' dynamic property access throws\n"
-    "    // \"Could not get unknown property 'release' for SoftwareComponentContainer\".\n"
-    "    // findByName() returns null instead of throwing; guard prevents NPE.\n"
-    "    def releaseComponent = project.components.findByName(\"release\")\n"
-    "    if (releaseComponent != null) {\n"
-    "      publishing {\n"
-    "        publications {\n"
-    "          release(MavenPublication) {\n"
-    "            from releaseComponent\n"
-    "          }\n"
-    "        }\n"
-    "        repositories {\n"
-    "          maven {\n"
-    "            url = mavenLocal().url\n"
-    "          }\n"
-    "        }\n"
-    "      }\n"
-    "    }\n"
-    "  }"
-)
-
-if old not in content:
-    print("      WARN — expected pattern not found in " + path)
-    print("             The file may already be patched or has a different structure.")
-    sys.exit(0)
-
-with open(path, 'w') as f:
-    f.write(content.replace(old, new, 1))
-print("      OK   — patched (components.release -> components.findByName())")
+with open(path, 'a') as f:
+    f.write(hook)
+print("      OK   — allprojects compileSdk hook appended")
 PYEOF
+
+# ── Fix 3: Patch ALL ExpoModulesCorePlugin.gradle files ──────────────────────
+# The root cause of Error 2: useExpoPublishing() uses `from components.release`
+# inside afterEvaluate. In Gradle 8 the Groovy dynamic property accessor no
+# longer works on SoftwareComponentContainer.
+#
+# Strategy: simple one-line find-and-replace of "from components.release"
+# → "def _rc = project.components.findByName('release'); if (_rc) from _rc"
+# This is version-agnostic (no whitespace or block-structure assumptions) and
+# patches every ExpoModulesCorePlugin.gradle found in node_modules.
+echo "[3/4] Patching ExpoModulesCorePlugin.gradle (all versions found) ..."
+
+PLUGIN_FILES=$(find "$NODE_MODULES" \
+    -path "*/expo-modules-core/android/ExpoModulesCorePlugin.gradle" \
+    2>/dev/null)
+
+if [ -z "$PLUGIN_FILES" ]; then
+    echo "      WARN — no ExpoModulesCorePlugin.gradle found in $NODE_MODULES"
+else
+    echo "$PLUGIN_FILES" | while IFS= read -r PLUGIN_FILE; do
+        python3 - "$PLUGIN_FILE" << 'PYEOF'
+import sys
+
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+
+TARGET = 'from components.release'
+REPLACEMENT = (
+    'def _rc = project.components.findByName("release"); '
+    'if (_rc != null) from _rc'
+)
+
+if TARGET not in content:
+    if 'findByName("release")' in content:
+        print("      SKIP [" + path + "] — already patched")
+    else:
+        print("      WARN [" + path + "] — target line not found (different format?)")
+    sys.exit(0)
+
+patched = content.replace(TARGET, REPLACEMENT)
+with open(path, 'w') as f:
+    f.write(patched)
+print("      OK   [" + path + "]")
+PYEOF
+    done
 fi
 
-# ── Fix 3: JVM tuning in gradle.properties ───────────────────────────────────
-echo "[3/3] Tuning android/gradle.properties ..."
+# ── Fix 4: JVM tuning in gradle.properties ───────────────────────────────────
+echo "[4/4] Tuning android/gradle.properties ..."
 
 GRADLE_PROPS="$ANDROID/gradle.properties"
 if [ -f "$GRADLE_PROPS" ]; then
-    # Remove the lines we are about to re-add (idempotent)
     sed -i.bak \
         -e '/^org\.gradle\.jvmargs/d'                            \
         -e '/^org\.gradle\.caching/d'                            \
@@ -193,9 +203,12 @@ echo "      OK   — android/.gradle cache cleared"
 echo ""
 echo "All fixes applied."
 echo ""
-echo "  android/build.gradle          top-level ext {} added"
-echo "  ExpoModulesCorePlugin.gradle  components.release -> components.findByName()"
-echo "  android/gradle.properties     JVM heap 4 GB, G1GC, parallel builds"
-echo "  android/.gradle               cache cleared"
+echo "  android/build.gradle"
+echo "    + root-level ext {} (compileSdkVersion on rootProject.ext)"
+echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 34 } }"
+echo "  ExpoModulesCorePlugin.gradle (all versions)"
+echo "    + components.release  →  components.findByName() with null guard"
+echo "  android/gradle.properties — JVM 4 GB heap, G1GC, parallel"
+echo "  android/.gradle           — cache cleared"
 echo ""
 echo "You can now build with:  cd android && ./gradlew assembleRelease"
