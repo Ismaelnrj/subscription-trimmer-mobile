@@ -198,6 +198,7 @@ if [ -f "$GRADLE_PROPS" ]; then
         -e '/^org\.gradle\.parallel/d'                           \
         -e '/^org\.gradle\.workers\.max/d'                       \
         -e '/^org\.gradle\.java\.installations\.auto-download/d' \
+        -e '/^kotlin\.daemon\.jvm\.options/d'                    \
         "$GRADLE_PROPS"
     rm -f "$GRADLE_PROPS.bak"
 
@@ -207,8 +208,10 @@ if [ -f "$GRADLE_PROPS" ]; then
 org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC
 org.gradle.caching=true
 org.gradle.parallel=true
-org.gradle.workers.max=8
+org.gradle.workers.max=4
 org.gradle.java.installations.auto-download=false
+# Give the Kotlin compiler daemon enough heap to compile expo-modules-core
+kotlin.daemon.jvm.options=-Xmx2048m -XX:MaxMetaspaceSize=512m
 EOF
     echo "      OK   — gradle.properties updated"
 else
@@ -227,7 +230,7 @@ echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 34 
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
-echo "  android/gradle.properties — JVM 4 GB heap, G1GC, parallel builds"
+echo "  android/gradle.properties — JVM 4 GB heap, G1GC, parallel builds, Kotlin daemon 2 GB"
 echo "  android/.gradle           — cache cleared"
 echo ""
 echo "You can now build with:  cd android && ./gradlew assembleRelease"
