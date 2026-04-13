@@ -17,7 +17,7 @@ buildscript {
     dependencies {
         classpath('com.android.tools.build:gradle')
         classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
     }
 }
 
@@ -63,6 +63,19 @@ allprojects {
     plugins.withId("com.android.library") {
         android {
             compileSdk 34
+        }
+    }
+}
+
+// expo-modules-core@1.12.26 uses Kotlin 1.9 features (data objects, reload API).
+// Force languageVersion 1.9 on every KotlinCompile task so the React Native BOM
+// cannot silently downgrade it to 1.8 via the unversioned kotlin-gradle-plugin.
+allprojects {
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            languageVersion = '1.9'
+            apiVersion      = '1.9'
+            jvmTarget       = '17'
         }
     }
 }

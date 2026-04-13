@@ -119,7 +119,68 @@ with open(path, 'a') as f:
 print("      OK   — allprojects compileSdk hook added")
 PYEOF
 
-# ── Fix 3: Patch ALL .gradle files containing "from components.release" ───────
+# ── Fix 3 (NEW): Pin Kotlin 1.9.23 + force language version 1.9 ──────────────
+# expo-modules-core@1.12.26 uses Kotlin 1.9 features:
+#   - 'data object' syntax  (Either.kt:13)  → requires languageVersion = 1.9
+#   - 'reload' reference    (CoreModule.kt) → requires Kotlin 1.9 stdlib/API
+# Root cause: React Native 0.73.x BOM provides kotlin-gradle-plugin without a
+# version, resolving it at a version whose default language level is 1.8.
+# Fix A: pin classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
+# Fix B: add allprojects { tasks.withType(KotlinCompile) } to force 1.9 on all
+#        submodules, so even if the BOM overrides the plugin version the
+#        language version is still explicitly 1.9.
+echo "[3/5] android/build.gradle — pin Kotlin 1.9.23 + language version 1.9 ..."
+
+python3 - "$ANDROID/build.gradle" << 'PYEOF'
+import sys
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+
+modified = False
+
+# Fix A: pin Kotlin gradle plugin version
+if 'kotlin-gradle-plugin:1.9.23' not in content:
+    target = "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')"
+    if target in content:
+        content = content.replace(target,
+            "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')", 1)
+        print("      OK   — Kotlin plugin classpath pinned to 1.9.23")
+        modified = True
+    else:
+        print("      WARN — Kotlin classpath line not found; Fix A skipped")
+else:
+    print("      SKIP — Kotlin plugin already pinned")
+
+# Fix B: add allprojects Kotlin language version hook
+if 'languageVersion' not in content:
+    hook = (
+        "\n"
+        "// expo-modules-core@1.12.26 requires Kotlin language version 1.9.\n"
+        "// Force it on every KotlinCompile task across all subprojects so the\n"
+        "// React Native BOM cannot silently downgrade it to 1.8.\n"
+        "allprojects {\n"
+        "    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {\n"
+        "        kotlinOptions {\n"
+        "            languageVersion = '1.9'\n"
+        "            apiVersion      = '1.9'\n"
+        "            jvmTarget       = '17'\n"
+        "        }\n"
+        "    }\n"
+        "}\n"
+    )
+    content += hook
+    print("      OK   — Kotlin languageVersion 1.9 hook added to allprojects")
+    modified = True
+else:
+    print("      SKIP — languageVersion already set")
+
+if modified:
+    with open(path, 'w') as f:
+        f.write(content)
+PYEOF
+
+# ── Fix 4: Patch ALL .gradle files containing "from components.release" ───────
 # In Gradle 8, `components.release` (Groovy dynamic property) throws
 # "Could not get unknown property 'release' for SoftwareComponentContainer".
 # This broken pattern appears in ExpoModulesCorePlugin.gradle AND in the
@@ -134,7 +195,7 @@ PYEOF
 #
 # components.findByName() is a method call (not a property) so it never throws.
 # The null guard prevents NPE when the component hasn't been registered yet.
-echo "[3/4] Patching all .gradle files with 'from components.release' ..."
+echo "[4/5] Patching all .gradle files with 'from components.release' ..."
 
 PATCHED=0
 ALREADY=0
@@ -188,7 +249,7 @@ else
 fi
 
 # ── Fix 4: JVM tuning in gradle.properties ───────────────────────────────────
-echo "[4/4] Tuning android/gradle.properties ..."
+echo "[5/5] Tuning android/gradle.properties ..."
 
 GRADLE_PROPS="$ANDROID/gradle.properties"
 if [ -f "$GRADLE_PROPS" ]; then
@@ -227,6 +288,8 @@ echo ""
 echo "  android/build.gradle"
 echo "    + root-level ext {}  (compileSdkVersion on rootProject.ext)"
 echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 34 } }"
+echo "    + Kotlin plugin pinned to 1.9.23 (was unversioned, resolved to 1.8 via BOM)"
+echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 1.9 } }"
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
