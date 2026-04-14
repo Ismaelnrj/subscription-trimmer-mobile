@@ -132,19 +132,22 @@ PYEOF
 echo "[3/5] android/build.gradle — pin Kotlin 1.9.23 + language version 1.9 ..."
 
 python3 - "$ANDROID/build.gradle" << 'PYEOF'
-import sys
+import sys, re
 path = sys.argv[1]
 with open(path) as f:
     content = f.read()
 
 modified = False
 
-# Fix A: pin Kotlin gradle plugin version
+# Fix A: pin Kotlin gradle plugin version.
+# expo prebuild generates double-quote form; handle both single and double quotes.
 if 'kotlin-gradle-plugin:1.9.23' not in content:
-    target = "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')"
-    if target in content:
-        content = content.replace(target,
-            "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')", 1)
+    # Match both classpath('...') and classpath("...") forms
+    pattern = r"""classpath\(['"]org\.jetbrains\.kotlin:kotlin-gradle-plugin['"]\)"""
+    if re.search(pattern, content):
+        content = re.sub(pattern,
+            "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')",
+            content, count=1)
         print("      OK   — Kotlin plugin classpath pinned to 1.9.23")
         modified = True
     else:
