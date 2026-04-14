@@ -10,6 +10,13 @@ buildscript {
 
         ndkVersion = "26.1.10909125"
     }
+    // Force Kotlin 1.9.23 so the React Native BOM cannot downgrade it to 1.8.
+    configurations.all {
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23'
+    }
     repositories {
         google()
         mavenCentral()

@@ -155,7 +155,32 @@ if 'kotlin-gradle-plugin:1.9.23' not in content:
 else:
     print("      SKIP — Kotlin plugin already pinned")
 
-# Fix B: add allprojects Kotlin language version hook
+# Fix B: add buildscript resolutionStrategy to force Kotlin 1.9.23 even if
+# the React Native BOM provides an older version via dependency management.
+if 'resolutionStrategy' not in content:
+    # Insert resolutionStrategy into the buildscript block right before repositories
+    bom_override = (
+        "    // Force Kotlin 1.9.23 so BOM cannot downgrade it to 1.8.\n"
+        "    configurations.all {\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23'\n"
+        "    }\n"
+    )
+    # Insert before the first repositories { block inside buildscript
+    repos_pattern = r'(\bbuildscript\b[^{]*\{[^}]*?)(    repositories\s*\{)'
+    m = re.search(repos_pattern, content, re.DOTALL)
+    if m:
+        content = content[:m.start(2)] + bom_override + content[m.start(2):]
+        print("      OK   — buildscript resolutionStrategy added (forces Kotlin 1.9.23)")
+        modified = True
+    else:
+        print("      WARN — buildscript repositories marker not found; Fix B skipped")
+else:
+    print("      SKIP — resolutionStrategy already present")
+
+# Fix C: add allprojects Kotlin language version hook
 if 'languageVersion' not in content:
     hook = (
         "\n"
