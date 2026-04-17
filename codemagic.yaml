@@ -19,6 +19,18 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
+      - name: Bundle JavaScript (Metro)
+        script: |
+          # Run the JS bundle step in isolation so any Metro error is clearly visible.
+          # This is the same operation Gradle's createBundleReleaseJsAndAssets runs.
+          ENTRY=$(node -e "process.stdout.write(require('expo/scripts/resolveAppEntry')('$(pwd)', 'android', 'absolute'))")
+          echo "Entry file: $ENTRY"
+          ./node_modules/.bin/expo export:embed \
+            --platform android \
+            --dev false \
+            --entry-file "$ENTRY" \
+            --bundle-output /tmp/index.android.bundle \
+            --assets-dest /tmp/android-assets/ 2>&1
       - name: Build Android APK with Gradle
         script: |
           cd android
