@@ -234,15 +234,15 @@ if TARGET not in content:
     print("skip")
     sys.exit(0)
 
-# Replace direct call with reflection — compiles on RN 0.73 and works on 0.74+
+# Replace direct call with reflection — compiles on RN 0.73 and works on 0.74+.
+# reactInstanceManager is NOT in scope at this call site (it's inside the if-block
+# above), so the fallback must not reference it. NoSuchMethodException is thrown on
+# RN 0.73.6 (reload() doesn't exist) and silently caught; on RN 0.74+ the method
+# is found and invoked normally.
 REPLACEMENT = (
     'try {\n'
-    '            reactDelegate?.javaClass?.getMethod("reload")?.invoke(reactDelegate)\n'
-    '          } catch (e: Exception) {\n'
-    '            UiThreadUtil.runOnUiThread {\n'
-    '              reactInstanceManager.recreateReactContextInBackground()\n'
-    '            }\n'
-    '          }'
+    '            reactDelegate.javaClass.getMethod("reload").invoke(reactDelegate)\n'
+    '          } catch (e: Exception) { /* reload() not available in RN < 0.74 */ }'
 )
 with open(path, 'w') as f:
     f.write(content.replace(TARGET, REPLACEMENT, 1))
