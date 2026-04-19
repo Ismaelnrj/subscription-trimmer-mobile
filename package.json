@@ -55,5 +55,11 @@
     "install": {
       "exclude": []
     }
+  },
+  "pnpm": {
+    "overrides": {
+      "expo-modules-core": "~1.11.14",
+      "react-native": "0.73.6"
+    }
   }
 }

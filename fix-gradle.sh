@@ -208,7 +208,64 @@ if modified:
         f.write(content)
 PYEOF
 
-# ── Fix 4: Patch ALL .gradle files containing "from components.release" ───────
+# ── Fix 4: Patch CoreModule.kt — reactDelegate.reload() missing in RN < 0.74 ──
+# expo-modules-core@1.12.x calls ReactDelegate.reload() which was added in
+# React Native 0.74. This project uses RN 0.73.6 where that method doesn't
+# exist, causing "Unresolved reference: reload" at compile time.
+# Fix: replace the direct call with reflection so it compiles on both versions.
+# At runtime in a release APK this code path is never reached anyway (the
+# early-return for ReleaseDevSupportManager fires first).
+echo "[4/6] Patching CoreModule.kt for RN 0.73 compatibility ..."
+
+PATCHED_KT=0
+while IFS= read -r KT_FILE; do
+    RESULT=$(python3 - "$KT_FILE" << 'PYEOF'
+import sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        content = f.read()
+except Exception as e:
+    print("error:" + str(e))
+    sys.exit(0)
+
+TARGET = 'reactDelegate.reload()'
+if TARGET not in content:
+    print("skip")
+    sys.exit(0)
+
+# Replace direct call with reflection — compiles on RN 0.73 and works on 0.74+
+REPLACEMENT = (
+    'try {\n'
+    '            reactDelegate?.javaClass?.getMethod("reload")?.invoke(reactDelegate)\n'
+    '          } catch (e: Exception) {\n'
+    '            UiThreadUtil.runOnUiThread {\n'
+    '              reactInstanceManager.recreateReactContextInBackground()\n'
+    '            }\n'
+    '          }'
+)
+with open(path, 'w') as f:
+    f.write(content.replace(TARGET, REPLACEMENT, 1))
+print("ok")
+PYEOF
+    )
+    case "$RESULT" in
+        ok)
+            echo "      OK   — $KT_FILE"
+            PATCHED_KT=$((PATCHED_KT + 1))
+            ;;
+        skip) ;;
+        error:*) echo "      WARN — ${RESULT#error:}" ;;
+    esac
+done < <(find "$NODE_MODULES" -name "CoreModule.kt" -path "*/expo-modules-core*" 2>/dev/null || true)
+
+if [ "$PATCHED_KT" -eq 0 ]; then
+    echo "      SKIP — no CoreModule.kt files needed patching"
+else
+    echo "      OK   — $PATCHED_KT file(s) patched"
+fi
+
+# ── Fix 5: Patch ALL .gradle files containing "from components.release" ───────
 # In Gradle 8, `components.release` (Groovy dynamic property) throws
 # "Could not get unknown property 'release' for SoftwareComponentContainer".
 # This broken pattern appears in ExpoModulesCorePlugin.gradle AND in the
@@ -223,7 +280,7 @@ PYEOF
 #
 # components.findByName() is a method call (not a property) so it never throws.
 # The null guard prevents NPE when the component hasn't been registered yet.
-echo "[4/5] Patching all .gradle files with 'from components.release' ..."
+echo "[5/6] Patching all .gradle files with 'from components.release' ..."
 
 PATCHED=0
 ALREADY=0
@@ -277,7 +334,7 @@ else
 fi
 
 # ── Fix 4: JVM tuning in gradle.properties ───────────────────────────────────
-echo "[5/5] Tuning android/gradle.properties ..."
+echo "[6/6] Tuning android/gradle.properties ..."
 
 GRADLE_PROPS="$ANDROID/gradle.properties"
 if [ -f "$GRADLE_PROPS" ]; then
