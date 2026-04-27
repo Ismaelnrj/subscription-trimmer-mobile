@@ -1,115 +1,51 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useAuthStore } from "../../lib/auth-store";
 import apiClient from "../../lib/api";
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  scrollContent: { padding: 16, paddingBottom: 32 },
   profileHeader: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    alignItems: "center",
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 20, marginBottom: 16,
+    borderWidth: 1, borderColor: "#E5E7EB", alignItems: "center",
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#4F46E5",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12,
+    width: 64, height: 64, borderRadius: 32, backgroundColor: "#4F46E5",
+    justifyContent: "center", alignItems: "center", marginBottom: 12,
   },
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
+  avatarText: { color: "#FFFFFF", fontSize: 24, fontWeight: "700" },
+  profileName: { fontSize: 18, fontWeight: "700", color: "#1F2937", marginBottom: 4 },
+  profileEmail: { fontSize: 14, color: "#6B7280" },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
-    marginTop: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontSize: 14, fontWeight: "600", color: "#1F2937", marginBottom: 12,
+    marginTop: 8, textTransform: "uppercase", letterSpacing: 0.5,
   },
   menuItem: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF", borderRadius: 8, paddingVertical: 14, paddingHorizontal: 16,
+    marginBottom: 8, flexDirection: "row", justifyContent: "space-between",
+    alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB",
   },
-  menuItemLabel: {
-    fontSize: 14,
-    color: "#1F2937",
-    fontWeight: "500",
-  },
+  menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  menuItemLabel: { fontSize: 14, color: "#1F2937", fontWeight: "500" },
   statCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: "#E5E7EB",
   },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1F2937",
-  },
+  statLabel: { fontSize: 12, color: "#6B7280", marginBottom: 4 },
+  statValue: { fontSize: 20, fontWeight: "700", color: "#1F2937" },
   dangerButton: {
-    backgroundColor: "#FEE2E2",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginTop: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
+    backgroundColor: "#FEE2E2", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16,
+    marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
   },
-  dangerButtonText: {
-    color: "#DC2626",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  dangerButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "600" },
 });
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const router = useRouter();
 
   const { data: summary } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -121,18 +57,12 @@ export default function ProfileScreen() {
 
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.scrollContent}>
-        {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
@@ -141,7 +71,6 @@ export default function ProfileScreen() {
           <Text style={styles.profileEmail}>{user?.email || "No email"}</Text>
         </View>
 
-        {/* Account Stats */}
         <Text style={styles.sectionTitle}>Account Summary</Text>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Active Subscriptions</Text>
@@ -156,22 +85,29 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>${summary?.yearlyTotal?.toFixed(2) ?? "0.00"}</Text>
         </View>
 
-        {/* Settings */}
         <Text style={styles.sectionTitle}>Settings</Text>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemLabel}>Notification Preferences</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/notification-preferences")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="bell-outline" size={20} color="#4F46E5" />
+            <Text style={styles.menuItemLabel}>Notification Preferences</Text>
+          </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemLabel}>Account Settings</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/account-settings")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="account-cog-outline" size={20} color="#4F46E5" />
+            <Text style={styles.menuItemLabel}>Account Settings</Text>
+          </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemLabel}>Help & Support</Text>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/help-support")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="help-circle-outline" size={20} color="#4F46E5" />
+            <Text style={styles.menuItemLabel}>Help & Support</Text>
+          </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
 
-        {/* Danger Zone */}
         <TouchableOpacity style={styles.dangerButton} onPress={logout}>
           <MaterialCommunityIcons name="logout" size={18} color="#DC2626" />
           <Text style={styles.dangerButtonText}>Sign Out</Text>

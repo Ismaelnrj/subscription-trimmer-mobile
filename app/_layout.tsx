@@ -37,6 +37,9 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="notification-preferences" options={{ headerShown: true, title: "Notification Preferences" }} />
+          <Stack.Screen name="account-settings" options={{ headerShown: true, title: "Account Settings" }} />
+          <Stack.Screen name="help-support" options={{ headerShown: true, title: "Help & Support" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>
