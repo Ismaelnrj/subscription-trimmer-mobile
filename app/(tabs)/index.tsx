@@ -1,90 +1,41 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import apiClient from "../../lib/api";
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
-  },
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  scrollContent: { padding: 16, paddingBottom: 32 },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
   statCard: {
-    flex: 1,
-    minWidth: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    flex: 1, minWidth: "48%", backgroundColor: "#FFFFFF", borderRadius: 12,
+    padding: 16, borderWidth: 1, borderColor: "#E5E7EB",
   },
   statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: "#EEF2FF",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
+    width: 40, height: 40, borderRadius: 8, backgroundColor: "#EEF2FF",
+    justifyContent: "center", alignItems: "center", marginBottom: 8,
   },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1F2937",
-    marginBottom: 12,
-  },
+  statValue: { fontSize: 24, fontWeight: "700", color: "#1F2937", marginBottom: 4 },
+  statLabel: { fontSize: 12, color: "#6B7280" },
+  sectionTitle: { fontSize: 16, fontWeight: "600", color: "#1F2937", marginBottom: 12 },
   actionButton: {
-    backgroundColor: "#4F46E5",
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 12,
+    paddingHorizontal: 16, marginBottom: 12,
   },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-  },
+  actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", textAlign: "center" },
   emptyState: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 24,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 24, alignItems: "center",
+    borderWidth: 1, borderColor: "#E5E7EB",
   },
-  emptyStateIcon: {
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-  },
+  emptyStateIcon: { marginBottom: 12 },
+  emptyStateText: { fontSize: 14, color: "#6B7280", textAlign: "center" },
 });
 
 export default function DashboardScreen() {
-  const { data: summary, isLoading } = useQuery({
+  const router = useRouter();
+
+  const { data: summary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => {
       const response = await apiClient.get("/trpc/analytics.summary");
@@ -105,7 +56,6 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.scrollContent}>
-        {/* Stats Grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
@@ -140,33 +90,27 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        {/* Quick Actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
           <Text style={styles.actionButtonText}>+ Add Subscription</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, { backgroundColor: "#6B7280" }]}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: "#6B7280" }]}
+          onPress={() => router.push("/insights")}
+        >
           <Text style={styles.actionButtonText}>View Recommendations</Text>
         </TouchableOpacity>
 
-        {/* Recent Subscriptions */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Subscriptions</Text>
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons
-              name="inbox"
-              size={40}
-              color="#D1D5DB"
-              style={styles.emptyStateIcon}
-            />
+            <MaterialCommunityIcons name="inbox" size={40} color="#D1D5DB" style={styles.emptyStateIcon} />
             <Text style={styles.emptyStateText}>No subscriptions yet. Add your first one!</Text>
           </View>
         ) : (
           recentSubs.map((sub: any) => (
             <View key={sub.id} style={[styles.statCard, { marginBottom: 8 }]}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: "#1F2937" }}>
-                {sub.name}
-              </Text>
+              <Text style={{ fontSize: 14, fontWeight: "600", color: "#1F2937" }}>{sub.name}</Text>
               <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>
                 ${sub.price} / {sub.billingCycle}
               </Text>
