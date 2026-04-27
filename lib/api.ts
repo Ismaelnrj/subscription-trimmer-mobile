@@ -30,8 +30,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
       await SecureStore.deleteItemAsync("auth_token");
+      const { useAuthStore } = await import("./auth-store");
+      useAuthStore.getState().setUser(null);
     }
     return Promise.reject(error);
   }
