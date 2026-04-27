@@ -19,6 +19,15 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
+      - name: Test Metro JS bundle (diagnostic)
+        script: |
+          NODE_ENV=production npx expo export:embed \
+            --entry-file node_modules/expo-router/entry.js \
+            --bundle-output /tmp/android-bundle.js \
+            --assets-dest /tmp/android-assets \
+            --platform android \
+            --dev false 2>&1
+          echo "Metro exit code: $?"
       - name: Build Android APK with Gradle
         script: |
           cd android
