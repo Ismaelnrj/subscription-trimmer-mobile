@@ -2,6 +2,7 @@
   "expo": {
     "name": "SubTrimmer",
     "slug": "subtrimmer",
+    "scheme": "subtrimmer",
     "version": "1.0.0",
 
     "assetBundlePatterns": [
