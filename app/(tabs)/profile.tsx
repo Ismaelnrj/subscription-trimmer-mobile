@@ -85,6 +85,29 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>${summary?.yearlyTotal?.toFixed(2) ?? "0.00"}</Text>
         </View>
 
+        <Text style={styles.sectionTitle}>Upgrade</Text>
+        <TouchableOpacity style={[styles.menuItem, { borderColor: "#C7D2FE", backgroundColor: "#EEF2FF" }]} onPress={() => router.push("/upgrade")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="crown" size={20} color="#4F46E5" />
+            <Text style={[styles.menuItemLabel, { color: "#4F46E5" }]}>Unlock Premium — $3.99</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#4F46E5" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="tag-multiple" size={20} color="#10B981" />
+            <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="heart" size={20} color="#EF4444" />
+            <Text style={styles.menuItemLabel}>Tip Jar — Support the Dev</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+
         <Text style={styles.sectionTitle}>Settings</Text>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/notification-preferences")}>
           <View style={styles.menuItemLeft}>
