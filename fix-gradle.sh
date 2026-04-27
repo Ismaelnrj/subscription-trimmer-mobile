@@ -367,6 +367,55 @@ fi
 rm -rf "$ANDROID/.gradle"
 echo "      OK   — android/.gradle cache cleared"
 
+# ── Fix 7: ProGuard keep rules for React Native + Expo release build ─────────
+# R8/ProGuard strips native module bridge classes by default. React Native's JNI
+# bridge, Expo modules, Reanimated, and Kotlin reflection all require explicit
+# keep rules or the release APK crashes on launch with no error screen.
+echo "[7/7] Appending ProGuard keep rules to android/app/proguard-rules.pro ..."
+
+PROGUARD_FILE="$ANDROID/app/proguard-rules.pro"
+if [ -f "$PROGUARD_FILE" ]; then
+    if grep -q "expo.modules" "$PROGUARD_FILE" 2>/dev/null; then
+        echo "      SKIP — rules already present"
+    else
+        cat >> "$PROGUARD_FILE" << 'EOF'
+
+# ── React Native / Hermes ────────────────────────────────────────────────────
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.jni.** { *; }
+-keep class com.facebook.hermes.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
+-dontwarn com.facebook.react.**
+-dontwarn com.facebook.hermes.**
+
+# ── Expo modules ─────────────────────────────────────────────────────────────
+-keep class expo.modules.** { *; }
+-keep class expo.** { *; }
+-dontwarn expo.**
+
+# ── React Native Reanimated ──────────────────────────────────────────────────
+-keep class com.swmansion.reanimated.** { *; }
+-keep class com.swmansion.gesturehandler.** { *; }
+-keep class com.swmansion.rnscreens.** { *; }
+
+# ── React Native Safe Area Context ──────────────────────────────────────────
+-keep class com.th3rdwave.safeareacontext.** { *; }
+
+# ── Async Storage ────────────────────────────────────────────────────────────
+-keep class com.reactnativecommunity.asyncstorage.** { *; }
+
+# ── Kotlin ───────────────────────────────────────────────────────────────────
+-keep class kotlin.** { *; }
+-keep class kotlinx.** { *; }
+-dontwarn kotlin.**
+-dontwarn kotlinx.**
+EOF
+        echo "      OK   — ProGuard keep rules added"
+    fi
+else
+    echo "      WARN — $PROGUARD_FILE not found; skipping"
+fi
+
 echo ""
 echo "All fixes applied."
 echo ""
