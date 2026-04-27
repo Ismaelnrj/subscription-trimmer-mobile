@@ -2,6 +2,7 @@
   "expo": {
     "name": "SubTrimmer",
     "slug": "subtrimmer",
+    "scheme": "subtrimmer",
     "version": "1.0.0",
 
     "assetBundlePatterns": [
@@ -21,7 +22,7 @@
     },
 
     "extra": {
-      "apiUrl": "https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer",
+      "apiUrl": "https://subscription-trimmer-mobile-jwtsecret.up.railway.app",
       "eas": {
         "projectId": "18a3e059-0c9c-49df-b485-21240d7e283a"
       }
