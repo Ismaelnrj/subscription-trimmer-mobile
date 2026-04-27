@@ -9,7 +9,6 @@ RUN npm install --production
 
 COPY backend/ .
 
-ENV PORT=8080
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["node", "server.js"]
