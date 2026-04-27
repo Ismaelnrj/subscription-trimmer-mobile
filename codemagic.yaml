@@ -28,22 +28,22 @@ workflows:
             --platform android \
             --dev false 2>&1
           echo "Metro exit code: $?"
-      - name: Build Android APK with Gradle
+      - name: Build Android AAB with Gradle
         script: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew bundleRelease
           cd ..
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.aab
     publishing:
       scripts:
         - name: Generate Download URL
           script: |
             echo "Build completed successfully!"
             echo "Artifacts available at: $CM_ARTIFACT_LINKS"
-            APK_URL=$(echo $CM_ARTIFACT_LINKS | grep -oP '(?<="url":")[^"]*apk[^"]*' | head -1)
-            if [ -z "$APK_URL" ]; then
-              echo "APK URL: Check Codemagic dashboard for artifacts"
+            AAB_URL=$(echo $CM_ARTIFACT_LINKS | grep -oP '(?<="url":")[^"]*aab[^"]*' | head -1)
+            if [ -z "$AAB_URL" ]; then
+              echo "AAB URL: Check Codemagic dashboard for artifacts"
             else
-              echo "APK Download URL: $APK_URL"
+              echo "AAB Download URL: $AAB_URL"
             fi
