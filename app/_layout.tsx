@@ -40,6 +40,9 @@ export default function RootLayout() {
           <Stack.Screen name="notification-preferences" options={{ headerShown: true, title: "Notification Preferences" }} />
           <Stack.Screen name="account-settings" options={{ headerShown: true, title: "Account Settings" }} />
           <Stack.Screen name="help-support" options={{ headerShown: true, title: "Help & Support" }} />
+          <Stack.Screen name="upgrade" options={{ headerShown: true, title: "Upgrade to Premium" }} />
+          <Stack.Screen name="tip-jar" options={{ headerShown: true, title: "Tip Jar" }} />
+          <Stack.Screen name="deals" options={{ headerShown: true, title: "Deals & Partnerships" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>
