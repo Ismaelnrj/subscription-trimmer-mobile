@@ -1,10 +1,8 @@
 const express = require('express');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,59 +11,58 @@ const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-pr
 app.use(cors());
 app.use(express.json());
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'subtrimmer.db');
-const dataDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+});
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    openId TEXT UNIQUE NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    name TEXT,
-    password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'user',
-    isPaid INTEGER DEFAULT 0,
-    paidAt TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS subscriptions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    price REAL NOT NULL,
-    billingCycle TEXT NOT NULL DEFAULT 'monthly',
-    category TEXT DEFAULT 'other',
-    nextBillingDate TEXT,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS notifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    type TEXT DEFAULT 'info',
-    is_read INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-
-  CREATE TABLE IF NOT EXISTS notification_preferences (
-    user_id INTEGER PRIMARY KEY,
-    renewal_alerts INTEGER DEFAULT 1,
-    spending_alerts INTEGER DEFAULT 1,
-    weekly_summary INTEGER DEFAULT 1,
-    push_enabled INTEGER DEFAULT 1,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
-`);
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      open_id TEXT UNIQUE NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      name TEXT,
+      password_hash TEXT NOT NULL,
+      role TEXT DEFAULT 'user',
+      is_paid BOOLEAN DEFAULT FALSE,
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      price NUMERIC NOT NULL,
+      billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+      category TEXT DEFAULT 'other',
+      next_billing_date TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT DEFAULT 'info',
+      is_read BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS notification_preferences (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      renewal_alerts BOOLEAN DEFAULT TRUE,
+      spending_alerts BOOLEAN DEFAULT TRUE,
+      weekly_summary BOOLEAN DEFAULT TRUE,
+      push_enabled BOOLEAN DEFAULT TRUE
+    )
+  `);
+}
 
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
@@ -96,7 +93,20 @@ function toMonthly(price, billingCycle) {
 }
 
 function formatUser(u) {
-  return { id: u.id, openId: u.openId, email: u.email, name: u.name, role: u.role, isPaid: !!u.isPaid, paidAt: u.paidAt };
+  return { id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role, isPaid: u.is_paid, paidAt: u.paid_at };
+}
+
+function formatSub(s) {
+  return {
+    id: s.id,
+    user_id: s.user_id,
+    name: s.name,
+    price: parseFloat(s.price),
+    billingCycle: s.billing_cycle,
+    category: s.category,
+    nextBillingDate: s.next_billing_date,
+    created_at: s.created_at,
+  };
 }
 
 function formatNotification(n) {
@@ -105,7 +115,7 @@ function formatNotification(n) {
     title: n.title,
     message: n.message,
     type: n.type || 'info',
-    read: !!n.is_read,
+    read: n.is_read,
     createdAt: n.created_at,
   };
 }
@@ -116,20 +126,29 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-    if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
+
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
+
     const passwordHash = await bcrypt.hash(password, 10);
     const openId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-    const { lastInsertRowid } = db.prepare(
-      'INSERT INTO users (openId, email, name, password_hash) VALUES (?, ?, ?, ?)'
-    ).run(openId, email, name || null, passwordHash);
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(lastInsertRowid);
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
-    db.prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)').run(
-      user.id, 'Welcome to SubTrimmer!', 'Start adding your subscriptions to track your spending.', 'info'
+
+    const result = await pool.query(
+      'INSERT INTO users (open_id, email, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING *',
+      [openId, email, name || null, passwordHash]
     );
-    db.prepare('INSERT OR IGNORE INTO notification_preferences (user_id) VALUES (?)').run(user.id);
+    const user = result.rows[0];
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+
+    await pool.query(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+      [user.id, 'Welcome to SubTrimmer!', 'Start adding your subscriptions to track your spending.', 'info']
+    );
+    await pool.query(
+      'INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING',
+      [user.id]
+    );
+
     res.json({ token, user: formatUser(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -140,10 +159,13 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: formatUser(user) });
   } catch (err) {
@@ -151,16 +173,21 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json(formatUser(user));
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(formatUser(result.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
   try {
     const { name, currentPassword, newPassword } = req.body;
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     if (newPassword) {
@@ -168,15 +195,15 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
       const valid = await bcrypt.compare(currentPassword, user.password_hash);
       if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
       const hash = await bcrypt.hash(newPassword, 10);
-      db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.userId);
+      await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.userId]);
     }
 
     if (name !== undefined) {
-      db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name || null, req.userId);
+      await pool.query('UPDATE users SET name = $1 WHERE id = $2', [name || null, req.userId]);
     }
 
-    const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(req.userId);
-    res.json(formatUser(updated));
+    const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    res.json(formatUser(updated.rows[0]));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -184,201 +211,274 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
 
 // ── Subscriptions ─────────────────────────────────────────────────────────────
 
-app.get('/api/trpc/subscriptions.list', authMiddleware, (req, res) => {
-  const subs = db.prepare('SELECT * FROM subscriptions WHERE user_id = ? ORDER BY created_at DESC').all(req.userId);
-  res.json(trpc(subs));
+app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.userId]
+    );
+    res.json(trpc(result.rows.map(formatSub)));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/trpc/subscriptions.create', authMiddleware, (req, res) => {
-  const { name, price, billingCycle = 'monthly', category = 'other' } = req.body;
-  if (!name || price == null) return res.status(400).json({ error: 'Name and price required' });
-  const { lastInsertRowid } = db.prepare(
-    'INSERT INTO subscriptions (user_id, name, price, billingCycle, category, nextBillingDate) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle));
-  const sub = db.prepare('SELECT * FROM subscriptions WHERE id = ?').get(lastInsertRowid);
-  db.prepare('INSERT INTO notifications (user_id, title, message, type) VALUES (?, ?, ?, ?)').run(
-    req.userId, 'Subscription Added', `${name} ($${price}/${billingCycle}) was added.`, 'info'
-  );
-  res.json(trpc(sub));
+app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
+  try {
+    const { name, price, billingCycle = 'monthly', category = 'other' } = req.body;
+    if (!name || price == null) return res.status(400).json({ error: 'Name and price required' });
+
+    const result = await pool.query(
+      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle)]
+    );
+    await pool.query(
+      'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+      [req.userId, 'Subscription Added', `${name} ($${price}/${billingCycle}) was added.`, 'info']
+    );
+    res.json(trpc(formatSub(result.rows[0])));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/trpc/subscriptions.update', authMiddleware, (req, res) => {
-  const { id, name, price, billingCycle, category } = req.body;
-  if (!id) return res.status(400).json({ error: 'Subscription id required' });
-  const sub = db.prepare('SELECT id FROM subscriptions WHERE id = ? AND user_id = ?').get(id, req.userId);
-  if (!sub) return res.status(404).json({ error: 'Subscription not found' });
-  db.prepare(
-    'UPDATE subscriptions SET name = ?, price = ?, billingCycle = ?, category = ?, nextBillingDate = ? WHERE id = ?'
-  ).run(name, price, billingCycle, category, nextBillingDate(billingCycle), id);
-  const updated = db.prepare('SELECT * FROM subscriptions WHERE id = ?').get(id);
-  res.json(trpc(updated));
+app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
+  try {
+    const { id, name, price, billingCycle, category } = req.body;
+    if (!id) return res.status(400).json({ error: 'Subscription id required' });
+
+    const check = await pool.query(
+      'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
+
+    const result = await pool.query(
+      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5 WHERE id = $6 RETURNING *',
+      [name, price, billingCycle, category, nextBillingDate(billingCycle), id]
+    );
+    res.json(trpc(formatSub(result.rows[0])));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/trpc/subscriptions.delete', authMiddleware, (req, res) => {
-  const { id } = req.body;
-  const sub = db.prepare('SELECT id FROM subscriptions WHERE id = ? AND user_id = ?').get(id, req.userId);
-  if (!sub) return res.status(404).json({ error: 'Subscription not found' });
-  db.prepare('DELETE FROM subscriptions WHERE id = ?').run(id);
-  res.json(trpc({ success: true }));
+app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.body;
+    const check = await pool.query(
+      'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
+    );
+    if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
+    await pool.query('DELETE FROM subscriptions WHERE id = $1', [id]);
+    res.json(trpc({ success: true }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Analytics ─────────────────────────────────────────────────────────────────
 
-app.get('/api/trpc/analytics.summary', authMiddleware, (req, res) => {
-  const subs = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').all(req.userId);
-  const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-  const alertCount = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0').get(req.userId).c;
+app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
+  try {
+    const subsResult = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
+    const subs = subsResult.rows;
+    const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
 
-  const byCategory = {};
-  for (const s of subs) {
-    const monthly = toMonthly(s.price, s.billingCycle);
-    byCategory[s.category] = (byCategory[s.category] || 0) + monthly;
+    const alertResult = await pool.query(
+      'SELECT COUNT(*) as c FROM notifications WHERE user_id = $1 AND is_read = FALSE',
+      [req.userId]
+    );
+    const alertCount = parseInt(alertResult.rows[0].c);
+
+    const byCategory = {};
+    for (const s of subs) {
+      const monthly = toMonthly(parseFloat(s.price), s.billing_cycle);
+      byCategory[s.category] = (byCategory[s.category] || 0) + monthly;
+    }
+    const categoryBreakdown = Object.entries(byCategory).map(([category, amount]) => ({ category, amount }));
+
+    res.json(trpc({
+      activeSubscriptions: subs.length,
+      totalSubscriptions: subs.length,
+      monthlyTotal,
+      yearlyTotal: monthlyTotal * 12,
+      alertCount,
+      categoryBreakdown,
+    }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  const categoryBreakdown = Object.entries(byCategory).map(([category, amount]) => ({ category, amount }));
-
-  res.json(trpc({
-    activeSubscriptions: subs.length,
-    totalSubscriptions: subs.length,
-    monthlyTotal,
-    yearlyTotal: monthlyTotal * 12,
-    alertCount,
-    categoryBreakdown,
-  }));
 });
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
 
-app.get('/api/trpc/alerts.list', authMiddleware, (req, res) => {
-  const subs = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').all(req.userId);
-  const now = new Date();
-  const alerts = [];
+app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
+    const subs = result.rows;
+    const now = new Date();
+    const alerts = [];
 
-  for (const sub of subs) {
-    const days = Math.ceil((new Date(sub.nextBillingDate) - now) / 86400000);
-    if (days <= 7) {
+    for (const sub of subs) {
+      const days = Math.ceil((new Date(sub.next_billing_date) - now) / 86400000);
+      if (days <= 7) {
+        alerts.push({
+          id: sub.id,
+          type: 'renewal_alert',
+          title: `${sub.name} billing ${days <= 0 ? 'today' : `in ${days} day${days !== 1 ? 's' : ''}`}`,
+          message: `$${sub.price} will be charged for ${sub.name}.`,
+          subscriptionName: sub.name,
+          severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
+        });
+      }
+    }
+
+    const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
+    if (monthlyTotal > 100) {
       alerts.push({
-        id: sub.id,
-        type: 'renewal_alert',
-        title: `${sub.name} billing ${days <= 0 ? 'today' : `in ${days} day${days !== 1 ? 's' : ''}`}`,
-        message: `$${sub.price} will be charged for ${sub.name}.`,
-        subscriptionName: sub.name,
-        severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
+        id: 0,
+        type: 'expensive_alert',
+        title: 'High monthly spending',
+        message: `You spend $${monthlyTotal.toFixed(2)}/month on subscriptions.`,
+        subscriptionName: null,
+        severity: 'low',
       });
     }
-  }
 
-  const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-  if (monthlyTotal > 100) {
-    alerts.push({
-      id: 0,
-      type: 'expensive_alert',
-      title: 'High monthly spending',
-      message: `You spend $${monthlyTotal.toFixed(2)}/month on subscriptions.`,
-      subscriptionName: null,
-      severity: 'low',
-    });
+    res.json(trpc(alerts));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  res.json(trpc(alerts));
 });
 
 // ── Insights ──────────────────────────────────────────────────────────────────
 
-app.get('/api/trpc/insights.getRecommendations', authMiddleware, (req, res) => {
-  const subs = db.prepare('SELECT * FROM subscriptions WHERE user_id = ?').all(req.userId);
+app.get('/api/trpc/insights.getRecommendations', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
+    const subs = result.rows;
 
-  if (subs.length === 0) {
-    return res.json(trpc({
-      keyInsights: 'Add your first subscription to get personalized insights about your spending habits.',
-      topRecommendations: [
-        'Track all your subscriptions in one place.',
-        'Set billing cycle correctly to get accurate yearly projections.',
-        'Review your subscriptions monthly to cancel unused ones.',
-      ],
-      estimatedSavings: 0,
+    if (subs.length === 0) {
+      return res.json(trpc({
+        keyInsights: 'Add your first subscription to get personalized insights about your spending habits.',
+        topRecommendations: [
+          'Track all your subscriptions in one place.',
+          'Set billing cycle correctly to get accurate yearly projections.',
+          'Review your subscriptions monthly to cancel unused ones.',
+        ],
+        estimatedSavings: 0,
+      }));
+    }
+
+    const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
+    const byCategory = {};
+    for (const s of subs) {
+      byCategory[s.category] = (byCategory[s.category] || 0) + toMonthly(parseFloat(s.price), s.billing_cycle);
+    }
+    const topCategory = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0];
+    const estimatedSavings = +(monthlyTotal * 0.2).toFixed(2);
+
+    const recommendations = [];
+    if (topCategory && topCategory[1] > 20) {
+      recommendations.push(`Review your ${topCategory[0]} subscriptions ($${topCategory[1].toFixed(2)}/mo) — you may be able to downgrade or cancel some.`);
+    }
+    if (subs.length > 5) {
+      recommendations.push(`You have ${subs.length} active subscriptions. Consider auditing for duplicates or unused services.`);
+    }
+    recommendations.push(`Switching some monthly plans to annual billing could save up to 20% per year.`);
+    if (monthlyTotal > 50) {
+      recommendations.push(`Your monthly spend of $${monthlyTotal.toFixed(2)} is above average. Look for bundle deals to reduce costs.`);
+    }
+
+    res.json(trpc({
+      keyInsights: `You have ${subs.length} active subscription${subs.length !== 1 ? 's' : ''} costing $${monthlyTotal.toFixed(2)}/month ($${(monthlyTotal * 12).toFixed(2)}/year). ${topCategory ? `Your biggest category is ${topCategory[0]} at $${topCategory[1].toFixed(2)}/month.` : ''}`,
+      topRecommendations: recommendations,
+      estimatedSavings,
     }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-  const byCategory = {};
-  for (const s of subs) {
-    byCategory[s.category] = (byCategory[s.category] || 0) + toMonthly(s.price, s.billingCycle);
-  }
-  const topCategory = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0];
-  const estimatedSavings = +(monthlyTotal * 0.2).toFixed(2);
-
-  const recommendations = [];
-  if (topCategory && topCategory[1] > 20) {
-    recommendations.push(`Review your ${topCategory[0]} subscriptions ($${topCategory[1].toFixed(2)}/mo) — you may be able to downgrade or cancel some.`);
-  }
-  if (subs.length > 5) {
-    recommendations.push(`You have ${subs.length} active subscriptions. Consider auditing for duplicates or unused services.`);
-  }
-  recommendations.push(`Switching some monthly plans to annual billing could save up to 20% per year.`);
-  if (monthlyTotal > 50) {
-    recommendations.push(`Your monthly spend of $${monthlyTotal.toFixed(2)} is above average. Look for bundle deals to reduce costs.`);
-  }
-
-  res.json(trpc({
-    keyInsights: `You have ${subs.length} active subscription${subs.length !== 1 ? 's' : ''} costing $${monthlyTotal.toFixed(2)}/month ($${(monthlyTotal * 12).toFixed(2)}/year). ${topCategory ? `Your biggest category is ${topCategory[0]} at $${topCategory[1].toFixed(2)}/month.` : ''}`,
-    topRecommendations: recommendations,
-    estimatedSavings,
-  }));
 });
 
 // ── Notifications ─────────────────────────────────────────────────────────────
 
-app.get('/api/trpc/notifications.getHistory', authMiddleware, (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
-  const notifs = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT ?').all(req.userId, limit);
-  res.json(trpc(notifs.map(formatNotification)));
-});
-
-app.get('/api/trpc/notifications.getUnreadCount', authMiddleware, (req, res) => {
-  const { c } = db.prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0').get(req.userId);
-  res.json(trpc({ unreadCount: c }));
-});
-
-app.post('/api/trpc/notifications.markAsRead', authMiddleware, (req, res) => {
-  const id = req.body.id || req.body.notificationId;
-  if (id) {
-    db.prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(id, req.userId);
-  } else {
-    db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(req.userId);
+app.get('/api/trpc/notifications.getHistory', authMiddleware, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const result = await pool.query(
+      'SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
+      [req.userId, limit]
+    );
+    res.json(trpc(result.rows.map(formatNotification)));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  res.json(trpc({ success: true }));
+});
+
+app.get('/api/trpc/notifications.getUnreadCount', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT COUNT(*) as c FROM notifications WHERE user_id = $1 AND is_read = FALSE',
+      [req.userId]
+    );
+    res.json(trpc({ unreadCount: parseInt(result.rows[0].c) }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/trpc/notifications.markAsRead', authMiddleware, async (req, res) => {
+  try {
+    const id = req.body.id || req.body.notificationId;
+    if (id) {
+      await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [id, req.userId]);
+    } else {
+      await pool.query('UPDATE notifications SET is_read = TRUE WHERE user_id = $1', [req.userId]);
+    }
+    res.json(trpc({ success: true }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Notification Preferences ──────────────────────────────────────────────────
 
-app.get('/api/trpc/notifications.getPreferences', authMiddleware, (req, res) => {
-  db.prepare('INSERT OR IGNORE INTO notification_preferences (user_id) VALUES (?)').run(req.userId);
-  const prefs = db.prepare('SELECT * FROM notification_preferences WHERE user_id = ?').get(req.userId);
-  res.json(trpc({
-    renewalAlerts: !!prefs.renewal_alerts,
-    spendingAlerts: !!prefs.spending_alerts,
-    weeklySummary: !!prefs.weekly_summary,
-    pushEnabled: !!prefs.push_enabled,
-  }));
+app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, res) => {
+  try {
+    await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
+    const result = await pool.query('SELECT * FROM notification_preferences WHERE user_id = $1', [req.userId]);
+    const p = result.rows[0];
+    res.json(trpc({
+      renewalAlerts: p.renewal_alerts,
+      spendingAlerts: p.spending_alerts,
+      weeklySummary: p.weekly_summary,
+      pushEnabled: p.push_enabled,
+    }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/trpc/notifications.updatePreferences', authMiddleware, (req, res) => {
-  const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled } = req.body;
-  db.prepare('INSERT OR IGNORE INTO notification_preferences (user_id) VALUES (?)').run(req.userId);
-  db.prepare(
-    'UPDATE notification_preferences SET renewal_alerts = ?, spending_alerts = ?, weekly_summary = ?, push_enabled = ? WHERE user_id = ?'
-  ).run(
-    renewalAlerts ? 1 : 0,
-    spendingAlerts ? 1 : 0,
-    weeklySummary ? 1 : 0,
-    pushEnabled ? 1 : 0,
-    req.userId
-  );
-  res.json(trpc({ success: true }));
+app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req, res) => {
+  try {
+    const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled } = req.body;
+    await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
+    await pool.query(
+      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4 WHERE user_id = $5',
+      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, req.userId]
+    );
+    res.json(trpc({ success: true }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── Health ────────────────────────────────────────────────────────────────────
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 
-app.listen(PORT, () => console.log(`SubTrimmer backend running on port ${PORT}`));
+initDB()
+  .then(() => app.listen(PORT, () => console.log(`SubTrimmer backend running on port ${PORT}`)))
+  .catch(err => { console.error('DB init failed:', err); process.exit(1); });
