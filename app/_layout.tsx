@@ -1,5 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as SecureStore from "expo-secure-store";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -26,9 +27,17 @@ export default function RootLayout() {
     SplashScreen.hideAsync();
 
     const inAuthScreen = segments[0] === "login" || segments[0] === "register";
-    if (!isAuthenticated && !inAuthScreen) {
-      router.replace("/login");
-    } else if (isAuthenticated && inAuthScreen) {
+    const inOnboarding = segments[0] === "onboarding";
+
+    if (!isAuthenticated && !inAuthScreen && !inOnboarding) {
+      SecureStore.getItemAsync("onboarding_done").then((done) => {
+        if (done) {
+          router.replace("/login");
+        } else {
+          router.replace("/onboarding");
+        }
+      });
+    } else if (isAuthenticated && (inAuthScreen || inOnboarding)) {
       router.replace("/(tabs)");
     }
   }, [isAuthenticated, isLoading, segments]);
@@ -37,6 +46,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
           <Stack.Screen name="(tabs)" />

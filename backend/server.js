@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const nodemailer = require('nodemailer');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,6 +12,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-pr
 
 app.use(cors());
 app.use(express.json());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', authLimiter);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

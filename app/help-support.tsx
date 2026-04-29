@@ -101,12 +101,12 @@ export default function HelpSupportScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.contactItem, styles.contactItemLast]}
-              onPress={() => Linking.openURL("https://subtrimmer.app/privacy")}
+              onPress={() => Linking.openURL("https://trimio-privacyp.netlify.app")}
             >
               <MaterialCommunityIcons name="shield-outline" size={22} color="#4F46E5" />
               <View>
                 <Text style={styles.contactLabel}>Privacy Policy</Text>
-                <Text style={styles.contactValue}>subtrimmer.app/privacy</Text>
+                <Text style={styles.contactValue}>trimio-privacyp.netlify.app</Text>
               </View>
             </TouchableOpacity>
           </View>
