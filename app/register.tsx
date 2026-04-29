@@ -14,6 +14,7 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
 
   const handleRegister = async () => {
     if (!email || !password) {
@@ -24,6 +25,7 @@ export default function RegisterScreen() {
       Alert.alert("Error", "Password must be at least 6 characters.");
       return;
     }
+    setEmailError("");
     setLoading(true);
     try {
       const res = await apiClient.post("/auth/register", { name, email, password });
@@ -32,7 +34,12 @@ export default function RegisterScreen() {
       setUser(user);
       router.replace("/(tabs)");
     } catch (err: any) {
-      Alert.alert("Registration failed", err.response?.data?.error || "Something went wrong.");
+      const msg = err.response?.data?.error || "Something went wrong.";
+      if (msg.toLowerCase().includes("already")) {
+        setEmailError("This email is already registered. Try signing in instead.");
+      } else {
+        Alert.alert("Registration failed", msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -54,14 +61,22 @@ export default function RegisterScreen() {
           onChangeText={setName}
         />
         <TextInput
-          style={styles.input}
+          style={[styles.input, emailError ? styles.inputError : null]}
           placeholder="Email"
           placeholderTextColor="#9CA3AF"
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(t) => { setEmail(t); setEmailError(""); }}
         />
+        {emailError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{emailError}</Text>
+            <TouchableOpacity onPress={() => router.push("/login")}>
+              <Text style={styles.errorLink}>Sign in →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.passwordWrapper}>
           <TextInput
@@ -109,6 +124,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#4F46E5", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 8,
   },
   buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  inputError: { borderColor: "#EF4444" },
+  errorBox: {
+    backgroundColor: "#FEF2F2", borderRadius: 8, padding: 10,
+    borderWidth: 1, borderColor: "#FECACA", flexDirection: "row",
+    justifyContent: "space-between", alignItems: "center",
+  },
+  errorText: { fontSize: 13, color: "#B91C1C", flex: 1 },
+  errorLink: { fontSize: 13, fontWeight: "700", color: "#4F46E5", marginLeft: 8 },
   link: { alignItems: "center", marginTop: 16 },
   linkText: { color: "#6B7280", fontSize: 14 },
   linkBold: { color: "#4F46E5", fontWeight: "700" },

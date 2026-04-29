@@ -82,6 +82,8 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -289,6 +291,56 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(updated.rows[0]) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
+    if (!user) return res.json({ success: true }); // Don't reveal if email exists
+    const code = generateCode();
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    if (mailer) {
+      await mailer.sendMail({
+        from: process.env.FROM_EMAIL || 'noreply@subtrimio.com',
+        to: email,
+        subject: 'Reset your SubTrimmer password',
+        html: `
+          <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+            <h2 style="color:#4F46E5;margin-bottom:8px">Reset your password</h2>
+            <p style="color:#374151">Enter this code in the app to reset your password:</p>
+            <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
+            <p style="color:#9CA3AF;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
+          </div>
+        `,
+      }).catch(e => console.error('Email send failed:', e));
+    } else {
+      console.log(`[DEV] Password reset code for ${email}: ${code}`);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) return res.status(400).json({ error: 'Email, code and new password required' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
+    if (!user || user.reset_token !== code) return res.status(400).json({ error: 'Invalid or expired code' });
+    if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
+    const hash = await bcrypt.hash(newPassword, 10);
+    await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2', [hash, user.id]);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

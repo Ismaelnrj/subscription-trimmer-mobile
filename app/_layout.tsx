@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SecureStore from "expo-secure-store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
@@ -16,31 +16,34 @@ export default function RootLayout() {
   const { loadCurrency } = useCurrencyStore();
   const router = useRouter();
   const segments = useSegments();
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
   useEffect(() => {
-    restoreToken();
-    loadCurrency();
+    const init = async () => {
+      const [, , done] = await Promise.all([
+        restoreToken(),
+        loadCurrency(),
+        SecureStore.getItemAsync("onboarding_done"),
+      ]);
+      setOnboardingDone(done === "true");
+    };
+    init();
   }, []);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || onboardingDone === null) return;
     SplashScreen.hideAsync();
 
-    const inAuthScreen = segments[0] === "login" || segments[0] === "register";
-    const inOnboarding = segments[0] === "onboarding";
+    const inAuthGroup = ["login", "register", "onboarding", "forgot-password"].includes(segments[0]);
 
-    if (!isAuthenticated && !inAuthScreen && !inOnboarding) {
-      SecureStore.getItemAsync("onboarding_done").then((done) => {
-        if (done) {
-          router.replace("/login");
-        } else {
-          router.replace("/onboarding");
-        }
-      });
-    } else if (isAuthenticated && (inAuthScreen || inOnboarding)) {
-      router.replace("/(tabs)");
+    if (!isAuthenticated) {
+      if (!inAuthGroup) {
+        router.replace(onboardingDone ? "/login" : "/onboarding");
+      }
+    } else {
+      if (inAuthGroup) router.replace("/(tabs)");
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading, onboardingDone, segments]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -49,6 +52,7 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />
+          <Stack.Screen name="forgot-password" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="notification-preferences" options={{ headerShown: true, title: "Notification Preferences" }} />
           <Stack.Screen name="account-settings" options={{ headerShown: true, title: "Account Settings" }} />
