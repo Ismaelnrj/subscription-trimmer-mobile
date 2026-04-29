@@ -65,6 +65,7 @@ export default function RootLayout() {
           <Stack.Screen name="tip-jar" options={{ headerShown: true, title: "Tip Jar" }} />
           <Stack.Screen name="deals" options={{ headerShown: true, title: "Deals & Partnerships" }} />
           <Stack.Screen name="verify-email" options={{ headerShown: true, title: "Verify Email" }} />
+          <Stack.Screen name="insights" options={{ headerShown: true, title: "Recommendations" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>
