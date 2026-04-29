@@ -381,6 +381,15 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const { name, price, billingCycle = 'monthly', category = 'other', trialEndDate } = req.body;
     if (!name || price == null) return res.status(400).json({ error: 'Name and price required' });
 
+    const userResult = await pool.query('SELECT is_paid FROM users WHERE id = $1', [req.userId]);
+    const isPaid = userResult.rows[0]?.is_paid;
+    if (!isPaid) {
+      const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
+      if (parseInt(countResult.rows[0].c) >= 7) {
+        return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
+      }
+    }
+
     const result = await pool.query(
       'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
       [req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle), trialEndDate || null]

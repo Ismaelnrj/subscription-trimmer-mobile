@@ -4,6 +4,8 @@ import { Stack, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../lib/api";
 import { useCurrencyStore, fmt } from "../lib/currency-store";
+import { useAuthStore } from "../lib/auth-store";
+import { PremiumGate } from "../components/PremiumGate";
 
 type Sub = {
   id: number;
@@ -183,8 +185,12 @@ export default function InsightsScreen() {
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
+  const { user } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
   const isLoading = subsLoading || summaryLoading;
-  const tips = buildTips(subscriptions, currency.symbol);
+  const allTips = buildTips(subscriptions, currency.symbol);
+  const tips = isPremium ? allTips : allTips.slice(0, 2);
+  const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
   const highCount = tips.filter(t => t.priority === "high").length;
 
@@ -234,6 +240,12 @@ export default function InsightsScreen() {
                 {highCount > 0 ? `  ·  ${highCount} need${highCount === 1 ? "s" : ""} attention` : ""}
               </Text>
 
+              {lockedCount > 0 && (
+                <PremiumGate
+                  title={`${lockedCount} more recommendation${lockedCount !== 1 ? "s" : ""} available`}
+                  description="Upgrade to see your full personalised analysis and every money-saving opportunity."
+                />
+              )}
               {tips.map(tip => (
                 <View key={tip.id} style={[styles.card, { borderLeftColor: tip.color }]}>
                   <View style={styles.cardRow}>

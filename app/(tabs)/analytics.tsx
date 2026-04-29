@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import apiClient from "../../lib/api";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useAuthStore } from "../../lib/auth-store";
+import { PremiumGate } from "../../components/PremiumGate";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
@@ -46,6 +48,8 @@ const styles = StyleSheet.create({
 export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { currency } = useCurrencyStore();
+  const { user } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
 
   const { data: summary, isLoading, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -104,7 +108,7 @@ export default function AnalyticsScreen() {
             <MaterialCommunityIcons name="chart-box-outline" size={48} color="#D1D5DB" style={{ marginBottom: 12 }} />
             <Text style={styles.emptyStateText}>No spending data yet</Text>
           </View>
-        ) : (
+        ) : isPremium ? (
           summary.categoryBreakdown
             .sort((a: any, b: any) => b.amount - a.amount)
             .map((cat: any) => {
@@ -121,6 +125,30 @@ export default function AnalyticsScreen() {
                 </View>
               );
             })
+        ) : (
+          <>
+            {/* Show first category as a teaser */}
+            {summary.categoryBreakdown.slice(0, 1).map((cat: any) => {
+              const pct = (cat.amount / maxAmount) * 100;
+              return (
+                <View key={cat.category} style={styles.categoryItem}>
+                  <View style={styles.categoryHeader}>
+                    <Text style={styles.categoryName}>{cat.category}</Text>
+                    <Text style={styles.categoryAmount}>{fmt(cat.amount, currency.symbol)}/mo</Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${pct}%` }]} />
+                  </View>
+                </View>
+              );
+            })}
+            {summary.categoryBreakdown.length > 1 && (
+              <PremiumGate
+                title={`${summary.categoryBreakdown.length - 1} more categor${summary.categoryBreakdown.length - 1 === 1 ? "y" : "ies"} hidden`}
+                description="See your full spending breakdown by category and identify exactly where your money is going."
+              />
+            )}
+          </>
         )}
 
         <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Summary</Text>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import apiClient from "../../lib/api";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
+import { PremiumGate } from "../../components/PremiumGate";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
@@ -85,6 +86,7 @@ export default function DashboardScreen() {
   };
 
   const { user } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading && subsLoading;
   const recentSubs = subscriptions.slice(0, 3);
   const budgetGoal = settings?.budgetGoal;
@@ -116,8 +118,14 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Budget goal bar */}
-        {budgetGoal != null && (
+        {/* Budget goal bar — premium only */}
+        {!isPremium && (
+          <PremiumGate
+            title="Budget Goal & Progress Bar"
+            description="Set a monthly spending limit and get a visual warning when you're getting close."
+          />
+        )}
+        {isPremium && budgetGoal != null && (
           <View style={styles.budgetCard}>
             <View style={styles.budgetRow}>
               <Text style={styles.budgetLabel}>Monthly Budget</Text>

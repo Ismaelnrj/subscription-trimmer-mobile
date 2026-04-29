@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
+import { PremiumGate } from "../components/PremiumGate";
 import apiClient from "../lib/api";
 
 const styles = StyleSheet.create({
@@ -56,6 +57,7 @@ const styles = StyleSheet.create({
 
 export default function AccountSettingsScreen() {
   const { user, setUser } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
   const { currency, setCurrency } = useCurrencyStore();
   const queryClient = useQueryClient();
 
@@ -145,8 +147,14 @@ export default function AccountSettingsScreen() {
             <Text style={styles.infoText}>Changes how prices are displayed throughout the app.</Text>
           </View>
 
-          {/* Budget Goal */}
+          {/* Budget Goal — premium */}
           <Text style={styles.sectionTitle}>Budget Goal</Text>
+          {!isPremium ? (
+            <PremiumGate
+              title="Monthly Budget Goal"
+              description="Set a spending limit and track progress directly on your dashboard."
+            />
+          ) : (
           <View style={styles.card}>
             <Text style={styles.label}>Monthly Spending Limit ({currency.symbol})</Text>
             <TextInput
@@ -175,6 +183,7 @@ export default function AccountSettingsScreen() {
               )}
             </View>
           </View>
+          )}
 
           {/* Profile */}
           <Text style={styles.sectionTitle}>Profile</Text>

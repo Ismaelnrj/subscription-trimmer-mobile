@@ -5,52 +5,14 @@ import { useState, useEffect } from "react";
 import { setupIAP, buyPremium, checkIsPremium, restorePremium } from "../lib/iap";
 
 const FEATURES = [
-  { icon: "infinity",         label: "Unlimited subscriptions",      desc: "Free plan limited to 5" },
-  { icon: "chart-bar",        label: "Advanced analytics",           desc: "Category breakdown & trends" },
-  { icon: "lightbulb-on",     label: "AI-powered insights",          desc: "Personalized saving tips" },
-  { icon: "target",           label: "Budget goals & alerts",        desc: "Set monthly spending limits" },
-  { icon: "calendar-clock",   label: "Trial date tracker",           desc: "Never forget to cancel a trial" },
-  { icon: "file-export",      label: "Export to CSV",                desc: "Backup your data anytime" },
-  { icon: "headset",          label: "Priority support",             desc: "Faster responses via email" },
+  { icon: "infinity",            label: "Subscriptions",              free: "Up to 7",    premium: "Unlimited" },
+  { icon: "chart-bar",           label: "Spending by category",       free: "Top 1 only", premium: "Full breakdown" },
+  { icon: "lightbulb-on",        label: "Recommendations",            free: "Top 2 only", premium: "All insights" },
+  { icon: "target",              label: "Budget goal & bar",          free: "—",          premium: "✓" },
+  { icon: "clock-alert-outline", label: "Trial date tracker",         free: "—",          premium: "✓" },
+  { icon: "file-export",         label: "Export to CSV",              free: "—",          premium: "✓" },
+  { icon: "headset",             label: "Priority support",           free: "—",          premium: "✓" },
 ];
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  hero: {
-    backgroundColor: "#4F46E5", padding: 28, alignItems: "center",
-  },
-  heroIcon: { marginBottom: 12 },
-  heroTitle: { fontSize: 26, fontWeight: "800", color: "#FFFFFF", marginBottom: 8 },
-  heroBadge: {
-    backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20,
-    paddingVertical: 4, paddingHorizontal: 14,
-  },
-  heroBadgeText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  body: { padding: 20, paddingBottom: 40 },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: "#1F2937", marginBottom: 14, marginTop: 4 },
-  featureRow: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 16 },
-  featureIcon: {
-    width: 40, height: 40, borderRadius: 10, backgroundColor: "#EEF2FF",
-    justifyContent: "center", alignItems: "center",
-  },
-  featureLabel: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
-  featureDesc: { fontSize: 12, color: "#6B7280", marginTop: 1 },
-  divider: { height: 1, backgroundColor: "#E5E7EB", marginVertical: 20 },
-  buyButton: {
-    backgroundColor: "#4F46E5", borderRadius: 12, paddingVertical: 16,
-    alignItems: "center", marginBottom: 12,
-  },
-  buyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  buyButtonSub: { color: "rgba(255,255,255,0.75)", fontSize: 12, marginTop: 2 },
-  restoreButton: { alignItems: "center", paddingVertical: 10 },
-  restoreButtonText: { color: "#6B7280", fontSize: 13 },
-  alreadyCard: {
-    backgroundColor: "#ECFDF5", borderRadius: 12, padding: 16,
-    alignItems: "center", borderWidth: 1, borderColor: "#6EE7B7",
-  },
-  alreadyText: { fontSize: 15, fontWeight: "700", color: "#059669", marginTop: 8 },
-  alreadyDesc: { fontSize: 13, color: "#6B7280", marginTop: 4 },
-});
 
 export default function UpgradeScreen() {
   const router = useRouter();
@@ -77,7 +39,7 @@ export default function UpgradeScreen() {
     try {
       await buyPremium();
       setIsPremium(true);
-      Alert.alert("Welcome to Premium!", "Thank you for your purchase. All features are now unlocked.", [
+      Alert.alert("Welcome to Premium!", "All features are now unlocked. Thank you for supporting Trimio!", [
         { text: "Let's go!", onPress: () => router.back() },
       ]);
     } catch (e: any) {
@@ -95,9 +57,9 @@ export default function UpgradeScreen() {
       const restored = await restorePremium();
       if (restored) {
         setIsPremium(true);
-        Alert.alert("Restored!", "Your premium purchase has been restored.");
+        Alert.alert("Restored!", "Your premium access has been restored.");
       } else {
-        Alert.alert("No purchase found", "No previous premium purchase was found for this account.");
+        Alert.alert("No purchase found", "No previous purchase was found for this account.");
       }
     } catch {
       Alert.alert("Error", "Could not restore purchases. Please try again.");
@@ -110,59 +72,114 @@ export default function UpgradeScreen() {
     <>
       <Stack.Screen options={{ title: "Upgrade to Premium", headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+
         <View style={styles.hero}>
-          <MaterialCommunityIcons name="crown" size={48} color="#FCD34D" style={styles.heroIcon} />
-          <Text style={styles.heroTitle}>SubTrimmer Premium</Text>
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>One-time purchase • No subscription</Text>
+          <MaterialCommunityIcons name="crown" size={48} color="#FCD34D" style={{ marginBottom: 12 }} />
+          <Text style={styles.heroTitle}>Trimio Premium</Text>
+          <Text style={styles.heroSub}>One-time payment · No subscription · Forever</Text>
+          <View style={styles.pricePill}>
+            <Text style={styles.priceText}>$3.99</Text>
           </View>
         </View>
 
-        <View style={styles.body}>
-          {isPremium ? (
+        {isPremium ? (
+          <View style={styles.body}>
             <View style={styles.alreadyCard}>
-              <MaterialCommunityIcons name="check-circle" size={36} color="#059669" />
-              <Text style={styles.alreadyText}>You're a Premium user!</Text>
-              <Text style={styles.alreadyDesc}>All features are unlocked. Thank you for your support.</Text>
+              <MaterialCommunityIcons name="check-circle" size={40} color="#059669" />
+              <Text style={styles.alreadyTitle}>You're a Premium user!</Text>
+              <Text style={styles.alreadySub}>All features are unlocked. Thank you for supporting Trimio.</Text>
             </View>
-          ) : (
-            <>
-              <Text style={styles.sectionTitle}>Everything included</Text>
-              {FEATURES.map((f) => (
-                <View key={f.label} style={styles.featureRow}>
-                  <View style={styles.featureIcon}>
-                    <MaterialCommunityIcons name={f.icon as any} size={20} color="#4F46E5" />
+          </View>
+        ) : (
+          <View style={styles.body}>
+
+            <View style={styles.hookCard}>
+              <Text style={styles.hookText}>
+                The average Trimio user finds <Text style={styles.hookBold}>$230+/year</Text> in subscriptions they'd forgotten about.
+              </Text>
+              <Text style={styles.hookSub}>Premium costs less than one Netflix month — paid once, yours forever.</Text>
+            </View>
+
+            <Text style={styles.tableTitle}>Free vs Premium</Text>
+            <View style={styles.table}>
+              <View style={styles.tableHeader}>
+                <Text style={[styles.col, styles.featureCol]} />
+                <Text style={[styles.col, styles.headerText]}>Free</Text>
+                <Text style={[styles.col, styles.headerText, styles.premiumColText]}>Premium</Text>
+              </View>
+              {FEATURES.map((f, i) => (
+                <View key={f.label} style={[styles.row, i % 2 === 0 && styles.rowAlt]}>
+                  <View style={[styles.col, styles.featureCol, { flexDirection: "row", alignItems: "center", gap: 6 }]}>
+                    <MaterialCommunityIcons name={f.icon as any} size={13} color="#6B7280" />
+                    <Text style={styles.featureText} numberOfLines={2}>{f.label}</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.featureLabel}>{f.label}</Text>
-                    <Text style={styles.featureDesc}>{f.desc}</Text>
-                  </View>
-                  <MaterialCommunityIcons name="check" size={18} color="#10B981" />
+                  <Text style={[styles.col, styles.freeText]}>{f.free}</Text>
+                  <Text style={[styles.col, styles.premiumText, styles.premiumColText]}>{f.premium}</Text>
                 </View>
               ))}
+            </View>
 
-              <View style={styles.divider} />
+            <TouchableOpacity style={styles.buyButton} onPress={handleBuy} disabled={loading}>
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+                <View style={{ alignItems: "center" }}>
+                  <Text style={styles.buyButtonText}>Unlock Premium — $3.99</Text>
+                  <Text style={styles.buyButtonSub}>One-time · No recurring fees · Supports the developer</Text>
+                </View>
+              )}
+            </TouchableOpacity>
 
-              <TouchableOpacity style={styles.buyButton} onPress={handleBuy} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Text style={styles.buyButtonText}>Unlock Premium — $3.99</Text>
-                    <Text style={styles.buyButtonSub}>One-time payment, forever</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={restoring}>
-                <Text style={styles.restoreButtonText}>
-                  {restoring ? "Restoring..." : "Restore previous purchase"}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+            <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={restoring}>
+              <Text style={styles.restoreText}>{restoring ? "Restoring..." : "Restore previous purchase"}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
+  hero: {
+    backgroundColor: "#4F46E5", paddingTop: 36, paddingBottom: 32,
+    alignItems: "center", paddingHorizontal: 24,
+  },
+  heroTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 },
+  heroSub: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginBottom: 16 },
+  pricePill: { backgroundColor: "#FCD34D", borderRadius: 20, paddingVertical: 6, paddingHorizontal: 20 },
+  priceText: { fontSize: 20, fontWeight: "800", color: "#1F2937" },
+  body: { padding: 20, paddingBottom: 48 },
+  hookCard: {
+    backgroundColor: "#EEF2FF", borderRadius: 12, padding: 16, marginBottom: 20,
+    borderWidth: 1, borderColor: "#C7D2FE",
+  },
+  hookText: { fontSize: 14, color: "#1F2937", lineHeight: 22, marginBottom: 6 },
+  hookBold: { fontWeight: "800", color: "#4F46E5" },
+  hookSub: { fontSize: 12, color: "#6B7280" },
+  tableTitle: { fontSize: 14, fontWeight: "700", color: "#1F2937", marginBottom: 10 },
+  table: { borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: "#E5E7EB", marginBottom: 24 },
+  tableHeader: { flexDirection: "row", backgroundColor: "#F3F4F6", paddingVertical: 10, paddingHorizontal: 12 },
+  row: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 12 },
+  rowAlt: { backgroundColor: "#FAFAFA" },
+  col: { flex: 1, fontSize: 12 },
+  featureCol: { flex: 2 },
+  featureText: { fontSize: 12, color: "#374151", flex: 1 },
+  headerText: { fontWeight: "700", color: "#6B7280", textAlign: "center" },
+  premiumColText: { color: "#4F46E5" },
+  freeText: { color: "#9CA3AF", textAlign: "center", fontSize: 12 },
+  premiumText: { fontWeight: "700", textAlign: "center", fontSize: 12 },
+  buyButton: {
+    backgroundColor: "#4F46E5", borderRadius: 14, paddingVertical: 18,
+    alignItems: "center", marginBottom: 14,
+  },
+  buyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
+  buyButtonSub: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 3 },
+  restoreButton: { alignItems: "center", paddingVertical: 8 },
+  restoreText: { color: "#9CA3AF", fontSize: 13 },
+  alreadyCard: {
+    backgroundColor: "#ECFDF5", borderRadius: 14, padding: 24,
+    alignItems: "center", borderWidth: 1, borderColor: "#6EE7B7",
+  },
+  alreadyTitle: { fontSize: 18, fontWeight: "700", color: "#059669", marginTop: 12, marginBottom: 6 },
+  alreadySub: { fontSize: 13, color: "#6B7280", textAlign: "center", lineHeight: 20 },
+});
