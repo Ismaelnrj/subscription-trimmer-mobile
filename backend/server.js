@@ -44,15 +44,15 @@ async function sendVerificationEmail(email, code) {
     return;
   }
   await mailer.sendMail({
-    from: process.env.FROM_EMAIL || 'noreply@subtrimio.com',
+    from: `Trimio <${process.env.SMTP_USER}>`,
     to: email,
-    subject: 'Verify your SubTrimmer account',
+    subject: 'Verify your Trimio account',
     html: `
       <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-        <h2 style="color:#4F46E5;margin-bottom:8px">Verify your email</h2>
+        <h2 style="color:#4F46E5;margin-bottom:8px">Verify your Trimio email</h2>
         <p style="color:#374151">Enter this code in the app to activate your account:</p>
         <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
-        <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create an account, ignore this email.</p>
+        <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
       </div>
     `,
   });
@@ -308,9 +308,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
     if (mailer) {
       await mailer.sendMail({
-        from: process.env.FROM_EMAIL || 'noreply@subtrimio.com',
+        from: `Trimio <${process.env.SMTP_USER}>`,
         to: email,
-        subject: 'Reset your SubTrimmer password',
+        subject: 'Reset your Trimio password',
         html: `
           <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
             <h2 style="color:#4F46E5;margin-bottom:8px">Reset your password</h2>

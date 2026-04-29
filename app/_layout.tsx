@@ -20,12 +20,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     const init = async () => {
-      const [, , done] = await Promise.all([
-        restoreToken(),
-        loadCurrency(),
-        SecureStore.getItemAsync("onboarding_done"),
-      ]);
-      setOnboardingDone(done === "true");
+      try {
+        const [, , done] = await Promise.all([
+          restoreToken(),
+          loadCurrency(),
+          SecureStore.getItemAsync("onboarding_done"),
+        ]);
+        setOnboardingDone(done === "true");
+      } catch {
+        setOnboardingDone(false);
+      }
     };
     init();
   }, []);
