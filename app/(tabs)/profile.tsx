@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../lib/auth-store";
+import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import apiClient from "../../lib/api";
 
 const styles = StyleSheet.create({
@@ -45,6 +46,7 @@ const styles = StyleSheet.create({
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const { currency } = useCurrencyStore();
   const router = useRouter();
 
   const { data: summary } = useQuery({
@@ -78,11 +80,11 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Monthly Spend</Text>
-          <Text style={styles.statValue}>${summary?.monthlyTotal?.toFixed(2) ?? "0.00"}</Text>
+          <Text style={styles.statValue}>{fmt(summary?.monthlyTotal ?? 0, currency.symbol)}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Yearly Projection</Text>
-          <Text style={styles.statValue}>${summary?.yearlyTotal?.toFixed(2) ?? "0.00"}</Text>
+          <Text style={styles.statValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Upgrade</Text>

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
+import { useCurrencyStore } from "../lib/currency-store";
 
 const queryClient = new QueryClient();
 
@@ -11,11 +12,13 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, restoreToken } = useAuthStore();
+  const { loadCurrency } = useCurrencyStore();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     restoreToken();
+    loadCurrency();
   }, []);
 
   useEffect(() => {

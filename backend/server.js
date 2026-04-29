@@ -39,9 +39,11 @@ async function initDB() {
       billing_cycle TEXT NOT NULL DEFAULT 'monthly',
       category TEXT DEFAULT 'other',
       next_billing_date TIMESTAMPTZ,
+      trial_end_date TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_end_date TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
@@ -62,6 +64,15 @@ async function initDB() {
       push_enabled BOOLEAN DEFAULT TRUE
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      budget_goal NUMERIC,
+      currency TEXT DEFAULT 'USD',
+      currency_symbol TEXT DEFAULT '$'
+    )
+  `);
+  await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$'`);
 }
 
 function authMiddleware(req, res, next) {
@@ -105,6 +116,7 @@ function formatSub(s) {
     billingCycle: s.billing_cycle,
     category: s.category,
     nextBillingDate: s.next_billing_date,
+    trialEndDate: s.trial_end_date || null,
     created_at: s.created_at,
   };
 }
@@ -144,10 +156,8 @@ app.post('/api/auth/register', async (req, res) => {
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
       [user.id, 'Welcome to SubTrimmer!', 'Start adding your subscriptions to track your spending.', 'info']
     );
-    await pool.query(
-      'INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING',
-      [user.id]
-    );
+    await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
+    await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
 
     res.json({ token, user: formatUser(user) });
   } catch (err) {
@@ -225,12 +235,12 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
   try {
-    const { name, price, billingCycle = 'monthly', category = 'other' } = req.body;
+    const { name, price, billingCycle = 'monthly', category = 'other', trialEndDate } = req.body;
     if (!name || price == null) return res.status(400).json({ error: 'Name and price required' });
 
     const result = await pool.query(
-      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle)]
+      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle), trialEndDate || null]
     );
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
@@ -244,7 +254,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
   try {
-    const { id, name, price, billingCycle, category } = req.body;
+    const { id, name, price, billingCycle, category, trialEndDate } = req.body;
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
 
     const check = await pool.query(
@@ -254,8 +264,8 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
     const result = await pool.query(
-      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5 WHERE id = $6 RETURNING *',
-      [name, price, billingCycle, category, nextBillingDate(billingCycle), id]
+      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 RETURNING *',
+      [name, price, billingCycle, category, nextBillingDate(billingCycle), trialEndDate || null, id]
     );
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
@@ -272,6 +282,60 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
     );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
     await pool.query('DELETE FROM subscriptions WHERE id = $1', [id]);
+    res.json(trpc({ success: true }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY name ASC',
+      [req.userId]
+    );
+    const subs = result.rows;
+    const header = 'Name,Price,Billing Cycle,Category,Next Billing Date,Trial End Date\n';
+    const rows = subs.map(s => [
+      `"${s.name}"`,
+      parseFloat(s.price).toFixed(2),
+      s.billing_cycle,
+      s.category,
+      s.next_billing_date ? new Date(s.next_billing_date).toLocaleDateString() : '',
+      s.trial_end_date ? new Date(s.trial_end_date).toLocaleDateString() : '',
+    ].join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.send(header + rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── User Settings ─────────────────────────────────────────────────────────────
+
+app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
+  try {
+    await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
+    const result = await pool.query('SELECT * FROM user_settings WHERE user_id = $1', [req.userId]);
+    const s = result.rows[0];
+    res.json(trpc({
+      budgetGoal: s.budget_goal ? parseFloat(s.budget_goal) : null,
+      currency: s.currency || 'USD',
+      currencySymbol: s.currency_symbol || '$',
+    }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
+  try {
+    const { budgetGoal, currency, currencySymbol } = req.body;
+    await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
+    await pool.query(
+      'UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3 WHERE user_id = $4',
+      [budgetGoal ?? null, currency || 'USD', currencySymbol || '$', req.userId]
+    );
     res.json(trpc({ success: true }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -332,6 +396,19 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
           subscriptionName: sub.name,
           severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
         });
+      }
+      if (sub.trial_end_date) {
+        const trialDays = Math.ceil((new Date(sub.trial_end_date) - now) / 86400000);
+        if (trialDays >= 0 && trialDays <= 3) {
+          alerts.push({
+            id: sub.id * 1000,
+            type: 'trial_alert',
+            title: `${sub.name} trial ends ${trialDays === 0 ? 'today' : `in ${trialDays} day${trialDays !== 1 ? 's' : ''}`}`,
+            message: `Your free trial for ${sub.name} is about to end. Cancel now to avoid charges.`,
+            subscriptionName: sub.name,
+            severity: trialDays === 0 ? 'high' : 'medium',
+          });
+        }
       }
     }
 

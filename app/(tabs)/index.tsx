@@ -1,8 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import apiClient from "../../lib/api";
+import { useCurrencyStore, fmt } from "../../lib/currency-store";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
@@ -28,40 +30,102 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF", borderRadius: 12, padding: 24, alignItems: "center",
     borderWidth: 1, borderColor: "#E5E7EB",
   },
-  emptyStateIcon: { marginBottom: 12 },
   emptyStateText: { fontSize: 14, color: "#6B7280", textAlign: "center" },
+  subCard: {
+    backgroundColor: "#FFFFFF", borderRadius: 10, padding: 14, marginBottom: 8,
+    borderWidth: 1, borderColor: "#E5E7EB", flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+  },
+  subName: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
+  subMeta: { fontSize: 12, color: "#6B7280", marginTop: 2 },
+  subPrice: { fontSize: 14, fontWeight: "700", color: "#4F46E5" },
+  budgetCard: {
+    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16, marginBottom: 20,
+    borderWidth: 1, borderColor: "#E5E7EB",
+  },
+  budgetRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+  budgetLabel: { fontSize: 13, fontWeight: "600", color: "#374151" },
+  budgetAmount: { fontSize: 13, fontWeight: "700", color: "#1F2937" },
+  progressTrack: { height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 4 },
+  budgetNote: { fontSize: 11, color: "#6B7280", marginTop: 6 },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
 });
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+  const { currency } = useCurrencyStore();
 
-  const { data: summary } = useQuery({
+  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
-    queryFn: async () => {
-      const response = await apiClient.get("/trpc/analytics.summary");
-      return response.data.result.data;
-    },
+    queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
-  const { data: subscriptions = [] } = useQuery({
+  const { data: subscriptions = [], isLoading: subsLoading, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => {
-      const response = await apiClient.get("/trpc/subscriptions.list");
-      return response.data.result.data;
-    },
+    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
+  });
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchSummary(), refetchSubs()]);
+    setRefreshing(false);
+  };
+
+  const isLoading = summaryLoading && subsLoading;
   const recentSubs = subscriptions.slice(0, 3);
+  const budgetGoal = settings?.budgetGoal;
+  const monthlyTotal = summary?.monthlyTotal ?? 0;
+  const budgetPct = budgetGoal ? Math.min((monthlyTotal / budgetGoal) * 100, 100) : 0;
+  const budgetColor = budgetPct >= 90 ? "#EF4444" : budgetPct >= 70 ? "#F59E0B" : "#10B981";
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4F46E5" />
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+    >
       <View style={styles.scrollContent}>
+        {/* Budget goal bar */}
+        {budgetGoal != null && (
+          <View style={styles.budgetCard}>
+            <View style={styles.budgetRow}>
+              <Text style={styles.budgetLabel}>Monthly Budget</Text>
+              <Text style={styles.budgetAmount}>
+                {fmt(monthlyTotal, currency.symbol)} / {fmt(budgetGoal, currency.symbol)}
+              </Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${budgetPct}%`, backgroundColor: budgetColor }]} />
+            </View>
+            {budgetPct >= 80 && (
+              <Text style={[styles.budgetNote, { color: budgetColor, fontWeight: "600" }]}>
+                {budgetPct >= 100 ? "⚠️ Budget exceeded!" : `⚠️ ${(100 - budgetPct).toFixed(0)}% of budget remaining`}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Stats grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="credit-card" size={20} color="#4F46E5" />
             </View>
-            <Text style={styles.statValue}>${summary?.monthlyTotal?.toFixed(0) ?? "0"}</Text>
+            <Text style={styles.statValue}>{fmt(summary?.monthlyTotal ?? 0, currency.symbol)}</Text>
             <Text style={styles.statLabel}>Monthly Spend</Text>
           </View>
 
@@ -69,7 +133,7 @@ export default function DashboardScreen() {
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={20} color="#4F46E5" />
             </View>
-            <Text style={styles.statValue}>${summary?.yearlyTotal?.toFixed(0) ?? "0"}</Text>
+            <Text style={styles.statValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
             <Text style={styles.statLabel}>Yearly Spend</Text>
           </View>
 
@@ -90,6 +154,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
+        {/* Quick actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
           <Text style={styles.actionButtonText}>+ Add Subscription</Text>
@@ -101,21 +166,33 @@ export default function DashboardScreen() {
           <Text style={styles.actionButtonText}>View Recommendations</Text>
         </TouchableOpacity>
 
+        {/* Recent subscriptions */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Subscriptions</Text>
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="inbox" size={40} color="#D1D5DB" style={styles.emptyStateIcon} />
+            <MaterialCommunityIcons name="inbox" size={40} color="#D1D5DB" style={{ marginBottom: 8 }} />
             <Text style={styles.emptyStateText}>No subscriptions yet. Add your first one!</Text>
           </View>
         ) : (
-          recentSubs.map((sub: any) => (
-            <View key={sub.id} style={[styles.statCard, { marginBottom: 8 }]}>
-              <Text style={{ fontSize: 14, fontWeight: "600", color: "#1F2937" }}>{sub.name}</Text>
-              <Text style={{ fontSize: 12, color: "#6B7280", marginTop: 4 }}>
-                ${sub.price} / {sub.billingCycle}
-              </Text>
-            </View>
-          ))
+          recentSubs.map((sub: any) => {
+            const monthly = sub.billingCycle === "yearly"
+              ? sub.price / 12
+              : sub.billingCycle === "weekly"
+              ? (sub.price * 52) / 12
+              : null;
+            return (
+              <View key={sub.id} style={styles.subCard}>
+                <View>
+                  <Text style={styles.subName}>{sub.name}</Text>
+                  <Text style={styles.subMeta}>
+                    {fmt(sub.price, currency.symbol)} / {sub.billingCycle}
+                    {monthly != null ? `  ·  ${fmt(monthly, currency.symbol)}/mo` : ""}
+                  </Text>
+                </View>
+                <Text style={styles.subPrice}>{fmt(sub.price, currency.symbol)}</Text>
+              </View>
+            );
+          })
         )}
       </View>
     </ScrollView>

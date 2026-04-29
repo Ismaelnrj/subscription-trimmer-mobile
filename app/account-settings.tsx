@@ -1,8 +1,13 @@
-import { View, Text, ScrollView, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import {
+  View, Text, ScrollView, TextInput, TouchableOpacity,
+  StyleSheet, Alert, ActivityIndicator, Modal, FlatList,
+} from "react-native";
 import { Stack } from "expo-router";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuthStore } from "../lib/auth-store";
+import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
 import apiClient from "../lib/api";
 
 const styles = StyleSheet.create({
@@ -21,63 +26,100 @@ const styles = StyleSheet.create({
   saveButton: { backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 13, alignItems: "center", marginTop: 4 },
   saveButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
   infoText: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
+  currencyRow: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F3F4F6",
+  },
+  currencyName: { fontSize: 14, color: "#1F2937" },
+  currencyCode: { fontSize: 12, color: "#6B7280" },
+  selectedMark: { marginLeft: 8 },
+  pickerOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
+  pickerSheet: {
+    backgroundColor: "#FFFFFF", borderTopLeftRadius: 16, borderTopRightRadius: 16,
+    padding: 20, maxHeight: "70%",
+  },
+  pickerTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 16 },
+  currencyButton: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, padding: 14, marginBottom: 4,
+  },
+  currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  currencySymbol: { fontSize: 18, fontWeight: "700", color: "#4F46E5", width: 28 },
+  budgetRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
+  budgetInput: { flex: 1 },
+  clearButton: {
+    backgroundColor: "#FEE2E2", borderRadius: 8, paddingVertical: 13, paddingHorizontal: 16,
+    alignItems: "center", marginTop: 4,
+  },
+  clearButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "600" },
 });
 
 export default function AccountSettingsScreen() {
   const { user, setUser } = useAuthStore();
+  const { currency, setCurrency } = useCurrencyStore();
+  const queryClient = useQueryClient();
+
   const [name, setName] = useState(user?.name || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [budgetInput, setBudgetInput] = useState("");
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
+    onSuccess: (data: any) => {
+      if (data.budgetGoal != null) setBudgetInput(String(data.budgetGoal));
+    },
+  });
 
   const profileMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiClient.patch("/auth/profile", data);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      setUser(data);
-      Alert.alert("Success", "Profile updated successfully.");
-    },
-    onError: (err: any) => {
-      Alert.alert("Error", err.response?.data?.error || "Failed to update profile.");
-    },
+    mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
+    onSuccess: (data) => { setUser(data); Alert.alert("Saved", "Display name updated."); },
+    onError: (err: any) => Alert.alert("Error", err.response?.data?.error || "Failed to update."),
   });
 
   const passwordMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiClient.patch("/auth/profile", data);
-      return response.data;
-    },
+    mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
     onSuccess: () => {
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      Alert.alert("Success", "Password changed successfully.");
+      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+      Alert.alert("Done", "Password changed successfully.");
     },
-    onError: (err: any) => {
-      Alert.alert("Error", err.response?.data?.error || "Failed to change password.");
-    },
+    onError: (err: any) => Alert.alert("Error", err.response?.data?.error || "Failed to change password."),
   });
 
-  const handleSaveName = () => {
-    profileMutation.mutate({ name: name.trim() });
-  };
+  const settingsMutation = useMutation({
+    mutationFn: async (data: any) => (await apiClient.post("/trpc/settings.update", data)).data.result.data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      Alert.alert("Saved", "Settings updated.");
+    },
+    onError: () => Alert.alert("Error", "Failed to save settings."),
+  });
+
+  const handleSaveName = () => profileMutation.mutate({ name: name.trim() });
 
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert("Error", "Please fill in all password fields.");
       return;
     }
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "New passwords do not match.");
-      return;
-    }
-    if (newPassword.length < 6) {
-      Alert.alert("Error", "New password must be at least 6 characters.");
-      return;
-    }
+    if (newPassword !== confirmPassword) { Alert.alert("Error", "New passwords do not match."); return; }
+    if (newPassword.length < 6) { Alert.alert("Error", "New password must be at least 6 characters."); return; }
     passwordMutation.mutate({ currentPassword, newPassword });
+  };
+
+  const handleSaveBudget = () => {
+    const goal = budgetInput ? parseFloat(budgetInput) : null;
+    if (budgetInput && isNaN(goal!)) { Alert.alert("Error", "Please enter a valid number."); return; }
+    settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
+  };
+
+  const handleSelectCurrency = (c: typeof CURRENCIES[0]) => {
+    setCurrency(c);
+    setShowCurrencyPicker(false);
+    settingsMutation.mutate({ budgetGoal: settings?.budgetGoal ?? null, currency: c.code, currencySymbol: c.symbol });
   };
 
   return (
@@ -85,6 +127,56 @@ export default function AccountSettingsScreen() {
       <Stack.Screen options={{ title: "Account Settings" }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
+
+          {/* Currency */}
+          <Text style={styles.sectionTitle}>Currency</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Display Currency</Text>
+            <TouchableOpacity style={styles.currencyButton} onPress={() => setShowCurrencyPicker(true)}>
+              <View style={styles.currencyButtonLeft}>
+                <Text style={styles.currencySymbol}>{currency.symbol}</Text>
+                <View>
+                  <Text style={styles.currencyName}>{currency.name}</Text>
+                  <Text style={styles.currencyCode}>{currency.code}</Text>
+                </View>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+            <Text style={styles.infoText}>Changes how prices are displayed throughout the app.</Text>
+          </View>
+
+          {/* Budget Goal */}
+          <Text style={styles.sectionTitle}>Budget Goal</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Monthly Spending Limit ({currency.symbol})</Text>
+            <TextInput
+              style={styles.input}
+              value={budgetInput}
+              onChangeText={setBudgetInput}
+              placeholder={`e.g. 50.00`}
+              placeholderTextColor="#9CA3AF"
+              keyboardType="decimal-pad"
+            />
+            <Text style={styles.infoText}>
+              A warning appears on your dashboard when you reach 80% of this limit.
+              {settings?.budgetGoal != null ? `\nCurrent goal: ${fmt(settings.budgetGoal, currency.symbol)}/mo` : ""}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+              <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isPending}>
+                {settingsMutation.isPending
+                  ? <ActivityIndicator color="#FFFFFF" />
+                  : <Text style={styles.saveButtonText}>Save Goal</Text>
+                }
+              </TouchableOpacity>
+              {settings?.budgetGoal != null && (
+                <TouchableOpacity style={styles.clearButton} onPress={() => { setBudgetInput(""); settingsMutation.mutate({ budgetGoal: null, currency: currency.code, currencySymbol: currency.symbol }); }}>
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Profile */}
           <Text style={styles.sectionTitle}>Profile</Text>
           <View style={styles.card}>
             <Text style={styles.label}>Display Name</Text>
@@ -110,35 +202,18 @@ export default function AccountSettingsScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Password */}
           <Text style={styles.sectionTitle}>Change Password</Text>
           <View style={styles.card}>
             <Text style={styles.label}>Current Password</Text>
-            <TextInput
-              style={styles.input}
-              value={currentPassword}
-              onChangeText={setCurrentPassword}
-              placeholder="Enter current password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-            />
+            <TextInput style={styles.input} value={currentPassword} onChangeText={setCurrentPassword}
+              placeholder="Enter current password" placeholderTextColor="#9CA3AF" secureTextEntry />
             <Text style={styles.label}>New Password</Text>
-            <TextInput
-              style={styles.input}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              placeholder="Enter new password (min 6 chars)"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-            />
+            <TextInput style={styles.input} value={newPassword} onChangeText={setNewPassword}
+              placeholder="Enter new password (min 6 chars)" placeholderTextColor="#9CA3AF" secureTextEntry />
             <Text style={styles.label}>Confirm New Password</Text>
-            <TextInput
-              style={styles.input}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm new password"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-            />
+            <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword}
+              placeholder="Confirm new password" placeholderTextColor="#9CA3AF" secureTextEntry />
             <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isPending}>
               {passwordMutation.isPending
                 ? <ActivityIndicator color="#FFFFFF" />
@@ -148,6 +223,33 @@ export default function AccountSettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Currency picker */}
+      <Modal visible={showCurrencyPicker} transparent animationType="slide" onRequestClose={() => setShowCurrencyPicker(false)}>
+        <View style={styles.pickerOverlay}>
+          <View style={styles.pickerSheet}>
+            <Text style={styles.pickerTitle}>Select Currency</Text>
+            <FlatList
+              data={CURRENCIES}
+              keyExtractor={(item) => item.code}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.currencyRow} onPress={() => handleSelectCurrency(item)}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Text style={styles.currencySymbol}>{item.symbol}</Text>
+                    <View>
+                      <Text style={styles.currencyName}>{item.name}</Text>
+                      <Text style={styles.currencyCode}>{item.code}</Text>
+                    </View>
+                  </View>
+                  {currency.code === item.code && (
+                    <MaterialCommunityIcons name="check-circle" size={20} color="#4F46E5" style={styles.selectedMark} />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
