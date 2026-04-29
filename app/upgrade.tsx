@@ -5,12 +5,13 @@ import { useState, useEffect } from "react";
 import { setupIAP, buyPremium, checkIsPremium, restorePremium } from "../lib/iap";
 
 const FEATURES = [
-  { icon: "infinity",            label: "Subscriptions",              free: "Up to 7",    premium: "Unlimited" },
+  { icon: "infinity",            label: "Subscriptions",              free: "Up to 5",    premium: "Unlimited" },
   { icon: "chart-bar",           label: "Spending by category",       free: "Top 1 only", premium: "Full breakdown" },
   { icon: "lightbulb-on",        label: "Recommendations",            free: "Top 2 only", premium: "All insights" },
   { icon: "target",              label: "Budget goal & bar",          free: "—",          premium: "✓" },
   { icon: "clock-alert-outline", label: "Trial date tracker",         free: "—",          premium: "✓" },
-  { icon: "file-export",         label: "Export to CSV",              free: "—",          premium: "✓" },
+  { icon: "tag-multiple",        label: "Custom categories",          free: "—",          premium: "✓" },
+  { icon: "file-chart",          label: "Export report (CSV + PDF)",  free: "—",          premium: "✓" },
   { icon: "headset",             label: "Priority support",           free: "—",          premium: "✓" },
 ];
 

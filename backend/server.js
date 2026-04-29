@@ -127,6 +127,7 @@ async function initDB() {
     )
   `);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$'`);
+  await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS custom_categories TEXT DEFAULT '[]'`);
 }
 
 function authMiddleware(req, res, next) {
@@ -385,7 +386,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const isPaid = userResult.rows[0]?.is_paid;
     if (!isPaid) {
       const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
-      if (parseInt(countResult.rows[0].c) >= 7) {
+      if (parseInt(countResult.rows[0].c) >= 5) {
         return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
       }
     }
@@ -474,6 +475,7 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
       budgetGoal: s.budget_goal ? parseFloat(s.budget_goal) : null,
       currency: s.currency || 'USD',
       currencySymbol: s.currency_symbol || '$',
+      customCategories: s.custom_categories ? JSON.parse(s.custom_categories) : [],
     }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -482,11 +484,11 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
   try {
-    const { budgetGoal, currency, currencySymbol } = req.body;
+    const { budgetGoal, currency, currencySymbol, customCategories } = req.body;
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3 WHERE user_id = $4',
-      [budgetGoal ?? null, currency || 'USD', currencySymbol || '$', req.userId]
+      'UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3, custom_categories = $4 WHERE user_id = $5',
+      [budgetGoal ?? null, currency || 'USD', currencySymbol || '$', JSON.stringify(customCategories || []), req.userId]
     );
     res.json(trpc({ success: true }));
   } catch (err) {
