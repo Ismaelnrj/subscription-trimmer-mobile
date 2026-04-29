@@ -9,6 +9,7 @@ interface User {
   role: "user" | "admin";
   isPaid: boolean;
   paidAt: string | null;
+  isVerified: boolean;
 }
 
 interface AuthState {

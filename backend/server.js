@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,6 +17,39 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
+const mailer = process.env.SMTP_HOST
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_PORT === '465',
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    })
+  : null;
+
+async function sendVerificationEmail(email, code) {
+  if (!mailer) {
+    console.log(`[DEV] Verification code for ${email}: ${code}`);
+    return;
+  }
+  await mailer.sendMail({
+    from: process.env.FROM_EMAIL || 'noreply@subtrimio.com',
+    to: email,
+    subject: 'Verify your SubTrimmer account',
+    html: `
+      <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+        <h2 style="color:#4F46E5;margin-bottom:8px">Verify your email</h2>
+        <p style="color:#374151">Enter this code in the app to activate your account:</p>
+        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
+        <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create an account, ignore this email.</p>
+      </div>
+    `,
+  });
+}
+
+function generateCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -27,9 +61,15 @@ async function initDB() {
       role TEXT DEFAULT 'user',
       is_paid BOOLEAN DEFAULT FALSE,
       paid_at TIMESTAMPTZ,
+      is_verified BOOLEAN DEFAULT FALSE,
+      verification_token TEXT,
+      verification_expires TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -104,7 +144,7 @@ function toMonthly(price, billingCycle) {
 }
 
 function formatUser(u) {
-  return { id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role, isPaid: u.is_paid, paidAt: u.paid_at };
+  return { id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role, isPaid: u.is_paid, paidAt: u.paid_at, isVerified: u.is_verified };
 }
 
 function formatSub(s) {
@@ -158,6 +198,11 @@ app.post('/api/auth/register', async (req, res) => {
     );
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
+
+    const code = generateCode();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    await sendVerificationEmail(email, code).catch(e => console.error('Email send failed:', e));
 
     res.json({ token, user: formatUser(user) });
   } catch (err) {
@@ -214,6 +259,40 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
 
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json(formatUser(updated.rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Code required' });
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.is_verified) return res.json({ success: true, user: formatUser(user) });
+    if (user.verification_token !== code) return res.status(400).json({ error: 'Invalid code' });
+    if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
+    await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
+    const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    res.json({ success: true, user: formatUser(updated.rows[0]) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.is_verified) return res.json({ success: true });
+    const code = generateCode();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    await sendVerificationEmail(user.email, code).catch(e => console.error('Email send failed:', e));
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

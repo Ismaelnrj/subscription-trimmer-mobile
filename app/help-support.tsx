@@ -26,7 +26,7 @@ const FAQ = [
   },
   {
     q: "How do I cancel my account?",
-    a: "Please contact us at support@subtrimmer.app and we will delete your account and all associated data within 48 hours.",
+    a: "Please contact us at Trimio@subtrimio.com and we will delete your account and all associated data within 48 hours.",
   },
 ];
 
@@ -91,12 +91,12 @@ export default function HelpSupportScreen() {
           <View style={styles.contactCard}>
             <TouchableOpacity
               style={styles.contactItem}
-              onPress={() => Linking.openURL("mailto:support@subtrimmer.app")}
+              onPress={() => Linking.openURL("mailto:Trimio@subtrimio.com")}
             >
               <MaterialCommunityIcons name="email-outline" size={22} color="#4F46E5" />
               <View>
                 <Text style={styles.contactLabel}>Email Support</Text>
-                <Text style={styles.contactValue}>support@subtrimmer.app</Text>
+                <Text style={styles.contactValue}>Trimio@subtrimio.com</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity

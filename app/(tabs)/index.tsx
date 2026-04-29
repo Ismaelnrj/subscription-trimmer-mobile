@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import apiClient from "../../lib/api";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useAuthStore } from "../../lib/auth-store";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
@@ -49,6 +50,12 @@ const styles = StyleSheet.create({
   progressFill: { height: "100%", borderRadius: 4 },
   budgetNote: { fontSize: 11, color: "#6B7280", marginTop: 6 },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
+  verifyBanner: {
+    backgroundColor: "#FEF3C7", borderRadius: 10, padding: 14, marginBottom: 16,
+    flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: "#FCD34D",
+  },
+  verifyBannerText: { flex: 1, fontSize: 13, color: "#92400E" },
+  verifyBannerLink: { fontSize: 13, fontWeight: "700", color: "#D97706" },
 });
 
 export default function DashboardScreen() {
@@ -77,6 +84,7 @@ export default function DashboardScreen() {
     setRefreshing(false);
   };
 
+  const { user } = useAuthStore();
   const isLoading = summaryLoading && subsLoading;
   const recentSubs = subscriptions.slice(0, 3);
   const budgetGoal = settings?.budgetGoal;
@@ -99,6 +107,15 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
     >
       <View style={styles.scrollContent}>
+        {/* Email verification banner */}
+        {user && !user.isVerified && (
+          <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
+            <MaterialCommunityIcons name="email-alert" size={20} color="#D97706" />
+            <Text style={styles.verifyBannerText}>Please verify your email address to secure your account.</Text>
+            <Text style={styles.verifyBannerLink}>Verify →</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Budget goal bar */}
         {budgetGoal != null && (
           <View style={styles.budgetCard}>
