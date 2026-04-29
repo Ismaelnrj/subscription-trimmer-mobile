@@ -127,7 +127,7 @@ export default function DealsScreen() {
   const openLink = (url: string, name: string) => {
     Alert.alert(
       `Opening ${name}`,
-      "You're about to open an external link. SubTrimmer may earn a small commission if you subscribe, at no extra cost to you.",
+      "You're about to open an external link. Trimio may earn a small commission if you subscribe, at no extra cost to you.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Continue", onPress: () => Linking.openURL(url) },
@@ -141,7 +141,7 @@ export default function DealsScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            Exclusive deals and free trials from popular services. SubTrimmer may earn a commission when you sign up — at no extra cost to you.
+            Exclusive deals and free trials from popular services. Trimio may earn a commission when you sign up — at no extra cost to you.
           </Text>
         </View>
 
@@ -174,7 +174,7 @@ export default function DealsScreen() {
           ))}
 
           <Text style={styles.disclaimer}>
-            Links marked as deals may be affiliate links. SubTrimmer earns a small commission at no extra cost to you. All deals are independently selected.
+            Links marked as deals may be affiliate links. Trimio earns a small commission at no extra cost to you. All deals are independently selected.
           </Text>
         </View>
       </ScrollView>

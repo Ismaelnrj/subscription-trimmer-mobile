@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
+import { requestNotificationPermission } from "../lib/notification-scheduler";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ export default function RootLayout() {
           SecureStore.getItemAsync("onboarding_done"),
         ]);
         setOnboardingDone(done === "true");
+        requestNotificationPermission();
       } catch {
         setOnboardingDone(false);
       }
@@ -66,6 +68,7 @@ export default function RootLayout() {
           <Stack.Screen name="deals" options={{ headerShown: true, title: "Deals & Partnerships" }} />
           <Stack.Screen name="verify-email" options={{ headerShown: true, title: "Verify Email" }} />
           <Stack.Screen name="insights" options={{ headerShown: true, title: "Recommendations" }} />
+          <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: "Terms of Service" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>

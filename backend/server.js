@@ -9,6 +9,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-production';
+if (JWT_SECRET === 'subtrimmer-dev-secret-change-in-production') {
+  console.warn('⚠️  WARNING: JWT_SECRET is using the default dev value. Set a strong secret in your environment variables before going to production.');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -357,6 +360,15 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [code, expires, user.id]);
     await sendVerificationEmail(user.email, code).catch(e => console.error('Email send failed:', e));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/auth/account', authMiddleware, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

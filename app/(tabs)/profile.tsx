@@ -132,6 +132,13 @@ export default function ProfileScreen() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/terms-of-service")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="file-document-outline" size={20} color="#4F46E5" />
+            <Text style={styles.menuItemLabel}>Terms of Service</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.dangerButton} onPress={logout}>
           <MaterialCommunityIcons name="logout" size={18} color="#DC2626" />

@@ -57,7 +57,7 @@ export default function TipJarScreen() {
     try {
       await sendTip(id);
       setTipped(true);
-      Alert.alert("Thank you! 🙏", "Your support means the world and helps keep SubTrimmer free and improving!");
+      Alert.alert("Thank you! 🙏", "Your support means the world and helps keep Trimio free and improving!");
     } catch (e: any) {
       if (!e?.message?.includes("cancel")) {
         Alert.alert("Error", "Could not complete the purchase. Please try again.");
@@ -75,7 +75,7 @@ export default function TipJarScreen() {
           <Text style={styles.headerEmoji}>🫙</Text>
           <Text style={styles.headerTitle}>Support the Developer</Text>
           <Text style={styles.headerDesc}>
-            SubTrimmer is built and maintained by one person. If it saves you money, consider buying me a treat!
+            Trimio is built and maintained by one person. If it saves you money, consider buying me a treat!
           </Text>
         </View>
 

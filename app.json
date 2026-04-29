@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "SubTrimmer",
-    "slug": "subtrimmer",
-    "scheme": "subtrimmer",
+    "name": "Trimio",
+    "slug": "trimio",
+    "scheme": "trimio",
     "version": "1.0.0",
 
     "assetBundlePatterns": [
@@ -10,11 +10,11 @@
     ],
 
     "android": {
-      "package": "com.subtrimmer.app"
+      "package": "com.trimio.app"
     },
 
     "ios": {
-      "bundleIdentifier": "com.subtrimmer.app"
+      "bundleIdentifier": "com.trimio.app"
     },
 
     "web": {

@@ -109,7 +109,7 @@ export default function NotificationPreferencesScreen() {
             <View style={[styles.row, styles.rowLast]}>
               <View style={{ flex: 1, marginRight: 16 }}>
                 <Text style={styles.rowLabel}>Push Notifications</Text>
-                <Text style={styles.rowDesc}>Enable all push notifications from SubTrimmer</Text>
+                <Text style={styles.rowDesc}>Enable all push notifications from Trimio</Text>
               </View>
               <Switch
                 value={prefs.pushEnabled}

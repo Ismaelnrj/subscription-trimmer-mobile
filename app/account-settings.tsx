@@ -6,9 +6,11 @@ import { Stack } from "expo-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
+import apiClient from "../lib/api";
 import apiClient from "../lib/api";
 
 const styles = StyleSheet.create({
@@ -53,10 +55,26 @@ const styles = StyleSheet.create({
     alignItems: "center", marginTop: 4,
   },
   clearButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "600" },
+  deleteSection: { marginTop: 24, marginBottom: 8 },
+  deleteSectionTitle: {
+    fontSize: 12, fontWeight: "600", color: "#DC2626", textTransform: "uppercase",
+    letterSpacing: 0.5, marginBottom: 8,
+  },
+  deleteCard: {
+    backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1,
+    borderColor: "#FECACA", padding: 16,
+  },
+  deleteDesc: { fontSize: 13, color: "#6B7280", lineHeight: 20, marginBottom: 14 },
+  deleteButton: {
+    backgroundColor: "#FEE2E2", borderRadius: 8, paddingVertical: 13,
+    alignItems: "center", borderWidth: 1, borderColor: "#FECACA",
+  },
+  deleteButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "700" },
 });
 
 export default function AccountSettingsScreen() {
-  const { user, setUser } = useAuthStore();
+  const router = useRouter();
+  const { user, setUser, logout } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const { currency, setCurrency } = useCurrencyStore();
   const queryClient = useQueryClient();
@@ -101,6 +119,29 @@ export default function AccountSettingsScreen() {
   });
 
   const handleSaveName = () => profileMutation.mutate({ name: name.trim() });
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your account and all your subscription data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete permanently",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete("/auth/account");
+              await logout();
+              router.replace("/login");
+            } catch {
+              Alert.alert("Error", "Could not delete account. Please try again or contact support.");
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
@@ -230,6 +271,21 @@ export default function AccountSettingsScreen() {
               }
             </TouchableOpacity>
           </View>
+        </View>
+
+          {/* Delete Account */}
+          <View style={styles.deleteSection}>
+            <Text style={styles.deleteSectionTitle}>Danger Zone</Text>
+            <View style={styles.deleteCard}>
+              <Text style={styles.deleteDesc}>
+                Permanently delete your account and all associated subscription data. This action cannot be undone.
+              </Text>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+                <Text style={styles.deleteButtonText}>Delete My Account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
         </View>
       </ScrollView>
 

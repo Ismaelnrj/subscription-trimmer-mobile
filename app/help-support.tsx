@@ -25,8 +25,8 @@ const FAQ = [
     a: "Go to Profile → Notification Preferences and enable Renewal Alerts. You will be notified 7 days before any subscription renews.",
   },
   {
-    q: "How do I cancel my account?",
-    a: "Please contact us at Trimio@subtrimio.com and we will delete your account and all associated data within 48 hours.",
+    q: "How do I delete my account?",
+    a: "Go to Profile → Account Settings and scroll to the bottom. Tap 'Delete Account' and confirm. Your account and all data will be permanently deleted immediately. You can also email Trimio@subtrimio.com.",
   },
 ];
 

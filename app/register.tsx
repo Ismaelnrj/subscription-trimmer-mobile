@@ -48,7 +48,7 @@ export default function RegisterScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>SubTrimmer</Text>
+        <Text style={styles.title}>Trimio</Text>
         <Text style={styles.subtitle}>Create your account</Text>
       </View>
 

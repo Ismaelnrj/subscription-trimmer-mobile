@@ -38,7 +38,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="home" size={24} color={color} />
           ),
-          headerTitle: "SubTrimmer",
+          headerTitle: "Trimio",
         }}
       />
       <Tabs.Screen
