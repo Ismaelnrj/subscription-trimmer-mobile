@@ -53,11 +53,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = await SecureStore.getItemAsync("auth_token");
       if (token) {
-        // Token exists, user is authenticated
-        set({ isAuthenticated: true });
+        const apiClient = (await import("./api")).default;
+        const res = await apiClient.get("/auth/me");
+        set({ user: res.data, isAuthenticated: true });
       }
-    } catch (error) {
-      console.error("Error restoring token:", error);
+    } catch {
+      await SecureStore.deleteItemAsync("auth_token");
+      set({ user: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
     }
