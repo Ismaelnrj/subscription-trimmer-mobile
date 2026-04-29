@@ -28,13 +28,13 @@ workflows:
             --platform android \
             --dev false 2>&1
           echo "Metro exit code: $?"
-      - name: Build Android AAB with Gradle
+      - name: Build Android APK with Gradle
         script: |
           cd android
-          ./gradlew bundleRelease
+          ./gradlew assembleRelease
           cd ..
     artifacts:
-      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/*.apk
     publishing:
       scripts:
         - name: Generate Download URL
