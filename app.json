@@ -27,7 +27,7 @@
         "projectId": "18a3e059-0c9c-49df-b485-21240d7e283a"
       }
     },
-    "plugins": ["react-native-iap"],
+    "plugins": [],
     "owner": "ismaelnrj"
   }
 }
