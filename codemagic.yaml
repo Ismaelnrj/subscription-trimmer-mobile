@@ -1,8 +1,8 @@
 workflows:
   android-build:
     name: Android Build
-    instance_type: linux_x2
-    max_build_duration: 120
+    instance_type: linux_x4
+    max_build_duration: 60
     environment:
       node: 18
       java: 17
@@ -19,19 +19,10 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Test Metro JS bundle (diagnostic)
-        script: |
-          NODE_ENV=production npx expo export:embed \
-            --entry-file node_modules/expo-router/entry.js \
-            --bundle-output /tmp/android-bundle.js \
-            --assets-dest /tmp/android-assets \
-            --platform android \
-            --dev false 2>&1
-          echo "Metro exit code: $?"
       - name: Build Android APK with Gradle
         script: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --no-daemon --build-cache
           cd ..
     artifacts:
       - android/app/build/outputs/**/*.apk
@@ -41,9 +32,3 @@ workflows:
           script: |
             echo "Build completed successfully!"
             echo "Artifacts available at: $CM_ARTIFACT_LINKS"
-            AAB_URL=$(echo $CM_ARTIFACT_LINKS | grep -oP '(?<="url":")[^"]*aab[^"]*' | head -1)
-            if [ -z "$AAB_URL" ]; then
-              echo "AAB URL: Check Codemagic dashboard for artifacts"
-            else
-              echo "AAB Download URL: $AAB_URL"
-            fi
