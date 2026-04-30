@@ -11,7 +11,6 @@ import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
 import apiClient from "../lib/api";
-import apiClient from "../lib/api";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F9FAFB" },
