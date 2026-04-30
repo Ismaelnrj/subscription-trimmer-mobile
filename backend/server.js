@@ -10,7 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-production';
 if (JWT_SECRET === 'subtrimmer-dev-secret-change-in-production') {
-  console.warn('⚠️  WARNING: JWT_SECRET is using the default dev value. Set a strong secret in your environment variables before going to production.');
+  console.warn('WARNING: JWT_SECRET is using the default dev value. Set a strong secret in your environment variables before going to production.');
+}
+
+console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
+if (!process.env.DATABASE_URL) {
+  console.error('FATAL: DATABASE_URL environment variable is not set. Set it to your PostgreSQL connection string.');
+  process.exit(1);
 }
 
 app.use(cors());
