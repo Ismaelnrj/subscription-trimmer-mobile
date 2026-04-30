@@ -210,8 +210,8 @@ export default function AccountSettingsScreen() {
               {settings?.budgetGoal != null ? `\nCurrent goal: ${fmt(settings.budgetGoal, currency.symbol)}/mo` : ""}
             </Text>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-              <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isPending}>
-                {settingsMutation.isPending
+              <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
+                {settingsMutation.isLoading
                   ? <ActivityIndicator color="#FFFFFF" />
                   : <Text style={styles.saveButtonText}>Save Goal</Text>
                 }
@@ -243,8 +243,8 @@ export default function AccountSettingsScreen() {
               editable={false}
             />
             <Text style={styles.infoText}>Email cannot be changed.</Text>
-            <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveName} disabled={profileMutation.isPending}>
-              {profileMutation.isPending
+            <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveName} disabled={profileMutation.isLoading}>
+              {profileMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
                 : <Text style={styles.saveButtonText}>Save Name</Text>
               }
@@ -263,8 +263,8 @@ export default function AccountSettingsScreen() {
             <Text style={styles.label}>Confirm New Password</Text>
             <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword}
               placeholder="Confirm new password" placeholderTextColor="#9CA3AF" secureTextEntry />
-            <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isPending}>
-              {passwordMutation.isPending
+            <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isLoading}>
+              {passwordMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
                 : <Text style={styles.saveButtonText}>Change Password</Text>
               }

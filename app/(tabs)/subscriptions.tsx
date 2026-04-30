@@ -315,7 +315,7 @@ export default function SubscriptionsScreen() {
     });
   };
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending = createMutation.isLoading || updateMutation.isLoading;
 
   const monthlyEquiv = (price: number, cycle: string) => {
     if (cycle === "yearly") return fmt(price / 12, currency.symbol) + "/mo";
