@@ -7,6 +7,7 @@ const { Resend } = require('resend');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-production';
 if (JWT_SECRET === 'subtrimmer-dev-secret-change-in-production') {
