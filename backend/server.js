@@ -53,7 +53,7 @@ async function sendVerificationEmail(email, code) {
     return;
   }
   await mailer.sendMail({
-    from: `Trimio <${process.env.SMTP_USER}>`,
+    from: `Trimio <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
     to: email,
     subject: 'Verify your Trimio account',
     html: `
@@ -318,7 +318,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
     if (mailer) {
       await mailer.sendMail({
-        from: `Trimio <${process.env.SMTP_USER}>`,
+        from: `Trimio <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
         to: email,
         subject: 'Reset your Trimio password',
         html: `
