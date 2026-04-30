@@ -49,7 +49,7 @@ async function sendVerificationEmail(email, code) {
     console.log(`[DEV] Verification code for ${email}: ${code}`);
     return;
   }
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: `Trimio <${FROM_EMAIL}>`,
     to: email,
     subject: 'Verify your Trimio account',
@@ -62,6 +62,11 @@ async function sendVerificationEmail(email, code) {
       </div>
     `,
   });
+  if (error) {
+    console.error('Resend error:', JSON.stringify(error));
+    throw new Error(error.message);
+  }
+  console.log('Email sent:', data?.id);
 }
 
 function generateCode() {
@@ -314,7 +319,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
     if (resend) {
-      await resend.emails.send({
+      const { data, error } = await resend.emails.send({
         from: `Trimio <${FROM_EMAIL}>`,
         to: email,
         subject: 'Reset your Trimio password',
@@ -326,7 +331,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
             <p style="color:#9CA3AF;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
           </div>
         `,
-      }).catch(e => console.error('Email send failed:', e));
+      });
+      if (error) console.error('Resend error:', JSON.stringify(error));
+      else console.log('Password reset email sent:', data?.id);
     } else {
       console.log(`[DEV] Password reset code for ${email}: ${code}`);
     }
