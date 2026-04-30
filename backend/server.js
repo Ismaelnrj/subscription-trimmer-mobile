@@ -40,6 +40,8 @@ const pool = new Pool({
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM_EMAIL = process.env.SMTP_FROM || 'onboarding@resend.dev';
+console.log('RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
+console.log('FROM_EMAIL:', FROM_EMAIL);
 
 async function sendVerificationEmail(email, code) {
   if (!resend) {
