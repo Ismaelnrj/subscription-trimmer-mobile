@@ -19,15 +19,6 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Test JS bundle (surface Metro errors early)
-        script: |
-          npx react-native bundle \
-            --platform android \
-            --dev false \
-            --entry-file node_modules/expo-router/entry.js \
-            --bundle-output /tmp/index.android.bundle \
-            --assets-dest /tmp/bundle-assets \
-            --reset-cache
       - name: Build Android APK with Gradle
         script: |
           cd android
