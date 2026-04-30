@@ -351,13 +351,13 @@ if [ -f "$GRADLE_PROPS" ]; then
     cat >> "$GRADLE_PROPS" << 'EOF'
 
 # Gradle 8 performance tuning
-org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC
+org.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -XX:+UseG1GC
 org.gradle.caching=true
 org.gradle.parallel=true
-org.gradle.workers.max=4
+org.gradle.workers.max=2
 org.gradle.java.installations.auto-download=false
-# Give the Kotlin compiler daemon enough heap to compile expo-modules-core
-kotlin.daemon.jvm.options=-Xmx2048m -XX:MaxMetaspaceSize=512m
+# Kotlin daemon — keep small to fit within linux_x2's 4GB total RAM
+kotlin.daemon.jvm.options=-Xmx768m -XX:MaxMetaspaceSize=256m
 EOF
     echo "      OK   — gradle.properties updated"
 else
@@ -427,7 +427,7 @@ echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 1.9 
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
-echo "  android/gradle.properties — JVM 4 GB heap, G1GC, parallel builds, Kotlin daemon 2 GB"
+echo "  android/gradle.properties — JVM 1.5 GB heap, G1GC, parallel builds, Kotlin daemon 768 MB"
 echo "  android/.gradle           — cache cleared"
 echo ""
 echo "You can now build with:  cd android && ./gradlew assembleRelease"
