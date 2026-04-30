@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -38,22 +38,16 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
-const mailer = process.env.SMTP_HOST
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_PORT === '465',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    })
-  : null;
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const FROM_EMAIL = process.env.SMTP_FROM || 'onboarding@resend.dev';
 
 async function sendVerificationEmail(email, code) {
-  if (!mailer) {
+  if (!resend) {
     console.log(`[DEV] Verification code for ${email}: ${code}`);
     return;
   }
-  await mailer.sendMail({
-    from: `Trimio <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: `Trimio <${FROM_EMAIL}>`,
     to: email,
     subject: 'Verify your Trimio account',
     html: `
@@ -316,9 +310,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
-    if (mailer) {
-      await mailer.sendMail({
-        from: `Trimio <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    if (resend) {
+      await resend.emails.send({
+        from: `Trimio <${FROM_EMAIL}>`,
         to: email,
         subject: 'Reset your Trimio password',
         html: `
