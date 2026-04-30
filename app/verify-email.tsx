@@ -38,8 +38,9 @@ export default function VerifyEmailScreen() {
       await apiClient.post("/auth/resend-verification");
       setResent(true);
       Alert.alert("Sent!", "A new verification code has been sent to your email.");
-    } catch {
-      Alert.alert("Error", "Could not resend code. Please try again.");
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || "Unknown error";
+      Alert.alert("Error", `Could not resend code: ${msg}`);
     } finally {
       setResending(false);
     }

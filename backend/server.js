@@ -212,7 +212,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-      [user.id, 'Welcome to SubTrimmer!', 'Start adding your subscriptions to track your spending.', 'info']
+      [user.id, 'Welcome to Trimio!', 'Start adding your subscriptions to track your spending.', 'info']
     );
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
@@ -723,5 +723,5 @@ app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 
 initDB()
-  .then(() => app.listen(PORT, () => console.log(`SubTrimmer backend running on port ${PORT}`)))
+  .then(() => app.listen(PORT, () => console.log(`Trimio backend running on port ${PORT}`)))
   .catch(err => { console.error('DB init failed:', err); process.exit(1); });
