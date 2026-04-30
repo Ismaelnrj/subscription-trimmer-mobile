@@ -270,7 +270,6 @@ export default function AccountSettingsScreen() {
               }
             </TouchableOpacity>
           </View>
-        </View>
 
           {/* Delete Account */}
           <View style={styles.deleteSection}>
