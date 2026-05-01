@@ -22,7 +22,7 @@
     },
 
     "extra": {
-      "apiUrl": "https://subscription-trimmer-mobile-jwtsecret.up.railway.app",
+      "apiUrl": "https://subscription-trimmer-mobile-production.up.railway.app",
       "eas": {
         "projectId": "18a3e059-0c9c-49df-b485-21240d7e283a"
       }
