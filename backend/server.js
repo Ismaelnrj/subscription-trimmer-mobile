@@ -22,6 +22,10 @@ if (!process.env.DATABASE_URL) {
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
