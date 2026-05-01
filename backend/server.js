@@ -22,10 +22,6 @@ if (!process.env.DATABASE_URL) {
 
 app.use(cors());
 app.use(express.json());
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -35,8 +31,18 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const emailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: 'Too many requests. Please try again in an hour.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/forgot-password', emailLimiter);
+app.use('/api/auth/resend-verification', emailLimiter);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -206,7 +212,8 @@ function formatNotification(n) {
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, name } = req.body;
+    const { password, name } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -242,7 +249,8 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -318,11 +326,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user) {
-      console.log(`[forgot-password] No user found for email: ${email}`);
-      return res.json({ success: true });
-    }
-    console.log(`[forgot-password] Sending reset code to: ${email}`);
+    if (!user) return res.json({ success: true });
+
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
@@ -441,14 +446,19 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
 
     const check = await pool.query(
-      'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
+      'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
       [id, req.userId]
     );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
+    const existing = check.rows[0];
+    const newBillingDate = billingCycle !== existing.billing_cycle
+      ? nextBillingDate(billingCycle)
+      : existing.next_billing_date;
+
     const result = await pool.query(
       'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 RETURNING *',
-      [name, price, billingCycle, category, nextBillingDate(billingCycle), trialEndDate || null, id]
+      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id]
     );
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
