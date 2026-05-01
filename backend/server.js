@@ -3,7 +3,6 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const { Resend } = require('resend');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -49,34 +48,45 @@ const pool = new Pool({
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
 });
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM_EMAIL = process.env.SMTP_FROM || 'onboarding@resend.dev';
-console.log('RESEND_API_KEY set:', !!process.env.RESEND_API_KEY);
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = process.env.SMTP_FROM || 'noreply@trimio.app';
+console.log('BREVO_API_KEY set:', !!BREVO_API_KEY);
 console.log('FROM_EMAIL:', FROM_EMAIL);
 
-async function sendVerificationEmail(email, code) {
-  if (!resend) {
-    console.log(`[DEV] Verification code for ${email}: ${code}`);
+async function sendEmail(to, subject, html) {
+  if (!BREVO_API_KEY) {
+    console.log(`[DEV] Email to ${to} | ${subject}`);
     return;
   }
-  const { data, error } = await resend.emails.send({
-    from: `Trimio <${FROM_EMAIL}>`,
-    to: email,
-    subject: 'Verify your Trimio account',
-    html: `
-      <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-        <h2 style="color:#4F46E5;margin-bottom:8px">Verify your Trimio email</h2>
-        <p style="color:#374151">Enter this code in the app to activate your account:</p>
-        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
-        <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
-      </div>
-    `,
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sender: { name: 'Trimio', email: FROM_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
-  if (error) {
-    console.error('Resend error:', JSON.stringify(error));
-    throw new Error(error.message);
+  const json = await res.json();
+  if (!res.ok) {
+    console.error('Brevo error:', JSON.stringify(json));
+    throw new Error(json.message || 'Email send failed');
   }
-  console.log('Email sent:', data?.id);
+  console.log('Email sent:', json.messageId);
+}
+
+async function sendVerificationEmail(email, code) {
+  await sendEmail(
+    email,
+    'Verify your Trimio account',
+    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+      <h2 style="color:#4F46E5;margin-bottom:8px">Verify your Trimio email</h2>
+      <p style="color:#374151">Enter this code in the app to activate your account:</p>
+      <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
+      <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
+    </div>`
+  );
 }
 
 function generateCode() {
@@ -331,25 +341,16 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
-    if (resend) {
-      const { data, error } = await resend.emails.send({
-        from: `Trimio <${FROM_EMAIL}>`,
-        to: email,
-        subject: 'Reset your Trimio password',
-        html: `
-          <div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-            <h2 style="color:#4F46E5;margin-bottom:8px">Reset your password</h2>
-            <p style="color:#374151">Enter this code in the app to reset your password:</p>
-            <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
-            <p style="color:#9CA3AF;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
-          </div>
-        `,
-      });
-      if (error) console.error('Resend error:', JSON.stringify(error));
-      else console.log('Password reset email sent:', data?.id);
-    } else {
-      console.log(`[DEV] Password reset code for ${email}: ${code}`);
-    }
+    await sendEmail(
+      email,
+      'Reset your Trimio password',
+      `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+        <h2 style="color:#4F46E5;margin-bottom:8px">Reset your password</h2>
+        <p style="color:#374151">Enter this code in the app to reset your password:</p>
+        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
+        <p style="color:#9CA3AF;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
+      </div>`
+    );
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
