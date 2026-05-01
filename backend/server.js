@@ -314,7 +314,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user) return res.json({ success: true }); // Don't reveal if email exists
+    if (!user) {
+      console.log(`[forgot-password] No user found for email: ${email}`);
+      return res.json({ success: true });
+    }
+    console.log(`[forgot-password] Sending reset code to: ${email}`);
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
