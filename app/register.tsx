@@ -28,7 +28,7 @@ export default function RegisterScreen() {
     setEmailError("");
     setLoading(true);
     try {
-      const res = await apiClient.post("/auth/register", { name, email, password });
+      const res = await apiClient.post("/auth/register", { name, email: email.trim().toLowerCase(), password });
       const { token, user } = res.data;
       await SecureStore.setItemAsync("auth_token", token);
       setUser(user);

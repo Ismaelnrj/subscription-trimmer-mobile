@@ -415,8 +415,10 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
   try {
-    const { name, price, billingCycle = 'monthly', category = 'other', trialEndDate } = req.body;
-    if (!name || price == null) return res.status(400).json({ error: 'Name and price required' });
+    const { name, billingCycle = 'monthly', category = 'other', trialEndDate } = req.body;
+    const price = parseFloat(req.body.price);
+    if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
+    if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
 
     const userResult = await pool.query('SELECT is_paid FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid;

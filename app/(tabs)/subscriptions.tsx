@@ -252,12 +252,39 @@ export default function SubscriptionsScreen() {
   };
 
   const handleSubmit = () => {
+    const price = parseFloat(formData.price);
     if (!formData.name.trim() || !formData.price) {
       Alert.alert("Error", "Please enter a name and price.");
       return;
     }
+    if (isNaN(price) || price <= 0) {
+      Alert.alert("Error", "Please enter a valid price greater than 0.");
+      return;
+    }
+    if (price > 99999) {
+      Alert.alert("Error", "Price seems too high. Please check and try again.");
+      return;
+    }
+    const duplicate = subscriptions?.find(
+      (s: any) => s.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && s.id !== editingId
+    );
+    if (duplicate) {
+      Alert.alert(
+        "Duplicate subscription",
+        `You already have "${duplicate.name}" in your list. Add it anyway?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Add anyway", onPress: () => submitData(price) },
+        ]
+      );
+      return;
+    }
+    submitData(price);
+  };
+
+  const submitData = (price: number) => {
     const data = {
-      name: formData.name.trim(), price: parseFloat(formData.price),
+      name: formData.name.trim(), price,
       billingCycle: formData.billingCycle, category: formData.category,
       trialEndDate: formData.trialEndDate || null,
     };
