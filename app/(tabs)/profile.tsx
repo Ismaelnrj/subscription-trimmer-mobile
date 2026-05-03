@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -136,6 +136,13 @@ export default function ProfileScreen() {
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="file-document-outline" size={20} color="#4F46E5" />
             <Text style={styles.menuItemLabel}>Terms of Service</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('market://details?id=com.trimio.app')}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="star-outline" size={20} color="#F59E0B" />
+            <Text style={styles.menuItemLabel}>Rate Trimio ⭐</Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
