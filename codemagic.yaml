@@ -19,13 +19,13 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Build Android AAB with Gradle
+      - name: Build Android APK with Gradle
         script: |
           cd android
-          ./gradlew bundleRelease --no-daemon --build-cache
+          ./gradlew assembleRelease --no-daemon --build-cache
           cd ..
     artifacts:
-      - android/app/build/outputs/bundle/**/*.aab
+      - android/app/build/outputs/**/*.apk
     publishing:
       scripts:
         - name: Generate Download URL
