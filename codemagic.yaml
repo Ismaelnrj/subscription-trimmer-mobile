@@ -19,13 +19,20 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Build Android APK with Gradle
+      - name: Set up release signing
+        script: |
+          echo $CM_KEYSTORE | base64 --decode > /tmp/release.keystore
+      - name: Build Android AAB with Gradle
         script: |
           cd android
-          ./gradlew assembleRelease --no-daemon --build-cache
+          ./gradlew bundleRelease --no-daemon --build-cache \
+            -Pandroid.injected.signing.store.file=/tmp/release.keystore \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
           cd ..
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/bundle/**/*.aab
     publishing:
       scripts:
         - name: Generate Download URL
