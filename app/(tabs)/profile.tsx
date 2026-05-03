@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import * as StoreReview from "expo-store-review";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -60,6 +61,15 @@ export default function ProfileScreen() {
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const handleRateApp = async () => {
+    const available = await StoreReview.isAvailableAsync();
+    if (available) {
+      await StoreReview.requestReview();
+    } else {
+      Linking.openURL("market://details?id=com.trimio.app");
+    }
   };
 
   return (
@@ -139,7 +149,7 @@ export default function ProfileScreen() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => Linking.openURL('market://details?id=com.trimio.app')}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleRateApp}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="star-outline" size={20} color="#F59E0B" />
             <Text style={styles.menuItemLabel}>Rate Trimio ⭐</Text>
