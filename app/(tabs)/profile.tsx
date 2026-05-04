@@ -1,5 +1,4 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
-import * as StoreReview from "expo-store-review";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -63,13 +62,8 @@ export default function ProfileScreen() {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  const handleRateApp = async () => {
-    const available = await StoreReview.isAvailableAsync();
-    if (available) {
-      await StoreReview.requestReview();
-    } else {
-      Linking.openURL("market://details?id=com.trimio.app");
-    }
+  const handleRateApp = () => {
+    Linking.openURL("market://details?id=com.trimio.app");
   };
 
   return (
