@@ -19,17 +19,19 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Set up release signing
-        script: |
-          echo $CM_KEYSTORE | base64 --decode > /tmp/release.keystore
       - name: Build Android AAB with Gradle
         script: |
           cd android
-          ./gradlew bundleRelease --no-daemon --build-cache \
-            -Pandroid.injected.signing.store.file=/tmp/release.keystore \
-            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
-            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo $CM_KEYSTORE | base64 --decode > /tmp/release.keystore
+            ./gradlew bundleRelease --no-daemon --build-cache \
+              -Pandroid.injected.signing.store.file=/tmp/release.keystore \
+              -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+              -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+              -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+          else
+            ./gradlew bundleRelease --no-daemon --build-cache
+          fi
           cd ..
     artifacts:
       - android/app/build/outputs/bundle/**/*.aab
