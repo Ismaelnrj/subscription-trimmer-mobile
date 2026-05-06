@@ -28,11 +28,18 @@ workflows:
           KEYSTORE_PATH=/tmp/release.keystore
           if [ -n "$CM_KEYSTORE" ]; then
             printf '%s' "$CM_KEYSTORE" | base64 --decode > $KEYSTORE_PATH
-            echo "Keystore decoded. Verifying..."
+            echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
+            echo "=== ALL ALIASES IN KEYSTORE ==="
             keytool -list -keystore $KEYSTORE_PATH \
               -storepass "$CM_KEYSTORE_PASSWORD" \
-              -alias "${CM_KEY_ALIAS:-trimio}" \
-              -noprompt && echo "Keystore verified OK" || echo "WARNING: Keystore verification failed"
+              -noprompt
+            echo "================================"
+            ACTUAL_ALIAS="${CM_KEY_ALIAS:-trimio}"
+            echo "Verifying alias: $ACTUAL_ALIAS"
+            keytool -list -keystore $KEYSTORE_PATH \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -alias "$ACTUAL_ALIAS" \
+              -noprompt && echo "Keystore verified OK" || echo "WARNING: alias mismatch or wrong password"
           elif [ -n "$CM_KEYSTORE_PASSWORD" ]; then
             echo "Generating new release keystore..."
             keytool -genkey -v \
