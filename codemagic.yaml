@@ -19,13 +19,51 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
-      - name: Build Android APK with Gradle
+      - name: Set up Android signing
         script: |
+          echo "CM_KEYSTORE set: $([ -n "$CM_KEYSTORE" ] && echo yes || echo no)"
+          echo "CM_KEYSTORE_PASSWORD set: $([ -n "$CM_KEYSTORE_PASSWORD" ] && echo yes || echo no)"
+          echo "CM_KEY_ALIAS: ${CM_KEY_ALIAS:-trimio}"
+          echo "CM_KEY_PASSWORD set: $([ -n "$CM_KEY_PASSWORD" ] && echo yes || echo no)"
+          KEYSTORE_PATH=/tmp/release.keystore
+          if [ -n "$CM_KEYSTORE" ]; then
+            printf '%s' "$CM_KEYSTORE" | base64 --decode > $KEYSTORE_PATH
+            echo "Keystore decoded. Verifying..."
+            keytool -list -keystore $KEYSTORE_PATH \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -alias "${CM_KEY_ALIAS:-trimio}" \
+              -noprompt && echo "Keystore verified OK" || echo "WARNING: Keystore verification failed"
+          elif [ -n "$CM_KEYSTORE_PASSWORD" ]; then
+            echo "Generating new release keystore..."
+            keytool -genkey -v \
+              -keystore $KEYSTORE_PATH \
+              -alias ${CM_KEY_ALIAS:-trimio} \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -keypass "$CM_KEY_PASSWORD" \
+              -dname "CN=Trimio, OU=Mobile, O=Trimio, L=Unknown, ST=Unknown, C=US" \
+              -noprompt
+            echo "=== COPY THIS AND SAVE AS CM_KEYSTORE ENV VAR FOR FUTURE BUILDS ==="
+            base64 $KEYSTORE_PATH
+            echo "==================================================================="
+          else
+            echo "ERROR: CM_KEYSTORE_PASSWORD is not set."
+            exit 1
+          fi
+      - name: Build Android AAB with Gradle
+        script: |
+          KEYSTORE_PATH=/tmp/release.keystore
           cd android
-          ./gradlew assembleRelease --no-daemon --build-cache
+          ./gradlew bundleRelease --no-daemon --build-cache \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio} \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
           cd ..
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/bundle/**/*.aab
     publishing:
       scripts:
         - name: Generate Download URL
