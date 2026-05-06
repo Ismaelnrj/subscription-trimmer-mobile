@@ -19,19 +19,40 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
+      - name: Set up Android signing
+        script: |
+          KEYSTORE_PATH=/tmp/release.keystore
+          STORE_PASS=${CM_KEYSTORE_PASSWORD}
+          KEY_ALIAS=${CM_KEY_ALIAS:-trimio}
+          KEY_PASS=${CM_KEY_PASSWORD}
+          if [ -n "$CM_KEYSTORE" ]; then
+            echo $CM_KEYSTORE | base64 --decode > $KEYSTORE_PATH
+            echo "Using existing keystore from CM_KEYSTORE env var."
+          else
+            echo "Generating new release keystore..."
+            keytool -genkey -v \
+              -keystore $KEYSTORE_PATH \
+              -alias $KEY_ALIAS \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass $STORE_PASS \
+              -keypass $KEY_PASS \
+              -dname "CN=Trimio, OU=Mobile, O=Trimio, L=Unknown, ST=Unknown, C=US" \
+              -noprompt
+            echo "=== COPY THIS AND SAVE AS CM_KEYSTORE ENV VAR FOR FUTURE BUILDS ==="
+            base64 $KEYSTORE_PATH
+            echo "==================================================================="
+          fi
       - name: Build Android AAB with Gradle
         script: |
+          KEYSTORE_PATH=/tmp/release.keystore
           cd android
-          if [ -n "$CM_KEYSTORE" ]; then
-            echo $CM_KEYSTORE | base64 --decode > /tmp/release.keystore
-            ./gradlew bundleRelease --no-daemon --build-cache \
-              -Pandroid.injected.signing.store.file=/tmp/release.keystore \
-              -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
-              -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
-              -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
-          else
-            ./gradlew bundleRelease --no-daemon --build-cache
-          fi
+          ./gradlew bundleRelease --no-daemon --build-cache \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio} \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
           cd ..
     artifacts:
       - android/app/build/outputs/bundle/**/*.aab
