@@ -10,7 +10,8 @@
     ],
 
     "android": {
-      "package": "com.trimio.app"
+      "package": "com.trimio.app",
+      "versionCode": 2
     },
 
     "ios": {
