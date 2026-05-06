@@ -21,28 +21,32 @@ workflows:
           bash fix-gradle.sh
       - name: Set up Android signing
         script: |
+          echo "CM_KEYSTORE set: $([ -n "$CM_KEYSTORE" ] && echo yes || echo no)"
+          echo "CM_KEYSTORE_PASSWORD set: $([ -n "$CM_KEYSTORE_PASSWORD" ] && echo yes || echo no)"
+          echo "CM_KEY_ALIAS set: $([ -n "$CM_KEY_ALIAS" ] && echo yes || echo no)"
+          echo "CM_KEY_PASSWORD set: $([ -n "$CM_KEY_PASSWORD" ] && echo yes || echo no)"
           KEYSTORE_PATH=/tmp/release.keystore
-          STORE_PASS=${CM_KEYSTORE_PASSWORD}
-          KEY_ALIAS=${CM_KEY_ALIAS:-trimio}
-          KEY_PASS=${CM_KEY_PASSWORD}
           if [ -n "$CM_KEYSTORE" ]; then
             echo $CM_KEYSTORE | base64 --decode > $KEYSTORE_PATH
             echo "Using existing keystore from CM_KEYSTORE env var."
-          else
+          elif [ -n "$CM_KEYSTORE_PASSWORD" ]; then
             echo "Generating new release keystore..."
             keytool -genkey -v \
               -keystore $KEYSTORE_PATH \
-              -alias $KEY_ALIAS \
+              -alias ${CM_KEY_ALIAS:-trimio} \
               -keyalg RSA \
               -keysize 2048 \
               -validity 10000 \
-              -storepass $STORE_PASS \
-              -keypass $KEY_PASS \
+              -storepass $CM_KEYSTORE_PASSWORD \
+              -keypass $CM_KEY_PASSWORD \
               -dname "CN=Trimio, OU=Mobile, O=Trimio, L=Unknown, ST=Unknown, C=US" \
               -noprompt
             echo "=== COPY THIS AND SAVE AS CM_KEYSTORE ENV VAR FOR FUTURE BUILDS ==="
             base64 $KEYSTORE_PATH
             echo "==================================================================="
+          else
+            echo "ERROR: CM_KEYSTORE_PASSWORD is not set. Cannot sign release build."
+            exit 1
           fi
       - name: Build Android AAB with Gradle
         script: |
