@@ -51,6 +51,7 @@
     "@types/react": "18.2.45",
     "typescript": "5.3.3"
   },
+  "packageManager": "pnpm@9.15.0",
   "private": true,
   "expo": {
     "install": {

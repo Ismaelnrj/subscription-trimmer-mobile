@@ -11,7 +11,6 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm install -g eas-cli
           pnpm install
       - name: Prebuild native Android
         script: |
@@ -66,7 +65,7 @@ workflows:
           ./gradlew bundleRelease --no-daemon --build-cache \
             -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio} \
+            "-Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio}" \
             -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
           cd ..
     artifacts:
