@@ -20,7 +20,7 @@
 # What this script does
 #   Fix 1 — adds a root-level ext {} to android/build.gradle so compileSdkVersion
 #            is always available on rootProject.ext for safeExtGet() calls.
-#   Fix 2 — adds allprojects { plugins.withId("com.android.library") { compileSdk 34 } }
+#   Fix 2 — adds allprojects { plugins.withId("com.android.library") { compileSdk 35 } }
 #            to android/build.gradle. Fires at plugin-apply time (Gradle 8 safe —
 #            no afterEvaluate) using the non-deprecated compileSdk property.
 #   Fix 3 — scans EVERY .gradle file inside node_modules for "from components.release"
@@ -68,10 +68,10 @@ ext_block = (
     "// Gradle 8: expose SDK versions on rootProject.ext so submodule\n"
     "// safeExtGet() calls find them via rootProject.ext.has()/.get().\n"
     "ext {\n"
-    "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')\n"
-    "    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '34')\n"
+    "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')\n"
+    "    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '35')\n"
     "    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')\n"
-    "    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'\n"
+    "    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'\n"
     "    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'\n"
     "    ndkVersion        = \"26.1.10909125\"\n"
     "}\n\n"
@@ -108,7 +108,7 @@ hook = (
     "allprojects {\n"
     "    plugins.withId(\"com.android.library\") {\n"
     "        android {\n"
-    "            compileSdk 34\n"
+    "            compileSdk 35\n"
     "        }\n"
     "    }\n"
     "}\n"
@@ -421,7 +421,7 @@ echo "All fixes applied."
 echo ""
 echo "  android/build.gradle"
 echo "    + root-level ext {}  (compileSdkVersion on rootProject.ext)"
-echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 34 } }"
+echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 35 } }"
 echo "    + Kotlin plugin pinned to 1.9.23 (was unversioned, resolved to 1.8 via BOM)"
 echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 1.9 } }"
 echo "  node_modules/**/*.gradle"
