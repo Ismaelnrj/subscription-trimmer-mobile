@@ -4,14 +4,15 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      node: 18
+      node: 20
       java: 17
       groups:
         - expo_credentials
     scripts:
       - name: Install dependencies
         script: |
-          npm install -g eas-cli
+          corepack disable || true
+          npm install -g pnpm@9
           pnpm install
       - name: Prebuild native Android
         script: |
@@ -23,12 +24,23 @@ workflows:
         script: |
           echo "CM_KEYSTORE set: $([ -n "$CM_KEYSTORE" ] && echo yes || echo no)"
           echo "CM_KEYSTORE_PASSWORD set: $([ -n "$CM_KEYSTORE_PASSWORD" ] && echo yes || echo no)"
-          echo "CM_KEY_ALIAS set: $([ -n "$CM_KEY_ALIAS" ] && echo yes || echo no)"
+          echo "CM_KEY_ALIAS: ${CM_KEY_ALIAS:-trimio}"
           echo "CM_KEY_PASSWORD set: $([ -n "$CM_KEY_PASSWORD" ] && echo yes || echo no)"
           KEYSTORE_PATH=/tmp/release.keystore
           if [ -n "$CM_KEYSTORE" ]; then
-            echo $CM_KEYSTORE | base64 --decode > $KEYSTORE_PATH
-            echo "Using existing keystore from CM_KEYSTORE env var."
+            printf '%s' "$CM_KEYSTORE" | base64 --decode > $KEYSTORE_PATH
+            echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
+            echo "=== ALL ALIASES IN KEYSTORE ==="
+            keytool -list -keystore $KEYSTORE_PATH \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -noprompt
+            echo "================================"
+            ACTUAL_ALIAS="${CM_KEY_ALIAS:-trimio}"
+            echo "Verifying alias: $ACTUAL_ALIAS"
+            keytool -list -keystore $KEYSTORE_PATH \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -alias "$ACTUAL_ALIAS" \
+              -noprompt && echo "Keystore verified OK" || echo "WARNING: alias mismatch or wrong password"
           elif [ -n "$CM_KEYSTORE_PASSWORD" ]; then
             echo "Generating new release keystore..."
             keytool -genkey -v \
@@ -37,15 +49,15 @@ workflows:
               -keyalg RSA \
               -keysize 2048 \
               -validity 10000 \
-              -storepass $CM_KEYSTORE_PASSWORD \
-              -keypass $CM_KEY_PASSWORD \
+              -storepass "$CM_KEYSTORE_PASSWORD" \
+              -keypass "$CM_KEY_PASSWORD" \
               -dname "CN=Trimio, OU=Mobile, O=Trimio, L=Unknown, ST=Unknown, C=US" \
               -noprompt
             echo "=== COPY THIS AND SAVE AS CM_KEYSTORE ENV VAR FOR FUTURE BUILDS ==="
             base64 $KEYSTORE_PATH
             echo "==================================================================="
           else
-            echo "ERROR: CM_KEYSTORE_PASSWORD is not set. Cannot sign release build."
+            echo "ERROR: CM_KEYSTORE_PASSWORD is not set."
             exit 1
           fi
       - name: Build Android AAB with Gradle
@@ -55,7 +67,7 @@ workflows:
           ./gradlew bundleRelease --no-daemon --build-cache \
             -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
-            -Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio} \
+            "-Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio}" \
             -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
           cd ..
     artifacts:
