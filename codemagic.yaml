@@ -11,6 +11,8 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
+          corepack disable || true
+          npm install -g pnpm@9
           pnpm install
       - name: Prebuild native Android
         script: |
