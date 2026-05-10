@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -59,11 +59,24 @@ export default function ProfileScreen() {
 
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
   const handleRateApp = () => {
-    Linking.openURL("market://details?id=com.trimio.app");
+    const playStoreUrl = "market://details?id=com.trimio.app";
+    const webFallback = "https://play.google.com/store/apps/details?id=com.trimio.app";
+    Linking.canOpenURL(playStoreUrl)
+      .then((supported) => Linking.openURL(supported ? playStoreUrl : webFallback))
+      .catch(() => Linking.openURL(webFallback));
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Sign out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Sign out", style: "destructive", onPress: logout },
+    ]);
   };
 
   return (
@@ -151,7 +164,7 @@ export default function ProfileScreen() {
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.dangerButton} onPress={logout}>
+        <TouchableOpacity style={styles.dangerButton} onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={18} color="#DC2626" />
           <Text style={styles.dangerButtonText}>Sign Out</Text>
         </TouchableOpacity>

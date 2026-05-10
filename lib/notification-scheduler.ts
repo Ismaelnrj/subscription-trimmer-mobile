@@ -5,6 +5,12 @@ export async function requestNotificationPermission() {
   await registerForPushNotificationsAsync();
 }
 
+// Parse a YYYY-MM-DD string as a local date (not UTC) to avoid off-by-one across timezones
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 export async function scheduleRenewalReminders(subscriptions: any[], currencySymbol: string) {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
@@ -14,7 +20,8 @@ export async function scheduleRenewalReminders(subscriptions: any[], currencySym
 
     for (const sub of subscriptions) {
       if (!sub.nextBillingDate) continue;
-      const billing = new Date(sub.nextBillingDate);
+      const rawBilling = String(sub.nextBillingDate).slice(0, 10);
+      const billing = parseLocalDate(rawBilling);
 
       const reminders = [
         { daysBefore: 7, label: "in 7 days" },
@@ -42,7 +49,7 @@ export async function scheduleRenewalReminders(subscriptions: any[], currencySym
 
       // Trial end reminder
       if (sub.trialEndDate) {
-        const trialEnd = new Date(sub.trialEndDate);
+        const trialEnd = parseLocalDate(String(sub.trialEndDate).slice(0, 10));
         const trialReminder = new Date(trialEnd);
         trialReminder.setDate(trialReminder.getDate() - 1);
         trialReminder.setHours(9, 0, 0, 0);

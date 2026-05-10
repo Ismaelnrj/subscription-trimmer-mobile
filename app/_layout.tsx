@@ -1,12 +1,44 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SecureStore from "expo-secure-store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Component, ReactNode } from "react";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
+  state = { hasError: false, error: "" };
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={errStyles.container}>
+          <Text style={errStyles.title}>Something went wrong</Text>
+          <Text style={errStyles.message}>{this.state.error}</Text>
+          <TouchableOpacity style={errStyles.button} onPress={() => this.setState({ hasError: false, error: "" })}>
+            <Text style={errStyles.buttonText}>Try again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const errStyles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24, backgroundColor: "#F9FAFB" },
+  title: { fontSize: 20, fontWeight: "700", color: "#1F2937", marginBottom: 12 },
+  message: { fontSize: 13, color: "#6B7280", textAlign: "center", marginBottom: 24 },
+  button: { backgroundColor: "#4F46E5", paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },
+  buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+});
 
 const queryClient = new QueryClient();
 
@@ -53,6 +85,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="onboarding" />
@@ -72,6 +105,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

@@ -6,9 +6,36 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import apiClient from "../../lib/api";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
+
+// Accepts YYYY-MM-DD, DD/MM/YYYY or MM/DD/YYYY and normalises to YYYY-MM-DD.
+// Returns null if the string cannot be understood as a valid date.
+function normaliseDateInput(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // Already YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const d = new Date(trimmed + "T00:00:00");
+    return isNaN(d.getTime()) ? null : trimmed;
+  }
+
+  // DD/MM/YYYY or MM/DD/YYYY  (we try both and accept whichever is a valid date)
+  const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, a, b, y] = slashMatch;
+    // Prefer DD/MM/YYYY; fall back to MM/DD/YYYY
+    for (const [month, day] of [[b, a], [a, b]]) {
+      const iso = `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      const d = new Date(iso + "T00:00:00");
+      if (!isNaN(d.getTime()) && d.getMonth() + 1 === Number(month)) return iso;
+    }
+  }
+
+  return null;
+}
 
 const FREE_LIMIT = 5;
 const BILLING_CYCLES = ["monthly", "yearly", "weekly"];
@@ -136,9 +163,18 @@ export default function SubscriptionsScreen() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCatDraft, setCustomCatDraft] = useState("");
+
+  // Debounce search input by 250 ms to avoid filtering on every keystroke
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+  }, [search]);
 
   const { data: subscriptions = [], refetch } = useQuery({
     queryKey: ["subscriptions", "list"],
@@ -159,11 +195,11 @@ export default function SubscriptionsScreen() {
   const limitColor = limitPct >= 100 ? "#EF4444" : limitPct >= 60 ? "#F59E0B" : "#4F46E5";
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
     return q ? subscriptions.filter((s: any) =>
       s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q)
     ) : subscriptions;
-  }, [subscriptions, search]);
+  }, [subscriptions, debouncedSearch]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
@@ -265,6 +301,16 @@ export default function SubscriptionsScreen() {
       Alert.alert("Error", "Price seems too high. Please check and try again.");
       return;
     }
+
+    let trialEndDate: string | null = null;
+    if (formData.trialEndDate.trim()) {
+      trialEndDate = normaliseDateInput(formData.trialEndDate);
+      if (!trialEndDate) {
+        Alert.alert("Invalid date", "Please enter the trial end date as DD/MM/YYYY or YYYY-MM-DD.");
+        return;
+      }
+    }
+
     const duplicate = subscriptions?.find(
       (s: any) => s.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && s.id !== editingId
     );
@@ -274,19 +320,19 @@ export default function SubscriptionsScreen() {
         `You already have "${duplicate.name}" in your list. Add it anyway?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Add anyway", onPress: () => submitData(price) },
+          { text: "Add anyway", onPress: () => submitData(price, trialEndDate) },
         ]
       );
       return;
     }
-    submitData(price);
+    submitData(price, trialEndDate);
   };
 
-  const submitData = (price: number) => {
+  const submitData = (price: number, trialEndDate: string | null) => {
     const data = {
       name: formData.name.trim(), price,
       billingCycle: formData.billingCycle, category: formData.category,
-      trialEndDate: formData.trialEndDate || null,
+      trialEndDate,
     };
     if (editingId !== null) { updateMutation.mutate({ id: editingId, ...data }); }
     else { createMutation.mutate(data); }
@@ -568,7 +614,7 @@ export default function SubscriptionsScreen() {
               <Text style={styles.label}>Trial End Date (optional)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="YYYY-MM-DD  e.g. 2025-06-15"
+                placeholder="e.g. 15/06/2025 or 2025-06-15"
                 placeholderTextColor="#9CA3AF"
                 value={formData.trialEndDate}
                 onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}

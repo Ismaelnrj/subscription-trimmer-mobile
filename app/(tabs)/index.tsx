@@ -93,8 +93,9 @@ export default function DashboardScreen() {
   const recentSubs = subscriptions.slice(0, 3);
   const budgetGoal = settings?.budgetGoal;
   const monthlyTotal = summary?.monthlyTotal ?? 0;
-  const budgetPct = budgetGoal ? Math.min((monthlyTotal / budgetGoal) * 100, 100) : 0;
-  const budgetColor = budgetPct >= 90 ? "#EF4444" : budgetPct >= 70 ? "#F59E0B" : "#10B981";
+  const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
+  const budgetPct = Math.min(budgetRaw, 100); // capped for the progress bar width
+  const budgetColor = budgetRaw >= 90 ? "#EF4444" : budgetRaw >= 70 ? "#F59E0B" : "#10B981";
 
   if (isLoading) {
     return (
@@ -138,9 +139,11 @@ export default function DashboardScreen() {
             <View style={styles.progressTrack}>
               <View style={[styles.progressFill, { width: `${budgetPct}%`, backgroundColor: budgetColor }]} />
             </View>
-            {budgetPct >= 80 && (
+            {budgetRaw >= 80 && (
               <Text style={[styles.budgetNote, { color: budgetColor, fontWeight: "600" }]}>
-                {budgetPct >= 100 ? "⚠️ Budget exceeded!" : `⚠️ ${(100 - budgetPct).toFixed(0)}% of budget remaining`}
+                {budgetRaw >= 100
+                  ? `⚠️ Over budget by ${fmt(monthlyTotal - budgetGoal, currency.symbol)}`
+                  : `⚠️ ${fmt(budgetGoal - monthlyTotal, currency.symbol)} remaining`}
               </Text>
             )}
           </View>
