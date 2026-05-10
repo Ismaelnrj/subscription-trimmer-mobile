@@ -264,6 +264,46 @@ if [ "$PATCHED_KT" -eq 0 ]; then
 else
     echo "      OK   — $PATCHED_KT file(s) patched"
 fi
+# ── Fix 5: Patch PermissionsService.kt — nullable requestedPermissions ────────
+echo "[5/7] Patching PermissionsService.kt for nullable requestedPermissions ..."
+
+PATCHED_PS=0
+while IFS= read -r KT_FILE; do
+    RESULT=$(python3 - "$KT_FILE" << 'PYEOF'
+import sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        content = f.read()
+except Exception as e:
+    print("error:" + str(e))
+    sys.exit(0)
+
+TARGET = 'requestedPermissions.contains(permission)'
+REPLACEMENT = 'requestedPermissions?.contains(permission) ?: false'
+
+if TARGET not in content:
+    print("skip")
+    sys.exit(0)
+
+with open(path, 'w') as f:
+    f.write(content.replace(TARGET, REPLACEMENT))
+print("ok")
+PYEOF
+    )
+    case "$RESULT" in
+        ok)
+            echo "      OK   — $KT_FILE"
+            PATCHED_PS=$((PATCHED_PS + 1))
+            ;;
+        skip) ;;
+        error:*) echo "      WARN — ${RESULT#error:}" ;;
+    esac
+done < <(find "$NODE_MODULES" -name "PermissionsService.kt" 2>/dev/null || true)
+
+if [ "$PATCHED_PS" -eq 0 ]; then
+    echo "      SKIP — no PermissionsService.kt files needed patching"
+fi
 
 # ── Fix 5: Patch ALL .gradle files containing "from components.release" ───────
 # In Gradle 8, `components.release` (Groovy dynamic property) throws
