@@ -23,9 +23,7 @@ import Purchases, {
 } from "react-native-purchases";
 import apiClient from "./api";
 
-// ─── Replace with your real RevenueCat Google API key ────────────────────────
-const REVENUECAT_API_KEY = "YOUR_REVENUECAT_GOOGLE_API_KEY";
-// ─────────────────────────────────────────────────────────────────────────────
+const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 
 const ENTITLEMENT_ID = "premium";
 
