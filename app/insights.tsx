@@ -13,14 +13,23 @@ type Sub = {
   category: string; nextBillingDate: string; trialEndDate?: string | null;
 };
 type Tip = {
-  id: string; icon: string; color: string; bg: string;
+  id: string; icon: string; color: string;
   title: string; detail: string; priority: "high" | "medium" | "low";
+  savingsHint?: string;
 };
+
+const STREAMING_KEYWORDS = ["netflix", "disney", "hulu", "hbo", "max", "apple tv", "amazon prime", "prime video", "paramount", "peacock", "crunchyroll", "mubi", "discovery"];
+const FITNESS_KEYWORDS = ["gym", "peloton", "fitbit", "myfitnesspal", "strava", "nike", "headspace", "calm", "noom", "beachbody", "whoop", "planet fitness"];
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
   if (cycle === "yearly") return price / 12;
   return price;
+}
+
+function matchesKeywords(name: string, keywords: string[]): boolean {
+  const n = name.toLowerCase();
+  return keywords.some(k => n.includes(k));
 }
 
 function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
@@ -31,68 +40,124 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
   const byCategory: Record<string, Sub[]> = {};
   for (const s of subs) { byCategory[s.category] = byCategory[s.category] || []; byCategory[s.category].push(s); }
 
+  // Duplicate category detection
   for (const [cat, list] of Object.entries(byCategory)) {
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-      tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#DC2626", bg: "#FEF2F2",
+      tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#DC2626",
         title: `${list.length} "${cat}" subscriptions`,
         detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmt(catTotal, currencySymbol)}/mo. Could you cut one?`,
-        priority: "high" });
+        priority: "high", savingsHint: `Could save up to ${fmt(catTotal * 0.5, currencySymbol)}/mo` });
     } else if (list.length === 2) {
-      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#D97706", bg: "#FEF3C7",
+      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#D97706",
         title: `2 "${cat}" subscriptions`,
         detail: `${list[0].name} and ${list[1].name} are both in the same category. Do you actively use both?`,
         priority: "medium" });
     }
   }
+
+  // Streaming overlap (3+ streaming services)
+  const streamingSubs = subs.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
+  if (streamingSubs.length >= 3) {
+    const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price, a.billingCycle) - toMonthly(b.price, b.billingCycle))[0];
+    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#DC2626",
+      title: `${streamingSubs.length} streaming services — that's a lot`,
+      detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmt(streamTotal, currencySymbol)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
+      priority: "high", savingsHint: `Save ~${fmt(toMonthly(cheapest.price, cheapest.billingCycle), currencySymbol)}/mo by pausing one` });
+  }
+
+  // Fitness overlap (2+ fitness services)
+  const fitnessSubs = subs.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
+  if (fitnessSubs.length >= 2) {
+    const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#7C3AED",
+      title: `${fitnessSubs.length} health & fitness subscriptions`,
+      detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmt(fitTotal, currencySymbol)}/mo in this category.`,
+      priority: "medium", savingsHint: `Could trim ${fmt(fitTotal * 0.5, currencySymbol)}/mo` });
+  }
+
+  // Trial alerts
   for (const s of subs) {
     if (!s.trialEndDate) continue;
     const days = Math.ceil((new Date(s.trialEndDate).getTime() - now.getTime()) / 86400000);
     if (days >= 0 && days <= 7) {
-      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#DC2626", bg: "#FEF2F2",
+      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#DC2626",
         title: `${s.name} trial ends ${days === 0 ? "today" : `in ${days} day${days !== 1 ? "s" : ""}`}`,
         detail: `You'll be charged ${fmt(s.price, currencySymbol)} automatically. If you don't want to continue, cancel before the trial ends.`,
         priority: "high" });
     }
   }
+
+  // High total spend
   if (totalMonthly >= 100) {
-    tips.push({ id: "high-spend", icon: "trending-up", color: "#DC2626", bg: "#FEF2F2",
+    tips.push({ id: "high-spend", icon: "trending-up", color: "#DC2626",
       title: `${fmt(totalMonthly, currencySymbol)}/mo is above average`,
       detail: `The average person spends $50–80/month on subscriptions. You're at ${fmt(totalMonthly, currencySymbol)} (${fmt(totalMonthly * 12, currencySymbol)}/yr). A quick audit could free up cash.`,
       priority: "high" });
   }
+
+  // Individual expensive subs
   for (const s of subs) {
     if (toMonthly(s.price, s.billingCycle) >= 25) {
-      tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#7C3AED", bg: "#F5F3FF",
+      tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#7C3AED",
         title: `${s.name} costs ${fmt(toMonthly(s.price, s.billingCycle), currencySymbol)}/mo`,
         detail: `That's ${fmt(toMonthly(s.price, s.billingCycle) * 12, currencySymbol)}/year. Check if a lower tier or family-sharing plan is available.`,
         priority: "medium" });
     }
   }
+
+  // Switch monthly → yearly
   const monthlySubs = subs.filter(s => s.billingCycle === "monthly" && s.price >= 5);
   if (monthlySubs.length > 0) {
-    const saving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
-    tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#059669", bg: "#ECFDF5",
+    const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
+    tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#059669",
       title: "Switch to yearly and save",
-      detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} could save roughly ${fmt(saving, currencySymbol)}/year.`,
+      detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmt(annualSaving, currencySymbol)}/year.`,
+      priority: "medium", savingsHint: `~${fmt(annualSaving, currencySymbol)}/yr` });
+  }
+
+  // No yearly plans at all — nudge harder
+  const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
+  if (yearlyCount === 0 && subs.length >= 4) {
+    tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#2563EB",
+      title: "None of your subscriptions are on annual plans",
+      detail: `You have ${subs.length} monthly subscriptions. Switching even half of them to yearly billing typically saves 15–20%. Check each service's pricing page for annual options.`,
       priority: "medium" });
   }
-  const thisWeek = subs.filter(s => { const days = Math.ceil((new Date(s.nextBillingDate).getTime() - now.getTime()) / 86400000); return days >= 0 && days <= 7; });
+
+  // Renewals this week
+  const thisWeek = subs.filter(s => {
+    const days = Math.ceil((new Date(s.nextBillingDate).getTime() - now.getTime()) / 86400000);
+    return days >= 0 && days <= 7;
+  });
   if (thisWeek.length >= 2) {
     const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);
-    tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#2563EB", bg: "#EFF6FF",
+    tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#2563EB",
       title: `${thisWeek.length} renewals this week`,
       detail: `${thisWeek.map(s => s.name).join(", ")} — totalling ${fmt(weekTotal, currencySymbol)} — renew in the next 7 days.`,
       priority: "low" });
   }
+
   if (tips.length === 0) {
-    tips.push({ id: "all-good", icon: "check-decagram", color: "#059669", bg: "#ECFDF5",
+    tips.push({ id: "all-good", icon: "check-decagram", color: "#059669",
       title: "Everything looks good!",
       detail: `You have ${subs.length} subscription${subs.length !== 1 ? "s" : ""} totalling ${fmt(totalMonthly, currencySymbol)}/mo. No issues detected right now.`,
       priority: "low" });
   }
+
   const order = { high: 0, medium: 1, low: 2 };
   return tips.sort((a, b) => order[a.priority] - order[b.priority]);
+}
+
+function calcSavingsPotential(tips: Tip[]): number {
+  let total = 0;
+  for (const t of tips) {
+    if (!t.savingsHint) continue;
+    const match = t.savingsHint.match(/[\d.]+/);
+    if (match) total += parseFloat(match[0]);
+  }
+  return total;
 }
 
 const PRIORITY_LABEL: Record<string, string> = { high: "Action needed", medium: "Worth reviewing", low: "FYI" };
@@ -121,6 +186,7 @@ export default function InsightsScreen() {
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
   const highCount = tips.filter(t => t.priority === "high").length;
+  const savingsPotential = isPremium ? calcSavingsPotential(allTips) : 0;
 
   return (
     <>
@@ -128,18 +194,28 @@ export default function InsightsScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <View style={styles.banner}>
-            <MaterialCommunityIcons name="lightbulb-on-outline" size={26} color={c.primary} />
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={styles.bannerTitle}>Spending snapshot</Text>
-              <Text style={styles.bannerSub}>
-                {subscriptions.length} subscription{subscriptions.length !== 1 ? "s" : ""}
-                {"  ·  "}{fmt(monthlyTotal, currency.symbol)}/mo
-                {"  ·  "}{fmt(monthlyTotal * 12, currency.symbol)}/yr
-              </Text>
+            <View style={styles.bannerLeft}>
+              <MaterialCommunityIcons name="lightbulb-on-outline" size={26} color={c.primary} />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={styles.bannerTitle}>Spending snapshot</Text>
+                <Text style={styles.bannerSub}>
+                  {subscriptions.length} subscription{subscriptions.length !== 1 ? "s" : ""}
+                  {"  ·  "}{fmt(monthlyTotal, currency.symbol)}/mo
+                  {"  ·  "}{fmt(monthlyTotal * 12, currency.symbol)}/yr
+                </Text>
+              </View>
+              {highCount > 0 && (
+                <View style={styles.alertBadge}>
+                  <Text style={styles.alertBadgeText}>{highCount}</Text>
+                </View>
+              )}
             </View>
-            {highCount > 0 && (
-              <View style={styles.alertBadge}>
-                <Text style={styles.alertBadgeText}>{highCount}</Text>
+            {isPremium && savingsPotential > 0 && (
+              <View style={styles.savingsRow}>
+                <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
+                <Text style={styles.savingsText}>
+                  Potential savings: up to {fmt(savingsPotential, currency.symbol)}/mo
+                </Text>
               </View>
             )}
           </View>
@@ -172,22 +248,29 @@ export default function InsightsScreen() {
                   description="Upgrade to see your full personalised analysis and every money-saving opportunity."
                 />
               )}
+
               {tips.map(tip => (
                 <View key={tip.id} style={[styles.card, { borderLeftColor: tip.color }]}>
                   <View style={styles.cardRow}>
-                    <View style={[styles.iconBox, { backgroundColor: tip.bg }]}>
+                    <View style={[styles.iconBox, { backgroundColor: tip.color + "18" }]}>
                       <MaterialCommunityIcons name={tip.icon as any} size={22} color={tip.color} />
                     </View>
                     <View style={styles.cardBody}>
                       <View style={styles.cardTitleRow}>
                         <Text style={styles.cardTitle} numberOfLines={2}>{tip.title}</Text>
-                        <View style={[styles.badge, { backgroundColor: tip.bg }]}>
+                        <View style={[styles.badge, { backgroundColor: tip.color + "18" }]}>
                           <Text style={[styles.badgeText, { color: tip.color }]}>
                             {PRIORITY_LABEL[tip.priority]}
                           </Text>
                         </View>
                       </View>
                       <Text style={styles.cardDetail}>{tip.detail}</Text>
+                      {tip.savingsHint && (
+                        <View style={styles.savingsHintRow}>
+                          <MaterialCommunityIcons name="piggy-bank-outline" size={12} color={c.success} />
+                          <Text style={styles.savingsHintText}>{tip.savingsHint}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -206,8 +289,8 @@ function makeStyles(c: AppColors) {
     content: { padding: 16, paddingBottom: 40 },
     banner: {
       backgroundColor: c.primaryLight, borderRadius: 12, padding: 16, marginBottom: 20,
-      flexDirection: "row", alignItems: "center",
     },
+    bannerLeft: { flexDirection: "row", alignItems: "center" },
     bannerTitle: { fontSize: 15, fontWeight: "700", color: c.text },
     bannerSub: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
     alertBadge: {
@@ -215,6 +298,11 @@ function makeStyles(c: AppColors) {
       justifyContent: "center", alignItems: "center", paddingHorizontal: 6,
     },
     alertBadgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+    savingsRow: {
+      flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10,
+      paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border,
+    },
+    savingsText: { fontSize: 13, fontWeight: "600", color: c.success },
     loading: { paddingTop: 60, alignItems: "center" },
     empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: 24 },
     emptyTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginTop: 16, marginBottom: 8 },
@@ -237,5 +325,7 @@ function makeStyles(c: AppColors) {
     badge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, flexShrink: 0 },
     badgeText: { fontSize: 11, fontWeight: "600" },
     cardDetail: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
+    savingsHintRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
+    savingsHintText: { fontSize: 12, fontWeight: "600", color: c.success },
   });
 }

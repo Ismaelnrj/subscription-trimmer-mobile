@@ -28,9 +28,9 @@ const FEATURES = [
 type PlanKey = "monthly" | "yearly" | "lifetime";
 
 const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
-  { key: "monthly",  label: "Monthly",  price: "$1.99", sub: "per month" },
-  { key: "yearly",   label: "Yearly",   price: "$14.99", sub: "per year", badge: "Save 37%" },
-  { key: "lifetime", label: "Lifetime", price: "$4.99",  sub: "one-time · forever", badge: "Best Value" },
+  { key: "monthly",  label: "Monthly",  price: "$2.99", sub: "per month" },
+  { key: "yearly",   label: "Yearly",   price: "$19.99", sub: "per year", badge: "Save 44%" },
+  { key: "lifetime", label: "Lifetime", price: "$29.99", sub: "one-time · forever", badge: "Best Value" },
 ];
 
 export default function UpgradeScreen() {

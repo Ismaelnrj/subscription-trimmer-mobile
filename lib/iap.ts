@@ -5,9 +5,9 @@
  * 1. Create a free RevenueCat account at https://app.revenuecat.com
  * 2. Add your app and get the Google API key — paste it into REVENUECAT_API_KEY below
  * 3. In Google Play Console create these in-app products:
- *      Subscriptions : trimio_premium_monthly  ($1.99/mo)
- *                      trimio_premium_yearly   ($14.99/yr)
- *      One-time      : trimio_premium_lifetime ($4.99)
+ *      Subscriptions : trimio_premium_monthly  ($2.99/mo)
+ *                      trimio_premium_yearly   ($19.99/yr)
+ *      One-time      : trimio_premium_lifetime ($29.99)
  *      Consumables   : trimio_tip_coffee ($0.99)
  *                      trimio_tip_lunch  ($2.99)
  *                      trimio_tip_dinner ($4.99)

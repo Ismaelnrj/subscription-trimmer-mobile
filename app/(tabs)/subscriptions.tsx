@@ -1,10 +1,11 @@
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
-  TextInput, Alert, RefreshControl, Share, ActivityIndicator,
+  TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import * as FileSystem from "expo-file-system";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
@@ -222,39 +223,38 @@ export default function SubscriptionsScreen() {
     if (!isPremium) { router.push("/upgrade"); return; }
     if (subscriptions.length === 0) { Alert.alert("No data", "Add some subscriptions first."); return; }
 
-    const now = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
     const monthlyTotal = subscriptions.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
+    const csvEscape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
 
-    const byCategory: Record<string, number> = {};
-    for (const s of subscriptions) {
-      byCategory[s.category] = (byCategory[s.category] || 0) + toMonthly(s.price, s.billingCycle);
+    const rows = [
+      ["Name", "Price", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost"].join(","),
+      ...subscriptions.map((s: any) => [
+        csvEscape(s.name),
+        s.price.toFixed(2),
+        csvEscape(s.billingCycle),
+        toMonthly(s.price, s.billingCycle).toFixed(2),
+        csvEscape(s.category),
+        s.nextBillingDate ? new Date(s.nextBillingDate).toISOString().split("T")[0] : "",
+        s.trialEndDate ? new Date(s.trialEndDate).toISOString().split("T")[0] : "",
+        (toMonthly(s.price, s.billingCycle) * 12).toFixed(2),
+      ].join(",")),
+      "",
+      `# Summary`,
+      `# Monthly Total,${monthlyTotal.toFixed(2)}`,
+      `# Yearly Total,${(monthlyTotal * 12).toFixed(2)}`,
+      `# Subscriptions,${subscriptions.length}`,
+      `# Generated,${new Date().toISOString().split("T")[0]}`,
+    ].join("\n");
+
+    try {
+      const path = `${FileSystem.cacheDirectory}trimio-export.csv`;
+      await FileSystem.writeAsStringAsync(path, rows, { encoding: FileSystem.EncodingType.UTF8 });
+      const shareUri = Platform.OS === "android" ? await FileSystem.getContentUriAsync(path) : path;
+      await Share.share({ url: shareUri, title: "Trimio Export" });
+    } catch {
+      // Fallback: share as plain text if file sharing fails
+      await Share.share({ message: rows, title: "Trimio Export" });
     }
-
-    const header = `===========================\n   TRIMIO SUBSCRIPTION REPORT\n===========================\nGenerated: ${now}\n\n`;
-    const summary = `SUMMARY\n-------\nMonthly spend : ${fmt(monthlyTotal, currency.symbol)}\nYearly spend  : ${fmt(monthlyTotal * 12, currency.symbol)}\nSubscriptions : ${subscriptions.length}\n\n`;
-    const subList = `SUBSCRIPTIONS\n-------------\n` +
-      subscriptions.map((s: any, i: number) => {
-        const monthly = toMonthly(s.price, s.billingCycle);
-        const next = new Date(s.nextBillingDate).toLocaleDateString();
-        return `${i + 1}. ${s.name}\n   ${fmt(s.price, currency.symbol)}/${s.billingCycle}  (${fmt(monthly, currency.symbol)}/mo)\n   Category: ${s.category}\n   Next billing: ${next}${s.trialEndDate ? `\n   Trial ends: ${new Date(s.trialEndDate).toLocaleDateString()}` : ""}`;
-      }).join("\n\n") + "\n\n";
-    const catSection = `CATEGORY BREAKDOWN\n------------------\n` +
-      Object.entries(byCategory)
-        .sort(([, a], [, b]) => b - a)
-        .map(([cat, amt]) => `${cat.padEnd(16)} ${fmt(amt, currency.symbol)}/mo`)
-        .join("\n") + "\n\n";
-    const csvHeader = `CSV DATA\n--------\nName,Price,Cycle,Category,Next Billing,Trial End\n`;
-    const csvRows = subscriptions.map((s: any) =>
-      [`"${s.name}"`, s.price, s.billingCycle, s.category,
-        s.nextBillingDate ? new Date(s.nextBillingDate).toLocaleDateString() : "",
-        s.trialEndDate ? new Date(s.trialEndDate).toLocaleDateString() : "",
-      ].join(",")
-    ).join("\n");
-
-    await Share.share({
-      message: header + summary + subList + catSection + csvHeader + csvRows,
-      title: "Trimio Subscription Report",
-    });
   };
 
   const isPending = createMutation.isLoading || updateMutation.isLoading;

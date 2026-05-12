@@ -3,16 +3,25 @@ import { useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
 import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../lib/api";
+import { useCurrencyStore, fmt } from "../lib/currency-store";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
+  const { currency } = useCurrencyStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
   const styles = makeStyles(c);
+
+  const { data: subscriptions = [] } = useQuery<any[]>({
+    queryKey: ["subscriptions", "list"],
+    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    enabled: isPremium,
+  });
 
   const { data: prefs, isLoading } = useQuery({
     queryKey: ["notifications", "preferences"],
@@ -105,32 +114,61 @@ export default function NotificationPreferencesScreen() {
                 thumbColor="#FFFFFF"
               />
             </View>
-            <View style={[styles.row, styles.rowLast]}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>
-                  Email Reminders{!isPremium ? "  🔒" : ""}
-                </Text>
-                <Text style={styles.rowDesc}>
-                  {isPremium
-                    ? "Get an email 7 days before any subscription renews"
-                    : "Premium feature — upgrade to enable email reminders"}
-                </Text>
+            <View style={[styles.row, styles.rowLast, { flexDirection: "column", alignItems: "flex-start" }]}>
+              <View style={styles.emailRowTop}>
+                <View style={{ flex: 1, marginRight: 16 }}>
+                  <Text style={styles.rowLabel}>
+                    Email Reminders{!isPremium ? "  🔒" : ""}
+                  </Text>
+                  <Text style={styles.rowDesc}>
+                    {isPremium
+                      ? "Get an email 7 days before any subscription renews"
+                      : "Premium feature — upgrade to enable email reminders"}
+                  </Text>
+                </View>
+                {isPremium ? (
+                  <Switch
+                    value={prefs.emailReminders ?? false}
+                    onValueChange={(v) => toggle("emailReminders", v)}
+                    trackColor={{ false: c.border, true: c.primary }}
+                    thumbColor="#FFFFFF"
+                  />
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => router.push("/upgrade")}
+                    style={{ backgroundColor: c.primary, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
+                  >
+                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Upgrade</Text>
+                  </TouchableOpacity>
+                )}
               </View>
-              {isPremium ? (
-                <Switch
-                  value={prefs.emailReminders ?? false}
-                  onValueChange={(v) => toggle("emailReminders", v)}
-                  trackColor={{ false: c.border, true: c.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              ) : (
-                <TouchableOpacity
-                  onPress={() => router.push("/upgrade")}
-                  style={{ backgroundColor: c.primary, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
-                >
-                  <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Upgrade</Text>
-                </TouchableOpacity>
-              )}
+              {isPremium && (prefs.emailReminders ?? false) && subscriptions.length > 0 && (() => {
+                const now = Date.now();
+                const upcoming = subscriptions
+                  .map((s: any) => {
+                    const renewMs = new Date(s.nextBillingDate).getTime();
+                    const emailMs = renewMs - 7 * 86400000;
+                    return { name: s.name, price: s.price, emailMs };
+                  })
+                  .filter((s) => s.emailMs > now)
+                  .sort((a, b) => a.emailMs - b.emailMs)
+                  .slice(0, 3);
+
+                if (upcoming.length === 0) return null;
+                return (
+                  <View style={styles.upcomingEmails}>
+                    <Text style={styles.upcomingLabel}>Next scheduled emails:</Text>
+                    {upcoming.map((s, i) => (
+                      <View key={i} style={styles.upcomingRow}>
+                        <MaterialCommunityIcons name="email-outline" size={13} color={c.primary} />
+                        <Text style={styles.upcomingText}>
+                          {s.name} — {new Date(s.emailMs).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
             </View>
           </View>
         </View>
@@ -152,5 +190,12 @@ function makeStyles(c: AppColors) {
     rowLabel: { fontSize: 14, fontWeight: "500", color: c.text },
     rowDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     sectionTitle: { fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 8 },
+    emailRowTop: { flexDirection: "row", alignItems: "center", width: "100%" },
+    upcomingEmails: {
+      marginTop: 12, backgroundColor: c.primaryLight, borderRadius: 8, padding: 10, width: "100%",
+    },
+    upcomingLabel: { fontSize: 11, fontWeight: "700", color: c.primary, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
+    upcomingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+    upcomingText: { fontSize: 13, color: c.text },
   });
 }

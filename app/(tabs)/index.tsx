@@ -43,11 +43,22 @@ export default function DashboardScreen() {
   const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading && subsLoading;
   const recentSubs = subscriptions.slice(0, 3);
+
   const budgetGoal = settings?.budgetGoal;
   const monthlyTotal = summary?.monthlyTotal ?? 0;
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
   const budgetPct = Math.min(budgetRaw, 100);
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
+  const budgetStatus = budgetRaw >= 100 ? "Over budget" : budgetRaw >= 80 ? "Getting close" : "On track";
+  const budgetStatusIcon = budgetRaw >= 80 ? "alert-circle-outline" : "check-circle-outline";
+
+  const trialsSoon = (subscriptions as any[]).filter((s) => {
+    if (!s.trialEndDate) return false;
+    const days = Math.ceil((new Date(s.trialEndDate).getTime() - Date.now()) / 86400000);
+    return days >= 0 && days <= 14;
+  }).sort((a, b) =>
+    new Date(a.trialEndDate).getTime() - new Date(b.trialEndDate).getTime()
+  );
 
   if (isLoading) {
     return (
@@ -78,24 +89,65 @@ export default function DashboardScreen() {
             description="Set a monthly spending limit and get a visual warning when you're getting close."
           />
         )}
+
         {isPremium && budgetGoal != null && (
-          <View style={styles.budgetCard}>
+          <View style={[styles.budgetCard, { borderLeftColor: budgetColor }]}>
             <View style={styles.budgetRow}>
-              <Text style={styles.budgetLabel}>Monthly Budget</Text>
-              <Text style={styles.budgetAmount}>
-                {fmt(monthlyTotal, currency.symbol)} / {fmt(budgetGoal, currency.symbol)}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.budgetLabel}>Monthly Budget</Text>
+                <Text style={styles.budgetAmount}>
+                  {fmt(monthlyTotal, currency.symbol)}{" "}
+                  <Text style={styles.budgetOf}>of {fmt(budgetGoal, currency.symbol)}</Text>
+                </Text>
+              </View>
+              <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
+                <Text style={[styles.budgetPctText, { color: budgetColor }]}>{Math.round(budgetPct)}%</Text>
+              </View>
             </View>
+
             <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${budgetPct}%`, backgroundColor: budgetColor }]} />
+              <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
             </View>
-            {budgetRaw >= 80 && (
-              <Text style={[styles.budgetNote, { color: budgetColor, fontWeight: "600" }]}>
+
+            <View style={styles.budgetFooter}>
+              <View style={styles.budgetStatusRow}>
+                <MaterialCommunityIcons name={budgetStatusIcon as any} size={13} color={budgetColor} />
+                <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
+              </View>
+              <Text style={styles.budgetRemaining}>
                 {budgetRaw >= 100
-                  ? `⚠️ Over budget by ${fmt(monthlyTotal - budgetGoal, currency.symbol)}`
-                  : `⚠️ ${fmt(budgetGoal - monthlyTotal, currency.symbol)} remaining`}
+                  ? `${fmt(monthlyTotal - budgetGoal, currency.symbol)} over limit`
+                  : `${fmt(budgetGoal - monthlyTotal, currency.symbol)} remaining`}
               </Text>
-            )}
+            </View>
+          </View>
+        )}
+
+        {isPremium && trialsSoon.length > 0 && (
+          <View style={styles.trialsSection}>
+            <View style={styles.trialsSectionHeader}>
+              <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />
+              <Text style={styles.trialsSectionTitle}>Trials Ending Soon</Text>
+            </View>
+            {trialsSoon.map((sub: any) => {
+              const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
+              const urgency = days <= 3 ? c.danger : days <= 7 ? c.warning : "#F59E0B";
+              return (
+                <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.trialName}>{sub.name}</Text>
+                    <Text style={styles.trialCharge}>
+                      {fmt(sub.price, currency.symbol)}/{sub.billingCycle} charged on expiry
+                    </Text>
+                  </View>
+                  <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
+                    <Text style={[styles.trialBadgeText, { color: urgency }]}>
+                      {days === 0 ? "Today!" : `${days}d left`}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -177,6 +229,46 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
+    verifyBanner: {
+      backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
+      flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,
+    },
+    verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
+    verifyBannerLink: { fontSize: 13, fontWeight: "700", color: c.warning },
+
+    budgetCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
+      borderWidth: 1, borderColor: c.border, borderLeftWidth: 4,
+    },
+    budgetRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+    budgetLabel: { fontSize: 11, fontWeight: "600", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
+    budgetAmount: { fontSize: 18, fontWeight: "800", color: c.text },
+    budgetOf: { fontSize: 14, fontWeight: "400", color: c.textSecondary },
+    budgetPctBadge: { borderRadius: 10, paddingVertical: 6, paddingHorizontal: 12, marginLeft: 12 },
+    budgetPctText: { fontSize: 20, fontWeight: "800" },
+    progressTrack: { height: 10, backgroundColor: c.border, borderRadius: 5, overflow: "hidden", marginBottom: 10 },
+    progressFill: { height: "100%", borderRadius: 5 },
+    budgetFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    budgetStatusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+    budgetStatus: { fontSize: 12, fontWeight: "700" },
+    budgetRemaining: { fontSize: 12, color: c.textSecondary },
+
+    trialsSection: {
+      backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 20,
+      borderWidth: 1, borderColor: c.border,
+    },
+    trialsSectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+    trialsSectionTitle: { fontSize: 13, fontWeight: "700", color: c.text },
+    trialCard: {
+      flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 12,
+      backgroundColor: c.bg, borderRadius: 8, marginBottom: 6, borderLeftWidth: 3,
+    },
+    trialName: { fontSize: 14, fontWeight: "600", color: c.text },
+    trialCharge: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    trialBadge: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 8 },
+    trialBadgeText: { fontSize: 12, fontWeight: "800" },
+
     statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
     statCard: {
       flex: 1, minWidth: "48%", backgroundColor: c.card, borderRadius: 12,
@@ -206,22 +298,5 @@ function makeStyles(c: AppColors) {
     subName: { fontSize: 14, fontWeight: "600", color: c.text },
     subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     subPrice: { fontSize: 14, fontWeight: "700", color: c.primary },
-    budgetCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
-      borderWidth: 1, borderColor: c.border,
-    },
-    budgetRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-    budgetLabel: { fontSize: 13, fontWeight: "600", color: c.text },
-    budgetAmount: { fontSize: 13, fontWeight: "700", color: c.text },
-    progressTrack: { height: 8, backgroundColor: c.border, borderRadius: 4, overflow: "hidden" },
-    progressFill: { height: "100%", borderRadius: 4 },
-    budgetNote: { fontSize: 11, color: c.textSecondary, marginTop: 6 },
-    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    verifyBanner: {
-      backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
-      flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,
-    },
-    verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
-    verifyBannerLink: { fontSize: 13, fontWeight: "700", color: c.warning },
   });
 }
