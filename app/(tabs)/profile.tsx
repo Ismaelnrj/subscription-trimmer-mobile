@@ -163,6 +163,18 @@ export default function ProfileScreen() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
         </TouchableOpacity>
+        <View style={[styles.menuItem, { opacity: 0.6 }]}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="apple" size={20} color="#1F2937" />
+            <View>
+              <Text style={styles.menuItemLabel}>Trimio for iOS</Text>
+              <Text style={{ fontSize: 11, color: "#6B7280", marginTop: 1 }}>Coming soon to the App Store</Text>
+            </View>
+          </View>
+          <View style={{ backgroundColor: "#FEF3C7", borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
+            <Text style={{ fontSize: 10, fontWeight: "700", color: "#D97706" }}>SOON</Text>
+          </View>
+        </View>
 
         <TouchableOpacity style={styles.dangerButton} onPress={handleLogout}>
           <MaterialCommunityIcons name="logout" size={18} color="#DC2626" />
