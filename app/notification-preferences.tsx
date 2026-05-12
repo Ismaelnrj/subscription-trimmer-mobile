@@ -4,43 +4,25 @@ import { useAuthStore } from "../lib/auth-store";
 import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../lib/api";
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB", overflow: "hidden", marginBottom: 16 },
-  row: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: "#F3F4F6",
-  },
-  rowLast: { borderBottomWidth: 0 },
-  rowLabel: { fontSize: 14, fontWeight: "500", color: "#1F2937" },
-  rowDesc: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  sectionTitle: { fontSize: 12, fontWeight: "600", color: "#6B7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 8 },
-});
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const { data: prefs, isLoading } = useQuery({
     queryKey: ["notifications", "preferences"],
-    queryFn: async () => {
-      const response = await apiClient.get("/trpc/notifications.getPreferences");
-      return response.data.result.data;
-    },
+    queryFn: async () => (await apiClient.get("/trpc/notifications.getPreferences")).data.result.data,
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiClient.post("/trpc/notifications.updatePreferences", data);
-      return response.data.result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
-    },
+    mutationFn: async (data: any) =>
+      (await apiClient.post("/trpc/notifications.updatePreferences", data)).data.result.data,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] }),
     onError: () => Alert.alert("Error", "Failed to save preferences. Please try again."),
   });
 
@@ -54,7 +36,7 @@ export default function NotificationPreferencesScreen() {
       <>
         <Stack.Screen options={{ title: "Notification Preferences" }} />
         <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-          <Text style={{ color: "#6B7280" }}>Loading...</Text>
+          <Text style={{ color: c.textSecondary }}>Loading...</Text>
         </View>
       </>
     );
@@ -75,7 +57,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.renewalAlerts}
                 onValueChange={(v) => toggle("renewalAlerts", v)}
-                trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -87,7 +69,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.spendingAlerts}
                 onValueChange={(v) => toggle("spendingAlerts", v)}
-                trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -103,7 +85,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.weeklySummary}
                 onValueChange={(v) => toggle("weeklySummary", v)}
-                trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -119,7 +101,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.pushEnabled}
                 onValueChange={(v) => toggle("pushEnabled", v)}
-                trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -138,13 +120,13 @@ export default function NotificationPreferencesScreen() {
                 <Switch
                   value={prefs.emailReminders ?? false}
                   onValueChange={(v) => toggle("emailReminders", v)}
-                  trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                  trackColor={{ false: c.border, true: c.primary }}
                   thumbColor="#FFFFFF"
                 />
               ) : (
                 <TouchableOpacity
                   onPress={() => router.push("/upgrade")}
-                  style={{ backgroundColor: "#4F46E5", borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
+                  style={{ backgroundColor: c.primary, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
                 >
                   <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Upgrade</Text>
                 </TouchableOpacity>
@@ -155,4 +137,20 @@ export default function NotificationPreferencesScreen() {
       </ScrollView>
     </>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginBottom: 16 },
+    row: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    rowLast: { borderBottomWidth: 0 },
+    rowLabel: { fontSize: 14, fontWeight: "500", color: c.text },
+    rowDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    sectionTitle: { fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 8 },
+  });
 }

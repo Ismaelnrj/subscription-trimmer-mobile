@@ -1,33 +1,32 @@
-import { BottomTabNavigationOptions, createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
-import { PixelRatio } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
-const Tab = createBottomTabNavigator();
+import { useTheme } from "../../lib/theme";
 
 export default function TabLayout() {
+  const c = useTheme();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4F46E5",
-        tabBarInactiveTintColor: "#9CA3AF",
+        tabBarActiveTintColor: c.tabBarActive,
+        tabBarInactiveTintColor: c.tabBarInactive,
         tabBarStyle: {
           paddingBottom: 8,
           paddingTop: 8,
           height: 60,
           borderTopWidth: 1,
-          borderTopColor: "#E5E7EB",
+          borderTopColor: c.tabBarBorder,
+          backgroundColor: c.tabBar,
         },
         headerShown: true,
         headerStyle: {
-          backgroundColor: "#FFFFFF",
-          borderBottomWidth: 1,
-          borderBottomColor: "#E5E7EB",
+          backgroundColor: c.card,
         },
         headerTitleStyle: {
           fontWeight: "600",
           fontSize: 18,
+          color: c.text,
         },
+        headerTintColor: c.text,
       }}
     >
       <Tabs.Screen

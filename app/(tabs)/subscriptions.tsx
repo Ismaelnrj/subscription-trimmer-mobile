@@ -9,33 +9,8 @@ import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
-
-// Accepts YYYY-MM-DD, DD/MM/YYYY or MM/DD/YYYY and normalises to YYYY-MM-DD.
-// Returns null if the string cannot be understood as a valid date.
-function normaliseDateInput(raw: string): string | null {
-  const trimmed = raw.trim();
-  if (!trimmed) return null;
-
-  // Already YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const d = new Date(trimmed + "T00:00:00");
-    return isNaN(d.getTime()) ? null : trimmed;
-  }
-
-  // DD/MM/YYYY or MM/DD/YYYY  (we try both and accept whichever is a valid date)
-  const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slashMatch) {
-    const [, a, b, y] = slashMatch;
-    // Prefer DD/MM/YYYY; fall back to MM/DD/YYYY
-    for (const [month, day] of [[b, a], [a, b]]) {
-      const iso = `${y}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-      const d = new Date(iso + "T00:00:00");
-      if (!isNaN(d.getTime()) && d.getMonth() + 1 === Number(month)) return iso;
-    }
-  }
-
-  return null;
-}
+import { normaliseDateInput } from "../../lib/utils";
+import { useTheme, AppColors } from "../../lib/theme";
 
 const FREE_LIMIT = 5;
 const BILLING_CYCLES = ["monthly", "yearly", "weekly"];
@@ -47,109 +22,6 @@ function toMonthly(price: number, cycle: string) {
   return price;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
-  addButton: {
-    flex: 1, backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 12,
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-  },
-  addButtonLocked: { backgroundColor: "#9CA3AF" },
-  addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  exportButton: {
-    backgroundColor: "#ECFDF5", borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
-    borderWidth: 1, borderColor: "#6EE7B7", justifyContent: "center", alignItems: "center",
-  },
-  exportButtonLocked: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-  limitBar: {
-    backgroundColor: "#FFFFFF", borderRadius: 10, padding: 12, marginBottom: 12,
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  limitRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  limitLabel: { fontSize: 12, color: "#6B7280", fontWeight: "500" },
-  limitCount: { fontSize: 12, fontWeight: "700" },
-  limitTrack: { height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden" },
-  limitFill: { height: "100%", borderRadius: 3 },
-  limitHint: { fontSize: 11, color: "#6B7280", marginTop: 5 },
-  searchBar: {
-    backgroundColor: "#FFFFFF", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14,
-    borderWidth: 1, borderColor: "#E5E7EB", fontSize: 14, color: "#1F2937", marginBottom: 14,
-  },
-  card: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: "#E5E7EB", flexDirection: "row",
-    justifyContent: "space-between", alignItems: "flex-start",
-  },
-  cardInfo: { flex: 1 },
-  cardName: { fontSize: 14, fontWeight: "600", color: "#1F2937", marginBottom: 3 },
-  cardPrice: { fontSize: 12, color: "#6B7280", marginBottom: 2 },
-  cardDate: { fontSize: 11, color: "#9CA3AF" },
-  cardMonthly: { fontSize: 11, color: "#4F46E5", marginTop: 1 },
-  categoryBadge: {
-    alignSelf: "flex-start", backgroundColor: "#EEF2FF", borderRadius: 4,
-    paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-  },
-  categoryBadgeText: { fontSize: 10, color: "#4F46E5", fontWeight: "600", textTransform: "capitalize" },
-  customCategoryBadge: { backgroundColor: "#F5F3FF" },
-  customCategoryBadgeText: { color: "#7C3AED" },
-  trialBadge: {
-    alignSelf: "flex-start", backgroundColor: "#FEF3C7", borderRadius: 4,
-    paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-  },
-  trialBadgeText: { fontSize: 10, color: "#D97706", fontWeight: "600" },
-  actionButtons: { flexDirection: "row", gap: 8 },
-  iconButton: {
-    width: 36, height: 36, borderRadius: 6, backgroundColor: "#F3F4F6",
-    justifyContent: "center", alignItems: "center",
-  },
-  emptyState: { alignItems: "center", paddingVertical: 48 },
-  emptyStateText: { fontSize: 14, color: "#6B7280", textAlign: "center" },
-  countText: { fontSize: 12, color: "#6B7280", marginBottom: 10 },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
-  modalContent: {
-    backgroundColor: "#FFFFFF", borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    padding: 20, paddingBottom: 32,
-  },
-  modalTitle: { fontSize: 18, fontWeight: "700", color: "#1F2937", marginBottom: 20 },
-  input: {
-    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, paddingVertical: 12,
-    paddingHorizontal: 12, marginBottom: 12, fontSize: 14, color: "#1F2937",
-  },
-  label: { fontSize: 12, fontWeight: "600", color: "#374151", marginBottom: 6 },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  chip: {
-    paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
-    backgroundColor: "#F3F4F6", borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  chipActive: { backgroundColor: "#4F46E5", borderColor: "#4F46E5" },
-  chipCustomActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
-  chipAdd: { backgroundColor: "#F5F3FF", borderColor: "#DDD6FE" },
-  chipText: { fontSize: 12, color: "#374151", fontWeight: "500", textTransform: "capitalize" },
-  chipTextActive: { color: "#FFFFFF" },
-  customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
-  customCatInput: {
-    flex: 1, borderWidth: 1, borderColor: "#DDD6FE", borderRadius: 8,
-    paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: "#1F2937",
-    backgroundColor: "#F5F3FF",
-  },
-  customCatConfirm: {
-    backgroundColor: "#7C3AED", borderRadius: 8, paddingVertical: 8,
-    paddingHorizontal: 14, justifyContent: "center",
-  },
-  customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  submitButton: {
-    backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 12,
-    alignItems: "center", marginTop: 8,
-  },
-  submitButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  cancelButton: {
-    backgroundColor: "#F3F4F6", borderRadius: 8, paddingVertical: 12,
-    alignItems: "center", marginTop: 8,
-  },
-  cancelButtonText: { color: "#6B7280", fontSize: 14, fontWeight: "600" },
-});
-
 const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "" };
 
 export default function SubscriptionsScreen() {
@@ -158,6 +30,8 @@ export default function SubscriptionsScreen() {
   const isPremium = user?.isPaid ?? false;
   const { currency } = useCurrencyStore();
   const queryClient = useQueryClient();
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -168,7 +42,6 @@ export default function SubscriptionsScreen() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCatDraft, setCustomCatDraft] = useState("");
 
-  // Debounce search input by 250 ms to avoid filtering on every keystroke
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -192,7 +65,7 @@ export default function SubscriptionsScreen() {
   const total = subscriptions.length;
   const atLimit = !isPremium && total >= FREE_LIMIT;
   const limitPct = isPremium ? 0 : Math.min((total / FREE_LIMIT) * 100, 100);
-  const limitColor = limitPct >= 100 ? "#EF4444" : limitPct >= 60 ? "#F59E0B" : "#4F46E5";
+  const limitColor = limitPct >= 100 ? c.danger : limitPct >= 60 ? c.warning : c.primary;
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
@@ -358,22 +231,18 @@ export default function SubscriptionsScreen() {
     }
 
     const header = `===========================\n   TRIMIO SUBSCRIPTION REPORT\n===========================\nGenerated: ${now}\n\n`;
-
     const summary = `SUMMARY\n-------\nMonthly spend : ${fmt(monthlyTotal, currency.symbol)}\nYearly spend  : ${fmt(monthlyTotal * 12, currency.symbol)}\nSubscriptions : ${subscriptions.length}\n\n`;
-
     const subList = `SUBSCRIPTIONS\n-------------\n` +
       subscriptions.map((s: any, i: number) => {
         const monthly = toMonthly(s.price, s.billingCycle);
         const next = new Date(s.nextBillingDate).toLocaleDateString();
         return `${i + 1}. ${s.name}\n   ${fmt(s.price, currency.symbol)}/${s.billingCycle}  (${fmt(monthly, currency.symbol)}/mo)\n   Category: ${s.category}\n   Next billing: ${next}${s.trialEndDate ? `\n   Trial ends: ${new Date(s.trialEndDate).toLocaleDateString()}` : ""}`;
       }).join("\n\n") + "\n\n";
-
     const catSection = `CATEGORY BREAKDOWN\n------------------\n` +
       Object.entries(byCategory)
         .sort(([, a], [, b]) => b - a)
         .map(([cat, amt]) => `${cat.padEnd(16)} ${fmt(amt, currency.symbol)}/mo`)
         .join("\n") + "\n\n";
-
     const csvHeader = `CSV DATA\n--------\nName,Price,Cycle,Category,Next Billing,Trial End\n`;
     const csvRows = subscriptions.map((s: any) =>
       [`"${s.name}"`, s.price, s.billingCycle, s.category,
@@ -400,10 +269,9 @@ export default function SubscriptionsScreen() {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
       >
         <View style={styles.scrollContent}>
-
           <View style={styles.topRow}>
             <TouchableOpacity
               style={[styles.addButton, atLimit && styles.addButtonLocked]}
@@ -419,12 +287,11 @@ export default function SubscriptionsScreen() {
               <MaterialCommunityIcons
                 name={isPremium ? "file-chart" : "lock"}
                 size={22}
-                color={isPremium ? "#059669" : "#9CA3AF"}
+                color={isPremium ? c.success : c.textMuted}
               />
             </TouchableOpacity>
           </View>
 
-          {/* Free tier usage bar */}
           {!isPremium && (
             <View style={styles.limitBar}>
               <View style={styles.limitRow}>
@@ -438,14 +305,14 @@ export default function SubscriptionsScreen() {
               </View>
               {atLimit ? (
                 <TouchableOpacity onPress={() => router.push("/upgrade")}>
-                  <Text style={[styles.limitHint, { color: "#4F46E5", fontWeight: "600" }]}>
+                  <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600" }]}>
                     Limit reached — Upgrade for unlimited →
                   </Text>
                 </TouchableOpacity>
               ) : (
                 <Text style={styles.limitHint}>
                   {FREE_LIMIT - total} slot{FREE_LIMIT - total !== 1 ? "s" : ""} remaining ·{" "}
-                  <Text style={{ color: "#4F46E5" }} onPress={() => router.push("/upgrade")}>
+                  <Text style={{ color: c.primary }} onPress={() => router.push("/upgrade")}>
                     Go unlimited
                   </Text>
                 </Text>
@@ -456,7 +323,7 @@ export default function SubscriptionsScreen() {
           <TextInput
             style={styles.searchBar}
             placeholder="Search subscriptions..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.placeholder}
             value={search}
             onChangeText={setSearch}
             clearButtonMode="while-editing"
@@ -470,7 +337,7 @@ export default function SubscriptionsScreen() {
 
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="inbox" size={48} color="#D1D5DB" style={{ marginBottom: 12 }} />
+              <MaterialCommunityIcons name="inbox" size={48} color={c.border} style={{ marginBottom: 12 }} />
               <Text style={styles.emptyStateText}>
                 {search ? "No results found" : "No subscriptions yet.\nTap Add to get started."}
               </Text>
@@ -509,10 +376,10 @@ export default function SubscriptionsScreen() {
                   </View>
                   <View style={styles.actionButtons}>
                     <TouchableOpacity style={styles.iconButton} onPress={() => openEdit(sub)}>
-                      <MaterialCommunityIcons name="pencil" size={18} color="#4F46E5" />
+                      <MaterialCommunityIcons name="pencil" size={18} color={c.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.iconButton} onPress={() => confirmDelete(sub.id, sub.name)}>
-                      <MaterialCommunityIcons name="trash-can" size={18} color="#EF4444" />
+                      <MaterialCommunityIcons name="trash-can" size={18} color={c.danger} />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -533,14 +400,14 @@ export default function SubscriptionsScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Subscription name (e.g. Netflix)"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
                 value={formData.name}
                 onChangeText={(t) => setFormData({ ...formData, name: t })}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Price (e.g. 9.99)"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
                 value={formData.price}
                 onChangeText={(t) => setFormData({ ...formData, price: t })}
@@ -548,14 +415,14 @@ export default function SubscriptionsScreen() {
 
               <Text style={styles.label}>Billing Cycle</Text>
               <View style={styles.chipRow}>
-                {BILLING_CYCLES.map((c) => (
+                {BILLING_CYCLES.map((cycle) => (
                   <TouchableOpacity
-                    key={c}
-                    style={[styles.chip, formData.billingCycle === c && styles.chipActive]}
-                    onPress={() => setFormData({ ...formData, billingCycle: c })}
+                    key={cycle}
+                    style={[styles.chip, formData.billingCycle === cycle && styles.chipActive]}
+                    onPress={() => setFormData({ ...formData, billingCycle: cycle })}
                   >
-                    <Text style={[styles.chipText, formData.billingCycle === c && styles.chipTextActive]}>
-                      {c}
+                    <Text style={[styles.chipText, formData.billingCycle === cycle && styles.chipTextActive]}>
+                      {cycle}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -565,20 +432,20 @@ export default function SubscriptionsScreen() {
                 Category{isPremium && customCategories.length > 0 ? "  ✦ custom" : ""}
               </Text>
               <View style={styles.chipRow}>
-                {allCategories.map((c) => {
-                  const isCustom = !DEFAULT_CATEGORIES.includes(c);
-                  const isActive = formData.category === c;
+                {allCategories.map((cat) => {
+                  const isCustom = !DEFAULT_CATEGORIES.includes(cat);
+                  const isActive = formData.category === cat;
                   return (
                     <TouchableOpacity
-                      key={c}
+                      key={cat}
                       style={[
                         styles.chip,
                         isActive && (isCustom ? styles.chipCustomActive : styles.chipActive),
                       ]}
-                      onPress={() => setFormData({ ...formData, category: c })}
+                      onPress={() => setFormData({ ...formData, category: cat })}
                     >
                       <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                        {c}
+                        {cat}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -615,7 +482,7 @@ export default function SubscriptionsScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 15/06/2025 or 2025-06-15"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={c.placeholder}
                 value={formData.trialEndDate}
                 onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
               />
@@ -637,4 +504,110 @@ export default function SubscriptionsScreen() {
       </Modal>
     </View>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+    addButton: {
+      flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    },
+    addButtonLocked: { backgroundColor: c.textMuted },
+    addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    exportButton: {
+      backgroundColor: c.card, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
+      borderWidth: 1, borderColor: c.border, justifyContent: "center", alignItems: "center",
+    },
+    exportButtonLocked: { backgroundColor: c.card, borderColor: c.border },
+    limitBar: {
+      backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    limitRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+    limitLabel: { fontSize: 12, color: c.textSecondary, fontWeight: "500" },
+    limitCount: { fontSize: 12, fontWeight: "700" },
+    limitTrack: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
+    limitFill: { height: "100%", borderRadius: 3 },
+    limitHint: { fontSize: 11, color: c.textSecondary, marginTop: 5 },
+    searchBar: {
+      backgroundColor: c.inputBg, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14,
+      borderWidth: 1, borderColor: c.border, fontSize: 14, color: c.text, marginBottom: 14,
+    },
+    card: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border, flexDirection: "row",
+      justifyContent: "space-between", alignItems: "flex-start",
+    },
+    cardInfo: { flex: 1 },
+    cardName: { fontSize: 14, fontWeight: "600", color: c.text, marginBottom: 3 },
+    cardPrice: { fontSize: 12, color: c.textSecondary, marginBottom: 2 },
+    cardDate: { fontSize: 11, color: c.textMuted },
+    cardMonthly: { fontSize: 11, color: c.primary, marginTop: 1 },
+    categoryBadge: {
+      alignSelf: "flex-start", backgroundColor: c.primaryLight, borderRadius: 4,
+      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
+    },
+    categoryBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600", textTransform: "capitalize" },
+    customCategoryBadge: { backgroundColor: "#2D1B69" },
+    customCategoryBadgeText: { color: "#A78BFA" },
+    trialBadge: {
+      alignSelf: "flex-start", backgroundColor: c.warningLight, borderRadius: 4,
+      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
+    },
+    trialBadgeText: { fontSize: 10, color: c.warning, fontWeight: "600" },
+    actionButtons: { flexDirection: "row", gap: 8 },
+    iconButton: {
+      width: 36, height: 36, borderRadius: 6, backgroundColor: c.border,
+      justifyContent: "center", alignItems: "center",
+    },
+    emptyState: { alignItems: "center", paddingVertical: 48 },
+    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
+    modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
+    modalContent: {
+      backgroundColor: c.card, borderTopLeftRadius: 16, borderTopRightRadius: 16,
+      padding: 20, paddingBottom: 32,
+    },
+    modalTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 20 },
+    input: {
+      borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,
+      paddingHorizontal: 12, marginBottom: 12, fontSize: 14, color: c.text,
+      backgroundColor: c.inputBg,
+    },
+    label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
+    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+    chip: {
+      paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
+      backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
+    },
+    chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    chipCustomActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
+    chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    chipText: { fontSize: 12, color: c.text, fontWeight: "500", textTransform: "capitalize" },
+    chipTextActive: { color: "#FFFFFF" },
+    customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
+    customCatInput: {
+      flex: 1, borderWidth: 1, borderColor: "#DDD6FE", borderRadius: 8,
+      paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: c.text,
+      backgroundColor: c.primaryLight,
+    },
+    customCatConfirm: {
+      backgroundColor: "#7C3AED", borderRadius: 8, paddingVertical: 8,
+      paddingHorizontal: 14, justifyContent: "center",
+    },
+    customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+    submitButton: {
+      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
+      alignItems: "center", marginTop: 8,
+    },
+    submitButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    cancelButton: {
+      backgroundColor: c.border, borderRadius: 8, paddingVertical: 12,
+      alignItems: "center", marginTop: 8,
+    },
+    cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
+  });
 }

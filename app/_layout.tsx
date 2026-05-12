@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
+import { useTheme } from "../lib/theme";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
   state = { hasError: false, error: "" };
@@ -49,6 +50,7 @@ export default function RootLayout() {
   const { loadCurrency } = useCurrencyStore();
   const router = useRouter();
   const segments = useSegments();
+  const c = useTheme();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -87,7 +89,13 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{
+          headerShown: false,
+          headerStyle: { backgroundColor: c.card },
+          headerTitleStyle: { color: c.text },
+          headerTintColor: c.primary,
+          contentStyle: { backgroundColor: c.bg },
+        }}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="login" />
           <Stack.Screen name="register" />

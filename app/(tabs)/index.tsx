@@ -8,62 +8,14 @@ import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
-  statCard: {
-    flex: 1, minWidth: "48%", backgroundColor: "#FFFFFF", borderRadius: 12,
-    padding: 16, borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  statIcon: {
-    width: 40, height: 40, borderRadius: 8, backgroundColor: "#EEF2FF",
-    justifyContent: "center", alignItems: "center", marginBottom: 8,
-  },
-  statValue: { fontSize: 24, fontWeight: "700", color: "#1F2937", marginBottom: 4 },
-  statLabel: { fontSize: 12, color: "#6B7280" },
-  sectionTitle: { fontSize: 16, fontWeight: "600", color: "#1F2937", marginBottom: 12 },
-  actionButton: {
-    backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 12,
-    paddingHorizontal: 16, marginBottom: 12,
-  },
-  actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", textAlign: "center" },
-  emptyState: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 24, alignItems: "center",
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  emptyStateText: { fontSize: 14, color: "#6B7280", textAlign: "center" },
-  subCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 10, padding: 14, marginBottom: 8,
-    borderWidth: 1, borderColor: "#E5E7EB", flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-  },
-  subName: { fontSize: 14, fontWeight: "600", color: "#1F2937" },
-  subMeta: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  subPrice: { fontSize: 14, fontWeight: "700", color: "#4F46E5" },
-  budgetCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16, marginBottom: 20,
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  budgetRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  budgetLabel: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  budgetAmount: { fontSize: 13, fontWeight: "700", color: "#1F2937" },
-  progressTrack: { height: 8, backgroundColor: "#E5E7EB", borderRadius: 4, overflow: "hidden" },
-  progressFill: { height: "100%", borderRadius: 4 },
-  budgetNote: { fontSize: 11, color: "#6B7280", marginTop: 6 },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-  verifyBanner: {
-    backgroundColor: "#FEF3C7", borderRadius: 10, padding: 14, marginBottom: 16,
-    flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: "#FCD34D",
-  },
-  verifyBannerText: { flex: 1, fontSize: 13, color: "#92400E" },
-  verifyBannerLink: { fontSize: 13, fontWeight: "700", color: "#D97706" },
-});
+import { useTheme, AppColors } from "../../lib/theme";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { currency } = useCurrencyStore();
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -94,13 +46,13 @@ export default function DashboardScreen() {
   const budgetGoal = settings?.budgetGoal;
   const monthlyTotal = summary?.monthlyTotal ?? 0;
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
-  const budgetPct = Math.min(budgetRaw, 100); // capped for the progress bar width
-  const budgetColor = budgetRaw >= 90 ? "#EF4444" : budgetRaw >= 70 ? "#F59E0B" : "#10B981";
+  const budgetPct = Math.min(budgetRaw, 100);
+  const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
@@ -109,19 +61,17 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
-        {/* Email verification banner */}
         {user && !user.isVerified && (
           <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
-            <MaterialCommunityIcons name="email-alert" size={20} color="#D97706" />
+            <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
             <Text style={styles.verifyBannerText}>Please verify your email address to secure your account.</Text>
             <Text style={styles.verifyBannerLink}>Verify →</Text>
           </TouchableOpacity>
         )}
 
-        {/* Budget goal bar — premium only */}
         {!isPremium && (
           <PremiumGate
             title="Budget Goal & Progress Bar"
@@ -149,58 +99,52 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Stats grid */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="credit-card" size={20} color="#4F46E5" />
+              <MaterialCommunityIcons name="credit-card" size={20} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{fmt(summary?.monthlyTotal ?? 0, currency.symbol)}</Text>
             <Text style={styles.statLabel}>Monthly Spend</Text>
           </View>
-
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="chart-line" size={20} color="#4F46E5" />
+              <MaterialCommunityIcons name="chart-line" size={20} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
             <Text style={styles.statLabel}>Yearly Spend</Text>
           </View>
-
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="check-circle" size={20} color="#4F46E5" />
+              <MaterialCommunityIcons name="check-circle" size={20} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
             <Text style={styles.statLabel}>Active Subs</Text>
           </View>
-
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="alert-circle" size={20} color="#4F46E5" />
+              <MaterialCommunityIcons name="alert-circle" size={20} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{summary?.alertCount ?? 0}</Text>
             <Text style={styles.statLabel}>Alerts</Text>
           </View>
         </View>
 
-        {/* Quick actions */}
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
           <Text style={styles.actionButtonText}>+ Add Subscription</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: "#6B7280" }]}
+          style={[styles.actionButton, { backgroundColor: c.textSecondary }]}
           onPress={() => router.push("/insights")}
         >
           <Text style={styles.actionButtonText}>View Recommendations</Text>
         </TouchableOpacity>
 
-        {/* Recent subscriptions */}
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Subscriptions</Text>
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="inbox" size={40} color="#D1D5DB" style={{ marginBottom: 8 }} />
+            <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
             <Text style={styles.emptyStateText}>No subscriptions yet. Add your first one!</Text>
           </View>
         ) : (
@@ -227,4 +171,57 @@ export default function DashboardScreen() {
       </View>
     </ScrollView>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
+    statCard: {
+      flex: 1, minWidth: "48%", backgroundColor: c.card, borderRadius: 12,
+      padding: 16, borderWidth: 1, borderColor: c.border,
+    },
+    statIcon: {
+      width: 40, height: 40, borderRadius: 8, backgroundColor: c.primaryLight,
+      justifyContent: "center", alignItems: "center", marginBottom: 8,
+    },
+    statValue: { fontSize: 24, fontWeight: "700", color: c.text, marginBottom: 4 },
+    statLabel: { fontSize: 12, color: c.textSecondary },
+    sectionTitle: { fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12 },
+    actionButton: {
+      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
+      paddingHorizontal: 16, marginBottom: 12,
+    },
+    actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", textAlign: "center" },
+    emptyState: {
+      backgroundColor: c.card, borderRadius: 12, padding: 24, alignItems: "center",
+      borderWidth: 1, borderColor: c.border,
+    },
+    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    subCard: {
+      backgroundColor: c.card, borderRadius: 10, padding: 14, marginBottom: 8,
+      borderWidth: 1, borderColor: c.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    },
+    subName: { fontSize: 14, fontWeight: "600", color: c.text },
+    subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    subPrice: { fontSize: 14, fontWeight: "700", color: c.primary },
+    budgetCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
+      borderWidth: 1, borderColor: c.border,
+    },
+    budgetRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
+    budgetLabel: { fontSize: 13, fontWeight: "600", color: c.text },
+    budgetAmount: { fontSize: 13, fontWeight: "700", color: c.text },
+    progressTrack: { height: 8, backgroundColor: c.border, borderRadius: 4, overflow: "hidden" },
+    progressFill: { height: "100%", borderRadius: 4 },
+    budgetNote: { fontSize: 11, color: c.textSecondary, marginTop: 6 },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
+    verifyBanner: {
+      backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
+      flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,
+    },
+    verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
+    verifyBannerLink: { fontSize: 13, fontWeight: "700", color: c.warning },
+  });
 }

@@ -10,66 +10,9 @@ import { useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
+import { isPasswordValid } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  sectionTitle: {
-    fontSize: 12, fontWeight: "600", color: "#6B7280", textTransform: "uppercase",
-    letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
-  },
-  card: { backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB", padding: 16, marginBottom: 8 },
-  label: { fontSize: 12, fontWeight: "600", color: "#374151", marginBottom: 6 },
-  input: {
-    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, paddingVertical: 12,
-    paddingHorizontal: 12, fontSize: 14, color: "#1F2937", marginBottom: 12, backgroundColor: "#FAFAFA",
-  },
-  saveButton: { backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 13, alignItems: "center", marginTop: 4 },
-  saveButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-  infoText: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
-  currencyRow: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F3F4F6",
-  },
-  currencyName: { fontSize: 14, color: "#1F2937" },
-  currencyCode: { fontSize: 12, color: "#6B7280" },
-  selectedMark: { marginLeft: 8 },
-  pickerOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  pickerSheet: {
-    backgroundColor: "#FFFFFF", borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    padding: 20, maxHeight: "70%",
-  },
-  pickerTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 16 },
-  currencyButton: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 8, padding: 14, marginBottom: 4,
-  },
-  currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  currencySymbol: { fontSize: 18, fontWeight: "700", color: "#4F46E5", width: 28 },
-  budgetRow: { flexDirection: "row", gap: 10, alignItems: "flex-start" },
-  budgetInput: { flex: 1 },
-  clearButton: {
-    backgroundColor: "#FEE2E2", borderRadius: 8, paddingVertical: 13, paddingHorizontal: 16,
-    alignItems: "center", marginTop: 4,
-  },
-  clearButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "600" },
-  deleteSection: { marginTop: 24, marginBottom: 8 },
-  deleteSectionTitle: {
-    fontSize: 12, fontWeight: "600", color: "#DC2626", textTransform: "uppercase",
-    letterSpacing: 0.5, marginBottom: 8,
-  },
-  deleteCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, borderWidth: 1,
-    borderColor: "#FECACA", padding: 16,
-  },
-  deleteDesc: { fontSize: 13, color: "#6B7280", lineHeight: 20, marginBottom: 14 },
-  deleteButton: {
-    backgroundColor: "#FEE2E2", borderRadius: 8, paddingVertical: 13,
-    alignItems: "center", borderWidth: 1, borderColor: "#FECACA",
-  },
-  deleteButtonText: { color: "#DC2626", fontSize: 14, fontWeight: "700" },
-});
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
@@ -77,6 +20,8 @@ export default function AccountSettingsScreen() {
   const isPremium = user?.isPaid ?? false;
   const { currency, setCurrency } = useCurrencyStore();
   const queryClient = useQueryClient();
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const [name, setName] = useState(user?.name || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -148,7 +93,10 @@ export default function AccountSettingsScreen() {
       return;
     }
     if (newPassword !== confirmPassword) { Alert.alert("Error", "New passwords do not match."); return; }
-    if (newPassword.length < 6) { Alert.alert("Error", "New password must be at least 6 characters."); return; }
+    if (!isPasswordValid(newPassword)) {
+      Alert.alert("Weak password", "New password must be at least 8 characters with one uppercase letter and one number.");
+      return;
+    }
     passwordMutation.mutate({ currentPassword, newPassword });
   };
 
@@ -158,10 +106,10 @@ export default function AccountSettingsScreen() {
     settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
   };
 
-  const handleSelectCurrency = (c: typeof CURRENCIES[0]) => {
-    setCurrency(c);
+  const handleSelectCurrency = (cur: typeof CURRENCIES[0]) => {
+    setCurrency(cur);
     setShowCurrencyPicker(false);
-    settingsMutation.mutate({ budgetGoal: settings?.budgetGoal ?? null, currency: c.code, currencySymbol: c.symbol });
+    settingsMutation.mutate({ budgetGoal: settings?.budgetGoal ?? null, currency: cur.code, currencySymbol: cur.symbol });
   };
 
   return (
@@ -170,7 +118,6 @@ export default function AccountSettingsScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
 
-          {/* Currency */}
           <Text style={styles.sectionTitle}>Currency</Text>
           <View style={styles.card}>
             <Text style={styles.label}>Display Currency</Text>
@@ -182,12 +129,11 @@ export default function AccountSettingsScreen() {
                   <Text style={styles.currencyCode}>{currency.code}</Text>
                 </View>
               </View>
-              <MaterialCommunityIcons name="chevron-right" size={20} color="#9CA3AF" />
+              <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
             </TouchableOpacity>
             <Text style={styles.infoText}>Changes how prices are displayed throughout the app.</Text>
           </View>
 
-          {/* Budget Goal — premium */}
           <Text style={styles.sectionTitle}>Budget Goal</Text>
           {!isPremium ? (
             <PremiumGate
@@ -195,37 +141,36 @@ export default function AccountSettingsScreen() {
               description="Set a spending limit and track progress directly on your dashboard."
             />
           ) : (
-          <View style={styles.card}>
-            <Text style={styles.label}>Monthly Spending Limit ({currency.symbol})</Text>
-            <TextInput
-              style={styles.input}
-              value={budgetInput}
-              onChangeText={setBudgetInput}
-              placeholder={`e.g. 50.00`}
-              placeholderTextColor="#9CA3AF"
-              keyboardType="decimal-pad"
-            />
-            <Text style={styles.infoText}>
-              A warning appears on your dashboard when you reach 80% of this limit.
-              {settings?.budgetGoal != null ? `\nCurrent goal: ${fmt(settings.budgetGoal, currency.symbol)}/mo` : ""}
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-              <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
-                {settingsMutation.isLoading
-                  ? <ActivityIndicator color="#FFFFFF" />
-                  : <Text style={styles.saveButtonText}>Save Goal</Text>
-                }
-              </TouchableOpacity>
-              {settings?.budgetGoal != null && (
-                <TouchableOpacity style={styles.clearButton} onPress={() => { setBudgetInput(""); settingsMutation.mutate({ budgetGoal: null, currency: currency.code, currencySymbol: currency.symbol }); }}>
-                  <Text style={styles.clearButtonText}>Clear</Text>
+            <View style={styles.card}>
+              <Text style={styles.label}>Monthly Spending Limit ({currency.symbol})</Text>
+              <TextInput
+                style={styles.input}
+                value={budgetInput}
+                onChangeText={setBudgetInput}
+                placeholder="e.g. 50.00"
+                placeholderTextColor={c.placeholder}
+                keyboardType="decimal-pad"
+              />
+              <Text style={styles.infoText}>
+                A warning appears on your dashboard when you reach 80% of this limit.
+                {settings?.budgetGoal != null ? `\nCurrent goal: ${fmt(settings.budgetGoal, currency.symbol)}/mo` : ""}
+              </Text>
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+                <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
+                  {settingsMutation.isLoading
+                    ? <ActivityIndicator color="#FFFFFF" />
+                    : <Text style={styles.saveButtonText}>Save Goal</Text>
+                  }
                 </TouchableOpacity>
-              )}
+                {settings?.budgetGoal != null && (
+                  <TouchableOpacity style={styles.clearButton} onPress={() => { setBudgetInput(""); settingsMutation.mutate({ budgetGoal: null, currency: currency.code, currencySymbol: currency.symbol }); }}>
+                    <Text style={styles.clearButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
           )}
 
-          {/* Profile */}
           <Text style={styles.sectionTitle}>Profile</Text>
           <View style={styles.card}>
             <Text style={styles.label}>Display Name</Text>
@@ -234,11 +179,11 @@ export default function AccountSettingsScreen() {
               value={name}
               onChangeText={setName}
               placeholder="Your name"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={c.placeholder}
             />
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={[styles.input, { color: "#9CA3AF" }]}
+              style={[styles.input, { color: c.textMuted }]}
               value={user?.email || ""}
               editable={false}
             />
@@ -251,18 +196,17 @@ export default function AccountSettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Password */}
           <Text style={styles.sectionTitle}>Change Password</Text>
           <View style={styles.card}>
             <Text style={styles.label}>Current Password</Text>
             <TextInput style={styles.input} value={currentPassword} onChangeText={setCurrentPassword}
-              placeholder="Enter current password" placeholderTextColor="#9CA3AF" secureTextEntry />
+              placeholder="Enter current password" placeholderTextColor={c.placeholder} secureTextEntry />
             <Text style={styles.label}>New Password</Text>
             <TextInput style={styles.input} value={newPassword} onChangeText={setNewPassword}
-              placeholder="Enter new password (min 6 chars)" placeholderTextColor="#9CA3AF" secureTextEntry />
+              placeholder="Min 8 chars, 1 uppercase, 1 number" placeholderTextColor={c.placeholder} secureTextEntry />
             <Text style={styles.label}>Confirm New Password</Text>
             <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword}
-              placeholder="Confirm new password" placeholderTextColor="#9CA3AF" secureTextEntry />
+              placeholder="Confirm new password" placeholderTextColor={c.placeholder} secureTextEntry />
             <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isLoading}>
               {passwordMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
@@ -271,7 +215,6 @@ export default function AccountSettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Delete Account */}
           <View style={styles.deleteSection}>
             <Text style={styles.deleteSectionTitle}>Danger Zone</Text>
             <View style={styles.deleteCard}>
@@ -283,11 +226,9 @@ export default function AccountSettingsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-
         </View>
       </ScrollView>
 
-      {/* Currency picker */}
       <Modal visible={showCurrencyPicker} transparent animationType="slide" onRequestClose={() => setShowCurrencyPicker(false)}>
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerSheet}>
@@ -305,7 +246,7 @@ export default function AccountSettingsScreen() {
                     </View>
                   </View>
                   {currency.code === item.code && (
-                    <MaterialCommunityIcons name="check-circle" size={20} color="#4F46E5" style={styles.selectedMark} />
+                    <MaterialCommunityIcons name="check-circle" size={20} color={c.primary} />
                   )}
                 </TouchableOpacity>
               )}
@@ -315,4 +256,63 @@ export default function AccountSettingsScreen() {
       </Modal>
     </>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    sectionTitle: {
+      fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase",
+      letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
+    },
+    card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 8 },
+    label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
+    input: {
+      borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,
+      paddingHorizontal: 12, fontSize: 14, color: c.text, marginBottom: 12, backgroundColor: c.inputBg,
+    },
+    saveButton: { backgroundColor: c.primary, borderRadius: 8, paddingVertical: 13, alignItems: "center", marginTop: 4 },
+    saveButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    infoText: { fontSize: 12, color: c.textMuted, marginTop: 4 },
+    currencyRow: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border,
+    },
+    currencyName: { fontSize: 14, color: c.text },
+    currencyCode: { fontSize: 12, color: c.textSecondary },
+    pickerOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
+    pickerSheet: {
+      backgroundColor: c.card, borderTopLeftRadius: 16, borderTopRightRadius: 16,
+      padding: 20, maxHeight: "70%",
+    },
+    pickerTitle: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 16 },
+    currencyButton: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      borderWidth: 1, borderColor: c.border, borderRadius: 8, padding: 14, marginBottom: 4,
+    },
+    currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+    currencySymbol: { fontSize: 18, fontWeight: "700", color: c.primary, width: 28 },
+    budgetInput: { flex: 1 },
+    clearButton: {
+      backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 13, paddingHorizontal: 16,
+      alignItems: "center", marginTop: 4, borderWidth: 1, borderColor: c.dangerBorder,
+    },
+    clearButtonText: { color: c.danger, fontSize: 14, fontWeight: "600" },
+    deleteSection: { marginTop: 24, marginBottom: 8 },
+    deleteSectionTitle: {
+      fontSize: 12, fontWeight: "600", color: c.danger, textTransform: "uppercase",
+      letterSpacing: 0.5, marginBottom: 8,
+    },
+    deleteCard: {
+      backgroundColor: c.card, borderRadius: 12, borderWidth: 1,
+      borderColor: c.dangerBorder, padding: 16,
+    },
+    deleteDesc: { fontSize: 13, color: c.textSecondary, lineHeight: 20, marginBottom: 14 },
+    deleteButton: {
+      backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 13,
+      alignItems: "center", borderWidth: 1, borderColor: c.dangerBorder,
+    },
+    deleteButtonText: { color: c.danger, fontSize: 14, fontWeight: "700" },
+  });
 }

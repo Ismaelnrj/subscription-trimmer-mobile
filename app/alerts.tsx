@@ -3,166 +3,39 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import apiClient from "../lib/api";
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 32,
-  },
-  alertCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  alertCardHigh: {
-    borderLeftColor: "#EF4444",
-  },
-  alertCardMedium: {
-    borderLeftColor: "#F59E0B",
-  },
-  alertCardLow: {
-    borderLeftColor: "#3B82F6",
-  },
-  alertHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  alertTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#1F2937",
-    flex: 1,
-  },
-  alertBadge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  alertBadgeHigh: {
-    backgroundColor: "#FEE2E2",
-  },
-  alertBadgeMedium: {
-    backgroundColor: "#FEF3C7",
-  },
-  alertBadgeLow: {
-    backgroundColor: "#DBEAFE",
-  },
-  alertBadgeText: {
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  alertBadgeTextHigh: {
-    color: "#DC2626",
-  },
-  alertBadgeTextMedium: {
-    color: "#D97706",
-  },
-  alertBadgeTextLow: {
-    color: "#1E40AF",
-  },
-  alertMessage: {
-    fontSize: 13,
-    color: "#6B7280",
-    lineHeight: 18,
-  },
-  alertAction: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  actionButton: {
-    backgroundColor: "#F3F4F6",
-    borderRadius: 6,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#4F46E5",
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 48,
-  },
-  emptyStateIcon: {
-    marginBottom: 12,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-  filterButtons: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
-  },
-  filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: "#F3F4F6",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  filterButtonActive: {
-    backgroundColor: "#4F46E5",
-    borderColor: "#4F46E5",
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6B7280",
-  },
-  filterButtonTextActive: {
-    color: "#FFFFFF",
-  },
-});
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function AlertsScreen() {
-  const { data: alerts = [], isLoading } = useQuery({
+  const c = useTheme();
+  const styles = makeStyles(c);
+
+  const { data: alerts = [] } = useQuery({
     queryKey: ["alerts", "list"],
-    queryFn: async () => {
-      const response = await apiClient.get("/trpc/alerts.list");
-      return response.data.result.data;
-    },
+    queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
   });
 
   const getAlertIcon = (type: string) => {
     switch (type) {
-      case "expensive":
-        return "alert-circle";
-      case "renewal":
-        return "calendar-alert";
-      case "inactive":
-        return "pause-circle";
-      default:
-        return "information";
+      case "expensive": return "alert-circle";
+      case "renewal": return "calendar-alert";
+      case "inactive": return "pause-circle";
+      default: return "information";
     }
   };
 
-  const getSeverityStyles = (severity: string) => {
+  const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case "high":
-        return { card: styles.alertCardHigh, badge: styles.alertBadgeHigh, text: styles.alertBadgeTextHigh };
-      case "medium":
-        return { card: styles.alertCardMedium, badge: styles.alertBadgeMedium, text: styles.alertBadgeTextMedium };
-      default:
-        return { card: styles.alertCardLow, badge: styles.alertBadgeLow, text: styles.alertBadgeTextLow };
+      case "high": return c.danger;
+      case "medium": return c.warning;
+      default: return "#3B82F6";
+    }
+  };
+
+  const getSeverityBg = (severity: string) => {
+    switch (severity) {
+      case "high": return c.dangerLight;
+      case "medium": return c.warningLight;
+      default: return "#DBEAFE";
     }
   };
 
@@ -173,28 +46,20 @@ export default function AlertsScreen() {
         <View style={styles.scrollContent}>
           {alerts.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons
-                name="check-circle"
-                size={48}
-                color="#10B981"
-                style={styles.emptyStateIcon}
-              />
+              <MaterialCommunityIcons name="check-circle" size={48} color={c.success} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>All clear! No alerts at the moment.</Text>
             </View>
           ) : (
             alerts.map((alert: any) => {
-              const severityStyles = getSeverityStyles(alert.severity);
+              const col = getSeverityColor(alert.severity);
+              const bg = getSeverityBg(alert.severity);
               return (
-                <View key={alert.id} style={[styles.alertCard, severityStyles.card]}>
+                <View key={alert.id} style={[styles.alertCard, { borderLeftColor: col }]}>
                   <View style={styles.alertHeader}>
-                    <MaterialCommunityIcons
-                      name={getAlertIcon(alert.type)}
-                      size={20}
-                      color={alert.severity === "high" ? "#EF4444" : alert.severity === "medium" ? "#F59E0B" : "#3B82F6"}
-                    />
+                    <MaterialCommunityIcons name={getAlertIcon(alert.type)} size={20} color={col} />
                     <Text style={styles.alertTitle}>{alert.title}</Text>
-                    <View style={[styles.alertBadge, severityStyles.badge]}>
-                      <Text style={[styles.alertBadgeText, severityStyles.text]}>
+                    <View style={[styles.alertBadge, { backgroundColor: bg }]}>
+                      <Text style={[styles.alertBadgeText, { color: col }]}>
                         {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
                       </Text>
                     </View>
@@ -202,7 +67,7 @@ export default function AlertsScreen() {
                   <Text style={styles.alertMessage}>{alert.message}</Text>
                   {alert.subscriptionName && (
                     <View style={styles.alertAction}>
-                      <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 8 }}>
+                      <Text style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
                         Service: <Text style={{ fontWeight: "600" }}>{alert.subscriptionName}</Text>
                       </Text>
                       <TouchableOpacity style={styles.actionButton}>
@@ -218,4 +83,26 @@ export default function AlertsScreen() {
       </ScrollView>
     </>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    alertCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
+      borderLeftWidth: 4, borderWidth: 1, borderColor: c.border,
+    },
+    alertHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+    alertTitle: { fontSize: 14, fontWeight: "600", color: c.text, flex: 1, marginLeft: 8 },
+    alertBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4, marginLeft: 8 },
+    alertBadgeText: { fontSize: 11, fontWeight: "600" },
+    alertMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 18 },
+    alertAction: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
+    actionButton: { backgroundColor: c.border, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12, alignItems: "center" },
+    actionButtonText: { fontSize: 12, fontWeight: "600", color: c.primary },
+    emptyState: { alignItems: "center", paddingVertical: 48 },
+    emptyStateIcon: { marginBottom: 12 },
+    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+  });
 }

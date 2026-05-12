@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
+import { useTheme, AppColors } from "../lib/theme";
 
 // Affiliate links — sign up at each program and replace these URLs with your
 // personalised affiliate link. Each one earns a commission when a user signs up.
@@ -145,37 +146,10 @@ const DEALS = [
   },
 ];
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  header: { padding: 16, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  headerTitle: { fontSize: 13, color: "#6B7280", lineHeight: 18 },
-  body: { padding: 16, paddingBottom: 40 },
-  card: {
-    backgroundColor: "#FFFFFF", borderRadius: 14, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 10 },
-  iconBox: {
-    width: 44, height: 44, borderRadius: 10, backgroundColor: "#F3F4F6",
-    justifyContent: "center", alignItems: "center",
-  },
-  cardMeta: { flex: 1 },
-  cardName: { fontSize: 15, fontWeight: "700", color: "#1F2937" },
-  cardCategory: { fontSize: 11, color: "#9CA3AF", marginTop: 1 },
-  badge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
-  badgeText: { fontSize: 10, fontWeight: "700", color: "#FFFFFF" },
-  cardDesc: { fontSize: 13, color: "#4B5563", lineHeight: 18, marginBottom: 12 },
-  cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  savingsText: { fontSize: 12, fontWeight: "600", color: "#059669" },
-  ctaButton: {
-    backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 8,
-    paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 4,
-  },
-  ctaText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
-  disclaimer: { fontSize: 11, color: "#9CA3AF", textAlign: "center", marginTop: 8, lineHeight: 16 },
-});
-
 export default function DealsScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
+
   const openLink = (url: string, name: string) => {
     Alert.alert(
       `Opening ${name}`,
@@ -232,4 +206,36 @@ export default function DealsScreen() {
       </ScrollView>
     </>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    header: { padding: 16, backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
+    headerTitle: { fontSize: 13, color: c.textSecondary, lineHeight: 18 },
+    body: { padding: 16, paddingBottom: 40 },
+    card: {
+      backgroundColor: c.card, borderRadius: 14, padding: 16, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    cardTop: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 10 },
+    iconBox: {
+      width: 44, height: 44, borderRadius: 10, backgroundColor: c.border,
+      justifyContent: "center", alignItems: "center",
+    },
+    cardMeta: { flex: 1 },
+    cardName: { fontSize: 15, fontWeight: "700", color: c.text },
+    cardCategory: { fontSize: 11, color: c.textMuted, marginTop: 1 },
+    badge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7 },
+    badgeText: { fontSize: 10, fontWeight: "700", color: "#FFFFFF" },
+    cardDesc: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 12 },
+    cardBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    savingsText: { fontSize: 12, fontWeight: "600", color: c.success },
+    ctaButton: {
+      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 8,
+      paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 4,
+    },
+    ctaText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
+    disclaimer: { fontSize: 11, color: c.textMuted, textAlign: "center", marginTop: 8, lineHeight: 16 },
+  });
 }

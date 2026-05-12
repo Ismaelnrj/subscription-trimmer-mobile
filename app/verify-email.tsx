@@ -4,6 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function VerifyEmailScreen() {
   const { user, setUser } = useAuthStore();
@@ -12,6 +13,8 @@ export default function VerifyEmailScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const handleVerify = async () => {
     if (code.length !== 6) {
@@ -51,7 +54,7 @@ export default function VerifyEmailScreen() {
       <Stack.Screen options={{ title: "Verify Email", headerShown: true }} />
       <View style={styles.container}>
         <View style={styles.icon}>
-          <MaterialCommunityIcons name="email-check-outline" size={56} color="#4F46E5" />
+          <MaterialCommunityIcons name="email-check-outline" size={56} color={c.primary} />
         </View>
         <Text style={styles.title}>Check your inbox</Text>
         <Text style={styles.subtitle}>
@@ -64,7 +67,7 @@ export default function VerifyEmailScreen() {
           value={code}
           onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
           placeholder="000000"
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor={c.textMuted}
           keyboardType="number-pad"
           maxLength={6}
           textAlign="center"
@@ -91,23 +94,26 @@ export default function VerifyEmailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB", alignItems: "center", justifyContent: "center", padding: 32 },
-  icon: { marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: "800", color: "#1F2937", marginBottom: 10, textAlign: "center" },
-  subtitle: { fontSize: 14, color: "#6B7280", textAlign: "center", lineHeight: 22, marginBottom: 32 },
-  email: { fontWeight: "700", color: "#4F46E5" },
-  codeInput: {
-    width: 200, fontSize: 36, fontWeight: "800", letterSpacing: 12, color: "#1F2937",
-    borderWidth: 2, borderColor: "#4F46E5", borderRadius: 12, paddingVertical: 16, marginBottom: 24,
-  },
-  button: {
-    backgroundColor: "#4F46E5", borderRadius: 10, paddingVertical: 14,
-    paddingHorizontal: 48, alignItems: "center", marginBottom: 16, width: "100%",
-  },
-  buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  resendButton: { marginBottom: 16 },
-  resendText: { color: "#4F46E5", fontSize: 14, fontWeight: "500" },
-  skipButton: { marginTop: 8 },
-  skipText: { color: "#9CA3AF", fontSize: 13 },
-});
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg, alignItems: "center", justifyContent: "center", padding: 32 },
+    icon: { marginBottom: 20 },
+    title: { fontSize: 24, fontWeight: "800", color: c.text, marginBottom: 10, textAlign: "center" },
+    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 32 },
+    email: { fontWeight: "700", color: c.primary },
+    codeInput: {
+      width: 200, fontSize: 36, fontWeight: "800", letterSpacing: 12, color: c.text,
+      borderWidth: 2, borderColor: c.primary, borderRadius: 12, paddingVertical: 16, marginBottom: 24,
+      backgroundColor: c.inputBg,
+    },
+    button: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14,
+      paddingHorizontal: 48, alignItems: "center", marginBottom: 16, width: "100%",
+    },
+    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    resendButton: { marginBottom: 16 },
+    resendText: { color: c.primary, fontSize: 14, fontWeight: "500" },
+    skipButton: { marginTop: 8 },
+    skipText: { color: c.textMuted, fontSize: 13 },
+  });
+}

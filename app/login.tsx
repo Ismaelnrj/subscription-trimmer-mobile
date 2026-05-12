@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -44,7 +47,7 @@ export default function LoginScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={c.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -55,13 +58,13 @@ export default function LoginScreen() {
           <TextInput
             style={styles.passwordInput}
             placeholder="Password"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.placeholder}
             secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
           />
           <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
+            <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
           </TouchableOpacity>
         </View>
 
@@ -81,29 +84,31 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB", justifyContent: "center", padding: 24 },
-  header: { alignItems: "center", marginBottom: 40 },
-  title: { fontSize: 32, fontWeight: "800", color: "#4F46E5", marginBottom: 8 },
-  subtitle: { fontSize: 14, color: "#6B7280", textAlign: "center" },
-  form: { gap: 12 },
-  input: {
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10,
-    paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: "#1F2937",
-  },
-  passwordWrapper: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10,
-  },
-  passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: "#1F2937" },
-  eyeButton: { paddingHorizontal: 14 },
-  button: {
-    backgroundColor: "#4F46E5", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 8,
-  },
-  buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  forgotLink: { alignItems: "center", marginTop: 4, marginBottom: 8 },
-  forgotText: { color: "#4F46E5", fontSize: 13, fontWeight: "500" },
-  link: { alignItems: "center", marginTop: 8 },
-  linkText: { color: "#6B7280", fontSize: 14 },
-  linkBold: { color: "#4F46E5", fontWeight: "700" },
-});
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg, justifyContent: "center", padding: 24 },
+    header: { alignItems: "center", marginBottom: 40 },
+    title: { fontSize: 32, fontWeight: "800", color: c.primary, marginBottom: 8 },
+    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    form: { gap: 12 },
+    input: {
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
+      paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text,
+    },
+    passwordWrapper: {
+      flexDirection: "row", alignItems: "center",
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
+    },
+    passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text },
+    eyeButton: { paddingHorizontal: 14 },
+    button: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 8,
+    },
+    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    forgotLink: { alignItems: "center", marginTop: 4, marginBottom: 8 },
+    forgotText: { color: c.primary, fontSize: 13, fontWeight: "500" },
+    link: { alignItems: "center", marginTop: 8 },
+    linkText: { color: c.textSecondary, fontSize: 14 },
+    linkBold: { color: c.primary, fontWeight: "700" },
+  });
+}

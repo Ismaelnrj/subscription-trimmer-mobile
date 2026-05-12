@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
+import { useTheme, AppColors } from "../lib/theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const handleSendCode = async () => {
     if (!email.trim()) { Alert.alert("Error", "Please enter your email address."); return; }
@@ -49,13 +52,13 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.back} onPress={() => step === 2 ? setStep(1) : router.back()}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color="#4F46E5" />
+        <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
       </TouchableOpacity>
 
       <View style={styles.icon}>
         <MaterialCommunityIcons
           name={step === 1 ? "lock-question" : "lock-reset"}
-          size={56} color="#4F46E5"
+          size={56} color={c.primary}
         />
       </View>
 
@@ -68,7 +71,7 @@ export default function ForgotPasswordScreen() {
           <TextInput
             style={styles.input}
             placeholder="Your email address"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={c.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -92,7 +95,7 @@ export default function ForgotPasswordScreen() {
             value={code}
             onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
             placeholder="000000"
-            placeholderTextColor="#D1D5DB"
+            placeholderTextColor={c.textMuted}
             keyboardType="number-pad"
             maxLength={6}
             textAlign="center"
@@ -102,13 +105,13 @@ export default function ForgotPasswordScreen() {
             <TextInput
               style={styles.passwordInput}
               placeholder="New password"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={c.placeholder}
               secureTextEntry={!showPassword}
               value={newPassword}
               onChangeText={setNewPassword}
             />
             <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
+              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
             </TouchableOpacity>
           </View>
           <PasswordStrengthMeter password={newPassword} />
@@ -130,35 +133,37 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB", padding: 28, paddingTop: 60 },
-  back: { marginBottom: 16 },
-  icon: { alignItems: "center", marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: "800", color: "#1F2937", marginBottom: 10, textAlign: "center" },
-  subtitle: { fontSize: 14, color: "#6B7280", textAlign: "center", lineHeight: 22, marginBottom: 28 },
-  emailHighlight: { fontWeight: "700", color: "#4F46E5" },
-  input: {
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10,
-    paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: "#1F2937", marginBottom: 14,
-  },
-  codeInput: {
-    backgroundColor: "#fff", borderWidth: 2, borderColor: "#4F46E5", borderRadius: 12,
-    paddingVertical: 16, fontSize: 36, fontWeight: "800", letterSpacing: 12,
-    color: "#1F2937", marginBottom: 14, textAlign: "center",
-  },
-  passwordWrapper: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#fff",
-    borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 10, marginBottom: 14,
-  },
-  passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: "#1F2937" },
-  eyeButton: { paddingHorizontal: 14 },
-  button: {
-    backgroundColor: "#4F46E5", borderRadius: 10, paddingVertical: 14,
-    alignItems: "center", marginBottom: 14,
-  },
-  buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-  resend: { alignItems: "center", marginBottom: 16 },
-  resendText: { color: "#4F46E5", fontSize: 14, fontWeight: "500" },
-  backToLogin: { alignItems: "center", marginTop: 8 },
-  backToLoginText: { color: "#9CA3AF", fontSize: 13 },
-});
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg, padding: 28, paddingTop: 60 },
+    back: { marginBottom: 16 },
+    icon: { alignItems: "center", marginBottom: 24 },
+    title: { fontSize: 24, fontWeight: "800", color: c.text, marginBottom: 10, textAlign: "center" },
+    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 28 },
+    emailHighlight: { fontWeight: "700", color: c.primary },
+    input: {
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
+      paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text, marginBottom: 14,
+    },
+    codeInput: {
+      backgroundColor: c.inputBg, borderWidth: 2, borderColor: c.primary, borderRadius: 12,
+      paddingVertical: 16, fontSize: 36, fontWeight: "800", letterSpacing: 12,
+      color: c.text, marginBottom: 14, textAlign: "center",
+    },
+    passwordWrapper: {
+      flexDirection: "row", alignItems: "center", backgroundColor: c.inputBg,
+      borderWidth: 1, borderColor: c.border, borderRadius: 10, marginBottom: 14,
+    },
+    passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text },
+    eyeButton: { paddingHorizontal: 14 },
+    button: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14,
+      alignItems: "center", marginBottom: 14,
+    },
+    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    resend: { alignItems: "center", marginBottom: 16 },
+    resendText: { color: c.primary, fontSize: 14, fontWeight: "500" },
+    backToLogin: { alignItems: "center", marginTop: 8 },
+    backToLoginText: { color: c.textMuted, fontSize: 13 },
+  });
+}

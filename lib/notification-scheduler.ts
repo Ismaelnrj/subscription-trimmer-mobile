@@ -1,14 +1,9 @@
 import * as Notifications from "expo-notifications";
 import { registerForPushNotificationsAsync } from "./notifications";
+import { parseLocalDate } from "./utils";
 
 export async function requestNotificationPermission() {
   await registerForPushNotificationsAsync();
-}
-
-// Parse a YYYY-MM-DD string as a local date (not UTC) to avoid off-by-one across timezones
-function parseLocalDate(dateStr: string): Date {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(y, m - 1, d);
 }
 
 export async function scheduleRenewalReminders(subscriptions: any[], currencySymbol: string) {

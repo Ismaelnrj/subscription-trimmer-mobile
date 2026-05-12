@@ -6,50 +6,15 @@ import apiClient from "../../lib/api";
 import { useCurrencyStore, fmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { padding: 16, paddingBottom: 32 },
-  summaryCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 16, marginBottom: 12,
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  summaryTitle: {
-    fontSize: 12, color: "#6B7280", marginBottom: 8,
-    textTransform: "uppercase", letterSpacing: 0.5,
-  },
-  summaryValue: { fontSize: 28, fontWeight: "700", color: "#1F2937" },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between" },
-  sectionTitle: {
-    fontSize: 16, fontWeight: "600", color: "#1F2937", marginBottom: 12, marginTop: 8,
-  },
-  categoryItem: {
-    backgroundColor: "#FFFFFF", borderRadius: 12, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: "#E5E7EB",
-  },
-  categoryHeader: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8,
-  },
-  categoryName: {
-    fontSize: 14, fontWeight: "600", color: "#1F2937", textTransform: "capitalize",
-  },
-  categoryAmount: { fontSize: 14, fontWeight: "700", color: "#4F46E5" },
-  progressBar: { height: 6, backgroundColor: "#E5E7EB", borderRadius: 3, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: "#4F46E5", borderRadius: 3 },
-  emptyState: { alignItems: "center", paddingVertical: 48 },
-  emptyStateText: { fontSize: 14, color: "#6B7280", textAlign: "center" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-  statPair: { flex: 1 },
-  statPairLabel: { fontSize: 12, color: "#6B7280", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 },
-  statPairValue: { fontSize: 20, fontWeight: "700", color: "#1F2937" },
-  divider: { width: 1, backgroundColor: "#E5E7EB", marginHorizontal: 12 },
-});
+import { useTheme, AppColors } from "../../lib/theme";
 
 export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { currency } = useCurrencyStore();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   const { data: summary, isLoading, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -70,12 +35,12 @@ export default function AnalyticsScreen() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4F46E5" />
+        <ActivityIndicator size="large" color={c.primary} />
       </View>
     );
   }
 
-  const maxAmount = Math.max(...(summary?.categoryBreakdown?.map((c: any) => c.amount) || [1]));
+  const maxAmount = Math.max(...(summary?.categoryBreakdown?.map((cat: any) => cat.amount) || [1]));
   const budgetGoal = settings?.budgetGoal;
   const monthly = summary?.monthlyTotal ?? 0;
 
@@ -83,14 +48,14 @@ export default function AnalyticsScreen() {
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#4F46E5" />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Monthly Spend</Text>
           <Text style={styles.summaryValue}>{fmt(monthly, currency.symbol)}</Text>
           {budgetGoal != null && (
-            <Text style={{ fontSize: 12, color: monthly > budgetGoal ? "#EF4444" : "#6B7280", marginTop: 4 }}>
+            <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 4 }}>
               Budget: {fmt(budgetGoal, currency.symbol)} · {monthly > budgetGoal ? "Over budget" : `${fmt(budgetGoal - monthly, currency.symbol)} remaining`}
             </Text>
           )}
@@ -105,7 +70,7 @@ export default function AnalyticsScreen() {
 
         {(!summary?.categoryBreakdown || summary.categoryBreakdown.length === 0) ? (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="chart-box-outline" size={48} color="#D1D5DB" style={{ marginBottom: 12 }} />
+            <MaterialCommunityIcons name="chart-box-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
             <Text style={styles.emptyStateText}>No spending data yet</Text>
           </View>
         ) : isPremium ? (
@@ -127,7 +92,6 @@ export default function AnalyticsScreen() {
             })
         ) : (
           <>
-            {/* Show first category as a teaser */}
             {summary.categoryBreakdown.slice(0, 1).map((cat: any) => {
               const pct = (cat.amount / maxAmount) * 100;
               return (
@@ -168,4 +132,44 @@ export default function AnalyticsScreen() {
       </View>
     </ScrollView>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    scrollContent: { padding: 16, paddingBottom: 32 },
+    summaryCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    summaryTitle: {
+      fontSize: 12, color: c.textSecondary, marginBottom: 8,
+      textTransform: "uppercase", letterSpacing: 0.5,
+    },
+    summaryValue: { fontSize: 28, fontWeight: "700", color: c.text },
+    summaryRow: { flexDirection: "row", justifyContent: "space-between" },
+    sectionTitle: {
+      fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12, marginTop: 8,
+    },
+    categoryItem: {
+      backgroundColor: c.card, borderRadius: 12, padding: 12, marginBottom: 8,
+      borderWidth: 1, borderColor: c.border,
+    },
+    categoryHeader: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8,
+    },
+    categoryName: {
+      fontSize: 14, fontWeight: "600", color: c.text, textTransform: "capitalize",
+    },
+    categoryAmount: { fontSize: 14, fontWeight: "700", color: c.primary },
+    progressBar: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
+    progressFill: { height: "100%", backgroundColor: c.primary, borderRadius: 3 },
+    emptyState: { alignItems: "center", paddingVertical: 48 },
+    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
+    statPair: { flex: 1 },
+    statPairLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 },
+    statPairValue: { fontSize: 20, fontWeight: "700", color: c.text },
+    divider: { width: 1, backgroundColor: c.border, marginHorizontal: 12 },
+  });
 }

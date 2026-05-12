@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import { useState, useEffect } from "react";
 import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
 import { PurchasesPackage } from "react-native-purchases";
+import { useTheme, AppColors } from "../lib/theme";
 
 const TIPS = [
   { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: "$0.99", desc: "A quick caffeine boost" },
@@ -11,40 +12,13 @@ const TIPS = [
   { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",   fallbackPrice: "$4.99", desc: "Incredible — thank you!" },
 ];
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  header: { padding: 24, alignItems: "center", backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: "#E5E7EB" },
-  headerEmoji: { fontSize: 48, marginBottom: 8 },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937", marginBottom: 6 },
-  headerDesc: { fontSize: 14, color: "#6B7280", textAlign: "center", lineHeight: 20 },
-  body: { padding: 20, paddingBottom: 40 },
-  tipCard: {
-    backgroundColor: "#FFFFFF", borderRadius: 14, padding: 20, marginBottom: 12,
-    borderWidth: 1, borderColor: "#E5E7EB", flexDirection: "row",
-    alignItems: "center", justifyContent: "space-between",
-  },
-  tipLeft: { flexDirection: "row", alignItems: "center", gap: 14 },
-  tipEmoji: { fontSize: 32 },
-  tipLabel: { fontSize: 15, fontWeight: "700", color: "#1F2937" },
-  tipDesc: { fontSize: 12, color: "#6B7280", marginTop: 2 },
-  tipButton: {
-    backgroundColor: "#4F46E5", borderRadius: 8, paddingVertical: 8,
-    paddingHorizontal: 14, minWidth: 70, alignItems: "center",
-  },
-  tipButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  note: { textAlign: "center", fontSize: 12, color: "#9CA3AF", marginTop: 8, lineHeight: 18 },
-  thankCard: {
-    backgroundColor: "#ECFDF5", borderRadius: 12, padding: 16, alignItems: "center",
-    borderWidth: 1, borderColor: "#6EE7B7", marginBottom: 20,
-  },
-  thankText: { fontSize: 15, fontWeight: "700", color: "#059669", marginTop: 8 },
-});
-
 export default function TipJarScreen() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [tipped, setTipped] = useState(false);
   const [iapReady, setIapReady] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const c = useTheme();
+  const styles = makeStyles(c);
 
   useEffect(() => {
     (async () => {
@@ -57,7 +31,6 @@ export default function TipJarScreen() {
     })();
   }, []);
 
-  // Show live price from Play Store if available, else fall back to display price
   const priceFor = (id: string, fallback: string) => {
     const pkg = packages.find((p) => p.product.identifier === id);
     return pkg?.product.priceString ?? fallback;
@@ -97,7 +70,7 @@ export default function TipJarScreen() {
         <View style={styles.body}>
           {tipped && (
             <View style={styles.thankCard}>
-              <MaterialCommunityIcons name="heart" size={28} color="#EF4444" />
+              <MaterialCommunityIcons name="heart" size={28} color={c.danger} />
               <Text style={styles.thankText}>Thank you so much! 🙏</Text>
             </View>
           )}
@@ -133,4 +106,35 @@ export default function TipJarScreen() {
       </ScrollView>
     </>
   );
+}
+
+function makeStyles(c: AppColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    header: { padding: 24, alignItems: "center", backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
+    headerEmoji: { fontSize: 48, marginBottom: 8 },
+    headerTitle: { fontSize: 22, fontWeight: "800", color: c.text, marginBottom: 6 },
+    headerDesc: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20 },
+    body: { padding: 20, paddingBottom: 40 },
+    tipCard: {
+      backgroundColor: c.card, borderRadius: 14, padding: 20, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border, flexDirection: "row",
+      alignItems: "center", justifyContent: "space-between",
+    },
+    tipLeft: { flexDirection: "row", alignItems: "center", gap: 14 },
+    tipEmoji: { fontSize: 32 },
+    tipLabel: { fontSize: 15, fontWeight: "700", color: c.text },
+    tipDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    tipButton: {
+      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 8,
+      paddingHorizontal: 14, minWidth: 70, alignItems: "center",
+    },
+    tipButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+    note: { textAlign: "center", fontSize: 12, color: c.textMuted, marginTop: 8, lineHeight: 18 },
+    thankCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 16, alignItems: "center",
+      borderWidth: 1, borderColor: c.success, marginBottom: 20,
+    },
+    thankText: { fontSize: 15, fontWeight: "700", color: c.success, marginTop: 8 },
+  });
 }
