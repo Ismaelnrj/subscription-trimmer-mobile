@@ -19,7 +19,7 @@ export function PremiumGate({ title, description }: Props) {
       <Text style={styles.desc}>{description}</Text>
       <View style={styles.button}>
         <MaterialCommunityIcons name="lock-open-outline" size={15} color="#fff" />
-        <Text style={styles.buttonText}>Unlock Premium — $3.99</Text>
+        <Text style={styles.buttonText}>Unlock Premium — from $1.99/mo</Text>
       </View>
     </TouchableOpacity>
   );
