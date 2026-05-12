@@ -1,6 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SecureStore from "expo-secure-store";
+import * as Sentry from "sentry-expo";
 import { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -10,11 +11,21 @@ import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { useTheme } from "../lib/theme";
 
+Sentry.init({
+  dsn: "https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664",
+  enableInExpoDevelopment: true,
+  debug: false,
+});
+
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
   state = { hasError: false, error: "" };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error: error.message };
+  }
+
+  componentDidCatch(error: Error) {
+    Sentry.Native.captureException(error);
   }
 
   render() {
