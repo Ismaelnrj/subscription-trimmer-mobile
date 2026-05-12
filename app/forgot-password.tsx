@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import apiClient from "../lib/api";
+import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -28,7 +29,10 @@ export default function ForgotPasswordScreen() {
 
   const handleReset = async () => {
     if (code.length !== 6) { Alert.alert("Error", "Please enter the 6-digit code."); return; }
-    if (newPassword.length < 6) { Alert.alert("Error", "Password must be at least 6 characters."); return; }
+    if (!isPasswordValid(newPassword)) {
+      Alert.alert("Weak password", "Your new password must be at least 8 characters and include one uppercase letter and one number.");
+      return;
+    }
     setLoading(true);
     try {
       await apiClient.post("/auth/reset-password", { email: email.trim().toLowerCase(), code, newPassword });
@@ -97,7 +101,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.passwordWrapper}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="New password (min 6 characters)"
+              placeholder="New password"
               placeholderTextColor="#9CA3AF"
               secureTextEntry={!showPassword}
               value={newPassword}
@@ -107,6 +111,7 @@ export default function ForgotPasswordScreen() {
               <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
+          <PasswordStrengthMeter password={newPassword} />
 
           <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}

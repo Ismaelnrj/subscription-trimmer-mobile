@@ -222,11 +222,20 @@ function formatNotification(n) {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
+function validatePassword(password) {
+  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
+  if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
+  return null;
+}
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { password, name } = req.body;
     const email = req.body.email?.trim().toLowerCase();
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
@@ -363,7 +372,8 @@ app.post('/api/auth/reset-password', async (req, res) => {
   try {
     const { email, code, newPassword } = req.body;
     if (!email || !code || !newPassword) return res.status(400).json({ error: 'Email, code and new password required' });
-    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: pwError });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user || user.reset_token !== code) return res.status(400).json({ error: 'Invalid or expired code' });

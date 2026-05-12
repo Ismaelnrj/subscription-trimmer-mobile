@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
+import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -21,8 +22,8 @@ export default function RegisterScreen() {
       Alert.alert("Error", "Please enter your email and password.");
       return;
     }
-    if (password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters.");
+    if (!isPasswordValid(password)) {
+      Alert.alert("Weak password", "Your password must be at least 8 characters and include one uppercase letter and one number.");
       return;
     }
     setEmailError("");
@@ -81,7 +82,7 @@ export default function RegisterScreen() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password (min 6 characters)"
+            placeholder="Password"
             placeholderTextColor="#9CA3AF"
             secureTextEntry={!showPassword}
             value={password}
@@ -91,6 +92,7 @@ export default function RegisterScreen() {
             <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
           </TouchableOpacity>
         </View>
+        <PasswordStrengthMeter password={password} />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Account</Text>}
