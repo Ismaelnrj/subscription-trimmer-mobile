@@ -2,12 +2,13 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState, useEffect } from "react";
-import { setupIAP, sendTip, TIP_IDS } from "../lib/iap";
+import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
+import { PurchasesPackage } from "react-native-purchases";
 
 const TIPS = [
-  { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee",    price: "$0.99",  desc: "A quick caffeine boost" },
-  { id: TIP_IDS.lunch,  emoji: "🍕", label: "Buy me a slice",    price: "$2.99",  desc: "You're too kind!" },
-  { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",     price: "$4.99",  desc: "Incredible — thank you!" },
+  { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: "$0.99", desc: "A quick caffeine boost" },
+  { id: TIP_IDS.lunch,  emoji: "🍕", label: "Buy me a slice",  fallbackPrice: "$2.99", desc: "You're too kind!" },
+  { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",   fallbackPrice: "$4.99", desc: "Incredible — thank you!" },
 ];
 
 const styles = StyleSheet.create({
@@ -43,10 +44,24 @@ export default function TipJarScreen() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [tipped, setTipped] = useState(false);
   const [iapReady, setIapReady] = useState(false);
+  const [packages, setPackages] = useState<PurchasesPackage[]>([]);
 
   useEffect(() => {
-    setupIAP().then(setIapReady);
+    (async () => {
+      const ready = await setupIAP();
+      setIapReady(ready);
+      if (ready) {
+        const pkgs = await getOfferings();
+        setPackages(pkgs);
+      }
+    })();
   }, []);
+
+  // Show live price from Play Store if available, else fall back to display price
+  const priceFor = (id: string, fallback: string) => {
+    const pkg = packages.find((p) => p.product.identifier === id);
+    return pkg?.product.priceString ?? fallback;
+  };
 
   const handleTip = async (id: string) => {
     if (!iapReady) {
@@ -59,7 +74,7 @@ export default function TipJarScreen() {
       setTipped(true);
       Alert.alert("Thank you! 🙏", "Your support means the world and helps keep Trimio free and improving!");
     } catch (e: any) {
-      if (!e?.message?.includes("cancel")) {
+      if (!e?.message?.toLowerCase().includes("cancel")) {
         Alert.alert("Error", "Could not complete the purchase. Please try again.");
       }
     } finally {
@@ -104,7 +119,7 @@ export default function TipJarScreen() {
                 {loadingId === tip.id ? (
                   <ActivityIndicator color="#FFFFFF" size="small" />
                 ) : (
-                  <Text style={styles.tipButtonText}>{tip.price}</Text>
+                  <Text style={styles.tipButtonText}>{priceFor(tip.id, tip.fallbackPrice)}</Text>
                 )}
               </TouchableOpacity>
             </View>

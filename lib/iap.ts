@@ -1,29 +1,125 @@
-// IAP stub — real react-native-iap will be wired up after Play Store publishing.
-// All purchase functions return false/throw so the UI shows "not available" alerts.
+/**
+ * IAP via RevenueCat (react-native-purchases).
+ *
+ * SETUP CHECKLIST (do this once before releasing):
+ * 1. Create a free RevenueCat account at https://app.revenuecat.com
+ * 2. Add your app and get the Google API key — paste it into REVENUECAT_API_KEY below
+ * 3. In Google Play Console create these in-app products:
+ *      Subscriptions : trimio_premium_monthly  ($1.99/mo)
+ *                      trimio_premium_yearly   ($14.99/yr)
+ *      One-time      : trimio_premium_lifetime ($4.99)
+ *      Consumables   : trimio_tip_coffee ($0.99)
+ *                      trimio_tip_lunch  ($2.99)
+ *                      trimio_tip_dinner ($4.99)
+ * 4. In RevenueCat create an Entitlement called "premium" and attach the
+ *    monthly + yearly + lifetime products to it.
+ * 5. Create an Offering called "default" with those packages.
+ */
 
-export const PREMIUM_ID = "trimio_premium_v1";
+import Purchases, {
+  PurchasesPackage,
+  CustomerInfo,
+  LOG_LEVEL,
+} from "react-native-purchases";
+import apiClient from "./api";
+
+// ─── Replace with your real RevenueCat Google API key ────────────────────────
+const REVENUECAT_API_KEY = "YOUR_REVENUECAT_GOOGLE_API_KEY";
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ENTITLEMENT_ID = "premium";
+
+export const PRODUCT_IDS = {
+  monthly:  "trimio_premium_monthly",
+  yearly:   "trimio_premium_yearly",
+  lifetime: "trimio_premium_lifetime",
+};
+
 export const TIP_IDS = {
   coffee: "trimio_tip_coffee",
   lunch:  "trimio_tip_lunch",
   dinner: "trimio_tip_dinner",
 };
 
+let _configured = false;
+
 export async function setupIAP(): Promise<boolean> {
-  return false;
+  try {
+    if (!_configured) {
+      if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+      _configured = true;
+    }
+    return true;
+  } catch (e) {
+    console.warn("[IAP] setup failed:", e);
+    return false;
+  }
 }
 
 export async function checkIsPremium(): Promise<boolean> {
-  return false;
+  try {
+    const info: CustomerInfo = await Purchases.getCustomerInfo();
+    return info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+  } catch {
+    return false;
+  }
 }
 
+/** Returns the current offering packages, or [] on failure. */
+export async function getOfferings(): Promise<PurchasesPackage[]> {
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offerings.current?.availablePackages ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Purchase a specific package. Throws on failure / user cancel. */
+export async function purchasePackage(pkg: PurchasesPackage): Promise<void> {
+  const { customerInfo } = await Purchases.purchasePackage(pkg);
+  const active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+
+  // Sync premium status to our backend so it reflects instantly everywhere
+  try {
+    await apiClient.post("/auth/verify-premium", { isPremium: active });
+  } catch (e) {
+    console.warn("[IAP] backend sync failed:", e);
+  }
+
+  if (!active) throw new Error("Purchase completed but entitlement not active.");
+}
+
+/** Legacy helper used by the buy button when the package is already known. */
 export async function buyPremium(): Promise<void> {
-  throw new Error("IAP not yet available");
+  const pkgs = await getOfferings();
+  const lifetime = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.lifetime);
+  const yearly   = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.yearly);
+  const monthly  = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.monthly);
+  const target = lifetime ?? yearly ?? monthly;
+  if (!target) throw new Error("No available packages found.");
+  await purchasePackage(target);
 }
 
-export async function sendTip(_productId: string): Promise<void> {
-  throw new Error("IAP not yet available");
+export async function sendTip(productId: string): Promise<void> {
+  const pkgs = await getOfferings();
+  const tip = pkgs.find((p) => p.product.identifier === productId);
+  if (!tip) throw new Error("Tip product not found.");
+  await Purchases.purchasePackage(tip);
 }
 
 export async function restorePremium(): Promise<boolean> {
-  return false;
+  try {
+    const info = await Purchases.restorePurchases();
+    const active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    if (active) {
+      try {
+        await apiClient.post("/auth/verify-premium", { isPremium: true });
+      } catch { /* non-fatal */ }
+    }
+    return active;
+  } catch {
+    return false;
+  }
 }

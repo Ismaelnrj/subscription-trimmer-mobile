@@ -146,9 +146,11 @@ async function initDB() {
       renewal_alerts BOOLEAN DEFAULT TRUE,
       spending_alerts BOOLEAN DEFAULT TRUE,
       weekly_summary BOOLEAN DEFAULT TRUE,
-      push_enabled BOOLEAN DEFAULT TRUE
+      push_enabled BOOLEAN DEFAULT TRUE,
+      email_reminders BOOLEAN DEFAULT FALSE
     )
   `);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS email_reminders BOOLEAN DEFAULT FALSE`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_settings (
       user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -394,6 +396,21 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
   try {
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Called by the app after a successful RevenueCat purchase to sync premium status
+app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
+  try {
+    const isPremium = req.body.isPremium === true;
+    await pool.query(
+      'UPDATE users SET is_paid = $1, paid_at = CASE WHEN $1 AND paid_at IS NULL THEN NOW() ELSE paid_at END WHERE id = $2',
+      [isPremium, req.userId]
+    );
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    res.json({ success: true, user: formatUser(result.rows[0]) });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -729,6 +746,7 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
       spendingAlerts: p.spending_alerts,
       weeklySummary: p.weekly_summary,
       pushEnabled: p.push_enabled,
+      emailReminders: p.email_reminders ?? false,
     }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -737,13 +755,81 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
 
 app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req, res) => {
   try {
-    const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled } = req.body;
+    const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders } = req.body;
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4 WHERE user_id = $5',
-      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, req.userId]
+      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4, email_reminders = $5 WHERE user_id = $6',
+      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders ?? false, req.userId]
     );
     res.json(trpc({ success: true }));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Sends email renewal reminders for all users who have email_reminders = true.
+// Call this daily via a cron job or Railway scheduled task.
+app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
+  // Simple shared secret to prevent unauthorised triggering
+  const secret = req.headers['x-cron-secret'];
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const usersResult = await pool.query(`
+      SELECT u.id, u.email, u.name
+      FROM users u
+      JOIN notification_preferences np ON np.user_id = u.id
+      WHERE np.email_reminders = TRUE AND u.is_verified = TRUE
+    `);
+
+    let sent = 0;
+    const now = new Date();
+    const in7Days = new Date(now.getTime() + 7 * 86400000);
+
+    for (const user of usersResult.rows) {
+      const subsResult = await pool.query(
+        `SELECT * FROM subscriptions
+         WHERE user_id = $1
+           AND next_billing_date BETWEEN $2 AND $3`,
+        [user.id, now.toISOString(), in7Days.toISOString()]
+      );
+      if (subsResult.rows.length === 0) continue;
+
+      const rows = subsResult.rows.map(s =>
+        `<tr>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${s.name}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">$${parseFloat(s.price).toFixed(2)}/${s.billing_cycle}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${new Date(s.next_billing_date).toLocaleDateString()}</td>
+        </tr>`
+      ).join('');
+
+      await sendEmail(
+        user.email,
+        `Trimio — ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing this week`,
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+          <h2 style="color:#4F46E5;margin-bottom:4px">Hi ${user.name || 'there'}!</h2>
+          <p style="color:#374151;margin-bottom:20px">Here are your upcoming subscription renewals in the next 7 days:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb">
+            <thead>
+              <tr style="background:#f3f4f6">
+                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Service</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Price</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Renewal Date</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p style="color:#9ca3af;font-size:12px;margin-top:20px">
+            You're receiving this because you enabled email reminders in Trimio.
+            Open the app to manage your notification preferences.
+          </p>
+        </div>`
+      ).catch(e => console.error(`Email failed for user ${user.id}:`, e));
+      sent++;
+    }
+
+    res.json({ success: true, emailsSent: sent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,4 +1,6 @@
-import { View, Text, ScrollView, Switch, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, Switch, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+import { useAuthStore } from "../lib/auth-store";
 import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../lib/api";
@@ -19,6 +21,9 @@ const styles = StyleSheet.create({
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
 
   const { data: prefs, isLoading } = useQuery({
     queryKey: ["notifications", "preferences"],
@@ -106,7 +111,7 @@ export default function NotificationPreferencesScreen() {
 
           <Text style={styles.sectionTitle}>General</Text>
           <View style={styles.card}>
-            <View style={[styles.row, styles.rowLast]}>
+            <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 16 }}>
                 <Text style={styles.rowLabel}>Push Notifications</Text>
                 <Text style={styles.rowDesc}>Enable all push notifications from Trimio</Text>
@@ -117,6 +122,33 @@ export default function NotificationPreferencesScreen() {
                 trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
                 thumbColor="#FFFFFF"
               />
+            </View>
+            <View style={[styles.row, styles.rowLast]}>
+              <View style={{ flex: 1, marginRight: 16 }}>
+                <Text style={styles.rowLabel}>
+                  Email Reminders{!isPremium ? "  🔒" : ""}
+                </Text>
+                <Text style={styles.rowDesc}>
+                  {isPremium
+                    ? "Get an email 7 days before any subscription renews"
+                    : "Premium feature — upgrade to enable email reminders"}
+                </Text>
+              </View>
+              {isPremium ? (
+                <Switch
+                  value={prefs.emailReminders ?? false}
+                  onValueChange={(v) => toggle("emailReminders", v)}
+                  trackColor={{ false: "#D1D5DB", true: "#4F46E5" }}
+                  thumbColor="#FFFFFF"
+                />
+              ) : (
+                <TouchableOpacity
+                  onPress={() => router.push("/upgrade")}
+                  style={{ backgroundColor: "#4F46E5", borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
+                >
+                  <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Upgrade</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
