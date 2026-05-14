@@ -78,3 +78,53 @@ workflows:
           script: |
             echo "Build completed successfully!"
             echo "Artifacts available at: $CM_ARTIFACT_LINKS"
+
+  android-apk:
+    name: Android APK (Signed)
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      node: 20
+      java: 17
+      groups:
+        - expo_credentials
+    scripts:
+      - name: Install dependencies
+        script: |
+          corepack disable || true
+          npm install -g pnpm@9
+          pnpm install
+      - name: Prebuild native Android
+        script: |
+          npx expo prebuild --platform android --clean
+      - name: Apply Gradle compatibility fixes
+        script: |
+          bash fix-gradle.sh
+      - name: Set up Android signing
+        script: |
+          KEYSTORE_PATH=/tmp/release.keystore
+          if [ -n "$CM_KEYSTORE" ]; then
+            printf '%s' "$CM_KEYSTORE" | tr -d ' \n\r\t' | base64 --decode > $KEYSTORE_PATH
+            echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
+          else
+            echo "ERROR: CM_KEYSTORE is not set."
+            exit 1
+          fi
+      - name: Build signed APK with Gradle
+        script: |
+          KEYSTORE_PATH=/tmp/release.keystore
+          cd android
+          ./gradlew assembleRelease --no-daemon --build-cache \
+            -Pandroid.injected.signing.store.file=$KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            "-Pandroid.injected.signing.key.alias=${CM_KEY_ALIAS:-trimio}" \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+          cd ..
+    artifacts:
+      - android/app/build/outputs/apk/release/*.apk
+    publishing:
+      scripts:
+        - name: Generate Download URL
+          script: |
+            echo "APK build completed!"
+            echo "Artifacts available at: $CM_ARTIFACT_LINKS"
