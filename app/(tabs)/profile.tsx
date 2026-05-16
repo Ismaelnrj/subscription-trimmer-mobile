@@ -70,7 +70,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
-            <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from $1.99/mo</Text>
+            <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from $2.99/mo</Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
         </TouchableOpacity>

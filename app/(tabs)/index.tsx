@@ -33,9 +33,14 @@ export default function DashboardScreen() {
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
   });
 
+  const { data: alerts = [], refetch: refetchAlerts } = useQuery({
+    queryKey: ["alerts", "list"],
+    queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([refetchSummary(), refetchSubs()]);
+    await Promise.all([refetchSummary(), refetchSubs(), refetchAlerts()]);
     setRefreshing(false);
   };
 
@@ -51,6 +56,11 @@ export default function DashboardScreen() {
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
   const budgetStatus = budgetRaw >= 100 ? "Over budget" : budgetRaw >= 80 ? "Getting close" : "On track";
   const budgetStatusIcon = budgetRaw >= 80 ? "alert-circle-outline" : "check-circle-outline";
+
+  const activeSubIds = new Set((subscriptions as any[]).map((s) => s.id));
+  const activeAlertCount = (alerts as any[]).filter(
+    (a) => !a.subscriptionId || activeSubIds.has(a.subscriptionId)
+  ).length;
 
   const trialsSoon = (subscriptions as any[]).filter((s) => {
     if (!s.trialEndDate) return false;
@@ -173,13 +183,13 @@ export default function DashboardScreen() {
             <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
             <Text style={styles.statLabel}>Active Subs</Text>
           </View>
-          <View style={styles.statCard}>
+          <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="alert-circle" size={20} color={c.primary} />
+              <MaterialCommunityIcons name="alert-circle" size={20} color={activeAlertCount > 0 ? c.danger : c.primary} />
             </View>
-            <Text style={styles.statValue}>{summary?.alertCount ?? 0}</Text>
+            <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]}>{activeAlertCount}</Text>
             <Text style={styles.statLabel}>Alerts</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
