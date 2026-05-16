@@ -3,14 +3,14 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import apiClient from "../../lib/api";
-import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { useTheme, AppColors } from "../../lib/theme";
 
 export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
-  const { currency } = useCurrencyStore();
+  const fmtC = useFmt();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
@@ -53,17 +53,17 @@ export default function AnalyticsScreen() {
       <View style={styles.scrollContent}>
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Monthly Spend</Text>
-          <Text style={styles.summaryValue}>{fmt(monthly, currency.symbol)}</Text>
+          <Text style={styles.summaryValue}>{fmtC(monthly)}</Text>
           {budgetGoal != null && (
             <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 4 }}>
-              Budget: {fmt(budgetGoal, currency.symbol)} · {monthly > budgetGoal ? "Over budget" : `${fmt(budgetGoal - monthly, currency.symbol)} remaining`}
+              Budget: {fmtC(budgetGoal)} · {monthly > budgetGoal ? "Over budget" : `${fmtC(budgetGoal - monthly)} remaining`}
             </Text>
           )}
         </View>
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Yearly Projection</Text>
-          <Text style={styles.summaryValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
+          <Text style={styles.summaryValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Spending by Category</Text>
@@ -82,7 +82,7 @@ export default function AnalyticsScreen() {
                 <View key={cat.category} style={styles.categoryItem}>
                   <View style={styles.categoryHeader}>
                     <Text style={styles.categoryName}>{cat.category}</Text>
-                    <Text style={styles.categoryAmount}>{fmt(cat.amount, currency.symbol)}/mo</Text>
+                    <Text style={styles.categoryAmount}>{fmtC(cat.amount)}/mo</Text>
                   </View>
                   <View style={styles.progressBar}>
                     <View style={[styles.progressFill, { width: `${pct}%` }]} />
@@ -98,7 +98,7 @@ export default function AnalyticsScreen() {
                 <View key={cat.category} style={styles.categoryItem}>
                   <View style={styles.categoryHeader}>
                     <Text style={styles.categoryName}>{cat.category}</Text>
-                    <Text style={styles.categoryAmount}>{fmt(cat.amount, currency.symbol)}/mo</Text>
+                    <Text style={styles.categoryAmount}>{fmtC(cat.amount)}/mo</Text>
                   </View>
                   <View style={styles.progressBar}>
                     <View style={[styles.progressFill, { width: `${pct}%` }]} />

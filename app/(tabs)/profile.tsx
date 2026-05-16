@@ -3,13 +3,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../lib/auth-store";
-import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useFmt } from "../../lib/currency-store";
 import apiClient from "../../lib/api";
 import { useTheme, AppColors } from "../../lib/theme";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
-  const { currency } = useCurrencyStore();
+  const fmtC = useFmt();
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -59,11 +59,11 @@ export default function ProfileScreen() {
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Monthly Spend</Text>
-          <Text style={styles.statValue}>{fmt(summary?.monthlyTotal ?? 0, currency.symbol)}</Text>
+          <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Yearly Projection</Text>
-          <Text style={styles.statValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
+          <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Upgrade</Text>

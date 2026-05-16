@@ -58,7 +58,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { isAuthenticated, isLoading, restoreToken } = useAuthStore();
-  const { loadCurrency } = useCurrencyStore();
+  const { loadCurrency, fetchRates } = useCurrencyStore();
   const router = useRouter();
   const segments = useSegments();
   const c = useTheme();
@@ -72,6 +72,7 @@ export default function RootLayout() {
           loadCurrency(),
           SecureStore.getItemAsync("onboarding_done"),
         ]);
+        fetchRates();
         setOnboardingDone(done === "true");
         requestNotificationPermission();
       } catch {

@@ -5,14 +5,12 @@ import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import apiClient from "../lib/api";
-import { useCurrencyStore, fmt } from "../lib/currency-store";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { user } = useAuthStore();
-  const { currency } = useCurrencyStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
   const styles = makeStyles(c);

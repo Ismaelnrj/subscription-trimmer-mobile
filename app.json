@@ -11,7 +11,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 5
+      "versionCode": 6
     },
 
     "ios": {

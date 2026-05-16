@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import apiClient from "../../lib/api";
-import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useCurrencyStore, useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
@@ -14,6 +14,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const { currency } = useCurrencyStore();
+  const fmtC = useFmt();
   const c = useTheme();
   const styles = makeStyles(c);
 
@@ -25,7 +26,7 @@ export default function DashboardScreen() {
   const { data: subscriptions = [], isLoading: subsLoading, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
-    onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol),
+    onSuccess: (data: any[]) => scheduleRenewalReminders(data),
   });
 
   const { data: settings } = useQuery({
@@ -106,8 +107,8 @@ export default function DashboardScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.budgetLabel}>Monthly Budget</Text>
                 <Text style={styles.budgetAmount}>
-                  {fmt(monthlyTotal, currency.symbol)}{" "}
-                  <Text style={styles.budgetOf}>of {fmt(budgetGoal, currency.symbol)}</Text>
+                  {fmtC(monthlyTotal)}{" "}
+                  <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
                 </Text>
               </View>
               <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
@@ -126,8 +127,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.budgetRemaining}>
                 {budgetRaw >= 100
-                  ? `${fmt(monthlyTotal - budgetGoal, currency.symbol)} over limit`
-                  : `${fmt(budgetGoal - monthlyTotal, currency.symbol)} remaining`}
+                  ? `${fmtC(monthlyTotal - budgetGoal)} over limit`
+                  : `${fmtC(budgetGoal - monthlyTotal)} remaining`}
               </Text>
             </View>
           </View>
@@ -147,7 +148,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.trialName}>{sub.name}</Text>
                     <Text style={styles.trialCharge}>
-                      {fmt(sub.price, currency.symbol)}/{sub.billingCycle} charged on expiry
+                      {fmtC(sub.price)}/{sub.billingCycle} charged on expiry
                     </Text>
                   </View>
                   <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
@@ -166,14 +167,14 @@ export default function DashboardScreen() {
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="credit-card" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmt(summary?.monthlyTotal ?? 0, currency.symbol)}</Text>
+            <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
             <Text style={styles.statLabel}>Monthly Spend</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmt(summary?.yearlyTotal ?? 0, currency.symbol)}</Text>
+            <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
             <Text style={styles.statLabel}>Yearly Spend</Text>
           </View>
           <View style={styles.statCard}>
@@ -221,11 +222,11 @@ export default function DashboardScreen() {
                 <View>
                   <Text style={styles.subName}>{sub.name}</Text>
                   <Text style={styles.subMeta}>
-                    {fmt(sub.price, currency.symbol)} / {sub.billingCycle}
-                    {monthly != null ? `  ·  ${fmt(monthly, currency.symbol)}/mo` : ""}
+                    {fmtC(sub.price)} / {sub.billingCycle}
+                    {monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}
                   </Text>
                 </View>
-                <Text style={styles.subPrice}>{fmt(sub.price, currency.symbol)}</Text>
+                <Text style={styles.subPrice}>{fmtC(sub.price)}</Text>
               </View>
             );
           })

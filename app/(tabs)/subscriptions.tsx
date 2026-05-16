@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useCurrencyStore, fmt } from "../../lib/currency-store";
+import { useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { normaliseDateInput } from "../../lib/utils";
 import { useTheme, AppColors } from "../../lib/theme";
@@ -29,7 +29,7 @@ export default function SubscriptionsScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
-  const { currency } = useCurrencyStore();
+  const fmtC = useFmt();
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -260,8 +260,8 @@ export default function SubscriptionsScreen() {
   const isPending = createMutation.isLoading || updateMutation.isLoading;
 
   const monthlyEquiv = (price: number, cycle: string) => {
-    if (cycle === "yearly") return fmt(price / 12, currency.symbol) + "/mo";
-    if (cycle === "weekly") return fmt((price * 52) / 12, currency.symbol) + "/mo";
+    if (cycle === "yearly") return `${fmtC(price / 12)}/mo`;
+    if (cycle === "weekly") return `${fmtC((price * 52) / 12)}/mo`;
     return null;
   };
 
@@ -354,7 +354,7 @@ export default function SubscriptionsScreen() {
                 <View key={sub.id} style={styles.card}>
                   <View style={styles.cardInfo}>
                     <Text style={styles.cardName}>{sub.name}</Text>
-                    <Text style={styles.cardPrice}>{fmt(sub.price, currency.symbol)} / {sub.billingCycle}</Text>
+                    <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
                       Next: {new Date(sub.nextBillingDate).toLocaleDateString()}

@@ -3,7 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../lib/api";
-import { useCurrencyStore, fmt } from "../lib/currency-store";
+import { useFmt } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
@@ -32,7 +32,7 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
   return keywords.some(k => n.includes(k));
 }
 
-function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
+function buildTips(subs: Sub[], fmtC: (n: number) => string): Tip[] {
   if (subs.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();
@@ -46,8 +46,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#DC2626",
         title: `${list.length} "${cat}" subscriptions`,
-        detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmt(catTotal, currencySymbol)}/mo. Could you cut one?`,
-        priority: "high", savingsHint: `Could save up to ${fmt(catTotal * 0.5, currencySymbol)}/mo` });
+        detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmtC(catTotal)}/mo. Could you cut one?`,
+        priority: "high", savingsHint: `Could save up to ${fmtC(catTotal * 0.5)}/mo` });
     } else if (list.length === 2) {
       tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#D97706",
         title: `2 "${cat}" subscriptions`,
@@ -63,8 +63,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
     const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price, a.billingCycle) - toMonthly(b.price, b.billingCycle))[0];
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#DC2626",
       title: `${streamingSubs.length} streaming services — that's a lot`,
-      detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmt(streamTotal, currencySymbol)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
-      priority: "high", savingsHint: `Save ~${fmt(toMonthly(cheapest.price, cheapest.billingCycle), currencySymbol)}/mo by pausing one` });
+      detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmtC(streamTotal)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
+      priority: "high", savingsHint: `Save ~${fmtC(toMonthly(cheapest.price, cheapest.billingCycle))}/mo by pausing one` });
   }
 
   // Fitness overlap (2+ fitness services)
@@ -73,8 +73,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
     const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#7C3AED",
       title: `${fitnessSubs.length} health & fitness subscriptions`,
-      detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmt(fitTotal, currencySymbol)}/mo in this category.`,
-      priority: "medium", savingsHint: `Could trim ${fmt(fitTotal * 0.5, currencySymbol)}/mo` });
+      detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmtC(fitTotal)}/mo in this category.`,
+      priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo` });
   }
 
   // Trial alerts
@@ -84,7 +84,7 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
     if (days >= 0 && days <= 7) {
       tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#DC2626",
         title: `${s.name} trial ends ${days === 0 ? "today" : `in ${days} day${days !== 1 ? "s" : ""}`}`,
-        detail: `You'll be charged ${fmt(s.price, currencySymbol)} automatically. If you don't want to continue, cancel before the trial ends.`,
+        detail: `You'll be charged ${fmtC(s.price)} automatically. If you don't want to continue, cancel before the trial ends.`,
         priority: "high" });
     }
   }
@@ -92,8 +92,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
   // High total spend
   if (totalMonthly >= 100) {
     tips.push({ id: "high-spend", icon: "trending-up", color: "#DC2626",
-      title: `${fmt(totalMonthly, currencySymbol)}/mo is above average`,
-      detail: `The average person spends $50–80/month on subscriptions. You're at ${fmt(totalMonthly, currencySymbol)} (${fmt(totalMonthly * 12, currencySymbol)}/yr). A quick audit could free up cash.`,
+      title: `${fmtC(totalMonthly)}/mo is above average`,
+      detail: `The average person spends $50–80/month on subscriptions. You're at ${fmtC(totalMonthly)} (${fmtC(totalMonthly * 12)}/yr). A quick audit could free up cash.`,
       priority: "high" });
   }
 
@@ -101,8 +101,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
   for (const s of subs) {
     if (toMonthly(s.price, s.billingCycle) >= 25) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#7C3AED",
-        title: `${s.name} costs ${fmt(toMonthly(s.price, s.billingCycle), currencySymbol)}/mo`,
-        detail: `That's ${fmt(toMonthly(s.price, s.billingCycle) * 12, currencySymbol)}/year. Check if a lower tier or family-sharing plan is available.`,
+        title: `${s.name} costs ${fmtC(toMonthly(s.price, s.billingCycle))}/mo`,
+        detail: `That's ${fmtC(toMonthly(s.price, s.billingCycle) * 12)}/year. Check if a lower tier or family-sharing plan is available.`,
         priority: "medium" });
     }
   }
@@ -113,8 +113,8 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
     tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#059669",
       title: "Switch to yearly and save",
-      detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmt(annualSaving, currencySymbol)}/year.`,
-      priority: "medium", savingsHint: `~${fmt(annualSaving, currencySymbol)}/yr` });
+      detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmtC(annualSaving)}/year.`,
+      priority: "medium", savingsHint: `~${fmtC(annualSaving)}/yr` });
   }
 
   // No yearly plans at all — nudge harder
@@ -135,14 +135,14 @@ function buildTips(subs: Sub[], currencySymbol: string): Tip[] {
     const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);
     tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#2563EB",
       title: `${thisWeek.length} renewals this week`,
-      detail: `${thisWeek.map(s => s.name).join(", ")} — totalling ${fmt(weekTotal, currencySymbol)} — renew in the next 7 days.`,
+      detail: `${thisWeek.map(s => s.name).join(", ")} — totalling ${fmtC(weekTotal)} — renew in the next 7 days.`,
       priority: "low" });
   }
 
   if (tips.length === 0) {
     tips.push({ id: "all-good", icon: "check-decagram", color: "#059669",
       title: "Everything looks good!",
-      detail: `You have ${subs.length} subscription${subs.length !== 1 ? "s" : ""} totalling ${fmt(totalMonthly, currencySymbol)}/mo. No issues detected right now.`,
+      detail: `You have ${subs.length} subscription${subs.length !== 1 ? "s" : ""} totalling ${fmtC(totalMonthly)}/mo. No issues detected right now.`,
       priority: "low" });
   }
 
@@ -164,7 +164,7 @@ const PRIORITY_LABEL: Record<string, string> = { high: "Action needed", medium: 
 
 export default function InsightsScreen() {
   const router = useRouter();
-  const { currency } = useCurrencyStore();
+  const fmtC = useFmt();
   const c = useTheme();
   const styles = makeStyles(c);
 
@@ -181,7 +181,7 @@ export default function InsightsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = subsLoading || summaryLoading;
-  const allTips = buildTips(subscriptions, currency.symbol);
+  const allTips = buildTips(subscriptions, fmtC);
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
@@ -200,8 +200,8 @@ export default function InsightsScreen() {
                 <Text style={styles.bannerTitle}>Spending snapshot</Text>
                 <Text style={styles.bannerSub}>
                   {subscriptions.length} subscription{subscriptions.length !== 1 ? "s" : ""}
-                  {"  ·  "}{fmt(monthlyTotal, currency.symbol)}/mo
-                  {"  ·  "}{fmt(monthlyTotal * 12, currency.symbol)}/yr
+                  {"  ·  "}{fmtC(monthlyTotal)}/mo
+                  {"  ·  "}{fmtC(monthlyTotal * 12)}/yr
                 </Text>
               </View>
               {highCount > 0 && (
@@ -214,7 +214,7 @@ export default function InsightsScreen() {
               <View style={styles.savingsRow}>
                 <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
                 <Text style={styles.savingsText}>
-                  Potential savings: up to {fmt(savingsPotential, currency.symbol)}/mo
+                  Potential savings: up to {fmtC(savingsPotential)}/mo
                 </Text>
               </View>
             )}

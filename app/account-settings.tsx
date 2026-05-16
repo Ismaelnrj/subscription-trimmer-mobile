@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
-import { useCurrencyStore, CURRENCIES, fmt } from "../lib/currency-store";
+import { useCurrencyStore, CURRENCIES, useFmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { isPasswordValid } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
@@ -19,6 +19,7 @@ export default function AccountSettingsScreen() {
   const { user, setUser, logout } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const { currency, setCurrency } = useCurrencyStore();
+  const fmtC = useFmt();
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -153,7 +154,7 @@ export default function AccountSettingsScreen() {
               />
               <Text style={styles.infoText}>
                 A warning appears on your dashboard when you reach 80% of this limit.
-                {settings?.budgetGoal != null ? `\nCurrent goal: ${fmt(settings.budgetGoal, currency.symbol)}/mo` : ""}
+                {settings?.budgetGoal != null ? `\nCurrent goal: ${fmtC(settings.budgetGoal)}/mo` : ""}
               </Text>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                 <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
