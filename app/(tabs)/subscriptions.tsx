@@ -121,6 +121,7 @@ export default function SubscriptionsScreen() {
     mutationFn: async (id: number) =>
       (await apiClient.post("/trpc/subscriptions.delete", { id })).data.result.data,
     onSuccess: invalidate,
+    onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
   });
 
   const onRefresh = async () => {
