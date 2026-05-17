@@ -28,13 +28,18 @@ export async function registerForPushNotificationsAsync() {
       return;
     }
 
-    token = (
-      await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.projectId,
-      })
-    ).data;
-
-    console.log("Push token:", token);
+    try {
+      token = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId: Constants.expoConfig?.extra?.eas?.projectId,
+        })
+      ).data;
+      console.log("Push token:", token);
+    } catch (err) {
+      // Firebase not initialised (google-services.json missing) — local
+      // scheduled notifications still work, so swallow this silently.
+      console.warn("[Notifications] Could not get push token:", err);
+    }
   } else {
     console.log("Must use physical device for Push Notifications");
   }
