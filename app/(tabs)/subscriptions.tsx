@@ -8,7 +8,7 @@ import { useRouter } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useFmt } from "../../lib/currency-store";
+import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { normaliseDateInput } from "../../lib/utils";
 import { useTheme, AppColors } from "../../lib/theme";
@@ -30,6 +30,7 @@ export default function SubscriptionsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
+  const { currency, baseCurrencyCode, convert } = useCurrencyStore();
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -406,12 +407,25 @@ export default function SubscriptionsScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder="Price (e.g. 9.99)"
+                placeholder={`Price in ${baseCurrencyCode} (e.g. 9.99)`}
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
                 value={formData.price}
                 onChangeText={(t) => setFormData({ ...formData, price: t })}
               />
+              {(() => {
+                const raw = parseFloat(formData.price);
+                if (!isNaN(raw) && raw > 0 && currency.code !== baseCurrencyCode) {
+                  const converted = convert(raw);
+                  const decimals = currency.code === "JPY" ? 0 : 2;
+                  return (
+                    <Text style={styles.priceHint}>
+                      ≈ {currency.symbol}{converted.toFixed(decimals)} {currency.code}
+                    </Text>
+                  );
+                }
+                return null;
+              })()}
 
               <Text style={styles.label}>Billing Cycle</Text>
               <View style={styles.chipRow}>
@@ -578,6 +592,7 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.inputBg,
     },
     label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
+    priceHint: { fontSize: 12, color: c.primary, marginTop: -8, marginBottom: 12, marginLeft: 2 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
     chip: {
       paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
