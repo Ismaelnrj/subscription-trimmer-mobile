@@ -11,6 +11,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { normaliseDateInput } from "../../lib/utils";
+import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 
 const FREE_LIMIT = 5;
@@ -43,6 +44,8 @@ export default function SubscriptionsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCatDraft, setCustomCatDraft] = useState("");
+  const [showEmailPaste, setShowEmailPaste] = useState(false);
+  const [emailText, setEmailText] = useState("");
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -146,6 +149,7 @@ export default function SubscriptionsScreen() {
   const closeModal = () => {
     setShowModal(false); setEditingId(null); setFormData(emptyForm);
     setShowCustomInput(false); setCustomCatDraft("");
+    setShowEmailPaste(false); setEmailText("");
   };
 
   const addCustomCategory = () => {
@@ -321,6 +325,15 @@ export default function SubscriptionsScreen() {
             </View>
           )}
 
+          <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
+            <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emailHintTitle}>Got a purchase email?</Text>
+              <Text style={styles.emailHintSub}>Tap + → Auto-fill to add it in seconds</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={18} color={c.primary} />
+          </TouchableOpacity>
+
           <TextInput
             style={styles.searchBar}
             placeholder="Search subscriptions..."
@@ -397,6 +410,60 @@ export default function SubscriptionsScreen() {
               <Text style={styles.modalTitle}>
                 {editingId ? "Edit Subscription" : "Add Subscription"}
               </Text>
+
+              {!editingId && (
+                <TouchableOpacity
+                  style={styles.emailFillButton}
+                  onPress={() => setShowEmailPaste(!showEmailPaste)}
+                >
+                  <MaterialCommunityIcons name="email-fast-outline" size={16} color={c.primary} />
+                  <Text style={styles.emailFillButtonText}>
+                    {showEmailPaste ? "Hide auto-fill" : "Auto-fill from purchase email"}
+                  </Text>
+                  <MaterialCommunityIcons
+                    name={showEmailPaste ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={c.primary}
+                  />
+                </TouchableOpacity>
+              )}
+
+              {showEmailPaste && (
+                <View style={styles.emailPasteBox}>
+                  <Text style={styles.emailPasteLabel}>
+                    Paste your purchase / confirmation email below — we'll fill in the details for you.
+                  </Text>
+                  <TextInput
+                    style={styles.emailPasteInput}
+                    multiline
+                    numberOfLines={5}
+                    placeholder="Paste email text here..."
+                    placeholderTextColor={c.placeholder}
+                    value={emailText}
+                    onChangeText={(t) => {
+                      setEmailText(t);
+                      const parsed = parseSubscriptionEmail(t);
+                      setFormData((prev) => ({
+                        ...prev,
+                        ...(parsed.name ? { name: parsed.name } : {}),
+                        ...(parsed.price ? { price: parsed.price } : {}),
+                        ...(parsed.billingCycle ? { billingCycle: parsed.billingCycle } : {}),
+                      }));
+                    }}
+                    textAlignVertical="top"
+                  />
+                  {(formData.name || formData.price) && (
+                    <View style={styles.parsedPreview}>
+                      <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
+                      <Text style={styles.parsedPreviewText}>
+                        Detected:{formData.name ? ` ${formData.name}` : ""}
+                        {formData.price ? ` · ${baseCurrencyCode} ${formData.price}` : ""}
+                        {formData.billingCycle ? ` · ${formData.billingCycle}` : ""}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
 
               <TextInput
                 style={styles.input}
@@ -624,5 +691,33 @@ function makeStyles(c: AppColors) {
       alignItems: "center", marginTop: 8,
     },
     cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
+    emailHintBanner: {
+      flexDirection: "row", alignItems: "center", gap: 10,
+      backgroundColor: c.primaryLight, borderRadius: 10, padding: 12, marginBottom: 12,
+      borderWidth: 1, borderColor: c.primary,
+    },
+    emailHintTitle: { fontSize: 13, fontWeight: "700", color: c.primary },
+    emailHintSub: { fontSize: 11, color: c.primary, opacity: 0.8, marginTop: 1 },
+    emailFillButton: {
+      flexDirection: "row", alignItems: "center", gap: 8,
+      backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
+      borderWidth: 1, borderColor: c.primary,
+    },
+    emailFillButtonText: { flex: 1, fontSize: 13, fontWeight: "600", color: c.primary },
+    emailPasteBox: {
+      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
+      borderColor: c.primary, padding: 12, marginBottom: 14,
+    },
+    emailPasteLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 8, lineHeight: 17 },
+    emailPasteInput: {
+      fontSize: 13, color: c.text, minHeight: 100, borderWidth: 1,
+      borderColor: c.border, borderRadius: 6, padding: 10, backgroundColor: c.inputBg,
+    },
+    parsedPreview: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      marginTop: 8, backgroundColor: c.success + "18",
+      borderRadius: 6, padding: 8,
+    },
+    parsedPreviewText: { fontSize: 12, color: c.success, flex: 1, fontWeight: "600" },
   });
 }
