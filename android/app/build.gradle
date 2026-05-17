@@ -114,7 +114,7 @@ android {
         applicationId "com.subtrimmer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 11
+        versionCode 12
         versionName "1.0"
     }
     signingConfigs {
@@ -204,44 +204,52 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// Strip sensitive permissions from the merged manifest after every variant merge.
-// This runs inside Gradle regardless of npm/postinstall and catches anything
-// injected by library manifests (expo-image-picker, expo-camera, etc.).
-android.applicationVariants.all { variant ->
-    def variantName = variant.name.capitalize()
-    def processManifestTask = tasks.findByName("process${variantName}Manifest")
-    if (processManifestTask) {
-        processManifestTask.doLast {
-            def manifestDir = new File("${buildDir}/intermediates/merged_manifests/${variant.name}")
-            if (!manifestDir.exists()) {
-                manifestDir = new File("${buildDir}/intermediates/bundle_manifest/${variant.name}/AndroidManifest.xml").parentFile
-            }
-            def manifestFile = new File(manifestDir, "AndroidManifest.xml")
-            if (!manifestFile.exists()) {
-                fileTree(dir: "${buildDir}/intermediates", include: "**/merged_manifests/**/AndroidManifest.xml").each { f ->
-                    if (f.absolutePath.contains(variant.name)) manifestFile = f
+// Strip sensitive permissions from the merged manifest after Gradle merges it.
+// Uses afterEvaluate so tasks are fully registered before we hook into them.
+// Hardcoded regex strings (no Pattern.quote) to avoid Groovy GString expansion issues.
+afterEvaluate {
+    android.applicationVariants.each { variant ->
+        def taskName = "process${variant.name.capitalize()}Manifest"
+        def manifestTask = tasks.findByName(taskName)
+        if (manifestTask == null) return
+
+        manifestTask.doLast {
+            // AGP writes the merged manifest to one of these two locations
+            def candidates = [
+                new File("${buildDir}/intermediates/merged_manifests/${variant.name}/AndroidManifest.xml"),
+                new File("${buildDir}/intermediates/merged_manifests/${variant.name}/${taskName}/AndroidManifest.xml"),
+                new File("${buildDir}/intermediates/bundle_manifest/${variant.name}/AndroidManifest.xml"),
+            ]
+            // Also do a broad search as a fallback
+            def found = candidates.find { it.exists() }
+            if (found == null) {
+                fileTree(dir: "${buildDir}/intermediates") {
+                    include "**/AndroidManifest.xml"
+                }.each { f ->
+                    if (f.absolutePath.contains(variant.name) && found == null) found = f
                 }
             }
-            if (manifestFile.exists()) {
-                def permsToStrip = [
-                    "android.permission.READ_MEDIA_IMAGES",
-                    "android.permission.READ_MEDIA_VIDEO",
-                    "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE",
-                    "android.permission.CAMERA",
-                    "android.permission.RECORD_AUDIO",
-                    "android.permission.SYSTEM_ALERT_WINDOW",
-                ]
-                def content = manifestFile.text
-                def original = content
-                permsToStrip.each { perm ->
-                    content = content.replaceAll(/(?m)\s*<uses-permission[^>]*android:name="${java.util.regex.Pattern.quote(perm)}"[^>]*\/>/, "")
-                }
-                if (content != original) {
-                    manifestFile.text = content
-                    println "[strip-perms] Cleaned merged manifest: ${manifestFile.absolutePath}"
-                }
+            if (found == null) {
+                println "[strip-perms] WARNING: merged manifest not found for variant ${variant.name}"
+                return
+            }
+
+            def content = found.text
+            def original = content
+            // Each permission stripped individually (no Pattern.quote — literals only)
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.READ_MEDIA_IMAGES"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.READ_MEDIA_VIDEO"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.READ_MEDIA_VISUAL_USER_SELECTED"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.READ_EXTERNAL_STORAGE"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.WRITE_EXTERNAL_STORAGE"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.CAMERA"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.RECORD_AUDIO"[^>]*\/>/, "")
+            content = content.replaceAll(/\s*<uses-permission[^>]*android:name="android\.permission\.SYSTEM_ALERT_WINDOW"[^>]*\/>/, "")
+            if (content != original) {
+                found.text = content
+                println "[strip-perms] Cleaned merged manifest: ${found.absolutePath}"
+            } else {
+                println "[strip-perms] No banned permissions found in: ${found.absolutePath}"
             }
         }
     }

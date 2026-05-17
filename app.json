@@ -11,7 +11,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 11,
+      "versionCode": 12,
       "permissions": [
         "INTERNET",
         "RECEIVE_BOOT_COMPLETED",
