@@ -114,7 +114,7 @@ android {
         applicationId "com.subtrimmer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 10
         versionName "1.0"
     }
     signingConfigs {
