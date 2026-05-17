@@ -75,7 +75,7 @@ export default function SubscriptionsScreen() {
   const filtered = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
     return q ? subscriptions.filter((s: any) =>
-      s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q)
+      (s.name ?? "").toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q)
     ) : subscriptions;
   }, [subscriptions, debouncedSearch]);
 

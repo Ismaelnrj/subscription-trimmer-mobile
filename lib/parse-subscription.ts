@@ -7,7 +7,9 @@ export interface ParsedSubscription {
   billingCycle?: "monthly" | "yearly" | "weekly";
 }
 
-const CURRENCY_SYMBOLS = ["$", "€", "£", "₹", "¥", "R\\$", "C\\$", "A\\$", "MX\\$"];
+// $ must be escaped (\$) so the regex engine treats it as a literal character,
+// not an end-of-string anchor — otherwise "$9.99" prices are never matched.
+const CURRENCY_SYMBOLS = ["\\$", "€", "£", "₹", "¥", "R\\$", "C\\$", "A\\$", "MX\\$"];
 const CURRENCY_PATTERN = CURRENCY_SYMBOLS.join("|");
 
 // Well-known service name hints extracted from email sender / subject lines
@@ -89,7 +91,7 @@ function extractPrice(text: string): string | undefined {
 
 function extractCycle(text: string): "monthly" | "yearly" | "weekly" | undefined {
   const lower = text.toLowerCase();
-  if (/\b(?:annual|yearly|per year|\/year|every year|12.month)\b/.test(lower)) return "yearly";
+  if (/\b(?:annual|yearly|per year|\/year|every year|12[\s-]?month)\b/.test(lower)) return "yearly";
   if (/\b(?:weekly|per week|every week|\/week)\b/.test(lower)) return "weekly";
   if (/\b(?:monthly|per month|\/month|every month|\/mo\b|mo\/)\b/.test(lower)) return "monthly";
   return undefined;

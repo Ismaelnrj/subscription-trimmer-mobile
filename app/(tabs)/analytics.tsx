@@ -40,7 +40,7 @@ export default function AnalyticsScreen() {
     );
   }
 
-  const maxAmount = Math.max(...(summary?.categoryBreakdown?.map((cat: any) => cat.amount) || [1]));
+  const maxAmount = Math.max(...(summary?.categoryBreakdown?.map((cat: any) => cat.amount) || [1]), 0.001);
   const budgetGoal = settings?.budgetGoal;
   const monthly = summary?.monthlyTotal ?? 0;
 
