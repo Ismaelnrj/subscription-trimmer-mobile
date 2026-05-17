@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function AlertsScreen() {
+  const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
 
@@ -70,7 +71,7 @@ export default function AlertsScreen() {
                       <Text style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
                         Service: <Text style={{ fontWeight: "600" }}>{alert.subscriptionName}</Text>
                       </Text>
-                      <TouchableOpacity style={styles.actionButton}>
+                      <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
                         <Text style={styles.actionButtonText}>View Subscription</Text>
                       </TouchableOpacity>
                     </View>

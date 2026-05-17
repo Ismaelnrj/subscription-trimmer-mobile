@@ -47,7 +47,7 @@ export default function DashboardScreen() {
 
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
-  const isLoading = summaryLoading && subsLoading;
+  const isLoading = summaryLoading || subsLoading;
   const recentSubs = subscriptions.slice(0, 3);
 
   const budgetGoal = settings?.budgetGoal;
@@ -218,7 +218,7 @@ export default function DashboardScreen() {
               ? (sub.price * 52) / 12
               : null;
             return (
-              <View key={sub.id} style={styles.subCard}>
+              <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push("/(tabs)/subscriptions")}>
                 <View>
                   <Text style={styles.subName}>{sub.name}</Text>
                   <Text style={styles.subMeta}>
@@ -226,8 +226,8 @@ export default function DashboardScreen() {
                     {monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}
                   </Text>
                 </View>
-                <Text style={styles.subPrice}>{fmtC(sub.price)}</Text>
-              </View>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
+              </TouchableOpacity>
             );
           })
         )}

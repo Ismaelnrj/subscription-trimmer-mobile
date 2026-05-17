@@ -30,10 +30,9 @@ apiClient.interceptors.request.use(async (config) => {
 async function retryRequest(error: any, retries = 2): Promise<any> {
   const isNetworkError = !error.response;
   const isServerError = error.response?.status >= 500;
-  if ((isNetworkError || isServerError) && retries > 0 && error.config && !error.config.__retried) {
-    error.config.__retried = true;
+  if ((isNetworkError || isServerError) && retries > 0 && error.config) {
     await new Promise((r) => setTimeout(r, (3 - retries) * 1000));
-    return apiClient(error.config).catch((e) => retryRequest(e, retries - 1));
+    return apiClient({ ...error.config }).catch((e) => retryRequest(e, retries - 1));
   }
   return Promise.reject(error);
 }

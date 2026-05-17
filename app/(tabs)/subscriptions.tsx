@@ -605,7 +605,7 @@ function makeStyles(c: AppColors) {
     chipTextActive: { color: "#FFFFFF" },
     customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
     customCatInput: {
-      flex: 1, borderWidth: 1, borderColor: "#DDD6FE", borderRadius: 8,
+      flex: 1, borderWidth: 1, borderColor: c.primary, borderRadius: 8,
       paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: c.text,
       backgroundColor: c.primaryLight,
     },

@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../lib/api";
 import { useFmt } from "../lib/currency-store";
@@ -181,7 +182,7 @@ export default function InsightsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = subsLoading || summaryLoading;
-  const allTips = buildTips(subscriptions, fmtC);
+  const allTips = useMemo(() => buildTips(subscriptions, fmtC), [subscriptions, fmtC]);
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
