@@ -18,6 +18,9 @@ if (!process.env.DATABASE_URL) {
   console.error('FATAL: DATABASE_URL environment variable is not set. Set it to your PostgreSQL connection string.');
   process.exit(1);
 }
+if (!process.env.CRON_SECRET) {
+  console.warn('WARNING: CRON_SECRET is not set. Email reminder cron endpoint will reject all requests.');
+}
 
 app.use(cors());
 app.use(express.json());
@@ -472,8 +475,11 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
   try {
-    const { id, name, price, billingCycle, category, trialEndDate } = req.body;
+    const { id, name, billingCycle, category, trialEndDate } = req.body;
+    const price = parseFloat(req.body.price);
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
+    if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
+    if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
 
     const check = await pool.query(
       'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
@@ -487,8 +493,8 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       : existing.next_billing_date;
 
     const result = await pool.query(
-      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 RETURNING *',
-      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id]
+      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
+      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id, req.userId]
     );
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
@@ -504,7 +510,7 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
       [id, req.userId]
     );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
-    await pool.query('DELETE FROM subscriptions WHERE id = $1', [id]);
+    await pool.query('DELETE FROM subscriptions WHERE id = $1 AND user_id = $2', [id, req.userId]);
     res.json(trpc({ success: true }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -604,19 +610,32 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
-    const subs = result.rows;
+    const [subResult, settingsResult] = await Promise.all([
+      pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
+    ]);
+    const subs = subResult.rows;
+    const sym = settingsResult.rows[0]?.currency_symbol || '$';
     const now = new Date();
     const alerts = [];
 
     for (const sub of subs) {
-      const days = Math.ceil((new Date(sub.next_billing_date) - now) / 86400000);
+      // Auto-advance stale billing dates so renewal alerts stay accurate
+      let billingDate = new Date(sub.next_billing_date);
+      while (billingDate < now) {
+        if (sub.billing_cycle === 'weekly') billingDate.setDate(billingDate.getDate() + 7);
+        else if (sub.billing_cycle === 'yearly') billingDate.setFullYear(billingDate.getFullYear() + 1);
+        else billingDate.setMonth(billingDate.getMonth() + 1);
+        await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
+      }
+
+      const days = Math.ceil((billingDate - now) / 86400000);
       if (days <= 7) {
         alerts.push({
           id: sub.id,
           type: 'renewal_alert',
           title: `${sub.name} billing ${days <= 0 ? 'today' : `in ${days} day${days !== 1 ? 's' : ''}`}`,
-          message: `$${sub.price} will be charged for ${sub.name}.`,
+          message: `${sym}${parseFloat(sub.price).toFixed(2)} will be charged for ${sub.name}.`,
           subscriptionName: sub.name,
           severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
         });
@@ -642,7 +661,7 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
         id: 0,
         type: 'expensive_alert',
         title: 'High monthly spending',
-        message: `You spend $${monthlyTotal.toFixed(2)}/month on subscriptions.`,
+        message: `You spend ${sym}${monthlyTotal.toFixed(2)}/month on subscriptions.`,
         subscriptionName: null,
         severity: 'low',
       });
