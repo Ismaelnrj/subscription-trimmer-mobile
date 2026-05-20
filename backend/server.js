@@ -620,17 +620,28 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
     const alerts = [];
 
     for (const sub of subs) {
-      // Auto-advance stale billing dates so renewal alerts stay accurate
-      let billingDate = new Date(sub.next_billing_date);
-      while (billingDate < now) {
-        if (sub.billing_cycle === 'weekly') billingDate.setDate(billingDate.getDate() + 7);
-        else if (sub.billing_cycle === 'yearly') billingDate.setFullYear(billingDate.getFullYear() + 1);
-        else billingDate.setMonth(billingDate.getMonth() + 1);
+      // Auto-advance stale billing dates so renewal alerts stay accurate.
+      // Guard against null/invalid dates to prevent infinite loops.
+      let billingDate = sub.next_billing_date ? new Date(sub.next_billing_date) : null;
+      if (billingDate && !isNaN(billingDate.getTime())) {
+        let iterations = 0;
+        while (billingDate < now && iterations < 1000) {
+          iterations++;
+          if (sub.billing_cycle === 'weekly') billingDate.setDate(billingDate.getDate() + 7);
+          else if (sub.billing_cycle === 'yearly') billingDate.setFullYear(billingDate.getFullYear() + 1);
+          else billingDate.setMonth(billingDate.getMonth() + 1);
+        }
+        if (iterations > 0 && billingDate >= now) {
+          await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
+        }
+      } else {
+        // Missing billing date — set it now and skip alert for this cycle
+        billingDate = new Date(nextBillingDate(sub.billing_cycle));
         await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
       }
 
       const days = Math.ceil((billingDate - now) / 86400000);
-      if (days <= 7) {
+      if (days <= 7 && days >= -1) {
         alerts.push({
           id: sub.id,
           type: 'renewal_alert',
