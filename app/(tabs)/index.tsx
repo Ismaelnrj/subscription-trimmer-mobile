@@ -26,7 +26,7 @@ export default function DashboardScreen() {
   const { data: subscriptions = [], isLoading: subsLoading, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
-    onSuccess: (data: any[]) => scheduleRenewalReminders(data),
+    onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol),
   });
 
   const { data: settings } = useQuery({
