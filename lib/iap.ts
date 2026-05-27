@@ -101,8 +101,13 @@ export async function buyPremium(): Promise<void> {
 }
 
 export async function sendTip(productId: string): Promise<void> {
-  const pkgs = await getOfferings();
-  const tip = pkgs.find((p) => p.product.identifier === productId);
+  // Tips may live in a separate "tips" offering or in the default one — check both.
+  const offerings = await Purchases.getOfferings();
+  const allPackages = [
+    ...(offerings.all["tips"]?.availablePackages ?? []),
+    ...(offerings.current?.availablePackages ?? []),
+  ];
+  const tip = allPackages.find((p) => p.product.identifier === productId);
   if (!tip) throw new Error("Tip product not found.");
   await Purchases.purchasePackage(tip);
 }

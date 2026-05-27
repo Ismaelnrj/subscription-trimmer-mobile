@@ -74,6 +74,7 @@ export default function UpgradeScreen() {
     try {
       await purchasePackage(pkg);
       setIsPremium(true);
+      if (user) setUser({ ...user, isPaid: true });
       Alert.alert("Welcome to Premium! 🎉", "All features are now unlocked. Thank you for supporting Trimio!", [
         { text: "Let's go!", onPress: () => router.back() },
       ]);
@@ -93,6 +94,7 @@ export default function UpgradeScreen() {
       const restored = await restorePremium();
       if (restored) {
         setIsPremium(true);
+        if (user) setUser({ ...user, isPaid: true });
         Alert.alert("Restored!", "Your premium access has been restored.");
       } else {
         Alert.alert("No purchase found", "No previous purchase was found for this account.");
