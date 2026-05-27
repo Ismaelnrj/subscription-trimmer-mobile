@@ -34,9 +34,9 @@ export const PRODUCT_IDS = {
 };
 
 export const TIP_IDS = {
-  coffee: "trimio-tip-coffee",
-  lunch:  "trimio-tip-lunch",
-  dinner: "trimio-tip-dinner",
+  coffee: "trimio_tip_coffee",
+  lunch:  "trimio_tip_lunch",
+  dinner: "trimio_tip_dinner",
 };
 
 let _configured = false;
