@@ -25,7 +25,7 @@ import apiClient from "./api";
 
 const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 
-const ENTITLEMENT_ID = "premium";
+const ENTITLEMENT_ID = "Trimio Premium";
 
 export const PRODUCT_IDS = {
   monthly:  "trimio_premium_monthly",
