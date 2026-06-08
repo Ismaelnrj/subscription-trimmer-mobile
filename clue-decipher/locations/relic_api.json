@@ -1,0 +1,9 @@
+{
+  "_comment": "A cached response from the old 'Relic Registry' API. Look up records by id.",
+  "endpoint": "GET /relics/:id",
+  "records": [
+    { "id": 1882, "cipher_note": "ORLB ZIVMR Z TLOW UZXV LU H KSZIZLS" },
+    { "id": 1947, "cipher_note": "GSV GIVZHFIV ZDZRGH RM OLXZGRLMH GIVZHFIV GCG" },
+    { "id": 2010, "cipher_note": "Z YILPVM XOZB GZYOVG, MLGSRMT NLIV" }
+  ]
+}

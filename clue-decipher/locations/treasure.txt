@@ -1,0 +1,16 @@
+         _____________________
+        /                     \
+       |   YOU FOUND IT!       |
+       |   THE LOST CIPHER     |
+       |   OF THE FOUR VAULTS  |
+        \_____________________/
+              )  (
+             (    )
+              )  (
+            _(______)_
+
+You traced the trail across an env file, a papyrus scroll,
+a vault database, and a cached relic API response —
+decoding Base64, Morse, Caesar and Atbash along the way.
+
+Not bad, for an archaeologist of text.

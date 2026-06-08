@@ -1,0 +1,16 @@
+{
+  "name": "clue-decipher",
+  "version": "1.0.0",
+  "description": "An Indiana-Jones-style adventure where you decode clues hidden across diverse storage locations (env files, scrolls, databases, cached APIs) — plus a standalone scanner that hunts for ciphered text anywhere.",
+  "private": true,
+  "bin": {
+    "clue-decipher-play": "./bin/play.js",
+    "clue-decipher-scan": "./bin/scan.js"
+  },
+  "scripts": {
+    "play": "node bin/play.js",
+    "scan": "node bin/scan.js",
+    "test": "node test/ciphers.test.js"
+  },
+  "license": "MIT"
+}
