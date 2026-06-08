@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Spy Decipher",
+    "slug": "spy-decipher",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0a0f0a"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.spydecipher.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is needed to overlay spy objects in AR mode.",
+        "NSLocationWhenInUseUsageDescription": "Location is needed to find nearby dead drops."
+      }
+    },
+    "android": {
+      "package": "com.spydecipher.app",
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        { "cameraPermission": "Camera needed for AR dead-drop detection." }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Location needed to detect nearby dead drops."
+        }
+      ]
+    ]
+  }
+}
