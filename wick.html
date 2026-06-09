@@ -260,13 +260,15 @@ html, body {
    ================================================================ */
 #puzzle1-display {
   font-family: 'Courier New', monospace;
-  font-size: clamp(1rem, 4vw, 1.4rem);
+  font-size: clamp(0.85rem, 3.5vw, 1.2rem);
   color: #c0a060;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.15em;
   text-shadow: 0 0 12px rgba(180,140,60,0.3);
   margin-bottom: 1rem;
-  word-break: break-all;
+  white-space: nowrap;
+  overflow-x: auto;
   line-height: 1.8;
+  padding-bottom: 0.2rem;
 }
 
 .scratch-marks {
@@ -275,6 +277,8 @@ html, body {
   letter-spacing: 0.3em;
   margin-bottom: 0.5rem;
   font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow-x: auto;
 }
 
 #puzzle1-input-row {
@@ -819,7 +823,7 @@ html, body {
     <div class="puzzle-zone" id="zone1">
       <div class="puzzle-label">— wall inscription —</div>
       <div class="scratch-marks">|||  ||||  |||  |  |||||||||</div>
-      <div id="puzzle1-display">2 — 5 — 3 — 1 — 9 — <span style="color:#3a2a10">?</span></div>
+      <div id="puzzle1-display">2 &mdash; 5 &mdash; 3 &mdash; 1 &mdash; 9 &mdash; <span style="color:#c49a2a">?</span></div>
       <div id="puzzle1-input-row">
         <input type="number" class="puzzle-input" id="p1-input" placeholder="?" min="0" max="99" autocomplete="off">
         <button class="submit-btn" onclick="submitPuzzle1()">SUBMIT</button>
