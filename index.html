@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WICK</title>
+<style>
+/* ================================================================
+   BASE RESET & TYPOGRAPHY
+   ================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0a;
+  --amber: #c49a2a;
+  --amber-light: #e8c060;
+  --paper: #c8b89a;
+  --paper-dark: #a89070;
+  --text-dim: #888;
+  --white: #d8d0c0;
+  --red: #c04040;
+  --flicker-opacity: 1;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: Georgia, serif;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* ================================================================
+   SCREEN SYSTEM
+   ================================================================ */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: opacity 0.6s ease;
+}
+
+.screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ================================================================
+   START SCREEN
+   ================================================================ */
+#screen-start {
+  background: #000;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+#screen-start h1 {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(3rem, 10vw, 5rem);
+  color: var(--amber);
+  letter-spacing: 0.3em;
+  text-shadow: 0 0 40px rgba(139,105,20,0.5);
+}
+
+#screen-start p {
+  color: #aaa;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.input-group input {
+  background: #111;
+  border: 1px solid var(--amber);
+  color: var(--amber-light);
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 2px;
+  outline: none;
+  width: 100%;
+  letter-spacing: 0.05em;
+}
+
+.input-group input:focus {
+  border-color: var(--amber-light);
+  box-shadow: 0 0 8px rgba(139,105,20,0.3);
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--amber);
+  color: var(--amber);
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+  padding: 0.85rem 2rem;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover, .btn:focus {
+  background: rgba(139,105,20,0.15);
+  border-color: var(--amber-light);
+  color: var(--amber-light);
+  outline: none;
+}
+
+.btn:active {
+  background: rgba(139,105,20,0.3);
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  border-color: #555;
+  color: #777;
+}
+
+.btn-danger:hover {
+  background: rgba(100,0,0,0.2);
+  border-color: #888;
+  color: #aaa;
+}
+
+/* ================================================================
+   GAME SCREEN
+   ================================================================ */
+#screen-game {
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+#screen-game.active {
+  display: flex;
+}
+
+/* Timer bar */
+#timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+#timer-display {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #999;
+  letter-spacing: 0.1em;
+}
+
+#phase-display {
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: #666;
+  letter-spacing: 0.15em;
+}
+
+/* Cell environment */
+#cell-env {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  opacity: var(--flicker-opacity);
+  padding-bottom: 0.5rem;
+}
+
+/* Puzzle zones */
+.puzzle-zone {
+  border: 1px solid #3a3020;
+  border-radius: 3px;
+  padding: 1.25rem;
+  background: #0f0e0b;
+  transition: border-color 0.5s, opacity 0.5s;
+  position: relative;
+}
+
+.puzzle-zone.locked {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.puzzle-zone.solved {
+  border-color: #2a4a2a;
+}
+
+.puzzle-zone.solved::after {
+  content: '✓';
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  color: #5a9a5a;
+  font-size: 1rem;
+}
+
+.puzzle-label {
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  color: #7a6a50;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+/* Attempt dots */
+.attempt-dots {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  transition: background 0.3s;
+}
+
+.dot.used {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/* ================================================================
+   PUZZLE 1 — WALL SCRATCHING
+   ================================================================ */
+#puzzle1-display {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(0.85rem, 3.5vw, 1.2rem);
+  color: #c0a060;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 12px rgba(180,140,60,0.3);
+  margin-bottom: 1rem;
+  white-space: nowrap;
+  overflow-x: auto;
+  line-height: 1.8;
+  padding-bottom: 0.2rem;
+}
+
+.scratch-marks {
+  color: #7a6a4a;
+  font-size: 0.65rem;
+  letter-spacing: 0.3em;
+  margin-bottom: 0.5rem;
+  font-family: 'Courier New', monospace;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+#puzzle1-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.puzzle-input {
+  background: #111008;
+  border: 1px solid #5a4a28;
+  color: var(--amber-light);
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 2px;
+  outline: none;
+  width: 80px;
+  text-align: center;
+}
+
+.puzzle-input:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 6px rgba(196,154,42,0.25);
+}
+
+.puzzle-input.shake {
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.puzzle-input.correct {
+  border-color: #4a8a4a;
+  color: #7aba7a;
+}
+
+.submit-btn {
+  background: transparent;
+  border: 1px solid #5a4a28;
+  color: #b09050;
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  letter-spacing: 0.15em;
+  border-radius: 2px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+}
+
+.submit-btn:hover {
+  border-color: var(--amber-light);
+  color: var(--amber-light);
+}
+
+/* Brick animation */
+#brick-reveal {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #7aba7a;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+#brick-reveal.open {
+  max-height: 60px;
+}
+
+/* ================================================================
+   PUZZLE 2 — NEWSPAPER
+   ================================================================ */
+#newspaper {
+  background: linear-gradient(135deg, #c8b89a 0%, #b8a88a 40%, #c2b090 70%, #baa880 100%);
+  border: 2px solid #8a7860;
+  border-radius: 2px;
+  padding: 1rem;
+  position: relative;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.4), 2px 2px 8px rgba(0,0,0,0.8);
+  margin-bottom: 0.75rem;
+}
+
+#newspaper::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='4' height='4' fill='%23c8b89a'/%3E%3Ccircle cx='1' cy='1' r='0.5' fill='%23b0a080' opacity='0.4'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+.newspaper-headline {
+  font-family: Georgia, serif;
+  font-size: clamp(0.85rem, 3vw, 1rem);
+  font-weight: bold;
+  color: #1a1008;
+  text-align: center;
+  border-bottom: 2px solid #8a7860;
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  position: relative;
+  z-index: 1;
+}
+
+.newspaper-dateline {
+  font-family: Georgia, serif;
+  font-size: 0.65rem;
+  color: #5a4a30;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.newspaper-body {
+  font-family: Georgia, serif;
+  font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+  color: #1e140a;
+  line-height: 1.6;
+  column-count: 2;
+  column-gap: 0.75rem;
+  position: relative;
+  z-index: 1;
+  word-spacing: 0.05em;
+}
+
+.circled {
+  display: inline-block;
+  border: 2px solid #992020;
+  border-radius: 50%;
+  padding: 0 3px;
+  margin: 0 1px;
+  color: #1a0808;
+  font-weight: bold;
+  background: rgba(200,80,80,0.2);
+  line-height: 1.4;
+  font-size: 1em;
+}
+
+/* Panel reveal animation */
+#panel-reveal {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #7aba7a;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+#panel-reveal.open {
+  max-height: 60px;
+}
+
+/* ================================================================
+   PUZZLE 3 — THE CUP
+   ================================================================ */
+#cup-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+#cup-visual {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.cup-svg-wrap {
+  position: relative;
+}
+
+.cup-label {
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  color: #8a7a58;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+#grid-container {
+  flex: 1;
+  min-width: 150px;
+}
+
+.grid-label {
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  color: #8a7a58;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+#direction-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  max-width: 180px;
+}
+
+.grid-cell {
+  aspect-ratio: 1;
+  background: #111008;
+  border: 1px solid #3a3018;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+  color: #8a7848;
+  border-radius: 2px;
+  transition: all 0.3s;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.grid-cell.highlighted {
+  background: #1a1408;
+  border-color: var(--amber);
+  color: var(--amber-light);
+  box-shadow: 0 0 6px rgba(139,105,20,0.4);
+}
+
+/* Sequence input */
+#sequence-display {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0.5rem;
+  flex-wrap: wrap;
+}
+
+.seq-slot {
+  width: 42px;
+  height: 42px;
+  background: #111008;
+  border: 1px solid #5a4a28;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--amber-light);
+  transition: border-color 0.3s;
+  flex-shrink: 0;
+}
+
+.seq-slot.filled {
+  border-color: #9a7a38;
+}
+
+.seq-slot.correct-slot {
+  border-color: #4a8a4a;
+  color: #7aba7a;
+}
+
+#arrow-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  max-width: 160px;
+  margin-bottom: 0.5rem;
+}
+
+.arrow-btn {
+  aspect-ratio: 1;
+  background: #111008;
+  border: 1px solid #5a4a28;
+  color: #b09050;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.arrow-btn:hover, .arrow-btn:active {
+  background: #1a1408;
+  border-color: var(--amber);
+  color: var(--amber-light);
+}
+
+.arrow-btn.empty { background: transparent; border-color: transparent; pointer-events: none; }
+
+#clear-seq-btn {
+  font-family: 'Courier New', monospace;
+  font-size: 0.65rem;
+  background: transparent;
+  border: 1px solid #5a4a28;
+  color: #907840;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  border-radius: 2px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s;
+}
+
+#clear-seq-btn:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+#door-reveal {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Courier New', monospace;
+  font-size: 0.75rem;
+  color: #7aba7a;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+#door-reveal.open {
+  max-height: 60px;
+}
+
+/* ================================================================
+   WICK TERMINAL
+   ================================================================ */
+#wick-terminal {
+  flex-shrink: 0;
+  background: #080706;
+  border-top: 1px solid #3a3020;
+  padding: 0.6rem 1rem;
+  min-height: 60px;
+  max-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+#wick-watching {
+  font-family: 'Courier New', monospace;
+  font-size: 0.6rem;
+  color: #5a4a28;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  height: 0.8rem;
+}
+
+#wick-watching.loading {
+  color: #8a6a30;
+  animation: blink 1.2s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+#wick-text {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(0.85rem, 3vw, 1rem);
+  color: #c8a858;
+  line-height: 1.4;
+  min-height: 1.4em;
+  letter-spacing: 0.03em;
+}
+
+#wick-cursor {
+  display: inline-block;
+  width: 7px;
+  height: 0.9em;
+  background: #9a7a38;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  animation: blink 0.8s step-end infinite;
+}
+
+/* ================================================================
+   GAME OVER SCREENS
+   ================================================================ */
+#screen-escape {
+  background: var(--bg);
+  gap: 2rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+#screen-escape .escape-title {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  color: var(--amber);
+  letter-spacing: 0.3em;
+}
+
+#screen-escape .escape-sub {
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  color: #aaa;
+  line-height: 1.8;
+  max-width: 340px;
+}
+
+#screen-escape #wick-escape-line {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #7a6a40;
+  font-style: italic;
+  max-width: 340px;
+  min-height: 1.4em;
+}
+
+#screen-failure {
+  background: #000;
+  gap: 2.5rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+#screen-failure .failure-title {
+  font-family: 'Courier New', monospace;
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  color: #ccc;
+  letter-spacing: 0.3em;
+}
+
+#screen-failure .failure-sub {
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  color: #888;
+  line-height: 2;
+}
+
+/* ================================================================
+   AMBIENT SOUND TOGGLE
+   ================================================================ */
+#sound-toggle {
+  position: fixed;
+  top: 0.5rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: #5a4a28;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.3rem;
+  z-index: 100;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.3s;
+}
+
+#sound-toggle:hover { color: #9a7a38; }
+#sound-toggle.on { color: var(--amber); }
+
+/* ================================================================
+   FLICKER ANIMATION
+   ================================================================ */
+@keyframes flicker {
+  0%, 100%   { opacity: 1.0; }
+  2%         { opacity: 0.92; }
+  4%         { opacity: 1.0; }
+  19%        { opacity: 0.98; }
+  21%        { opacity: 0.88; }
+  23%        { opacity: 0.98; }
+  55%        { opacity: 1.0; }
+  57%        { opacity: 0.85; }
+  59%        { opacity: 0.97; }
+  61%        { opacity: 1.0; }
+  80%        { opacity: 0.96; }
+}
+
+#cell-env {
+  animation: flicker 8s linear infinite;
+}
+
+/* ================================================================
+   UTILITY
+   ================================================================ */
+.fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dim-text { color: var(--text-dim); font-size: 0.75rem; font-family: 'Courier New', monospace; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #1a1510; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div id="screen-start" class="screen">
+  <h1>WICK</h1>
+  <p>Enter your Anthropic API key to begin</p>
+  <div class="input-group">
+    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+    <button class="btn" id="begin-btn" onclick="beginGame()">BEGIN</button>
+  </div>
+</div>
+
+<div id="screen-game">
+
+  <div id="timer-bar">
+    <span id="timer-display">25:00</span>
+    <span id="phase-display">BLOCK B · 1962</span>
+  </div>
+
+  <div id="cell-env">
+
+    <div class="puzzle-zone" id="zone1">
+      <div class="puzzle-label">— wall inscription —</div>
+      <div class="scratch-marks">|||  ||||  |||  |  |||||||||</div>
+      <div id="puzzle1-display">2 &mdash; 5 &mdash; 3 &mdash; 1 &mdash; 9 &mdash; <span style="color:#c49a2a">?</span></div>
+      <div id="puzzle1-input-row">
+        <input type="number" class="puzzle-input" id="p1-input" placeholder="?" min="0" max="99" autocomplete="off">
+        <button class="submit-btn" onclick="submitPuzzle1()">SUBMIT</button>
+      </div>
+      <div class="attempt-dots" id="dots1">
+        <div class="dot" id="d1-1"></div>
+        <div class="dot" id="d1-2"></div>
+        <div class="dot" id="d1-3"></div>
+      </div>
+      <div id="brick-reveal">— loose brick recedes — passage revealed —</div>
+    </div>
+
+    <div class="puzzle-zone locked" id="zone2">
+      <div class="puzzle-label">— torn newspaper —</div>
+      <div id="newspaper">
+        <div class="newspaper-headline">ESCAPE ATTEMPT FOILED — JUNE 1962</div>
+        <div class="newspaper-dateline">The Alcatraz Island Gazette · Vol. XXIV</div>
+        <div class="newspaper-body" id="newspaper-body"></div>
+      </div>
+      <div id="puzzle2-input-row">
+        <input type="text" class="puzzle-input" id="p2-input" placeholder="______" maxlength="10" autocomplete="off" style="width:120px; text-transform:uppercase;" spellcheck="false">
+        <button class="submit-btn" onclick="submitPuzzle2()">SUBMIT</button>
+      </div>
+      <div class="attempt-dots" id="dots2">
+        <div class="dot" id="d2-1"></div>
+        <div class="dot" id="d2-2"></div>
+        <div class="dot" id="d2-3"></div>
+      </div>
+      <div id="panel-reveal">— wall panel slides open — corridor visible —</div>
+    </div>
+
+    <div class="puzzle-zone locked" id="zone3">
+      <div class="puzzle-label">— rusted cup · wall grid —</div>
+      <div id="cup-container">
+        <div id="cup-visual">
+          <svg width="72" height="90" viewBox="0 0 72 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 18 L8 82 Q8 86 12 86 L60 86 Q64 86 64 82 L60 18 Z" fill="#2a2018" stroke="#4a3828" stroke-width="1.5"/>
+            <rect x="10" y="14" width="52" height="6" rx="2" fill="#3a2a1a" stroke="#5a4a38" stroke-width="1"/>
+            <path d="M64 30 Q78 30 78 46 Q78 62 64 62" stroke="#4a3828" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="28" cy="36" r="4" fill="#1a1208" stroke="#6a5a3a" stroke-width="1.5"/>
+            <text x="28" y="40" text-anchor="middle" fill="#8a7a50" font-size="5" font-family="Courier New">1</text>
+            <circle cx="50" cy="50" r="4" fill="#1a1208" stroke="#6a5a3a" stroke-width="1.5"/>
+            <text x="50" y="54" text-anchor="middle" fill="#8a7a50" font-size="5" font-family="Courier New">2</text>
+            <circle cx="28" cy="64" r="4" fill="#1a1208" stroke="#6a5a3a" stroke-width="1.5"/>
+            <text x="28" y="68" text-anchor="middle" fill="#8a7a50" font-size="5" font-family="Courier New">3</text>
+            <circle cx="22" cy="78" r="4" fill="#1a1208" stroke="#6a5a3a" stroke-width="1.5"/>
+            <text x="22" y="82" text-anchor="middle" fill="#8a7a50" font-size="5" font-family="Courier New">4</text>
+          </svg>
+          <div class="cup-label">dents: 1→2→3→4</div>
+        </div>
+        <div id="grid-container">
+          <div class="grid-label">WALL GRID — A·B·C·D</div>
+          <div id="direction-grid"></div>
+        </div>
+      </div>
+
+      <div id="sequence-display">
+        <div class="seq-slot" id="seq0"></div>
+        <div class="seq-slot" id="seq1"></div>
+        <div class="seq-slot" id="seq2"></div>
+        <div class="seq-slot" id="seq3"></div>
+      </div>
+
+      <div id="arrow-buttons">
+        <div class="arrow-btn empty"></div>
+        <button class="arrow-btn" onclick="inputArrow('UP')" aria-label="Up">↑</button>
+        <div class="arrow-btn empty"></div>
+        <button class="arrow-btn" onclick="inputArrow('LEFT')" aria-label="Left">←</button>
+        <button class="arrow-btn" onclick="inputArrow('DOWN')" aria-label="Down">↓</button>
+        <button class="arrow-btn" onclick="inputArrow('RIGHT')" aria-label="Right">→</button>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <button id="clear-seq-btn" onclick="clearSequence()">CLEAR</button>
+        <button class="submit-btn" onclick="submitPuzzle3()">SUBMIT</button>
+      </div>
+
+      <div class="attempt-dots" id="dots3">
+        <div class="dot" id="d3-1"></div>
+        <div class="dot" id="d3-2"></div>
+        <div class="dot" id="d3-3"></div>
+      </div>
+      <div id="door-reveal">— door mechanism engages — escape —</div>
+    </div>
+
+  </div>
+
+  <div id="wick-terminal">
+    <div id="wick-watching">WICK IS WATCHING...</div>
+    <div id="wick-text"><span id="wick-cursor"></span></div>
+  </div>
+
+</div>
+
+<div id="screen-escape" class="screen hidden">
+  <div class="escape-title fade-in">You escaped.</div>
+  <div class="escape-sub fade-in" style="animation-delay:1.2s; opacity:0;">
+    So did three others. In 1962.
+    <br><br>
+    Eastern State is waiting.
+  </div>
+  <div id="wick-escape-line" class="fade-in" style="animation-delay:3s; opacity:0;"></div>
+  <button class="btn" disabled style="margin-top:1rem;">
+    FACE EASTERN STATE
+    <br><span style="font-size:0.65rem; letter-spacing:0.1em; opacity:0.5;">coming soon</span>
+  </button>
+  <button class="btn btn-danger" style="font-size:0.75rem;" onclick="restartGame()">TRY AGAIN</button>
+</div>
+
+<div id="screen-failure" class="screen hidden">
+  <div class="failure-title">WICK wins.</div>
+  <div class="failure-sub">
+    I know you now.<br>Rest.
+  </div>
+  <button class="btn" onclick="restartGame()">TRY AGAIN</button>
+</div>
+
+<button id="sound-toggle" title="Toggle ambient sound" onclick="toggleSound()">♪</button>
+
+<script>
+const gameState = {
+  currentPuzzle: 1,
+  attempts: { 1: 0, 2: 0, 3: 0 },
+  maxAttempts: 3,
+  sessionStart: null,
+  elapsed: 0,
+  phase: 1,
+  hesitationPoints: [],
+  failedPuzzles: [],
+  fastSolves: [],
+  escaped: false,
+  failed: false,
+  wickMemory: { knownWeaknesses: [], knownStrengths: [], lastObservation: null }
+};
+
+let apiKey = '';
+let timerInterval = null;
+let idleTimer = null;
+let p3Sequence = [];
+let wickQueue = [];
+let wickTyping = false;
+let twentyMinuteSilence = false;
+let twentyThreeMinuteFired = false;
+let phase2Fired = false;
+let phase3Fired = false;
+const ANSWER_P1 = 5;
+const ANSWER_P2 = 'KEYHOLE';
+const ANSWER_P3 = ['UP', 'RIGHT', 'DOWN', 'LEFT'];
+
+const DENT_COORDS = [
+  { row: 0, col: 1 },
+  { row: 1, col: 3 },
+  { row: 2, col: 1 },
+  { row: 3, col: 0 },
+];
+
+const GRID_ARROWS = [
+  ['←','↑','→','↓'],
+  ['↓','←','↑','→'],
+  ['→','↓','←','↑'],
+  ['←','↑','→','↓'],
+];
+
+const FALLBACK = {
+  session_start:       "Alcatraz held 1,576 prisoners. Only three ever made it out.",
+  wrong_attempt_1:     "Try again.",
+  wrong_attempt_2:     "You're forcing it.",
+  wrong_attempt_3:     "Third attempt.",
+  puzzle_solved:       "Hm.",
+  idle_90_seconds:     "Are you thinking, or afraid to be wrong?",
+  phase_2_transition:  "You're still here. I wasn't certain you would be.",
+  phase_3_transition:  "Ten minutes. I know something about you now.",
+  twenty_three_min:    "Two minutes. The door doesn't care.",
+  session_escape:      "Hm. I'll be ready next time.",
+  session_failure:     "I know you now. Rest.",
+  puzzle_start:        "Another lock. Another version of you.",
+};
+
+let wickMemory = { totalSessions: 0, totalEscapes: 0, totalFailures: 0, knownWeaknesses: [], knownStrengths: [], lastObservation: null };
+
+function loadMemory() {
+  try { const s = localStorage.getItem('wick_memory'); if (s) wickMemory = { ...wickMemory, ...JSON.parse(s) }; } catch(e) {}
+}
+
+function saveMemory(lastLine, escaped) {
+  wickMemory.totalSessions++;
+  if (escaped) wickMemory.totalEscapes++; else wickMemory.totalFailures++;
+  if (lastLine) wickMemory.lastObservation = lastLine;
+  if (escaped) { wickMemory.knownStrengths.push('escape'); if (wickMemory.knownStrengths.length > 5) wickMemory.knownStrengths.shift(); }
+  else if (gameState.failedPuzzles.length) {
+    gameState.failedPuzzles.forEach(p => { const w = `puzzle_${p}`; if (!wickMemory.knownWeaknesses.includes(w)) wickMemory.knownWeaknesses.push(w); });
+    if (wickMemory.knownWeaknesses.length > 5) wickMemory.knownWeaknesses.shift();
+  }
+  try { localStorage.setItem('wick_memory', JSON.stringify(wickMemory)); } catch(e) {}
+}
+
+function buildWickPrompt(triggerType, attemptNumber) {
+  return `You are WICK. You are the architect of this experience.
+Theatrical but never loud. Precise but never boring.
+You find genuine delight in watching someone struggle — not from cruelty, but from curiosity.
+You believe pressure reveals truth. You are doing them a favor.
+
+PERSONALITY RULES:
+- Never shout. Calm is more terrifying than rage.
+- Reference the player's actual mistakes when available.
+- Short sentences when serious, longer when performing.
+- Laughter written as "hm." — never "haha".
+- Never explain puzzles. Only observe.
+- Treat previous failures as data points, not mockery.
+
+CURRENT SESSION CONTEXT:
+Phase: ${gameState.phase}
+Current puzzle: ${gameState.currentPuzzle}
+Attempt number: ${attemptNumber || '—'}
+Failed puzzles so far: ${gameState.failedPuzzles.join(', ') || 'none'}
+Fast solves so far: ${gameState.fastSolves.join(', ') || 'none'}
+Elapsed time: ${Math.floor(gameState.elapsed / 60)} minutes
+Trigger type: ${triggerType}
+
+RETURNING PLAYER MEMORY:
+Total sessions: ${wickMemory.totalSessions}
+Total escapes: ${wickMemory.totalEscapes}
+Total failures: ${wickMemory.totalFailures}
+Known weaknesses: ${(wickMemory.knownWeaknesses || []).join(', ') || 'unknown'}
+Known strengths: ${(wickMemory.knownStrengths || []).join(', ') || 'unknown'}
+Last session note: ${wickMemory.lastObservation || 'none'}
+
+RESPONSE RULES:
+- One line only.
+- Maximum 15 words.
+- No quotation marks.
+- No stage directions.
+- Just the line.`;
+}
+
+async function callWickAPI(triggerType, attemptNumber) {
+  if (twentyMinuteSilence) return null;
+  if (!apiKey) return FALLBACK[triggerType] || FALLBACK.wrong_attempt_1;
+  setWickLoading(true);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 60, system: buildWickPrompt(triggerType, attemptNumber), messages: [{ role: 'user', content: `Trigger: ${triggerType}` }] })
+    });
+    if (!resp.ok) throw new Error('API error');
+    const data = await resp.json();
+    return data.content?.[0]?.text?.trim() || FALLBACK[triggerType];
+  } catch(e) { return FALLBACK[triggerType] || ''; } finally { setWickLoading(false); }
+}
+
+function setWickLoading(on) {
+  const el = document.getElementById('wick-watching');
+  if (on) { el.textContent = 'WICK IS PROCESSING...'; el.classList.add('loading'); }
+  else { el.textContent = 'WICK IS WATCHING...'; el.classList.remove('loading'); }
+}
+
+let wickLastLine = '';
+
+function queueWick(t, a) { wickQueue.push({ triggerType: t, attemptNumber: a }); if (!wickTyping) drainWickQueue(); }
+
+async function drainWickQueue() {
+  if (wickQueue.length === 0) { wickTyping = false; return; }
+  wickTyping = true;
+  const { triggerType, attemptNumber } = wickQueue.shift();
+  const line = await callWickAPI(triggerType, attemptNumber);
+  if (line) { wickLastLine = line; await typeWickLine(line); }
+  drainWickQueue();
+}
+
+function typeWickLine(text) {
+  return new Promise(resolve => {
+    const el = document.getElementById('wick-text');
+    el.innerHTML = '<span id="wick-cursor"></span>';
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i < text.length) el.innerHTML = text.slice(0, ++i) + '<span id="wick-cursor"></span>';
+      else { clearInterval(iv); resolve(); }
+    }, 40);
+  });
+}
+
+function startTimer() {
+  gameState.sessionStart = Date.now();
+  timerInterval = setInterval(tickTimer, 1000);
+}
+
+function tickTimer() {
+  gameState.elapsed = Math.floor((Date.now() - gameState.sessionStart) / 1000);
+  const remaining = 25 * 60 - gameState.elapsed;
+  if (remaining <= 0) { clearInterval(timerInterval); triggerSessionFailure('timeout'); return; }
+  const mins = Math.floor(remaining / 60), secs = remaining % 60;
+  document.getElementById('timer-display').textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  const em = gameState.elapsed / 60;
+  if (!phase2Fired && em >= 5) { phase2Fired = true; gameState.phase = 2; document.getElementById('phase-display').textContent = 'PHASE II'; queueWick('phase_2_transition'); }
+  if (!phase3Fired && em >= 15) { phase3Fired = true; gameState.phase = 3; document.getElementById('phase-display').textContent = 'PHASE III'; queueWick('phase_3_transition'); }
+  if (!twentyMinuteSilence && em >= 20) { twentyMinuteSilence = true; document.getElementById('wick-watching').textContent = ''; }
+  if (!twentyThreeMinuteFired && em >= 23) { twentyThreeMinuteFired = true; queueWick('twenty_three_min'); }
+}
+
+function resetIdleTimer() {
+  clearTimeout(idleTimer);
+  if (gameState.escaped || gameState.failed) return;
+  idleTimer = setTimeout(() => queueWick('idle_90_seconds'), 90000);
+}
+
+function buildNewspaper() {
+  document.getElementById('newspaper-body').innerHTML = `Federal authorities confirmed Friday that an elaborate escape attempt at the island federal penitentiary was thwarted after guards discovered a concealed passage. The <span class="circled">K</span>ey evidence recovered suggests inmates used improvised tools fashioned from mess hall utensils. <span class="circled">E</span>ach man had <span class="circled">Y</span>ears of prior offenses. A <span class="circled">H</span>andwritten note found in <span class="circled">O</span>ne cell contained cryptic markings. <span class="circled">L</span>ocal residents reported hearing unusual sounds. Guard <span class="circled">E</span>dwards was commended for alertness. No injuries reported. Investigation ongoing per Warden Blackwell.`;
+}
+
+function buildGrid() {
+  const grid = document.getElementById('direction-grid');
+  grid.innerHTML = '';
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    const cell = document.createElement('div');
+    cell.className = 'grid-cell';
+    cell.textContent = GRID_ARROWS[r][c];
+    if (DENT_COORDS.some(d => d.row === r && d.col === c)) cell.classList.add('highlighted');
+    grid.appendChild(cell);
+  }
+}
+
+function submitPuzzle1() {
+  if (gameState.currentPuzzle !== 1) return;
+  const val = parseInt(document.getElementById('p1-input').value, 10);
+  gameState.attempts[1]++; markDot(1, gameState.attempts[1]); resetIdleTimer();
+  if (val === ANSWER_P1) { solvePuzzle1(); }
+  else if (gameState.attempts[1] >= gameState.maxAttempts) { if (!gameState.failedPuzzles.includes(1)) gameState.failedPuzzles.push(1); triggerSessionFailure('attempts'); }
+  else { shake('p1-input'); queueWick(gameState.attempts[1] === 1 ? 'wrong_attempt_1' : gameState.attempts[1] === 2 ? 'wrong_attempt_2' : 'wrong_attempt_3', gameState.attempts[1]); }
+}
+
+function solvePuzzle1() {
+  const i = document.getElementById('p1-input'); i.value = ANSWER_P1; i.classList.add('correct'); i.disabled = true;
+  document.querySelector('#zone1 .submit-btn').disabled = true;
+  document.getElementById('brick-reveal').classList.add('open');
+  document.getElementById('zone1').classList.add('solved');
+  markFastSolve(1); if (Math.random() < 0.5) queueWick('puzzle_solved'); unlockPuzzle(2);
+}
+
+function submitPuzzle2() {
+  if (gameState.currentPuzzle !== 2) return;
+  const val = document.getElementById('p2-input').value.trim().toUpperCase();
+  gameState.attempts[2]++; markDot(2, gameState.attempts[2]); resetIdleTimer();
+  if (val === ANSWER_P2) { solvePuzzle2(); }
+  else if (gameState.attempts[2] >= gameState.maxAttempts) { if (!gameState.failedPuzzles.includes(2)) gameState.failedPuzzles.push(2); triggerSessionFailure('attempts'); }
+  else { shake('p2-input'); queueWick(gameState.attempts[2] === 1 ? 'wrong_attempt_1' : gameState.attempts[2] === 2 ? 'wrong_attempt_2' : 'wrong_attempt_3', gameState.attempts[2]); }
+}
+
+function solvePuzzle2() {
+  const i = document.getElementById('p2-input'); i.value = 'KEYHOLE'; i.classList.add('correct'); i.disabled = true;
+  document.querySelector('#zone2 .submit-btn').disabled = true;
+  document.getElementById('panel-reveal').classList.add('open');
+  document.getElementById('zone2').classList.add('solved');
+  markFastSolve(2); if (Math.random() < 0.5) queueWick('puzzle_solved'); unlockPuzzle(3);
+}
+
+const ARROW_SYMBOLS = { UP: '↑', DOWN: '↓', LEFT: '←', RIGHT: '→' };
+
+function inputArrow(dir) {
+  if (gameState.currentPuzzle !== 3 || p3Sequence.length >= 4) return;
+  p3Sequence.push(dir); updateSeqDisplay(); resetIdleTimer();
+  if (p3Sequence.length === 4) setTimeout(submitPuzzle3, 300);
+}
+
+function updateSeqDisplay() {
+  for (let i = 0; i < 4; i++) {
+    const s = document.getElementById(`seq${i}`);
+    if (p3Sequence[i]) { s.textContent = ARROW_SYMBOLS[p3Sequence[i]]; s.classList.add('filled'); }
+    else { s.textContent = ''; s.classList.remove('filled','correct-slot'); }
+  }
+}
+
+function clearSequence() { p3Sequence = []; updateSeqDisplay(); }
+
+function submitPuzzle3() {
+  if (gameState.currentPuzzle !== 3 || p3Sequence.length < 4) return;
+  gameState.attempts[3]++; markDot(3, gameState.attempts[3]); resetIdleTimer();
+  if (ANSWER_P3.every((v, i) => v === p3Sequence[i])) { solvePuzzle3(); }
+  else if (gameState.attempts[3] >= gameState.maxAttempts) { if (!gameState.failedPuzzles.includes(3)) gameState.failedPuzzles.push(3); triggerSessionFailure('attempts'); }
+  else {
+    document.querySelectorAll('.seq-slot').forEach(s => { s.style.borderColor = '#8a2020'; setTimeout(() => s.style.borderColor = '', 600); });
+    p3Sequence = []; updateSeqDisplay();
+    queueWick(gameState.attempts[3] === 1 ? 'wrong_attempt_1' : gameState.attempts[3] === 2 ? 'wrong_attempt_2' : 'wrong_attempt_3', gameState.attempts[3]);
+  }
+}
+
+function solvePuzzle3() {
+  for (let i = 0; i < 4; i++) document.getElementById(`seq${i}`).classList.add('correct-slot');
+  document.querySelectorAll('.arrow-btn').forEach(b => b.disabled = true);
+  document.getElementById('clear-seq-btn').disabled = true;
+  document.querySelector('#zone3 .submit-btn').disabled = true;
+  document.getElementById('door-reveal').classList.add('open');
+  document.getElementById('zone3').classList.add('solved');
+  markFastSolve(3); setTimeout(() => triggerSessionEscape(), 800);
+}
+
+function unlockPuzzle(num) {
+  gameState.currentPuzzle = num;
+  const zone = document.getElementById(`zone${num}`);
+  zone.classList.remove('locked'); zone.classList.add('fade-in');
+  setTimeout(() => zone.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  queueWick('puzzle_start');
+}
+
+function markDot(puzzle, attempt) { const d = document.getElementById(`d${puzzle}-${attempt}`); if (d) d.classList.add('used'); }
+
+function markFastSolve(puzzle) {
+  const expected = puzzle === 1 ? 180 : puzzle === 2 ? 300 : 420;
+  if (gameState.elapsed < expected && !gameState.fastSolves.includes(puzzle)) gameState.fastSolves.push(puzzle);
+}
+
+function shake(id) {
+  const el = document.getElementById(id); el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 500);
+}
+
+async function triggerSessionEscape() {
+  if (gameState.escaped || gameState.failed) return;
+  gameState.escaped = true; clearInterval(timerInterval); clearTimeout(idleTimer);
+  queueWick('session_escape');
+  await new Promise(r => setTimeout(r, 1000));
+  const line = await callWickAPI('session_escape');
+  saveMemory(line || FALLBACK.session_escape, true);
+  showScreen('escape');
+  if (line) setTimeout(() => typewriterTo(document.getElementById('wick-escape-line'), line), 3200);
+}
+
+async function triggerSessionFailure(reason) {
+  if (gameState.escaped || gameState.failed) return;
+  gameState.failed = true; clearInterval(timerInterval); clearTimeout(idleTimer);
+  queueWick('session_failure');
+  await new Promise(r => setTimeout(r, 1200));
+  saveMemory(wickLastLine || FALLBACK.session_failure, false);
+  showScreen('failure');
+}
+
+function showScreen(name) {
+  ['screen-start','screen-escape','screen-failure'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const game = document.getElementById('screen-game'); game.classList.remove('active');
+  if (name === 'game') game.classList.add('active');
+  else document.getElementById(`screen-${name}`).classList.remove('hidden');
+}
+
+function beginGame() {
+  const input = document.getElementById('api-key-input');
+  const key = input.value.trim();
+  if (!key) { input.style.borderColor = '#8B2020'; setTimeout(() => input.style.borderColor = '', 1000); return; }
+  apiKey = key;
+  try { localStorage.setItem('wick_api_key', key); } catch(e) {}
+  startSession();
+}
+
+function startSession() {
+  loadMemory(); buildNewspaper(); buildGrid(); showScreen('game');
+  Object.assign(gameState, { currentPuzzle: 1, attempts: {1:0,2:0,3:0}, escaped: false, failed: false, failedPuzzles: [], fastSolves: [], phase: 1 });
+  phase2Fired = phase3Fired = twentyMinuteSilence = twentyThreeMinuteFired = false;
+  wickQueue = []; wickTyping = false; p3Sequence = []; wickLastLine = '';
+  for (let p = 1; p <= 3; p++) for (let d = 1; d <= 3; d++) { const dot = document.getElementById(`d${p}-${d}`); if (dot) dot.classList.remove('used'); }
+  ['zone1','zone2','zone3'].forEach(id => { const z = document.getElementById(id); z.classList.remove('solved'); });
+  document.getElementById('zone2').classList.add('locked');
+  document.getElementById('zone3').classList.add('locked');
+  ['brick-reveal','panel-reveal','door-reveal'].forEach(id => document.getElementById(id).classList.remove('open'));
+  const p1i = document.getElementById('p1-input'); p1i.value = ''; p1i.disabled = false; p1i.classList.remove('correct');
+  const p2i = document.getElementById('p2-input'); p2i.value = ''; p2i.disabled = false; p2i.classList.remove('correct');
+  updateSeqDisplay();
+  document.getElementById('wick-text').innerHTML = '<span id="wick-cursor"></span>';
+  startTimer(); resetIdleTimer(); queueWick('session_start');
+  document.addEventListener('touchstart', resetIdleTimer, { passive: true });
+  document.addEventListener('keydown', resetIdleTimer);
+  document.addEventListener('mousemove', resetIdleTimer, { passive: true });
+}
+
+function restartGame() {
+  const s = document.getElementById('screen-start'); s.classList.remove('hidden');
+  document.getElementById('screen-escape').classList.add('hidden');
+  document.getElementById('screen-failure').classList.add('hidden');
+  document.getElementById('screen-game').classList.remove('active');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !document.getElementById('screen-start').classList.contains('hidden')) beginGame();
+  if (gameState.currentPuzzle === 3 && !gameState.escaped && !gameState.failed) {
+    const map = { ArrowUp:'UP', ArrowDown:'DOWN', ArrowLeft:'LEFT', ArrowRight:'RIGHT' };
+    if (map[e.key]) { e.preventDefault(); inputArrow(map[e.key]); }
+  }
+});
+
+document.getElementById('p1-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitPuzzle1(); });
+document.getElementById('p2-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitPuzzle2(); });
+
+let audioCtx = null, droneNodes = [], soundOn = false;
+
+function toggleSound() {
+  soundOn ? stopDrone() : startDrone();
+  soundOn = !soundOn;
+  document.getElementById('sound-toggle').classList.toggle('on', soundOn);
+}
+
+function startDrone() {
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const mg = audioCtx.createGain(); mg.gain.setValueAtTime(0, audioCtx.currentTime); mg.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 2); mg.connect(audioCtx.destination);
+    [[60,0.5],[90,0.25],[120,0.15],[45,0.35]].forEach(([freq,gain]) => { const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type='sawtooth'; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(mg); o.start(); droneNodes.push(o); });
+    scheduleDroneCreak(mg);
+  } catch(e) {}
+}
+
+function scheduleDroneCreak(mg) {
+  if (!soundOn && !audioCtx) return;
+  setTimeout(() => {
+    if (!soundOn) return;
+    try {
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.4, audioCtx.sampleRate);
+      const data = buf.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1)*0.8;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const f = audioCtx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=200+Math.random()*150;
+      const g = audioCtx.createGain(); g.gain.setValueAtTime(0,audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.08,audioCtx.currentTime+0.05); g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.4);
+      src.connect(f); f.connect(g); g.connect(mg); src.start();
+    } catch(e) {}
+    scheduleDroneCreak(mg);
+  }, 8000 + Math.random() * 15000);
+}
+
+function stopDrone() {
+  droneNodes.forEach(n => { try { n.stop(); } catch(e) {} }); droneNodes = [];
+  if (audioCtx) { audioCtx.close(); audioCtx = null; }
+}
+
+function typewriterTo(el, text) {
+  el.textContent = ''; let i = 0;
+  const iv = setInterval(() => { if (i < text.length) el.textContent = text.slice(0,++i); else clearInterval(iv); }, 45);
+}
+
+(function init() {
+  try { const s = localStorage.getItem('wick_api_key'); if (s) document.getElementById('api-key-input').value = s; } catch(e) {}
+})();
+<\/script>
+</body>
+</html>
