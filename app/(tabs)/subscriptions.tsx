@@ -230,7 +230,11 @@ export default function SubscriptionsScreen() {
     if (subscriptions.length === 0) { Alert.alert("No data", "Add some subscriptions first."); return; }
 
     const monthlyTotal = subscriptions.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
-    const csvEscape = (v: string) => `"${String(v).replace(/"/g, '""')}"`;
+    const csvEscape = (v: string) => {
+      let str = String(v);
+      if (/^[=+\-@]/.test(str)) str = `'${str}`; // prevent formula injection in Excel/Sheets
+      return `"${str.replace(/"/g, '""')}"`;
+    };
 
     const rows = [
       ["Name", "Price", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost"].join(","),

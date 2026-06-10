@@ -346,7 +346,7 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
     if (!email) return res.status(400).json({ error: 'Email required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
@@ -373,7 +373,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body;
+    const email = req.body.email?.trim().toLowerCase();
+    const { code, newPassword } = req.body;
     if (!email || !code || !newPassword) return res.status(400).json({ error: 'Email, code and new password required' });
     const pwError = validatePassword(newPassword);
     if (pwError) return res.status(400).json({ error: pwError });
@@ -449,6 +450,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const price = parseFloat(req.body.price);
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
+    if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
 
     const userResult = await pool.query('SELECT is_paid FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid;
@@ -480,6 +482,7 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
+    if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
 
     const check = await pool.query(
       'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
@@ -525,11 +528,16 @@ app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) =>
     );
     const subs = result.rows;
     const header = 'Name,Price,Billing Cycle,Category,Next Billing Date,Trial End Date\n';
+    const csvCell = (value) => {
+      let str = String(value ?? '');
+      if (/^[=+\-@]/.test(str)) str = `'${str}`; // prevent formula injection in Excel/Sheets
+      return `"${str.replace(/"/g, '""')}"`;
+    };
     const rows = subs.map(s => [
-      `"${s.name}"`,
+      csvCell(s.name),
       parseFloat(s.price).toFixed(2),
-      s.billing_cycle,
-      s.category,
+      csvCell(s.billing_cycle),
+      csvCell(s.category),
       s.next_billing_date ? new Date(s.next_billing_date).toLocaleDateString() : '',
       s.trial_end_date ? new Date(s.trial_end_date).toLocaleDateString() : '',
     ].join(',')).join('\n');
@@ -643,10 +651,11 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       const days = Math.ceil((billingDate - now) / 86400000);
       if (days <= 7 && days >= -1) {
         alerts.push({
-          id: sub.id,
+          id: `renewal-${sub.id}`,
           type: 'renewal_alert',
           title: `${sub.name} billing ${days <= 0 ? 'today' : `in ${days} day${days !== 1 ? 's' : ''}`}`,
           message: `${sym}${parseFloat(sub.price).toFixed(2)} will be charged for ${sub.name}.`,
+          subscriptionId: sub.id,
           subscriptionName: sub.name,
           severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
         });
@@ -655,10 +664,11 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
         const trialDays = Math.ceil((new Date(sub.trial_end_date) - now) / 86400000);
         if (trialDays >= 0 && trialDays <= 3) {
           alerts.push({
-            id: sub.id * 1000,
+            id: `trial-${sub.id}`,
             type: 'trial_alert',
             title: `${sub.name} trial ends ${trialDays === 0 ? 'today' : `in ${trialDays} day${trialDays !== 1 ? 's' : ''}`}`,
             message: `Your free trial for ${sub.name} is about to end. Cancel now to avoid charges.`,
+            subscriptionId: sub.id,
             subscriptionName: sub.name,
             severity: trialDays === 0 ? 'high' : 'medium',
           });
@@ -669,10 +679,11 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
     const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
     if (monthlyTotal > 100) {
       alerts.push({
-        id: 0,
+        id: 'expensive',
         type: 'expensive_alert',
         title: 'High monthly spending',
         message: `You spend ${sym}${monthlyTotal.toFixed(2)}/month on subscriptions.`,
+        subscriptionId: null,
         subscriptionName: null,
         severity: 'low',
       });
