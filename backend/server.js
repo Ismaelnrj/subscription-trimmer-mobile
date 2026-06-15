@@ -3,6 +3,7 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -20,6 +21,9 @@ if (!process.env.DATABASE_URL) {
 }
 if (!process.env.CRON_SECRET) {
   console.warn('WARNING: CRON_SECRET is not set. Email reminder cron endpoint will reject all requests.');
+}
+if (!process.env.REVENUECAT_WEBHOOK_SECRET) {
+  console.warn('WARNING: REVENUECAT_WEBHOOK_SECRET is not set. The RevenueCat webhook endpoint will reject all requests.');
 }
 
 app.use(cors());
@@ -41,10 +45,19 @@ const emailLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { result: { data: null }, error: { code: 'RATE_LIMITED', message: 'Too many requests. Slow down.' } },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot-password', emailLimiter);
 app.use('/api/auth/resend-verification', emailLimiter);
+app.use('/api/trpc', apiLimiter);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -94,6 +107,12 @@ async function sendVerificationEmail(email, code) {
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// Verification/reset codes are emailed in plaintext but only the hash is stored,
+// so a database leak alone can't be used to take over accounts.
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 async function initDB() {
@@ -164,6 +183,18 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$'`);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS custom_categories TEXT DEFAULT '[]'`);
+  await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS alert_threshold NUMERIC DEFAULT 50`);
+
+  // open_id is the stable identifier passed to RevenueCat as the appUserID, so
+  // purchase webhooks can map RevenueCat's app_user_id back to a Trimio user.
+  await pool.query(`COMMENT ON COLUMN users.open_id IS 'RevenueCat appUserID — used by the /api/webhooks/revenuecat handler to map purchases back to this user.'`);
+
+  // Every CRUD/list query filters by user_id (and notifications also by is_read),
+  // so without these indexes those become full table scans as the tables grow.
+  // (users.email already has an index from its UNIQUE constraint.)
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read)`);
 }
 
 function authMiddleware(req, res, next) {
@@ -262,7 +293,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     await sendVerificationEmail(email, code).catch(e => console.error('Email send failed:', e));
 
     res.json({ token, user: formatUser(user) });
@@ -334,7 +365,7 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.is_verified) return res.json({ success: true, user: formatUser(user) });
-    if (user.verification_token !== code) return res.status(400).json({ error: 'Invalid code' });
+    if (!user.verification_token || user.verification_token !== hashToken(code)) return res.status(400).json({ error: 'Invalid code' });
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
@@ -354,7 +385,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     await sendEmail(
       email,
       'Reset your Trimio password',
@@ -380,7 +411,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (pwError) return res.status(400).json({ error: pwError });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user || user.reset_token !== code) return res.status(400).json({ error: 'Invalid or expired code' });
+    if (!user || !user.reset_token || user.reset_token !== hashToken(code)) return res.status(400).json({ error: 'Invalid or expired code' });
     if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
     const hash = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2', [hash, user.id]);
@@ -398,7 +429,7 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     if (user.is_verified) return res.json({ success: true });
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [code, expires, user.id]);
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     await sendVerificationEmail(user.email, code).catch(e => console.error('Email send failed:', e));
     res.json({ success: true });
   } catch (err) {
@@ -425,6 +456,43 @@ app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
     );
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(result.rows[0]) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// RevenueCat server webhook — acts as the source of truth for premium status if the
+// app-side sync (above) never reaches us (app killed mid-purchase, network drop, etc).
+// Configure in RevenueCat > Project Settings > Integrations > Webhooks with URL
+// https://<your-domain>/api/webhooks/revenuecat and header "Authorization: Bearer <REVENUECAT_WEBHOOK_SECRET>".
+app.post('/api/webhooks/revenuecat', async (req, res) => {
+  try {
+    if (!process.env.REVENUECAT_WEBHOOK_SECRET) {
+      return res.status(503).json({ error: 'Webhook not configured' });
+    }
+    if (req.headers['authorization'] !== `Bearer ${process.env.REVENUECAT_WEBHOOK_SECRET}`) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const event = req.body && req.body.event;
+    const appUserId = event && event.app_user_id;
+    if (!appUserId) {
+      return res.status(400).json({ error: 'Missing event.app_user_id' });
+    }
+
+    const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'TRANSFER'];
+    const REVOKE_EVENTS = ['EXPIRATION'];
+
+    if (GRANT_EVENTS.includes(event.type)) {
+      await pool.query(
+        "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1",
+        [appUserId]
+      );
+    } else if (REVOKE_EVENTS.includes(event.type)) {
+      await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1', [appUserId]);
+    }
+
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -560,6 +628,7 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
       currency: s.currency || 'USD',
       currencySymbol: s.currency_symbol || '$',
       customCategories: s.custom_categories ? JSON.parse(s.custom_categories) : [],
+      alertThreshold: s.alert_threshold != null ? parseFloat(s.alert_threshold) : 50,
     }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -568,11 +637,18 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
   try {
-    const { budgetGoal, currency, currencySymbol, customCategories } = req.body;
+    const { budgetGoal, currency, currencySymbol, customCategories, alertThreshold } = req.body;
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3, custom_categories = $4 WHERE user_id = $5',
-      [budgetGoal ?? null, currency || 'USD', currencySymbol || '$', JSON.stringify(customCategories || []), req.userId]
+      `UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3,
+       custom_categories = COALESCE($4, custom_categories), alert_threshold = COALESCE($5, alert_threshold)
+       WHERE user_id = $6`,
+      [
+        budgetGoal ?? null, currency || 'USD', currencySymbol || '$',
+        customCategories !== undefined ? JSON.stringify(customCategories) : null,
+        alertThreshold !== undefined ? alertThreshold : null,
+        req.userId,
+      ]
     );
     res.json(trpc({ success: true }));
   } catch (err) {
@@ -676,8 +752,10 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       }
     }
 
+    // Configurable: total monthly spend threshold for the "high spending" alert.
+    const TOTAL_SPEND_ALERT_THRESHOLD = 200;
     const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
-    if (monthlyTotal > 100) {
+    if (monthlyTotal > TOTAL_SPEND_ALERT_THRESHOLD) {
       alerts.push({
         id: 'expensive',
         type: 'expensive_alert',

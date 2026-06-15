@@ -47,7 +47,7 @@ export default function UpgradeScreen() {
 
   useEffect(() => {
     (async () => {
-      const ready = await setupIAP();
+      const ready = await setupIAP(user?.openId);
       setIapReady(ready);
       if (ready) {
         const [pkgs, premium] = await Promise.all([getOfferings(), checkIsPremium()]);

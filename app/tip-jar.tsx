@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
 import { PurchasesPackage } from "react-native-purchases";
 import { useTheme, AppColors } from "../lib/theme";
+import { useAuthStore } from "../lib/auth-store";
 
 const TIPS = [
   { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: "$0.99", desc: "A quick caffeine boost" },
@@ -17,12 +18,13 @@ export default function TipJarScreen() {
   const [tipped, setTipped] = useState(false);
   const [iapReady, setIapReady] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  const { user } = useAuthStore();
   const c = useTheme();
   const styles = makeStyles(c);
 
   useEffect(() => {
     (async () => {
-      const ready = await setupIAP();
+      const ready = await setupIAP(user?.openId);
       setIapReady(ready);
       if (ready) {
         const pkgs = await getOfferings();

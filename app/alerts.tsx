@@ -19,7 +19,6 @@ export default function AlertsScreen() {
     switch (type) {
       case "expensive": return "alert-circle";
       case "renewal": return "calendar-alert";
-      case "inactive": return "pause-circle";
       default: return "information";
     }
   };

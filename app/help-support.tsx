@@ -59,6 +59,9 @@ export default function HelpSupportScreen() {
               </View>
             </TouchableOpacity>
           </View>
+          <Text style={styles.contactNote}>
+            Trimio@subtrimio.com is our official support address — yes, the domain is "subtrimio.com" even though the app is called Trimio.
+          </Text>
         </View>
       </ScrollView>
     </>
@@ -85,5 +88,6 @@ function makeStyles(c: AppColors) {
     contactItemLast: { borderBottomWidth: 0 },
     contactLabel: { fontSize: 14, fontWeight: "500", color: c.text },
     contactValue: { fontSize: 12, color: c.primary, marginTop: 2 },
+    contactNote: { fontSize: 11, color: c.textMuted, lineHeight: 16, marginTop: -8, marginBottom: 8 },
   });
 }

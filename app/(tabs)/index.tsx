@@ -134,7 +134,7 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {isPremium && trialsSoon.length > 0 && (
+        {trialsSoon.length > 0 && (
           <View style={styles.trialsSection}>
             <View style={styles.trialsSectionHeader}>
               <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />

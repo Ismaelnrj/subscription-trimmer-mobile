@@ -78,9 +78,16 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   },
 }));
 
+// Round to a fixed number of decimals, compensating for binary floating-point
+// error so e.g. 1.005 rounds to 1.01 instead of 1.00.
+function roundTo(amount: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round((amount + Number.EPSILON) * factor) / factor;
+}
+
 // Simple format without conversion (for raw display)
 export function fmt(amount: number, symbol: string): string {
-  return `${symbol}${amount.toFixed(2)}`;
+  return `${symbol}${roundTo(amount, 2).toFixed(2)}`;
 }
 
 // Hook that returns a formatter with live conversion built in
@@ -89,6 +96,6 @@ export function useFmt(): (amount: number) => string {
   return (amount: number) => {
     const converted = convert(amount);
     const decimals = currency.code === "JPY" ? 0 : 2;
-    return `${currency.symbol}${converted.toFixed(decimals)}`;
+    return `${currency.symbol}${roundTo(converted, decimals).toFixed(decimals)}`;
   };
 }

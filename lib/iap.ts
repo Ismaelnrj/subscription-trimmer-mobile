@@ -21,6 +21,7 @@ import Purchases, {
   CustomerInfo,
   LOG_LEVEL,
 } from "react-native-purchases";
+import * as SecureStore from "expo-secure-store";
 import apiClient from "./api";
 
 const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
@@ -41,18 +42,60 @@ export const TIP_IDS = {
 
 let _configured = false;
 
-export async function setupIAP(): Promise<boolean> {
+/**
+ * Configure RevenueCat. Pass the user's `openId` so RevenueCat's `app_user_id`
+ * matches `users.open_id` in our database — this is how the webhook
+ * (/api/webhooks/revenuecat) maps purchases back to a Trimio account.
+ */
+export async function setupIAP(appUserID?: string): Promise<boolean> {
   try {
     if (!_configured) {
       if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-      Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+      Purchases.configure({ apiKey: REVENUECAT_API_KEY, appUserID });
       _configured = true;
+    } else if (appUserID) {
+      const currentId = await Purchases.getAppUserID();
+      if (currentId !== appUserID) {
+        await Purchases.logIn(appUserID);
+      }
     }
     return true;
   } catch (e) {
     console.warn("[IAP] setup failed:", e);
     return false;
   }
+}
+
+const PENDING_PREMIUM_SYNC_KEY = "pending_premium_sync";
+
+/**
+ * Sync premium status to our backend, retrying with backoff. If every attempt
+ * fails (e.g. app killed, no network), persist the desired state so it can be
+ * retried on next app launch via retryPendingPremiumSync(). The RevenueCat
+ * webhook is also a fallback source of truth if this never succeeds.
+ */
+export async function syncPremiumWithBackend(isPremium: boolean, retries = 3): Promise<void> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      await apiClient.post("/auth/verify-premium", { isPremium });
+      await SecureStore.deleteItemAsync(PENDING_PREMIUM_SYNC_KEY);
+      return;
+    } catch (e) {
+      if (attempt < retries - 1) {
+        await new Promise<void>((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+      } else {
+        console.warn("[IAP] backend sync failed after retries, will retry on next launch:", e);
+        await SecureStore.setItemAsync(PENDING_PREMIUM_SYNC_KEY, isPremium ? "true" : "false");
+      }
+    }
+  }
+}
+
+/** Call on app launch (once authenticated) to flush any sync that failed last time. */
+export async function retryPendingPremiumSync(): Promise<void> {
+  const pending = await SecureStore.getItemAsync(PENDING_PREMIUM_SYNC_KEY);
+  if (pending === null) return;
+  await syncPremiumWithBackend(pending === "true");
 }
 
 export async function checkIsPremium(): Promise<boolean> {
@@ -80,11 +123,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<void> {
   const active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
 
   // Sync premium status to our backend so it reflects instantly everywhere
-  try {
-    await apiClient.post("/auth/verify-premium", { isPremium: active });
-  } catch (e) {
-    console.warn("[IAP] backend sync failed:", e);
-  }
+  await syncPremiumWithBackend(active);
 
   if (!active) throw new Error("Purchase completed but entitlement not active.");
 }
@@ -117,9 +156,7 @@ export async function restorePremium(): Promise<boolean> {
     const info = await Purchases.restorePurchases();
     const active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
     if (active) {
-      try {
-        await apiClient.post("/auth/verify-premium", { isPremium: true });
-      } catch { /* non-fatal */ }
+      await syncPremiumWithBackend(true);
     }
     return active;
   } catch {
