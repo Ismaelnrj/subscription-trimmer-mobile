@@ -119,7 +119,7 @@ const DEALS = [
     badgeColor: "#8B5CF6",
     icon: "television-play",
     iconColor: "#113CCF",
-    url: "https://disneyplus.com?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    url: "https://disneyplus.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
     savings: "Cancel anytime",
   },
   {
@@ -156,7 +156,14 @@ export default function DealsScreen() {
       "You're about to open an external link. Trimio may earn a small commission if you subscribe, at no extra cost to you.",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Continue", onPress: () => Linking.openURL(url) },
+        {
+          text: "Continue",
+          onPress: () => {
+            Linking.openURL(url).catch(() =>
+              Alert.alert("Couldn't open link", "Please try again later.")
+            );
+          },
+        },
       ]
     );
   };

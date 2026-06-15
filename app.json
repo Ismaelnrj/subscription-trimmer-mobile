@@ -5,6 +5,14 @@
     "scheme": "trimio",
     "version": "1.0.0",
 
+    "icon": "./assets/icon.png",
+
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F9FAFB"
+    },
+
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -12,6 +20,11 @@
     "android": {
       "package": "com.trimio.app",
       "versionCode": 14,
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4F46E5"
+      },
       "permissions": [
         "INTERNET",
         "RECEIVE_BOOT_COMPLETED",
@@ -42,7 +55,16 @@
         "projectId": "18a3e059-0c9c-49df-b485-21240d7e283a"
       }
     },
-    "plugins": ["sentry-expo"],
+    "plugins": [
+      "sentry-expo",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4F46E5"
+        }
+      ]
+    ],
     "owner": "ismaelnrj"
   }
 }

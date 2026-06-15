@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import { useState } from "react";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -9,16 +10,23 @@ export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: notifications = [] } = useQuery({
+  const { data: notifications = [], isLoading, isError, refetch: refetchHistory } = useQuery({
     queryKey: ["notifications", "history"],
     queryFn: async () => (await apiClient.get("/trpc/notifications.getHistory?limit=50")).data.result.data,
   });
 
-  const { data: unreadData } = useQuery({
+  const { data: unreadData, refetch: refetchUnread } = useQuery({
     queryKey: ["notifications", "unreadCount"],
     queryFn: async () => (await apiClient.get("/trpc/notifications.getUnreadCount")).data.result.data,
   });
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetchHistory(), refetchUnread()]);
+    setRefreshing(false);
+  };
 
   const unreadCount = unreadData?.unreadCount ?? 0;
 
@@ -49,7 +57,11 @@ export default function NotificationsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: unreadCount > 0 ? `Notifications (${unreadCount})` : "Notifications" }} />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+      >
         <View style={styles.scrollContent}>
           {unreadCount > 0 && (
             <TouchableOpacity style={styles.markAllButton} onPress={() => markAsReadMutation.mutate(undefined)}>
@@ -57,7 +69,14 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
           )}
 
-          {notifications.length === 0 ? (
+          {isLoading ? (
+            <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 48 }} />
+          ) : isError ? (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
+              <Text style={styles.emptyStateText}>Couldn't load notifications. Pull down to retry.</Text>
+            </View>
+          ) : notifications.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="bell-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>No notifications yet</Text>
@@ -66,7 +85,7 @@ export default function NotificationsScreen() {
             notifications.map((n: any) => (
               <View key={n.id} style={[styles.notificationCard, !n.read && styles.notificationCardUnread]}>
                 <View style={styles.notificationIcon}>
-                  <MaterialCommunityIcons name={getIcon(n.type)} size={20} color={getIconColor(n.type)} />
+                  <MaterialCommunityIcons name={getIcon(n.type) as any} size={20} color={getIconColor(n.type)} />
                 </View>
                 <View style={styles.notificationContent}>
                   <Text style={styles.notificationTitle}>{n.title}</Text>

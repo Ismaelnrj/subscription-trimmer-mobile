@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "592788812003",
+    "project_id": "trimio-47529",
+    "storage_bucket": "trimio-47529.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:592788812003:android:42d5e7039e82e9027455d6",
+        "android_client_info": {
+          "package_name": "com.trimio.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC35V02WK41dDlCw_NCvyQC0HCOf2syXC8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
