@@ -183,6 +183,7 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$'`);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS custom_categories TEXT DEFAULT '[]'`);
+  await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS alert_threshold NUMERIC DEFAULT 50`);
 
   // open_id is the stable identifier passed to RevenueCat as the appUserID, so
   // purchase webhooks can map RevenueCat's app_user_id back to a Trimio user.
@@ -627,6 +628,7 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
       currency: s.currency || 'USD',
       currencySymbol: s.currency_symbol || '$',
       customCategories: s.custom_categories ? JSON.parse(s.custom_categories) : [],
+      alertThreshold: s.alert_threshold != null ? parseFloat(s.alert_threshold) : 50,
     }));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -635,11 +637,18 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
   try {
-    const { budgetGoal, currency, currencySymbol, customCategories } = req.body;
+    const { budgetGoal, currency, currencySymbol, customCategories, alertThreshold } = req.body;
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3, custom_categories = $4 WHERE user_id = $5',
-      [budgetGoal ?? null, currency || 'USD', currencySymbol || '$', JSON.stringify(customCategories || []), req.userId]
+      `UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3,
+       custom_categories = COALESCE($4, custom_categories), alert_threshold = COALESCE($5, alert_threshold)
+       WHERE user_id = $6`,
+      [
+        budgetGoal ?? null, currency || 'USD', currencySymbol || '$',
+        customCategories !== undefined ? JSON.stringify(customCategories) : null,
+        alertThreshold !== undefined ? alertThreshold : null,
+        req.userId,
+      ]
     );
     res.json(trpc({ success: true }));
   } catch (err) {
@@ -743,8 +752,10 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       }
     }
 
+    // Configurable: total monthly spend threshold for the "high spending" alert.
+    const TOTAL_SPEND_ALERT_THRESHOLD = 200;
     const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
-    if (monthlyTotal > 100) {
+    if (monthlyTotal > TOTAL_SPEND_ALERT_THRESHOLD) {
       alerts.push({
         id: 'expensive',
         type: 'expensive_alert',

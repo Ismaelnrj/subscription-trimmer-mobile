@@ -29,6 +29,7 @@ export default function AccountSettingsScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [budgetInput, setBudgetInput] = useState("");
+  const [alertThresholdInput, setAlertThresholdInput] = useState("");
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
 
   const { data: settings } = useQuery({
@@ -36,6 +37,7 @@ export default function AccountSettingsScreen() {
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
     onSuccess: (data: any) => {
       if (data.budgetGoal != null) setBudgetInput(String(data.budgetGoal));
+      if (data.alertThreshold != null) setAlertThresholdInput(String(data.alertThreshold));
     },
   });
 
@@ -107,6 +109,12 @@ export default function AccountSettingsScreen() {
     settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
   };
 
+  const handleSaveAlertThreshold = () => {
+    const threshold = alertThresholdInput ? parseFloat(alertThresholdInput) : 50;
+    if (isNaN(threshold)) { Alert.alert("Error", "Please enter a valid number."); return; }
+    settingsMutation.mutate({ alertThreshold: threshold, budgetGoal: settings?.budgetGoal ?? null, currency: currency.code, currencySymbol: currency.symbol });
+  };
+
   const handleSelectCurrency = (cur: typeof CURRENCIES[0]) => {
     setCurrency(cur);
     setShowCurrencyPicker(false);
@@ -169,6 +177,38 @@ export default function AccountSettingsScreen() {
                   </TouchableOpacity>
                 )}
               </View>
+            </View>
+          )}
+
+          <Text style={styles.sectionTitle}>Spending Alert Threshold</Text>
+          {!isPremium ? (
+            <PremiumGate
+              title="Custom Alert Threshold"
+              description="Choose your own limit for the 'expensive subscription' alert instead of the default."
+            />
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.label}>Alert me when a subscription exceeds</Text>
+              <View style={styles.prefixInputRow}>
+                <Text style={styles.prefixSymbol}>{currency.symbol}</Text>
+                <TextInput
+                  style={[styles.input, styles.prefixInput]}
+                  value={alertThresholdInput}
+                  onChangeText={setAlertThresholdInput}
+                  placeholder="e.g. 50"
+                  placeholderTextColor={c.placeholder}
+                  keyboardType="decimal-pad"
+                />
+              </View>
+              <Text style={styles.infoText}>
+                Subscriptions costing more than this per month will be flagged in Recommendations. Default: {currency.symbol}50/mo.
+              </Text>
+              <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveAlertThreshold} disabled={settingsMutation.isLoading}>
+                {settingsMutation.isLoading
+                  ? <ActivityIndicator color="#FFFFFF" />
+                  : <Text style={styles.saveButtonText}>Save Threshold</Text>
+                }
+              </TouchableOpacity>
             </View>
           )}
 
@@ -295,6 +335,12 @@ function makeStyles(c: AppColors) {
     currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
     currencySymbol: { fontSize: 18, fontWeight: "700", color: c.primary, width: 28 },
     budgetInput: { flex: 1 },
+    prefixInputRow: {
+      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.border,
+      borderRadius: 8, backgroundColor: c.inputBg, marginBottom: 4,
+    },
+    prefixSymbol: { fontSize: 16, fontWeight: "700", color: c.primary, paddingLeft: 12 },
+    prefixInput: { flex: 1, borderWidth: 0, marginBottom: 0, backgroundColor: "transparent" },
     clearButton: {
       backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 13, paddingHorizontal: 16,
       alignItems: "center", marginTop: 4, borderWidth: 1, borderColor: c.dangerBorder,

@@ -355,12 +355,26 @@ export default function SubscriptionsScreen() {
           )}
 
           {filtered.length === 0 ? (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="inbox" size={48} color={c.border} style={{ marginBottom: 12 }} />
-              <Text style={styles.emptyStateText}>
-                {search ? "No results found" : "No subscriptions yet.\nTap Add to get started."}
-              </Text>
-            </View>
+            total === 0 ? (
+              <View style={styles.emptyState}>
+                <MaterialCommunityIcons name="receipt-text-outline" size={52} color={c.border} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyStateTitle}>What are you paying for?</Text>
+                <Text style={styles.emptyStateSubtext}>
+                  Add your first subscription to start tracking your monthly spend.
+                </Text>
+                <TouchableOpacity style={styles.emptyStateButton} onPress={openAdd}>
+                  <Text style={styles.emptyStateButtonText}>+ Add Subscription</Text>
+                </TouchableOpacity>
+                <Text style={styles.emptyStateHint}>
+                  You can also paste a purchase confirmation email and we'll fill it in for you.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.emptyState}>
+                <MaterialCommunityIcons name="inbox" size={48} color={c.border} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyStateText}>No results found</Text>
+              </View>
+            )
           ) : (
             filtered.map((sub: any) => {
               const equiv = monthlyEquiv(sub.price, sub.billingCycle);
@@ -651,6 +665,14 @@ function makeStyles(c: AppColors) {
     },
     emptyState: { alignItems: "center", paddingVertical: 48 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    emptyStateTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 8, textAlign: "center" },
+    emptyStateSubtext: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, paddingHorizontal: 24, marginBottom: 20 },
+    emptyStateButton: {
+      backgroundColor: c.primary, borderRadius: 10,
+      paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
+    },
+    emptyStateButtonText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    emptyStateHint: { fontSize: 12, color: c.textMuted, textAlign: "center", paddingHorizontal: 32, lineHeight: 18 },
     countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
     modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
     modalContent: {

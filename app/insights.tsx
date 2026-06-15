@@ -33,7 +33,12 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
   return keywords.some(k => n.includes(k));
 }
 
-function buildTips(subs: Sub[], fmtC: (n: number) => string): Tip[] {
+// Configurable thresholds — these can be tuned without code changes if they
+// turn out to be too aggressive or too lax for most users.
+const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing this much or more per month
+const TOTAL_SPEND_THRESHOLD = 200; // flag total monthly spend at or above this amount
+
+function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD): Tip[] {
   if (subs.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();
@@ -91,7 +96,7 @@ function buildTips(subs: Sub[], fmtC: (n: number) => string): Tip[] {
   }
 
   // High total spend
-  if (totalMonthly >= 100) {
+  if (totalMonthly >= TOTAL_SPEND_THRESHOLD) {
     tips.push({ id: "high-spend", icon: "trending-up", color: "#DC2626",
       title: `${fmtC(totalMonthly)}/mo is above average`,
       detail: `The average person spends $50–80/month on subscriptions. You're at ${fmtC(totalMonthly)} (${fmtC(totalMonthly * 12)}/yr). A quick audit could free up cash.`,
@@ -100,7 +105,7 @@ function buildTips(subs: Sub[], fmtC: (n: number) => string): Tip[] {
 
   // Individual expensive subs
   for (const s of subs) {
-    if (toMonthly(s.price, s.billingCycle) >= 25) {
+    if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#7C3AED",
         title: `${s.name} costs ${fmtC(toMonthly(s.price, s.billingCycle))}/mo`,
         detail: `That's ${fmtC(toMonthly(s.price, s.billingCycle) * 12)}/year. Check if a lower tier or family-sharing plan is available.`,
@@ -179,10 +184,16 @@ export default function InsightsScreen() {
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
+  });
+
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = subsLoading || summaryLoading;
-  const allTips = useMemo(() => buildTips(subscriptions, fmtC), [subscriptions, fmtC]);
+  const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
+  const allTips = useMemo(() => buildTips(subscriptions, fmtC, singleSubThreshold), [subscriptions, fmtC, singleSubThreshold]);
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
