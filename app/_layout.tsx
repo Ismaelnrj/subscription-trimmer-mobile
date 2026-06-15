@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
+import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
 
 Sentry.init({
@@ -75,6 +76,9 @@ export default function RootLayout() {
         fetchRates();
         setOnboardingDone(done === "true");
         requestNotificationPermission();
+        if (useAuthStore.getState().isAuthenticated) {
+          retryPendingPremiumSync();
+        }
       } catch {
         setOnboardingDone(false);
       }
