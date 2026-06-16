@@ -1,7 +1,8 @@
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
-  TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform,
+  TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform, Animated,
 } from "react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -41,11 +42,13 @@ export default function SubscriptionsScreen() {
   const [formData, setFormData] = useState(emptyForm);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sort, setSort] = useState<"date" | "name" | "price_desc">("date");
   const [refreshing, setRefreshing] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCatDraft, setCustomCatDraft] = useState("");
   const [showEmailPaste, setShowEmailPaste] = useState(false);
   const [emailText, setEmailText] = useState("");
+  const [loadingExamples, setLoadingExamples] = useState(false);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -74,10 +77,16 @@ export default function SubscriptionsScreen() {
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.toLowerCase();
-    return q ? subscriptions.filter((s: any) =>
-      (s.name ?? "").toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q)
-    ) : subscriptions;
-  }, [subscriptions, debouncedSearch]);
+    const list = q
+      ? subscriptions.filter((s: any) =>
+          (s.name ?? "").toLowerCase().includes(q) || (s.category ?? "").toLowerCase().includes(q)
+        )
+      : [...subscriptions];
+
+    if (sort === "name") list.sort((a: any, b: any) => a.name.localeCompare(b.name));
+    else if (sort === "price_desc") list.sort((a: any, b: any) => toMonthly(b.price, b.billingCycle) - toMonthly(a.price, a.billingCycle));
+    return list;
+  }, [subscriptions, debouncedSearch, sort]);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
@@ -225,6 +234,25 @@ export default function SubscriptionsScreen() {
     ]);
   };
 
+  const handleLoadExamples = async () => {
+    setLoadingExamples(true);
+    const examples = [
+      { name: "Netflix", price: 15.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null },
+      { name: "Spotify", price: 9.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null },
+      { name: "iCloud+", price: 2.99, billingCycle: "monthly", category: "software", trialEndDate: null },
+    ];
+    try {
+      for (const ex of examples) {
+        await apiClient.post("/trpc/subscriptions.create", ex);
+      }
+      invalidate();
+    } catch {
+      Alert.alert("Error", "Could not load examples. Please try again.");
+    } finally {
+      setLoadingExamples(false);
+    }
+  };
+
   const exportReport = async () => {
     if (!isPremium) { router.push("/upgrade"); return; }
     if (subscriptions.length === 0) { Alert.alert("No data", "Add some subscriptions first."); return; }
@@ -349,6 +377,20 @@ export default function SubscriptionsScreen() {
           />
 
           {total > 0 && (
+            <View style={styles.sortRow}>
+              {([ ["date", "Recent"], ["name", "A–Z"], ["price_desc", "Price ↓"] ] as ["date"|"name"|"price_desc", string][]).map(([key, label]) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.sortChip, sort === key && styles.sortChipActive]}
+                  onPress={() => setSort(key)}
+                >
+                  <Text style={[styles.sortChipText, sort === key && styles.sortChipTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {total > 0 && (
             <Text style={styles.countText}>
               {filtered.length} of {total} subscription{total !== 1 ? "s" : ""}
             </Text>
@@ -364,6 +406,16 @@ export default function SubscriptionsScreen() {
                 </Text>
                 <TouchableOpacity style={styles.emptyStateButton} onPress={openAdd}>
                   <Text style={styles.emptyStateButtonText}>+ Add Subscription</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.examplesButton}
+                  onPress={handleLoadExamples}
+                  disabled={loadingExamples}
+                >
+                  {loadingExamples
+                    ? <ActivityIndicator color={c.primary} size="small" />
+                    : <Text style={styles.examplesButtonText}>Try with example subscriptions</Text>
+                  }
                 </TouchableOpacity>
                 <Text style={styles.emptyStateHint}>
                   You can also paste a purchase confirmation email and we'll fill it in for you.
@@ -384,7 +436,23 @@ export default function SubscriptionsScreen() {
                 : null;
               const isCustomCat = !DEFAULT_CATEGORIES.includes(sub.category);
               return (
-                <View key={sub.id} style={styles.card}>
+                <Swipeable
+                  key={sub.id}
+                  friction={2}
+                  rightThreshold={40}
+                  renderRightActions={(progress) => {
+                    const trans = progress.interpolate({ inputRange: [0, 1], outputRange: [80, 0] });
+                    return (
+                      <Animated.View style={[styles.swipeDeleteWrapper, { transform: [{ translateX: trans }] }]}>
+                        <TouchableOpacity style={styles.swipeDelete} onPress={() => confirmDelete(sub.id, sub.name)}>
+                          <MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
+                          <Text style={styles.swipeDeleteText}>Delete</Text>
+                        </TouchableOpacity>
+                      </Animated.View>
+                    );
+                  }}
+                >
+                <View style={styles.card}>
                   <View style={styles.cardInfo}>
                     <Text style={styles.cardName}>{sub.name}</Text>
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
@@ -416,6 +484,7 @@ export default function SubscriptionsScreen() {
                     </TouchableOpacity>
                   </View>
                 </View>
+                </Swipeable>
               );
             })
           )}
@@ -746,5 +815,24 @@ function makeStyles(c: AppColors) {
       borderRadius: 6, padding: 8,
     },
     parsedPreviewText: { fontSize: 12, color: c.success, flex: 1, fontWeight: "600" },
+    sortRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+    sortChip: {
+      paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20,
+      backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
+    },
+    sortChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    sortChipText: { fontSize: 12, color: c.textSecondary, fontWeight: "500" },
+    sortChipTextActive: { color: "#FFFFFF", fontWeight: "700" },
+    swipeDeleteWrapper: { justifyContent: "center", marginBottom: 12 },
+    swipeDelete: {
+      backgroundColor: c.danger, justifyContent: "center", alignItems: "center",
+      width: 80, borderRadius: 12, height: "100%", gap: 2,
+    },
+    swipeDeleteText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+    examplesButton: {
+      borderWidth: 1, borderColor: c.border, borderRadius: 10,
+      paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,
+    },
+    examplesButtonText: { color: c.textSecondary, fontSize: 13 },
   });
 }
