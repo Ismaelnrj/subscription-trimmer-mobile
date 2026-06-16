@@ -129,6 +129,21 @@ export default function AnalyticsScreen() {
             </View>
           </View>
         </View>
+        {(summary?.activeSubscriptions ?? 0) > 0 && (
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View style={styles.statPair}>
+                <Text style={styles.statPairLabel}>Avg per Subscription</Text>
+                <Text style={styles.statPairValue}>{fmtC(monthly / (summary?.activeSubscriptions ?? 1))}/mo</Text>
+              </View>
+              <View style={styles.divider} />
+              <View style={styles.statPair}>
+                <Text style={styles.statPairLabel}>Avg per Year</Text>
+                <Text style={styles.statPairValue}>{fmtC((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}/yr</Text>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </ScrollView>
   );
