@@ -41,13 +41,20 @@ export const TIP_IDS = {
 };
 
 let _configured = false;
+let _configuring: Promise<boolean> | null = null;
 
 /**
  * Configure RevenueCat. Pass the user's `openId` so RevenueCat's `app_user_id`
  * matches `users.open_id` in our database — this is how the webhook
  * (/api/webhooks/revenuecat) maps purchases back to a Trimio account.
  */
-export async function setupIAP(appUserID?: string): Promise<boolean> {
+export function setupIAP(appUserID?: string): Promise<boolean> {
+  if (_configuring) return _configuring;
+  _configuring = _setupIAP(appUserID).finally(() => { _configuring = null; });
+  return _configuring;
+}
+
+async function _setupIAP(appUserID?: string): Promise<boolean> {
   try {
     if (!_configured) {
       if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
@@ -120,7 +127,16 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
 /** Purchase a specific package. Throws on failure / user cancel. */
 export async function purchasePackage(pkg: PurchasesPackage): Promise<void> {
   const { customerInfo } = await Purchases.purchasePackage(pkg);
-  const active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+  let active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+
+  // RevenueCat can lag on entitlement propagation — retry once after a short delay
+  if (!active) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+    try {
+      const refreshed = await Purchases.getCustomerInfo();
+      active = refreshed.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    } catch {}
+  }
 
   // Sync premium status to our backend so it reflects instantly everywhere
   await syncPremiumWithBackend(active);

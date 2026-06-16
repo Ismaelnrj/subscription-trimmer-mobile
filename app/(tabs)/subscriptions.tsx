@@ -390,7 +390,7 @@ export default function SubscriptionsScreen() {
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
-                      Next: {new Date(sub.nextBillingDate).toLocaleDateString()}
+                      Next: {sub.nextBillingDate ? new Date(sub.nextBillingDate).toLocaleDateString() : "—"}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                       <View style={[styles.categoryBadge, isCustomCat && styles.customCategoryBadge]}>

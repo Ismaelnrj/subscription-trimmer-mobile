@@ -59,6 +59,8 @@ function extractName(text: string): string | undefined {
   return undefined;
 }
 
+const BILLING_CONTEXT_RE = /(?:per month|\/month|\/mo\b|monthly|per year|\/year|annually|per week|\/week|subscription|membership|plan|renewal|recurring|charged)/i;
+
 function extractPrice(text: string): string | undefined {
   // Match currency symbol followed by number, e.g. $9.99 or €14,99
   const withSymbol = new RegExp(
@@ -69,23 +71,40 @@ function extractPrice(text: string): string | undefined {
   // Match number followed by currency code, e.g. 9.99 USD
   const withCode = /(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\b/gi;
 
-  const candidates: number[] = [];
+  const candidates: { value: number; index: number }[] = [];
 
   let m: RegExpExecArray | null;
   while ((m = withSymbol.exec(text)) !== null) {
     const n = parseFloat(m[1].replace(",", "."));
-    if (!isNaN(n) && n > 0 && n < 10000) candidates.push(n);
+    if (!isNaN(n) && n > 0 && n < 10000) candidates.push({ value: n, index: m.index });
   }
   while ((m = withCode.exec(text)) !== null) {
     const n = parseFloat(m[1].replace(",", "."));
-    if (!isNaN(n) && n > 0 && n < 10000) candidates.push(n);
+    if (!isNaN(n) && n > 0 && n < 10000) candidates.push({ value: n, index: m.index });
   }
 
   if (candidates.length === 0) return undefined;
 
-  // Prefer the smallest plausible price (avoid totals/one-time charges being mistaken for monthly)
-  const sorted = [...new Set(candidates)].sort((a, b) => a - b);
-  const best = sorted[0];
+  // Prefer a candidate that appears within 60 chars of a billing-cycle keyword
+  const contextual = candidates.filter(({ index }) => {
+    const window = text.slice(Math.max(0, index - 60), index + 60);
+    return BILLING_CONTEXT_RE.test(window);
+  });
+
+  // Among contextual hits (or all candidates as fallback), pick the most frequent value;
+  // ties broken by choosing the smallest (avoids totals/one-time fees).
+  const pool = contextual.length > 0 ? contextual : candidates;
+  const freq: Record<string, number> = {};
+  for (const { value } of pool) {
+    const k = value.toFixed(2);
+    freq[k] = (freq[k] ?? 0) + 1;
+  }
+  const maxFreq = Math.max(...Object.values(freq));
+  const best = Object.entries(freq)
+    .filter(([, f]) => f === maxFreq)
+    .map(([k]) => parseFloat(k))
+    .sort((a, b) => a - b)[0];
+
   return best.toFixed(2);
 }
 
