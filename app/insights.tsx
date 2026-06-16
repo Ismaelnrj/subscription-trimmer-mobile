@@ -127,7 +127,7 @@ function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold:
   const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
   if (yearlyCount === 0 && subs.length >= 4) {
     tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#2563EB",
-      title: "None of your subscriptions are on annual plans",
+      title: "No annual plans — you're paying more",
       detail: `You have ${subs.length} monthly subscriptions. Switching even half of them to yearly billing typically saves 15–20%. Check each service's pricing page for annual options.`,
       priority: "medium" });
   }
