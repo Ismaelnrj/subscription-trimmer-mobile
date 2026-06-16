@@ -29,8 +29,8 @@ const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 const ENTITLEMENT_ID = "Trimio Premium";
 
 export const PRODUCT_IDS = {
-  monthly:  "trimio_premium_monthly",
-  yearly:   "trimio_premium_yearly",
+  monthly:  "trimio_premium_monthly:monthly-2-99",
+  yearly:   "trimio_premium_yearly:yearly",
   lifetime: "trimio_premium_lifetime",
 };
 
