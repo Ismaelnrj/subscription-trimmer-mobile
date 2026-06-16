@@ -12,7 +12,7 @@ export interface ParsedSubscription {
 const CURRENCY_SYMBOLS = ["\\$", "€", "£", "₹", "¥", "R\\$", "C\\$", "A\\$", "MX\\$"];
 const CURRENCY_PATTERN = CURRENCY_SYMBOLS.join("|");
 
-// Well-known service name hints extracted from email sender / subject lines
+// Well-known service name hints extracted from email content
 const KNOWN_SERVICES: Record<string, string> = {
   netflix: "Netflix", spotify: "Spotify", apple: "Apple", disney: "Disney+",
   hulu: "Hulu", amazon: "Amazon Prime", "prime video": "Amazon Prime",
@@ -26,7 +26,51 @@ const KNOWN_SERVICES: Record<string, string> = {
   "new york times": "NY Times", nyt: "NY Times", hbo: "HBO Max",
   peacock: "Peacock", paramount: "Paramount+", crunchyroll: "Crunchyroll",
   headspace: "Headspace", calm: "Calm",
+  // AI services
+  anthropic: "Claude", claude: "Claude", chatgpt: "ChatGPT", openai: "ChatGPT",
+  perplexity: "Perplexity", midjourney: "Midjourney", "cursor ": "Cursor",
+  copilot: "GitHub Copilot",
+  // Other common services
+  dashlane: "Dashlane", lastpass: "LastPass", "1password": "1Password",
+  proton: "Proton", mullvad: "Mullvad VPN", surfshark: "Surfshark",
+  todoist: "Todoist", evernote: "Evernote", bear: "Bear",
+  pocketcasts: "Pocket Casts", overcast: "Overcast",
 };
+
+// Payment intermediaries — never use these as the subscription name
+const PAYMENT_INTERMEDIARIES = new Set([
+  "paypal", "venmo", "cashapp", "cash app", "stripe", "square",
+  "paddle", "fastspring", "gumroad", "lemonsqueezy", "lemon squeezy",
+]);
+
+function isIntermediaryText(text: string): boolean {
+  const lower = text.toLowerCase();
+  for (const name of PAYMENT_INTERMEDIARIES) {
+    if (lower.includes(name)) return true;
+  }
+  return false;
+}
+
+function extractMerchantFromIntermediaryEmail(text: string): string | undefined {
+  const patterns = [
+    /(?:sent|paid)\s+(?:a\s+payment\s+of\s+)?(?:[\$€£₹¥][\d,.]+\s*(?:USD|EUR|GBP|INR|JPY)?\s+)?to\s+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+    /merchant(?:\s+name)?[:\s]+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+    /seller(?:\s+info(?:rmation)?)?[:\s]+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+    /(?:payment|receipt)\s+to[:\s]+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+    /you\s+paid\s+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+    /subscription\s+(?:to|for|with)\s+([A-Za-z0-9][A-Za-z0-9 .,&'"\-]{1,40})/i,
+  ];
+
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) {
+      const candidate = m[1].trim().replace(/\s{2,}/g, " ");
+      // Discard if it's just another intermediary name or too short
+      if (candidate.length >= 2 && !isIntermediaryText(candidate)) return candidate;
+    }
+  }
+  return undefined;
+}
 
 function detectKnownService(text: string): string | undefined {
   const lower = text.toLowerCase();
@@ -37,11 +81,22 @@ function detectKnownService(text: string): string | undefined {
 }
 
 function extractName(text: string): string | undefined {
-  // Try known services first (most reliable)
+  // Step 1: always scan the full content for known services first —
+  // this correctly handles intermediary emails (e.g. PayPal receipt for Claude)
   const known = detectKnownService(text);
   if (known) return known;
 
-  // "Your [Name] subscription"
+  // Step 2: if the email came through a payment intermediary, use
+  // merchant-specific patterns before falling back to generic ones
+  if (isIntermediaryText(text)) {
+    const merchant = extractMerchantFromIntermediaryEmail(text);
+    if (merchant) return merchant;
+    // Can't determine merchant — return undefined so the form stays blank
+    // rather than pre-filling with "PayPal"
+    return undefined;
+  }
+
+  // Step 3: generic patterns for direct merchant emails
   const patterns = [
     /your\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30}?)\s+(?:subscription|membership|plan|account)/i,
     /subscri(?:bed|ption)\s+to\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
@@ -54,7 +109,11 @@ function extractName(text: string): string | undefined {
 
   for (const re of patterns) {
     const m = text.match(re);
-    if (m) return m[1].trim().replace(/\s{2,}/g, " ");
+    if (m) {
+      const candidate = m[1].trim().replace(/\s{2,}/g, " ");
+      // Never return an intermediary name from a generic pattern
+      if (!isIntermediaryText(candidate)) return candidate;
+    }
   }
   return undefined;
 }
