@@ -6,11 +6,9 @@ import { useTheme, AppColors } from "../lib/theme";
 // Affiliate links — sign up at each program and replace the URLs below with your
 // personal affiliate link. Apply here:
 // NordVPN:      https://affiliates.nordvpn.com
-// Surfshark:    https://surfshark.com/affiliates
 // 1Password:    https://1password.com/affiliates  (via impact.com)
 // Dashlane:     https://dashlane.com/affiliates
 // Grammarly:    https://grammarly.com/affiliates  (via impact.com)
-// Canva:        https://canva.com/affiliates
 // Skillshare:   https://skillshare.com/affiliates
 // MasterClass:  https://masterclass.com/affiliates
 // Headspace:    https://headspace.com/affiliates
@@ -28,17 +26,6 @@ const DEALS = [
     iconColor: "#4F46E5",
     url: "https://nordvpn.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
     savings: "Save ~$80/yr",
-  },
-  {
-    name: "Surfshark",
-    category: "Security",
-    desc: "Unlimited devices on one plan. One of the most affordable VPNs with strong privacy features.",
-    badge: "Unlimited Devices",
-    badgeColor: "#10B981",
-    icon: "shield-lock",
-    iconColor: "#06B6D4",
-    url: "https://surfshark.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "Save up to 85%",
   },
   {
     name: "Proton VPN & Mail",
@@ -94,17 +81,6 @@ const DEALS = [
     iconColor: "#1F2937",
     url: "https://notion.so/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
     savings: "Free forever plan",
-  },
-  {
-    name: "Canva Pro",
-    category: "Design",
-    desc: "Create stunning graphics, videos and presentations in minutes. 30-day free Pro trial.",
-    badge: "Free Trial",
-    badgeColor: "#10B981",
-    icon: "palette",
-    iconColor: "#7C3AED",
-    url: "https://canva.com/pro/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "30 days free",
   },
   {
     name: "Adobe Creative Cloud",
