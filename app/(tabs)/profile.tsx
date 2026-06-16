@@ -27,12 +27,14 @@ export default function ProfileScreen() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const handleRateApp = () => {
-    const playStoreUrl = "market://details?id=com.trimio.app";
-    const webFallback = "https://play.google.com/store/apps/details?id=com.trimio.app";
-    Linking.canOpenURL(playStoreUrl)
-      .then((supported) => Linking.openURL(supported ? playStoreUrl : webFallback))
-      .catch(() => Linking.openURL(webFallback));
+  const handleRateApp = async () => {
+    const market = "market://details?id=com.trimio.app";
+    const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
+    try {
+      await Linking.openURL(market);
+    } catch {
+      try { await Linking.openURL(web); } catch {}
+    }
   };
 
   const handleLogout = () => {
