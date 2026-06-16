@@ -10,9 +10,16 @@ import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
 
+function toMonthly(price: number, cycle: string) {
+  if (cycle === "weekly") return (price * 52) / 12;
+  if (cycle === "yearly") return price / 12;
+  return price;
+}
+
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const { currency } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
@@ -162,20 +169,34 @@ export default function DashboardScreen() {
           </View>
         )}
 
+        <View style={styles.toggleRow}>
+          {(["monthly", "yearly"] as const).map((mode) => (
+            <TouchableOpacity
+              key={mode}
+              style={[styles.togglePill, viewMode === mode && styles.togglePillActive]}
+              onPress={() => setViewMode(mode)}
+            >
+              <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
+                {mode === "monthly" ? "Monthly" : "Yearly"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="credit-card" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
-            <Text style={styles.statLabel}>Monthly Spend</Text>
+            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : (summary?.yearlyTotal ?? 0))}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
-            <Text style={styles.statLabel}>Yearly Spend</Text>
+            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.yearlyTotal ?? 0) : (summary?.monthlyTotal ?? 0))}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly Spend" : "Monthly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
@@ -222,8 +243,10 @@ export default function DashboardScreen() {
                 <View>
                   <Text style={styles.subName}>{sub.name}</Text>
                   <Text style={styles.subMeta}>
-                    {fmtC(sub.price)} / {sub.billingCycle}
-                    {monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}
+                    {viewMode === "yearly"
+                      ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)}/yr`
+                      : `${fmtC(sub.price)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
+                    }
                   </Text>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
@@ -309,5 +332,14 @@ function makeStyles(c: AppColors) {
     subName: { fontSize: 14, fontWeight: "600", color: c.text },
     subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     subPrice: { fontSize: 14, fontWeight: "700", color: c.primary },
+    toggleRow: {
+      flexDirection: "row", gap: 4, marginBottom: 16,
+      backgroundColor: c.card, borderRadius: 10, padding: 4,
+      borderWidth: 1, borderColor: c.border, alignSelf: "flex-start",
+    },
+    togglePill: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8 },
+    togglePillActive: { backgroundColor: c.primary },
+    toggleText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
+    toggleTextActive: { color: "#FFFFFF" },
   });
 }
