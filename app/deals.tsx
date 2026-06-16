@@ -3,14 +3,20 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useTheme, AppColors } from "../lib/theme";
 
-// Affiliate links — sign up at each program and replace these URLs with your
-// personalised affiliate link. Each one earns a commission when a user signs up.
-// NordVPN: https://affiliates.nordvpn.com
-// ExpressVPN: https://www.expressvpn.com/affiliates
-// Surfshark: https://surfshark.com/affiliates
-// NordPass: https://nordpass.com/affiliate-program
-// Notion: https://www.notion.so/affiliates
-// Canva: https://www.canva.com/affiliates
+// Affiliate links — sign up at each program and replace the URLs below with your
+// personal affiliate link. Apply here:
+// NordVPN:      https://affiliates.nordvpn.com
+// Surfshark:    https://surfshark.com/affiliates
+// 1Password:    https://1password.com/affiliates  (via impact.com)
+// Dashlane:     https://dashlane.com/affiliates
+// Grammarly:    https://grammarly.com/affiliates  (via impact.com)
+// Canva:        https://canva.com/affiliates
+// Skillshare:   https://skillshare.com/affiliates
+// MasterClass:  https://masterclass.com/affiliates
+// Headspace:    https://headspace.com/affiliates
+// Adobe CC:     https://www.adobe.com/affiliates.html
+// Notion:       https://notion.so/affiliates       (via impact.com)
+// Proton:       https://proton.me/referral
 const DEALS = [
   {
     name: "NordVPN",
@@ -24,44 +30,66 @@ const DEALS = [
     savings: "Save ~$80/yr",
   },
   {
-    name: "ExpressVPN",
-    category: "Security",
-    desc: "30-day money-back guarantee. Ultra-fast servers in 105 countries.",
-    badge: "Top Rated",
-    badgeColor: "#6366F1",
-    icon: "vpn",
-    iconColor: "#EF4444",
-    url: "https://expressvpn.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "30-day guarantee",
-  },
-  {
     name: "Surfshark",
     category: "Security",
-    desc: "Unlimited devices on one plan. 85% off + 3 months extra free.",
+    desc: "Unlimited devices on one plan. One of the most affordable VPNs with strong privacy features.",
     badge: "Unlimited Devices",
     badgeColor: "#10B981",
     icon: "shield-lock",
     iconColor: "#06B6D4",
     url: "https://surfshark.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "Save 85%",
+    savings: "Save up to 85%",
   },
   {
-    name: "NordPass",
-    category: "Productivity",
-    desc: "Password manager by the makers of NordVPN. Family plan available.",
-    badge: "Free Trial",
-    badgeColor: "#10B981",
+    name: "Proton VPN & Mail",
+    category: "Privacy",
+    desc: "Swiss-based privacy suite — encrypted VPN, email, calendar and cloud storage. Free plan available.",
+    badge: "Privacy First",
+    badgeColor: "#6366F1",
+    icon: "lock-outline",
+    iconColor: "#6D4AFF",
+    url: "https://proton.me/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "Free plan available",
+  },
+  {
+    name: "1Password",
+    category: "Security",
+    desc: "The most trusted password manager for individuals and families. 14-day free trial.",
+    badge: "Top Rated",
+    badgeColor: "#6366F1",
     icon: "lock-check",
-    iconColor: "#4F46E5",
-    url: "https://nordpass.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "30 days free",
+    iconColor: "#1A8CFF",
+    url: "https://1password.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "14 days free",
+  },
+  {
+    name: "Dashlane",
+    category: "Security",
+    desc: "Password manager with built-in VPN and dark web monitoring. Free plan for one device.",
+    badge: "Free Plan",
+    badgeColor: "#10B981",
+    icon: "key-variant",
+    iconColor: "#00B388",
+    url: "https://dashlane.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "Free forever plan",
+  },
+  {
+    name: "Grammarly",
+    category: "Productivity",
+    desc: "AI writing assistant that fixes grammar, clarity, tone and style. Free plan available.",
+    badge: "Popular",
+    badgeColor: "#8B5CF6",
+    icon: "text-box-check-outline",
+    iconColor: "#15C39A",
+    url: "https://grammarly.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "Free plan available",
   },
   {
     name: "Notion",
     category: "Productivity",
-    desc: "All-in-one workspace for notes, tasks, wikis, and databases. Free plan available.",
-    badge: "Popular",
-    badgeColor: "#8B5CF6",
+    desc: "All-in-one workspace for notes, docs, tasks and wikis. Free plan for personal use.",
+    badge: "Free Plan",
+    badgeColor: "#10B981",
     icon: "notebook-outline",
     iconColor: "#1F2937",
     url: "https://notion.so/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
@@ -70,7 +98,7 @@ const DEALS = [
   {
     name: "Canva Pro",
     category: "Design",
-    desc: "Create stunning designs in minutes. 30-day free trial of Pro features.",
+    desc: "Create stunning graphics, videos and presentations in minutes. 30-day free Pro trial.",
     badge: "Free Trial",
     badgeColor: "#10B981",
     icon: "palette",
@@ -79,70 +107,48 @@ const DEALS = [
     savings: "30 days free",
   },
   {
-    name: "Amazon Prime",
-    category: "Shopping",
-    desc: "30-day free trial — fast shipping, Prime Video, Prime Music and more.",
-    badge: "Free Trial",
-    badgeColor: "#10B981",
-    icon: "package-variant",
-    iconColor: "#F59E0B",
-    url: "https://amazon.com/prime?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "30 days free",
+    name: "Adobe Creative Cloud",
+    category: "Design",
+    desc: "Photoshop, Illustrator, Premiere and 20+ apps. The industry standard creative suite.",
+    badge: "Best Value",
+    badgeColor: "#EF4444",
+    icon: "brush",
+    iconColor: "#FF0000",
+    url: "https://adobe.com/creativecloud/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "First month free",
   },
   {
-    name: "Microsoft 365",
-    category: "Productivity",
-    desc: "Word, Excel, PowerPoint + 1TB OneDrive. 1 month free for new subscribers.",
-    badge: "Free Trial",
-    badgeColor: "#10B981",
-    icon: "microsoft",
-    iconColor: "#0078D4",
-    url: "https://microsoft.com/microsoft-365?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "1 month free",
-  },
-  {
-    name: "Spotify Premium",
-    category: "Music",
-    desc: "Ad-free music, offline listening, and unlimited skips. 1 month free.",
-    badge: "Free Trial",
-    badgeColor: "#10B981",
-    icon: "music",
-    iconColor: "#1DB954",
-    url: "https://spotify.com/premium?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "1 month free",
-  },
-  {
-    name: "Disney+",
-    category: "Streaming",
-    desc: "Marvel, Star Wars, Pixar, Disney classics and National Geographic.",
-    badge: "Popular",
-    badgeColor: "#8B5CF6",
-    icon: "television-play",
-    iconColor: "#113CCF",
-    url: "https://disneyplus.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "Cancel anytime",
-  },
-  {
-    name: "Duolingo Plus",
+    name: "Skillshare",
     category: "Education",
-    desc: "Learn 40+ languages ad-free with offline access and progress tracking.",
-    badge: "Popular",
-    badgeColor: "#8B5CF6",
-    icon: "school",
-    iconColor: "#58CC02",
-    url: "https://duolingo.com/plus?utm_source=trimio&utm_medium=app&utm_campaign=deals",
-    savings: "2 weeks free",
-  },
-  {
-    name: "YouTube Premium",
-    category: "Video",
-    desc: "Ad-free videos, background play, and YouTube Music included.",
+    desc: "Thousands of creative and business classes. Learn design, marketing, coding and more.",
     badge: "Free Trial",
     badgeColor: "#10B981",
-    icon: "youtube",
-    iconColor: "#EF4444",
-    url: "https://youtube.com/premium?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    icon: "school-outline",
+    iconColor: "#00C4CC",
+    url: "https://skillshare.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
     savings: "1 month free",
+  },
+  {
+    name: "MasterClass",
+    category: "Education",
+    desc: "Learn from the world's best — Gordon Ramsay, Serena Williams, Neil deGrasse Tyson and more.",
+    badge: "Popular",
+    badgeColor: "#8B5CF6",
+    icon: "star-circle-outline",
+    iconColor: "#C9A84C",
+    url: "https://masterclass.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "30-day guarantee",
+  },
+  {
+    name: "Headspace",
+    category: "Wellness",
+    desc: "Guided meditation, sleep sounds and focus music. Stress less and sleep better.",
+    badge: "Free Trial",
+    badgeColor: "#10B981",
+    icon: "head-heart-outline",
+    iconColor: "#FF6B35",
+    url: "https://headspace.com/?utm_source=trimio&utm_medium=app&utm_campaign=deals",
+    savings: "7 days free",
   },
 ];
 
