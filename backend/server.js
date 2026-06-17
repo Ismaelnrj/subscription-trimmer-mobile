@@ -481,14 +481,27 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     }
 
     const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'TRANSFER'];
-    const REVOKE_EVENTS = ['EXPIRATION'];
+    const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION'];
+    const PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
-    if (GRANT_EVENTS.includes(event.type)) {
+    // Sandbox/test events from RevenueCat (e.g. compressed renewal/expiration
+    // windows) must never affect real users' premium status in production.
+    if (event.environment === 'SANDBOX' && process.env.NODE_ENV === 'production') {
+      return res.json({ success: true });
+    }
+
+    // Only act on events for the Premium entitlement specifically — RevenueCat
+    // sends EXPIRATION/etc. events per-entitlement, and other entitlements
+    // (e.g. tip products) expiring must not revoke Premium access.
+    const entitlementIds = event.entitlement_ids || [];
+    const affectsPremium = entitlementIds.includes(PREMIUM_ENTITLEMENT);
+
+    if (affectsPremium && GRANT_EVENTS.includes(event.type)) {
       await pool.query(
         "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1",
         [appUserId]
       );
-    } else if (REVOKE_EVENTS.includes(event.type)) {
+    } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1', [appUserId]);
     }
 
