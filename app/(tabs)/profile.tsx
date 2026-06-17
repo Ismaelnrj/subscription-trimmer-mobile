@@ -6,6 +6,7 @@ import { useAuthStore } from "../../lib/auth-store";
 import { useFmt } from "../../lib/currency-store";
 import apiClient from "../../lib/api";
 import { useTheme, AppColors } from "../../lib/theme";
+import { DEALS_TAB_ENABLED } from "../../lib/config";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -90,13 +91,15 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="tag-multiple" size={20} color={c.success} />
-            <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+        {DEALS_TAB_ENABLED && (
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="tag-multiple" size={20} color={c.success} />
+              <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
