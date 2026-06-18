@@ -484,9 +484,11 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION'];
     const PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
-    // Sandbox/test events from RevenueCat (e.g. compressed renewal/expiration
-    // windows) must never affect real users' premium status in production.
-    if (event.environment === 'SANDBOX' && process.env.NODE_ENV === 'production') {
+    // Sandbox/test purchases have a compressed billing cycle (RevenueCat/Play
+    // simulate a "month" in minutes), so they expire almost immediately. This
+    // backend only serves the live app, so sandbox events must never touch
+    // real premium status regardless of how NODE_ENV happens to be set.
+    if (event.environment === 'SANDBOX') {
       return res.json({ success: true });
     }
 
