@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert, Platform, RefreshControl, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -7,6 +7,7 @@ import { useFmt } from "../../lib/currency-store";
 import apiClient from "../../lib/api";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEALS_TAB_ENABLED } from "../../lib/config";
+import { PREMIUM_PRICES } from "../../lib/pricing";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -16,7 +17,7 @@ export default function ProfileScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: summary } = useQuery({
+  const { data: summary, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -29,6 +30,16 @@ export default function ProfileScreen() {
   };
 
   const handleRateApp = async () => {
+    if (Platform.OS === "ios") {
+      const appStore = "itms-apps://apps.apple.com/app/id0000000000?action=write-review";
+      const appStoreWeb = "https://apps.apple.com/app/id0000000000";
+      try {
+        await Linking.openURL(appStore);
+      } catch {
+        try { await Linking.openURL(appStoreWeb); } catch {}
+      }
+      return;
+    }
     const market = "market://details?id=com.trimio.app";
     const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
     try {
@@ -46,7 +57,11 @@ export default function ProfileScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.primary} />}
+    >
       <View style={styles.scrollContent}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
@@ -57,18 +72,30 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Account Summary</Text>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Active Subscriptions</Text>
-          <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Monthly Spend</Text>
-          <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statLabel}>Yearly Projection</Text>
-          <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
-        </View>
+        {isLoading ? (
+          <View style={styles.statCard}>
+            <ActivityIndicator size="small" color={c.primary} />
+          </View>
+        ) : isError ? (
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Couldn't load account summary. Pull down to retry.</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Active Subscriptions</Text>
+              <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Monthly Spend</Text>
+              <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Yearly Projection</Text>
+              <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
+            </View>
+          </>
+        )}
 
         <Text style={styles.sectionTitle}>Upgrade</Text>
         {isPremium ? (
@@ -86,7 +113,7 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
             <View style={styles.menuItemLeft}>
               <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
-              <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from $2.99/mo</Text>
+              <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from {PREMIUM_PRICES.monthly}/mo</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </TouchableOpacity>

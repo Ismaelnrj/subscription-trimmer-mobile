@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -16,7 +16,7 @@ export default function AnalyticsScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: summary, isLoading, refetch } = useQuery({
+  const { data: summary, isLoading, isError, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -36,6 +36,18 @@ export default function AnalyticsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <Text style={styles.emptyStateText}>Couldn't load analytics.</Text>
+        <TouchableOpacity style={{ marginTop: 16 }} onPress={onRefresh}>
+          <Text style={{ color: c.primary, fontWeight: "600" }}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -92,7 +104,7 @@ export default function AnalyticsScreen() {
             })
         ) : (
           <>
-            {summary.categoryBreakdown.slice(0, 1).map((cat: any) => {
+            {[...summary.categoryBreakdown].sort((a: any, b: any) => b.amount - a.amount).slice(0, 1).map((cat: any) => {
               const pct = (cat.amount / maxAmount) * 100;
               return (
                 <View key={cat.category} style={styles.categoryItem}>

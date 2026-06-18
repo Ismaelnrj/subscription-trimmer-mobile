@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
@@ -10,7 +10,7 @@ export default function AlertsScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: alerts = [] } = useQuery({
+  const { data: alerts = [], isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["alerts", "list"],
     queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
   });
@@ -42,9 +42,20 @@ export default function AlertsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: "Alerts" }} />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[c.primary]} tintColor={c.primary} />}
+      >
         <View style={styles.scrollContent}>
-          {alerts.length === 0 ? (
+          {isLoading ? (
+            <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 48 }} />
+          ) : isError ? (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
+              <Text style={styles.emptyStateText}>Couldn't load alerts. Pull down to retry.</Text>
+            </View>
+          ) : alerts.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="check-circle" size={48} color={c.success} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>All clear! No alerts at the moment.</Text>

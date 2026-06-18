@@ -25,12 +25,12 @@ export default function DashboardScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
-  const { data: subscriptions = [], isLoading: subsLoading, refetch: refetchSubs } = useQuery({
+  const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
     onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol),
@@ -55,6 +55,7 @@ export default function DashboardScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading || subsLoading;
+  const isError = summaryError || subsError;
   const recentSubs = subscriptions.slice(0, 3);
 
   const budgetGoal = settings?.budgetGoal;
@@ -82,6 +83,18 @@ export default function DashboardScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <Text style={styles.emptyStateText}>Couldn't load your dashboard.</Text>
+        <TouchableOpacity style={[styles.actionButton, { marginTop: 16, paddingHorizontal: 24 }]} onPress={onRefresh}>
+          <Text style={styles.actionButtonText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
