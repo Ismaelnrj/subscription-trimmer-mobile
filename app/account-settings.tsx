@@ -31,6 +31,9 @@ export default function AccountSettingsScreen() {
   const [budgetInput, setBudgetInput] = useState("");
   const [alertThresholdInput, setAlertThresholdInput] = useState("");
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -68,26 +71,26 @@ export default function AccountSettingsScreen() {
   const handleSaveName = () => profileMutation.mutate({ name: name.trim() });
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "This will permanently delete your account and all your subscription data. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete permanently",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await apiClient.delete("/auth/account");
-              await logout();
-              router.replace("/login");
-            } catch {
-              Alert.alert("Error", "Could not delete account. Please try again or contact support.");
-            }
-          },
-        },
-      ]
-    );
+    setDeletePassword("");
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletePassword) {
+      Alert.alert("Error", "Please enter your password to confirm.");
+      return;
+    }
+    setDeleting(true);
+    try {
+      await apiClient.delete("/auth/account", { data: { password: deletePassword } });
+      setShowDeleteModal(false);
+      await logout();
+      router.replace("/login");
+    } catch (err: any) {
+      Alert.alert("Error", err.response?.data?.error || "Could not delete account. Please try again or contact support.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleChangePassword = () => {
@@ -292,6 +295,41 @@ export default function AccountSettingsScreen() {
                 </TouchableOpacity>
               )}
             />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+        <View style={styles.pickerOverlay}>
+          <View style={[styles.pickerSheet, { borderTopLeftRadius: 16, borderTopRightRadius: 16 }]}>
+            <Text style={styles.pickerTitle}>Confirm Account Deletion</Text>
+            <Text style={styles.deleteDesc}>
+              Enter your password to permanently delete your account and all subscription data. This cannot be undone.
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              placeholder="Current password"
+              placeholderTextColor={c.placeholder}
+              secureTextEntry
+              autoFocus
+            />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                style={[styles.clearButton, { flex: 1, backgroundColor: c.card, borderColor: c.border }]}
+                onPress={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                <Text style={[styles.clearButtonText, { color: c.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.deleteButton, { flex: 1 }]} onPress={handleConfirmDelete} disabled={deleting}>
+                {deleting
+                  ? <ActivityIndicator color={c.danger} />
+                  : <Text style={styles.deleteButtonText}>Delete permanently</Text>
+                }
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>

@@ -53,10 +53,21 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const codeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/forgot-password', emailLimiter);
 app.use('/api/auth/resend-verification', emailLimiter);
+app.use('/api/auth/verify-email', codeLimiter);
+app.use('/api/auth/reset-password', codeLimiter);
+app.use('/api/auth/account', authLimiter);
 app.use('/api/trpc', apiLimiter);
 
 const pool = new Pool({
@@ -439,6 +450,13 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
 
 app.delete('/api/auth/account', authMiddleware, async (req, res) => {
   try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Password required' });
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const user = result.rows[0];
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {

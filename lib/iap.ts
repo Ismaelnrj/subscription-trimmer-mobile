@@ -74,12 +74,12 @@ const PENDING_PREMIUM_SYNC_KEY = "pending_premium_sync";
  * retried on next app launch via retryPendingPremiumSync(). The RevenueCat
  * webhook is also a fallback source of truth if this never succeeds.
  */
-export async function syncPremiumWithBackend(isPremium: boolean, retries = 3): Promise<void> {
+export async function syncPremiumWithBackend(isPremium: boolean, retries = 3): Promise<boolean> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       await apiClient.post("/auth/verify-premium", { isPremium });
       await SecureStore.deleteItemAsync(PENDING_PREMIUM_SYNC_KEY);
-      return;
+      return true;
     } catch (e) {
       if (attempt < retries - 1) {
         await new Promise<void>((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
@@ -89,6 +89,7 @@ export async function syncPremiumWithBackend(isPremium: boolean, retries = 3): P
       }
     }
   }
+  return false;
 }
 
 /** Call on app launch (once authenticated) to flush any sync that failed last time. */
@@ -117,15 +118,33 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
   }
 }
 
-/** Purchase a specific package. Throws on failure / user cancel. */
-export async function purchasePackage(pkg: PurchasesPackage): Promise<void> {
+/**
+ * Purchase a specific package. Only throws on a real RevenueCat failure or
+ * user cancellation — once the SDK call itself succeeds the user has been
+ * charged, so we never report that as a "failed" purchase. The entitlement
+ * can lag a few seconds behind the charge, so it's re-checked with backoff
+ * before giving up on confirming it as active.
+ *
+ * Returns `active` (whether the entitlement confirmed) and `synced` (whether
+ * that status reached our backend) separately so callers can gate local
+ * premium state on actual confirmation instead of assuming success.
+ */
+export async function purchasePackage(pkg: PurchasesPackage): Promise<{ active: boolean; synced: boolean }> {
   const { customerInfo } = await Purchases.purchasePackage(pkg);
-  const active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
+  let active = customerInfo.entitlements.active[ENTITLEMENT_ID] !== undefined;
 
-  // Sync premium status to our backend so it reflects instantly everywhere
-  await syncPremiumWithBackend(active);
+  for (let attempt = 0; !active && attempt < 3; attempt++) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    try {
+      const info = await Purchases.getCustomerInfo();
+      active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+    } catch (e) {
+      console.warn("[IAP] entitlement re-check failed, will retry:", e);
+    }
+  }
 
-  if (!active) throw new Error("Purchase completed but entitlement not active.");
+  const synced = await syncPremiumWithBackend(active);
+  return { active, synced };
 }
 
 /** Legacy helper used by the buy button when the package is already known. */
@@ -151,15 +170,13 @@ export async function sendTip(productId: string): Promise<void> {
   await Purchases.purchasePackage(tip);
 }
 
-export async function restorePremium(): Promise<boolean> {
+export async function restorePremium(): Promise<{ active: boolean; synced: boolean }> {
   try {
     const info = await Purchases.restorePurchases();
     const active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-    if (active) {
-      await syncPremiumWithBackend(true);
-    }
-    return active;
+    const synced = active ? await syncPremiumWithBackend(true) : true;
+    return { active, synced };
   } catch {
-    return false;
+    return { active: false, synced: false };
   }
 }

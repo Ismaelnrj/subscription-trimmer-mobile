@@ -72,12 +72,19 @@ export default function UpgradeScreen() {
     }
     setLoading(true);
     try {
-      await purchasePackage(pkg);
-      setIsPremium(true);
-      if (user) setUser({ ...user, isPaid: true });
-      Alert.alert("Welcome to Premium! 🎉", "All features are now unlocked. Thank you for supporting Trimio!", [
-        { text: "Let's go!", onPress: () => router.back() },
-      ]);
+      const { active, synced } = await purchasePackage(pkg);
+      if (active && synced) {
+        setIsPremium(true);
+        if (user) setUser({ ...user, isPaid: true });
+        Alert.alert("Welcome to Premium! 🎉", "All features are now unlocked. Thank you for supporting Trimio!", [
+          { text: "Let's go!", onPress: () => router.back() },
+        ]);
+      } else {
+        Alert.alert(
+          "Purchase received",
+          "Your payment went through. It may take a minute for Premium to activate — if it doesn't, use \"Restore previous purchase\" below."
+        );
+      }
     } catch (e: any) {
       if (!e?.message?.toLowerCase().includes("cancel")) {
         Alert.alert("Purchase failed", "Something went wrong. Please try again.");
@@ -91,11 +98,13 @@ export default function UpgradeScreen() {
     if (!iapReady) return;
     setRestoring(true);
     try {
-      const restored = await restorePremium();
-      if (restored) {
+      const { active, synced } = await restorePremium();
+      if (active && synced) {
         setIsPremium(true);
         if (user) setUser({ ...user, isPaid: true });
         Alert.alert("Restored!", "Your premium access has been restored.");
+      } else if (active) {
+        Alert.alert("Almost there", "Your purchase was found but syncing is taking longer than expected. Please try again shortly.");
       } else {
         Alert.alert("No purchase found", "No previous purchase was found for this account.");
       }
