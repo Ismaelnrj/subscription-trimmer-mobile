@@ -69,27 +69,34 @@ const FROM_EMAIL = process.env.SMTP_FROM || 'noreply@trimio.app';
 console.log('BREVO_API_KEY set:', !!BREVO_API_KEY);
 console.log('FROM_EMAIL:', FROM_EMAIL);
 
-async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, html, retries = 3) {
   if (!BREVO_API_KEY) {
     console.log(`[DEV] Email to ${to} | ${subject}`);
     return;
   }
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sender: { name: 'Trimio', email: FROM_EMAIL },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-    }),
-  });
-  const json = await res.json();
-  if (!res.ok) {
-    console.error('Brevo error:', JSON.stringify(json));
-    throw new Error(json.message || 'Email send failed');
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: { name: 'Trimio', email: FROM_EMAIL },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Email send failed');
+      console.log('Email sent:', json.messageId);
+      return;
+    } catch (e) {
+      const isLastAttempt = attempt === retries - 1;
+      console.error(`Email send attempt ${attempt + 1}/${retries} failed:`, e.message);
+      if (isLastAttempt) throw e;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
   }
-  console.log('Email sent:', json.messageId);
 }
 
 async function sendVerificationEmail(email, code) {
