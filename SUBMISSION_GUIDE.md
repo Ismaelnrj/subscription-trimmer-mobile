@@ -1,6 +1,6 @@
-# SubTrimmer - Google Play Store Submission Guide
+# Trimio - Google Play Store Submission Guide
 
-This guide walks you through submitting the SubTrimmer Android app to Google Play Store.
+This guide walks you through submitting the Trimio Android app to Google Play Store.
 
 ## Prerequisites
 
@@ -72,7 +72,7 @@ eas build --platform android --type app-bundle
 1. Go to https://play.google.com/console
 2. Click "Create app"
 3. Fill in:
-   - **App name:** SubTrimmer
+   - **App name:** Trimio
    - **Default language:** English
    - **App type:** Application
    - **Category:** Productivity or Finance
@@ -89,7 +89,7 @@ eas build --platform android --type app-bundle
    
    - **Full description** (4000 chars max):
      ```
-     SubTrimmer helps you take control of your subscription expenses.
+     Trimio helps you take control of your subscription expenses.
      
      Features:
      • Track all your subscriptions in one place
@@ -108,12 +108,12 @@ eas build --platform android --type app-bundle
 You need to provide:
 
 1. **App Icon** (512x512 PNG)
-   - Create a simple icon with the SubTrimmer logo
+   - Create a simple icon with the Trimio logo
    - Use the indigo/violet color (#4F46E5)
 
 2. **Feature Graphic** (1024x500 PNG)
    - Landscape banner showing app benefits
-   - Text: "SubTrimmer - Control Your Subscriptions"
+   - Text: "Trimio - Control Your Subscriptions"
 
 3. **Screenshots** (minimum 2, recommended 4-5)
    - Dashboard screen
@@ -149,7 +149,7 @@ You need to provide:
 3. Upload the .aab file you built earlier
 4. Add release notes:
    ```
-   Initial release of SubTrimmer
+   Initial release of Trimio
    
    Features:
    - Track subscriptions
@@ -185,7 +185,7 @@ You need to provide:
 
 Once approved:
 - App appears on Google Play Store
-- Users can search for "SubTrimmer"
+- Users can search for "Trimio"
 - Share the link: https://play.google.com/store/apps/details?id=com.subtrimmer.app
 
 ## Updating the App

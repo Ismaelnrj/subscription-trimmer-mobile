@@ -24,6 +24,9 @@ import Purchases, {
 import * as SecureStore from "expo-secure-store";
 import apiClient from "./api";
 
+// RevenueCat public SDK key (Google platform) — safe to ship in client code,
+// it only authorizes this app to talk to RevenueCat and carries no secret
+// permissions. Server-side operations use a separate secret key.
 const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 
 const ENTITLEMENT_ID = "Trimio Premium";

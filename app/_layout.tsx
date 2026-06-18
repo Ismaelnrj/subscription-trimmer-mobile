@@ -12,6 +12,8 @@ import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
 
+// Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
+// can only submit error events, not read project data. Safe to ship in client code.
 Sentry.init({
   dsn: "https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664",
   enableInExpoDevelopment: true,

@@ -13,7 +13,6 @@ import { useTheme, AppColors } from "../lib/theme";
 // Dashlane:     https://dashlane.com/affiliates
 // Proton:       https://proton.me/referral
 // Avira:        https://www.avira.com/en/affiliates
-// Norton:       https://www.norton.com/affiliates
 // Coursera:     https://coursera.org/affiliates  (via impact.com)
 // Adobe CC:     https://www.adobe.com/affiliates.html
 const DEALS = [

@@ -1,4 +1,4 @@
-# Build SubTrimmer App via Expo Web Dashboard (No Command Line!)
+# Build Trimio App via Expo Web Dashboard (No Command Line!)
 
 This guide shows you how to build your Android app using Expo's web dashboard. **No command line needed!** ✨
 
@@ -15,7 +15,7 @@ This guide shows you how to build your Android app using Expo's web dashboard. *
 
 1. Click "Create project" or "New project"
 2. Choose "Blank" template
-3. Name it: `SubTrimmer`
+3. Name it: `Trimio`
 4. Click "Create"
 
 You'll see a project dashboard with a project ID. **Save this ID!**
@@ -45,7 +45,7 @@ If it works, you'll see a message saying the project is linked. ✅
 **From now on, NO MORE COMMAND LINE!** 🎉
 
 1. Go back to https://expo.dev
-2. Open your SubTrimmer project
+2. Open your Trimio project
 3. Click the **"Builds"** tab (or similar)
 4. Click **"Create build"** or **"New build"**
 5. Select:
@@ -68,14 +68,14 @@ The build will start and show a progress bar. This takes 5-15 minutes.
 
 1. Go to https://play.google.com/console
 2. Log in with your Google Play Developer account
-3. Open your SubTrimmer app
+3. Open your Trimio app
 4. Go to **"Release" → "Production"**
 5. Click **"Create release"**
 6. Click **"Browse files"** and select the `.aab` file you just downloaded
 7. Upload it
 8. Add release notes:
    ```
-   Initial release of SubTrimmer
+   Initial release of Trimio
    
    Features:
    - Track subscriptions
@@ -106,7 +106,7 @@ The build will start and show a progress bar. This takes 5-15 minutes.
 
 **Can't find the build download?**
 - Go to https://expo.dev
-- Open SubTrimmer project
+- Open Trimio project
 - Click "Builds" tab
 - Find your completed build
 - Click it and look for download button

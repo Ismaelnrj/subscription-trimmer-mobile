@@ -1,4 +1,4 @@
-# SubTrimmer Mobile App
+# Trimio Mobile App
 
 A React Native Android app built with Expo for managing and optimizing subscription expenses.
 
@@ -54,7 +54,7 @@ pnpm android
 ## Architecture
 
 ### API Connection
-- Connects to existing SubTrimmer backend at `https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer`
+- Connects to existing Trimio backend at `https://3000-ia39shsfy6ozctawtvoyh-bff2e256.us2.manus.computer`
 - Uses tRPC client for type-safe API calls
 - Axios for HTTP requests with automatic token injection
 
@@ -173,7 +173,7 @@ eas build --platform android --auto-submit
 For issues or questions, refer to:
 - [Expo Documentation](https://docs.expo.dev)
 - [React Native Documentation](https://reactnative.dev)
-- [SubTrimmer Backend Documentation](../README.md)
+- [Trimio Backend Documentation](../README.md)
 
 ## License
 

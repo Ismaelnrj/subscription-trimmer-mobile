@@ -1,4 +1,4 @@
-# SubTrimmer Android App - Fast Cloud Build & Deploy Guide
+# Trimio Android App - Fast Cloud Build & Deploy Guide
 
 **Total time: ~20 minutes to have your app on Google Play Store!**
 
@@ -87,7 +87,7 @@
 
 ### 4.2 Create Your App
 - Click **"Create app"**
-- App name: `SubTrimmer`
+- App name: `Trimio`
 - Default language: English
 - App type: **Applications**
 - Category: **Productivity**
@@ -95,11 +95,11 @@
 - Click **"Create app"**
 
 ### 4.3 Fill in App Details
-- **App name:** SubTrimmer
+- **App name:** Trimio
 - **Short description:** Track and manage your subscriptions to save money
 - **Full description:** 
   ```
-  SubTrimmer helps you take control of your recurring expenses. 
+  Trimio helps you take control of your recurring expenses. 
   Track all your subscriptions, get alerts for expensive services, 
   receive renewal reminders, and get AI-powered recommendations 
   on which subscriptions to cancel or downgrade.
@@ -179,7 +179,7 @@
 ## Success! 🚀
 
 Your app is now on Google Play Store! Users can:
-- Search for "SubTrimmer"
+- Search for "Trimio"
 - Click "Install"
 - Start managing their subscriptions
 

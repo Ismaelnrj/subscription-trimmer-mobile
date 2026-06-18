@@ -1,4 +1,4 @@
-# SubTrimmer - Build via Expo Web Dashboard (Complete Visual Guide)
+# Trimio - Build via Expo Web Dashboard (Complete Visual Guide)
 
 **NO COMMAND LINE NEEDED!** Just browser clicks. Follow this step-by-step guide. ✨
 
@@ -18,7 +18,7 @@
 1. Once logged in, look for a **"Create project"** or **"New project"** button
 2. Click it
 3. Fill in:
-   - **Project name:** `SubTrimmer`
+   - **Project name:** `Trimio`
    - **Template:** Select "Blank" or "Managed Workflow"
 4. Click **"Create"**
 
@@ -47,7 +47,7 @@ That's it! Your project is now linked.
 ### Step 4: Upload Your Project to Expo
 
 1. Go back to https://expo.dev
-2. Open your **SubTrimmer** project
+2. Open your **Trimio** project
 3. Look for an **"Upload"** or **"Import"** button
 4. Select your mobile app folder: `C:\Users\ismael\subscription-trimmer-mobile`
 5. Wait for upload to complete (2-5 minutes)
@@ -86,7 +86,7 @@ That's it! Your project is now linked.
 
 1. Open https://play.google.com/console
 2. Log in with your Google Play Developer account
-3. Click on your **SubTrimmer** app
+3. Click on your **Trimio** app
 
 ### Step 9: Upload Your App
 
@@ -100,7 +100,7 @@ That's it! Your project is now linked.
 
 1. In the **"Release notes"** section, add:
    ```
-   Initial release of SubTrimmer
+   Initial release of Trimio
    
    Features:
    - Track all your subscriptions
@@ -146,7 +146,7 @@ Share the link: `https://play.google.com/store/apps/details?id=com.subtrimmer.ap
 
 ### "Can't find Builds tab"
 - Make sure you're logged into Expo.dev
-- Open your SubTrimmer project
+- Open your Trimio project
 - Look for "Builds" in the left sidebar or top menu
 
 ### "Build failed"
@@ -176,7 +176,7 @@ Share the link: `https://play.google.com/store/apps/details?id=com.subtrimmer.ap
 
 - [ ] Created Expo account
 - [ ] Created Google Play Developer account
-- [ ] Created SubTrimmer project on Expo.dev
+- [ ] Created Trimio project on Expo.dev
 - [ ] Copied Project ID
 - [ ] Created `.env.local` file with Project ID
 - [ ] Uploaded project to Expo
