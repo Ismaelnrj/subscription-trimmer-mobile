@@ -38,7 +38,13 @@ export default function VerifyEmailScreen() {
   const handleResend = async () => {
     setResending(true);
     try {
-      await apiClient.post("/auth/resend-verification");
+      const res = await apiClient.post("/auth/resend-verification");
+      if (res.data?.alreadyVerified) {
+        Alert.alert("Already verified", "Your email is already verified.", [
+          { text: "Continue", onPress: () => router.replace("/(tabs)") },
+        ]);
+        return;
+      }
       setResent(true);
       Alert.alert("Sent!", "A new verification code has been sent to your email.");
     } catch (err: any) {

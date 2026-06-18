@@ -426,7 +426,7 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (user.is_verified) return res.json({ success: true });
+    if (user.is_verified) return res.json({ success: true, alreadyVerified: true });
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
