@@ -29,8 +29,8 @@ const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 const ENTITLEMENT_ID = "Trimio Premium";
 
 export const PRODUCT_IDS = {
-  monthly:  "trimio_premium_monthly",
-  yearly:   "trimio_premium_yearly",
+  monthly:  "trimio_premium_monthly:monthly-2-99",
+  yearly:   "trimio_premium_yearly:yearly",
   lifetime: "trimio_premium_lifetime",
 };
 
@@ -41,13 +41,20 @@ export const TIP_IDS = {
 };
 
 let _configured = false;
+let _configuring: Promise<boolean> | null = null;
 
 /**
  * Configure RevenueCat. Pass the user's `openId` so RevenueCat's `app_user_id`
  * matches `users.open_id` in our database — this is how the webhook
  * (/api/webhooks/revenuecat) maps purchases back to a Trimio account.
  */
-export async function setupIAP(appUserID?: string): Promise<boolean> {
+export function setupIAP(appUserID?: string): Promise<boolean> {
+  if (_configuring) return _configuring;
+  _configuring = _setupIAP(appUserID).finally(() => { _configuring = null; });
+  return _configuring;
+}
+
+async function _setupIAP(appUserID?: string): Promise<boolean> {
   try {
     if (!_configured) {
       if (__DEV__) Purchases.setLogLevel(LOG_LEVEL.DEBUG);

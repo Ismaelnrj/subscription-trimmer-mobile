@@ -6,9 +6,11 @@ import { useAuthStore } from "../../lib/auth-store";
 import { useFmt } from "../../lib/currency-store";
 import apiClient from "../../lib/api";
 import { useTheme, AppColors } from "../../lib/theme";
+import { DEALS_TAB_ENABLED } from "../../lib/config";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
   const router = useRouter();
   const c = useTheme();
@@ -26,12 +28,14 @@ export default function ProfileScreen() {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const handleRateApp = () => {
-    const playStoreUrl = "market://details?id=com.trimio.app";
-    const webFallback = "https://play.google.com/store/apps/details?id=com.trimio.app";
-    Linking.canOpenURL(playStoreUrl)
-      .then((supported) => Linking.openURL(supported ? playStoreUrl : webFallback))
-      .catch(() => Linking.openURL(webFallback));
+  const handleRateApp = async () => {
+    const market = "market://details?id=com.trimio.app";
+    const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
+    try {
+      await Linking.openURL(market);
+    } catch {
+      try { await Linking.openURL(web); } catch {}
+    }
   };
 
   const handleLogout = () => {
@@ -67,20 +71,35 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Upgrade</Text>
-        <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
-            <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from $2.99/mo</Text>
+        {isPremium ? (
+          <View style={[styles.premiumItem, { borderColor: c.success }]}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="crown" size={20} color={c.success} />
+              <View>
+                <Text style={[styles.menuItemLabel, { color: c.success }]}>Premium Member</Text>
+                <Text style={{ fontSize: 11, color: c.textSecondary, marginTop: 1 }}>All features unlocked · Thank you!</Text>
+              </View>
+            </View>
+            <MaterialCommunityIcons name="check-circle" size={20} color={c.success} />
           </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="tag-multiple" size={20} color={c.success} />
-            <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
+              <Text style={[styles.menuItemLabel, { color: c.primary }]}>Unlock Premium — from $2.99/mo</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
+          </TouchableOpacity>
+        )}
+        {DEALS_TAB_ENABLED && (
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="tag-multiple" size={20} color={c.success} />
+              <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="heart" size={20} color={c.danger} />

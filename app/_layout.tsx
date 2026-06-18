@@ -126,6 +126,8 @@ export default function RootLayout() {
           <Stack.Screen name="verify-email" options={{ headerShown: true, title: "Verify Email" }} />
           <Stack.Screen name="insights" options={{ headerShown: true, title: "Recommendations" }} />
           <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: "Terms of Service" }} />
+          <Stack.Screen name="alerts" options={{ headerShown: true, title: "Alerts" }} />
+          <Stack.Screen name="notifications" options={{ headerShown: true, title: "Notifications" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
       </QueryClientProvider>

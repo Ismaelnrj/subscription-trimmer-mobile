@@ -3,7 +3,7 @@ import {
   StyleSheet, Alert, ActivityIndicator, Modal, FlatList,
 } from "react-native";
 import { Stack } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -35,14 +35,21 @@ export default function AccountSettingsScreen() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
 
+  const [budgetDirty, setBudgetDirty] = useState(false);
+  const [thresholdDirty, setThresholdDirty] = useState(false);
+
   const { data: settings } = useQuery({
     queryKey: ["settings"],
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
-    onSuccess: (data: any) => {
-      if (data.budgetGoal != null) setBudgetInput(String(data.budgetGoal));
-      if (data.alertThreshold != null) setAlertThresholdInput(String(data.alertThreshold));
-    },
   });
+
+  useEffect(() => {
+    if (!budgetDirty && settings?.budgetGoal != null) setBudgetInput(String(settings.budgetGoal));
+  }, [settings?.budgetGoal]);
+
+  useEffect(() => {
+    if (!thresholdDirty && settings?.alertThreshold != null) setAlertThresholdInput(String(settings.alertThreshold));
+  }, [settings?.alertThreshold]);
 
   const profileMutation = useMutation({
     mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
@@ -62,6 +69,8 @@ export default function AccountSettingsScreen() {
   const settingsMutation = useMutation({
     mutationFn: async (data: any) => (await apiClient.post("/trpc/settings.update", data)).data.result.data,
     onSuccess: () => {
+      setBudgetDirty(false);
+      setThresholdDirty(false);
       queryClient.invalidateQueries({ queryKey: ["settings"] });
       Alert.alert("Saved", "Settings updated.");
     },
@@ -158,7 +167,7 @@ export default function AccountSettingsScreen() {
               <TextInput
                 style={styles.input}
                 value={budgetInput}
-                onChangeText={setBudgetInput}
+                onChangeText={(v) => { setBudgetDirty(true); setBudgetInput(v); }}
                 placeholder="e.g. 50.00"
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
@@ -197,7 +206,7 @@ export default function AccountSettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.prefixInput]}
                   value={alertThresholdInput}
-                  onChangeText={setAlertThresholdInput}
+                  onChangeText={(v) => { setThresholdDirty(true); setAlertThresholdInput(v); }}
                   placeholder="e.g. 50"
                   placeholderTextColor={c.placeholder}
                   keyboardType="decimal-pad"

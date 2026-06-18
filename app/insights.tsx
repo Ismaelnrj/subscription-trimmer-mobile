@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../lib/api";
 import { useFmt } from "../lib/currency-store";
@@ -127,7 +127,7 @@ function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold:
   const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
   if (yearlyCount === 0 && subs.length >= 4) {
     tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#2563EB",
-      title: "None of your subscriptions are on annual plans",
+      title: "No annual plans — you're paying more",
       detail: `You have ${subs.length} monthly subscriptions. Switching even half of them to yearly billing typically saves 15–20%. Check each service's pricing page for annual options.`,
       priority: "medium" });
   }
@@ -188,6 +188,8 @@ export default function InsightsScreen() {
     queryKey: ["settings"],
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
   });
+
+  const [selectedTip, setSelectedTip] = useState<Tip | null>(null);
 
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
@@ -262,7 +264,7 @@ export default function InsightsScreen() {
               )}
 
               {tips.map(tip => (
-                <View key={tip.id} style={[styles.card, { borderLeftColor: tip.color }]}>
+                <TouchableOpacity key={tip.id} style={[styles.card, { borderLeftColor: tip.color }]} onPress={() => setSelectedTip(tip)} activeOpacity={0.75}>
                   <View style={styles.cardRow}>
                     <View style={[styles.iconBox, { backgroundColor: tip.color + "18" }]}>
                       <MaterialCommunityIcons name={tip.icon as any} size={22} color={tip.color} />
@@ -276,7 +278,7 @@ export default function InsightsScreen() {
                           </Text>
                         </View>
                       </View>
-                      <Text style={styles.cardDetail}>{tip.detail}</Text>
+                      <Text style={styles.cardDetail} numberOfLines={2}>{tip.detail}</Text>
                       {tip.savingsHint && (
                         <View style={styles.savingsHintRow}>
                           <MaterialCommunityIcons name="piggy-bank-outline" size={12} color={c.success} />
@@ -285,8 +287,41 @@ export default function InsightsScreen() {
                       )}
                     </View>
                   </View>
-                </View>
+                  <Text style={styles.tapHint}>Tap to read more →</Text>
+                </TouchableOpacity>
               ))}
+
+              <Modal visible={!!selectedTip} transparent animationType="slide" onRequestClose={() => setSelectedTip(null)}>
+                <Pressable style={styles.modalOverlay} onPress={() => setSelectedTip(null)}>
+                  <Pressable style={styles.modalSheet} onPress={() => {}}>
+                    {selectedTip && (
+                      <>
+                        <View style={styles.modalHeader}>
+                          <View style={[styles.modalIconBox, { backgroundColor: selectedTip.color + "18" }]}>
+                            <MaterialCommunityIcons name={selectedTip.icon as any} size={28} color={selectedTip.color} />
+                          </View>
+                          <View style={[styles.badge, { backgroundColor: selectedTip.color + "18", alignSelf: "flex-start" }]}>
+                            <Text style={[styles.badgeText, { color: selectedTip.color }]}>
+                              {PRIORITY_LABEL[selectedTip.priority]}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={styles.modalTitle}>{selectedTip.title}</Text>
+                        <Text style={styles.modalDetail}>{selectedTip.detail}</Text>
+                        {selectedTip.savingsHint && (
+                          <View style={[styles.savingsHintRow, { marginTop: 16, marginBottom: 4 }]}>
+                            <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
+                            <Text style={[styles.savingsHintText, { fontSize: 14 }]}>{selectedTip.savingsHint}</Text>
+                          </View>
+                        )}
+                        <TouchableOpacity style={[styles.modalClose, { backgroundColor: selectedTip.color }]} onPress={() => setSelectedTip(null)}>
+                          <Text style={styles.modalCloseText}>Got it</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </Pressable>
+                </Pressable>
+              </Modal>
             </>
           )}
         </View>
@@ -339,5 +374,19 @@ function makeStyles(c: AppColors) {
     cardDetail: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
     savingsHintRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
     savingsHintText: { fontSize: 12, fontWeight: "600", color: c.success },
+    tapHint: { fontSize: 11, color: c.textMuted, textAlign: "right", marginTop: 8 },
+    modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+    modalSheet: {
+      backgroundColor: c.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+      padding: 24, paddingBottom: 40,
+    },
+    modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
+    modalIconBox: { width: 52, height: 52, borderRadius: 14, justifyContent: "center", alignItems: "center" },
+    modalTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 12, lineHeight: 26 },
+    modalDetail: { fontSize: 15, color: c.textSecondary, lineHeight: 24 },
+    modalClose: {
+      borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 24,
+    },
+    modalCloseText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   });
 }

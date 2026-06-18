@@ -80,27 +80,34 @@ const FROM_EMAIL = process.env.SMTP_FROM || 'noreply@trimio.app';
 console.log('BREVO_API_KEY set:', !!BREVO_API_KEY);
 console.log('FROM_EMAIL:', FROM_EMAIL);
 
-async function sendEmail(to, subject, html) {
+async function sendEmail(to, subject, html, retries = 3) {
   if (!BREVO_API_KEY) {
     console.log(`[DEV] Email to ${to} | ${subject}`);
     return;
   }
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-    method: 'POST',
-    headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      sender: { name: 'Trimio', email: FROM_EMAIL },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-    }),
-  });
-  const json = await res.json();
-  if (!res.ok) {
-    console.error('Brevo error:', JSON.stringify(json));
-    throw new Error(json.message || 'Email send failed');
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sender: { name: 'Trimio', email: FROM_EMAIL },
+          to: [{ email: to }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.message || 'Email send failed');
+      console.log('Email sent:', json.messageId);
+      return;
+    } catch (e) {
+      const isLastAttempt = attempt === retries - 1;
+      console.error(`Email send attempt ${attempt + 1}/${retries} failed:`, e.message);
+      if (isLastAttempt) throw e;
+      await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
   }
-  console.log('Email sent:', json.messageId);
 }
 
 async function sendVerificationEmail(email, code) {
@@ -437,7 +444,7 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (user.is_verified) return res.json({ success: true });
+    if (user.is_verified) return res.json({ success: true, alreadyVerified: true });
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
@@ -499,14 +506,29 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     }
 
     const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'TRANSFER'];
-    const REVOKE_EVENTS = ['EXPIRATION'];
+    const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION'];
+    const PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
-    if (GRANT_EVENTS.includes(event.type)) {
+    // Sandbox/test purchases have a compressed billing cycle (RevenueCat/Play
+    // simulate a "month" in minutes), so they expire almost immediately. This
+    // backend only serves the live app, so sandbox events must never touch
+    // real premium status regardless of how NODE_ENV happens to be set.
+    if (event.environment === 'SANDBOX') {
+      return res.json({ success: true });
+    }
+
+    // Only act on events for the Premium entitlement specifically — RevenueCat
+    // sends EXPIRATION/etc. events per-entitlement, and other entitlements
+    // (e.g. tip products) expiring must not revoke Premium access.
+    const entitlementIds = event.entitlement_ids || [];
+    const affectsPremium = entitlementIds.includes(PREMIUM_ENTITLEMENT);
+
+    if (affectsPremium && GRANT_EVENTS.includes(event.type)) {
       await pool.query(
         "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1",
         [appUserId]
       );
-    } else if (REVOKE_EVENTS.includes(event.type)) {
+    } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1', [appUserId]);
     }
 
