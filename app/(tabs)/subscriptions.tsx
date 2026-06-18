@@ -83,8 +83,8 @@ export default function SubscriptionsScreen() {
         )
       : [...subscriptions];
 
-    if (sort === "name") list.sort((a: any, b: any) => a.name.localeCompare(b.name));
-    else if (sort === "price_desc") list.sort((a: any, b: any) => toMonthly(b.price, b.billingCycle) - toMonthly(a.price, a.billingCycle));
+    if (sort === "name") list.sort((a: any, b: any) => (a.name ?? "").localeCompare(b.name ?? ""));
+    else if (sort === "price_desc") list.sort((a: any, b: any) => toMonthly(b.price ?? 0, b.billingCycle ?? "monthly") - toMonthly(a.price ?? 0, a.billingCycle ?? "monthly"));
     return list;
   }, [subscriptions, debouncedSearch, sort]);
 
