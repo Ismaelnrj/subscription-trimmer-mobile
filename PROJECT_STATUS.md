@@ -116,6 +116,34 @@ remaining step is for the user to **trigger the Codemagic build** — see
 - `4e115ddd` — Priority 1 fixes (merged from feature branch)
 - `b4bd085e` — Priority 2 fixes
 - `ff62477c` — Priority 3 fixes
+- `d1ee7a48` — this status doc
+- (next commit) — react-native-screens 3.29.0 → 3.33.0 + versionCode 15 → 16,
+  see "Kotlin/Android 15 crash fix" below
+
+---
+
+## Kotlin/Android 15 crash fix (resolved this session)
+
+Google Play's pre-launch report flagged: *"Las incompatibilidades de Kotlin
+provocarán fallos"* — `removeFirst()`/`removeLast()` Kotlin extension
+functions in `com.swmansion.rnscreens.ScreenStack.obtainDrawingOp` conflict
+with new `List` default methods on Android 15, crashing the app on Android
+14 and earlier.
+
+Root cause: `react-native-screens` 3.29.0 has this bug. Confirmed via
+upstream GitHub (issue #2257, PR #2258) that it was fixed in **3.33.0**
+(July 2024) by replacing `removeLast()` with `removeAt(lastIndex)`.
+
+**Fix applied:** bumped `react-native-screens` to `3.33.0` in
+`package.json`. No lockfile in this repo, so the next `pnpm install` (e.g.
+in Codemagic) will resolve the new version automatically. Also bumped
+`app.json` `versionCode` 15 → 16 in the same change, since a new build is
+needed anyway and 15 may already have been uploaded to Play Console.
+
+**Not yet verified:** this fix hasn't been confirmed against an actual
+build yet (no node_modules / build environment in the agent sandbox). If a
+new session picks this up, check whether the Codemagic build succeeded and
+whether the Play Console pre-launch warning is gone.
 
 ---
 
@@ -123,14 +151,9 @@ remaining step is for the user to **trigger the Codemagic build** — see
 
 The user is about to **trigger the Codemagic build** (`codemagic.yaml`,
 workflow `android-build` for `.aab` or `android-apk` for a signed `.apk`) to
-ship all of the above to a real Android build.
-
-**Heads up to carry into the build conversation:** `app.json` has
-`"versionCode": 15`. If versionCode 15 was already uploaded to Google Play
-Console (even as a draft/internal test) before this session's fixes, Play
-Console will reject this new upload as a duplicate — it needs to be bumped
-to 16 first. This was flagged to the user but not yet confirmed/resolved as
-of this note.
+ship all of the above to a real Android build, including the
+react-native-screens crash fix above.
 
 If a new session picks this up: ask whether the Codemagic build was
-triggered, whether it succeeded, and whether versionCode needed bumping.
+triggered, whether it succeeded, and whether the Kotlin/Android 15
+pre-launch warning cleared.
