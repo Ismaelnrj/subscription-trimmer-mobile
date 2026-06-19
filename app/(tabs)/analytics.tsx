@@ -63,26 +63,28 @@ export default function AnalyticsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Monthly Spend</Text>
-          <Text style={styles.summaryValue}>{fmtC(monthly)}</Text>
-          {budgetGoal != null && (
-            <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 4 }}>
-              Budget: {fmtC(budgetGoal)} · {monthly > budgetGoal ? "Over budget" : `${fmtC(budgetGoal - monthly)} remaining`}
-            </Text>
-          )}
-        </View>
+        <View style={styles.summaryRowCompact}>
+          <View style={styles.summaryCardCompact}>
+            <Text style={styles.summaryTitleCompact}>Monthly Spend</Text>
+            <Text style={styles.summaryValueCompact}>{fmtC(monthly)}</Text>
+            {budgetGoal != null && (
+              <Text style={{ fontSize: 11, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 2 }}>
+                {monthly > budgetGoal ? "Over budget" : `${fmtC(budgetGoal - monthly)} left`}
+              </Text>
+            )}
+          </View>
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Yearly Projection</Text>
-          <Text style={styles.summaryValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
+          <View style={styles.summaryCardCompact}>
+            <Text style={styles.summaryTitleCompact}>Yearly Projection</Text>
+            <Text style={styles.summaryValueCompact}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Spending by Category</Text>
 
         {(!summary?.categoryBreakdown || summary.categoryBreakdown.length === 0) ? (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="chart-box-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+          <View style={styles.emptyStateCompact}>
+            <MaterialCommunityIcons name="chart-box-outline" size={28} color={c.border} style={{ marginBottom: 6 }} />
             <Text style={styles.emptyStateText}>No spending data yet</Text>
           </View>
         ) : isPremium ? (
@@ -131,12 +133,12 @@ export default function AnalyticsScreen() {
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>Active Subscriptions</Text>
+              <Text style={styles.statPairLabel}>Active Now</Text>
               <Text style={styles.statPairValue}>{summary?.activeSubscriptions ?? 0}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>Total Services</Text>
+              <Text style={styles.statPairLabel}>Total Added (All Time)</Text>
               <Text style={styles.statPairValue}>{summary?.totalSubscriptions ?? 0}</Text>
             </View>
           </View>
@@ -175,6 +177,16 @@ function makeStyles(c: AppColors) {
     },
     summaryValue: { fontSize: 28, fontWeight: "700", color: c.text },
     summaryRow: { flexDirection: "row", justifyContent: "space-between" },
+    summaryRowCompact: { flexDirection: "row", gap: 12, marginBottom: 12 },
+    summaryCardCompact: {
+      flex: 1, backgroundColor: c.card, borderRadius: 12, padding: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    summaryTitleCompact: {
+      fontSize: 11, color: c.textSecondary, marginBottom: 4,
+      textTransform: "uppercase", letterSpacing: 0.5,
+    },
+    summaryValueCompact: { fontSize: 20, fontWeight: "700", color: c.text },
     sectionTitle: {
       fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12, marginTop: 8,
     },
@@ -192,6 +204,7 @@ function makeStyles(c: AppColors) {
     progressBar: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
     progressFill: { height: "100%", backgroundColor: c.primary, borderRadius: 3 },
     emptyState: { alignItems: "center", paddingVertical: 48 },
+    emptyStateCompact: { alignItems: "center", paddingVertical: 16 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
     statPair: { flex: 1 },

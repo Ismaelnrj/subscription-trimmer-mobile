@@ -1,10 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert, Platform, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert, Platform } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../lib/auth-store";
-import { useFmt } from "../../lib/currency-store";
-import apiClient from "../../lib/api";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEALS_TAB_ENABLED } from "../../lib/config";
 import { PREMIUM_PRICES } from "../../lib/pricing";
@@ -12,15 +9,9 @@ import { PREMIUM_PRICES } from "../../lib/pricing";
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
-  const fmtC = useFmt();
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
-
-  const { data: summary, isLoading, isError, refetch, isRefetching } = useQuery({
-    queryKey: ["analytics", "summary"],
-    queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
-  });
 
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
@@ -60,7 +51,6 @@ export default function ProfileScreen() {
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
         <View style={styles.profileHeader}>
@@ -70,32 +60,6 @@ export default function ProfileScreen() {
           <Text style={styles.profileName}>{user?.name || "User"}</Text>
           <Text style={styles.profileEmail}>{user?.email || "No email"}</Text>
         </View>
-
-        <Text style={styles.sectionTitle}>Account Summary</Text>
-        {isLoading ? (
-          <View style={styles.statCard}>
-            <ActivityIndicator size="small" color={c.primary} />
-          </View>
-        ) : isError ? (
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Couldn't load account summary. Pull down to retry.</Text>
-          </View>
-        ) : (
-          <>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Active Subscriptions</Text>
-              <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Monthly Spend</Text>
-              <Text style={styles.statValue}>{fmtC(summary?.monthlyTotal ?? 0)}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Yearly Projection</Text>
-              <Text style={styles.statValue}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
-            </View>
-          </>
-        )}
 
         <Text style={styles.sectionTitle}>Upgrade</Text>
         {isPremium ? (
@@ -121,7 +85,7 @@ export default function ProfileScreen() {
         {DEALS_TAB_ENABLED && (
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
             <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="tag-multiple" size={20} color={c.success} />
+              <MaterialCommunityIcons name="tag-multiple" size={20} color={c.primary} />
               <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
@@ -129,8 +93,8 @@ export default function ProfileScreen() {
         )}
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
           <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
-            <Text style={styles.menuItemLabel}>Tip Jar — Support the Dev</Text>
+            <MaterialCommunityIcons name="heart" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>Tip Jar</Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
         </TouchableOpacity>
@@ -224,12 +188,6 @@ function makeStyles(c: AppColors) {
     },
     menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
     menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500" },
-    statCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border,
-    },
-    statLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
-    statValue: { fontSize: 20, fontWeight: "700", color: c.text },
     dangerButton: {
       backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16,
       marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
