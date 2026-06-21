@@ -73,7 +73,7 @@ ext_block = (
     "    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')\n"
     "    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'\n"
     "    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'\n"
-    "    ndkVersion        = \"27.1.12297006\"\n"
+    "    ndkVersion        = \"26.1.10909125\"\n"
     "}\n\n"
 )
 

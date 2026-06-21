@@ -8,7 +8,7 @@ buildscript {
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
         kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
 
-        ndkVersion = "27.1.12297006"
+        ndkVersion = "26.1.10909125"
     }
     // Force Kotlin 1.9.23 so the React Native BOM cannot downgrade it to 1.8.
     configurations.all {
@@ -40,7 +40,7 @@ ext {
     minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')
     buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
     kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'
-    ndkVersion        = "27.1.12297006"
+    ndkVersion        = "26.1.10909125"
 }
 
 apply plugin: "com.facebook.react.rootproject"
