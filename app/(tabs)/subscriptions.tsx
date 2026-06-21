@@ -533,9 +533,9 @@ export default function SubscriptionsScreen() {
                       const parsed = parseSubscriptionEmail(t);
                       setFormData((prev) => ({
                         ...prev,
-                        ...(parsed.name ? { name: parsed.name } : {}),
-                        ...(parsed.price ? { price: parsed.price } : {}),
-                        ...(parsed.billingCycle ? { billingCycle: parsed.billingCycle } : {}),
+                        name: parsed.name ?? "",
+                        price: parsed.price ?? "",
+                        billingCycle: parsed.billingCycle ?? prev.billingCycle,
                       }));
                     }}
                     textAlignVertical="top"
