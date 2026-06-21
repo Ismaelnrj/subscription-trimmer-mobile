@@ -121,6 +121,13 @@ export default function ProfileScreen() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
         </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/privacy-policy")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="shield-lock-outline" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>Privacy Policy</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/terms-of-service")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="file-document-outline" size={20} color={c.primary} />

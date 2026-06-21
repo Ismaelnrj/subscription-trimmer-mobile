@@ -27,7 +27,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 16,
+      "versionCode": 17,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
