@@ -28,7 +28,7 @@ const KNOWN_SERVICES: Record<string, string> = {
   headspace: "Headspace", calm: "Calm",
   // AI services
   anthropic: "Claude", claude: "Claude", chatgpt: "ChatGPT", openai: "ChatGPT",
-  perplexity: "Perplexity", midjourney: "Midjourney", "cursor ": "Cursor",
+  perplexity: "Perplexity", midjourney: "Midjourney", cursor: "Cursor",
   copilot: "GitHub Copilot",
   // Other common services
   dashlane: "Dashlane", lastpass: "LastPass", "1password": "1Password",
@@ -43,10 +43,20 @@ const PAYMENT_INTERMEDIARIES = new Set([
   "paddle", "fastspring", "gumroad", "lemonsqueezy", "lemon squeezy",
 ]);
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Word-boundary match so a key like "google" doesn't match a footer mention
+// of "powered by Google Pay" inside an otherwise-unrelated merchant email.
+function matchesWholeWord(lower: string, key: string): boolean {
+  return new RegExp(`\\b${escapeRegex(key)}\\b`, "i").test(lower);
+}
+
 function isIntermediaryText(text: string): boolean {
   const lower = text.toLowerCase();
   for (const name of PAYMENT_INTERMEDIARIES) {
-    if (lower.includes(name)) return true;
+    if (matchesWholeWord(lower, name)) return true;
   }
   return false;
 }
@@ -75,7 +85,7 @@ function extractMerchantFromIntermediaryEmail(text: string): string | undefined 
 function detectKnownService(text: string): string | undefined {
   const lower = text.toLowerCase();
   for (const [key, label] of Object.entries(KNOWN_SERVICES)) {
-    if (lower.includes(key)) return label;
+    if (matchesWholeWord(lower, key)) return label;
   }
   return undefined;
 }

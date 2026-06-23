@@ -66,7 +66,7 @@ function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold:
   const streamingSubs = subs.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
   if (streamingSubs.length >= 3) {
     const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price, a.billingCycle) - toMonthly(b.price, b.billingCycle))[0];
+    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#DC2626",
       title: `${streamingSubs.length} streaming services — that's a lot`,
       detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmtC(streamTotal)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,

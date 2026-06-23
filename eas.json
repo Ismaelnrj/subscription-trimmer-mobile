@@ -9,18 +9,6 @@
       },
       "channel": "staging"
     },
-    "preview2": {
-      "android": {
-        "buildType": "apk"
-      },
-      "channel": "staging"
-    },
-    "preview3": {
-      "android": {
-        "buildType": "apk"
-      },
-      "channel": "staging"
-    },
     "production": {
       "android": {
         "buildType": "app-bundle",

@@ -11,6 +11,10 @@ app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-production';
 if (JWT_SECRET === 'subtrimmer-dev-secret-change-in-production') {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET is not set. Refusing to run in production with the default dev secret — anyone could forge auth tokens.');
+    process.exit(1);
+  }
   console.warn('WARNING: JWT_SECRET is using the default dev value. Set a strong secret in your environment variables before going to production.');
 }
 
@@ -24,6 +28,9 @@ if (!process.env.CRON_SECRET) {
 }
 if (!process.env.REVENUECAT_WEBHOOK_SECRET) {
   console.warn('WARNING: REVENUECAT_WEBHOOK_SECRET is not set. The RevenueCat webhook endpoint will reject all requests.');
+}
+if (!process.env.REVENUECAT_SECRET_API_KEY) {
+  console.warn('WARNING: REVENUECAT_SECRET_API_KEY is not set. /api/auth/verify-premium will trust the client-reported premium status instead of verifying it against RevenueCat — set this before going to production.');
 }
 
 app.use(cors());
@@ -125,6 +132,41 @@ async function sendVerificationEmail(email, code) {
 
 function generateCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+// Brevo contact attribute sync (PLAN, SUB_COUNT) — best-effort marketing
+// enrichment, never awaited by callers and never allowed to fail a request.
+async function updateBrevoContact(email, attributes) {
+  if (!email || !BREVO_API_KEY) return;
+  try {
+    const res = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
+      method: 'PUT',
+      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attributes }),
+    });
+    if (!res.ok) {
+      console.error('[Brevo] Contact update failed for', email, res.status, await res.text());
+    }
+  } catch (err) {
+    console.error('[Brevo] Contact update error for', email, err.message);
+  }
+}
+
+function syncBrevoPlan(email, plan) {
+  updateBrevoContact(email, { PLAN: plan });
+}
+
+function syncBrevoSubCount(email, count) {
+  updateBrevoContact(email, { SUB_COUNT: count });
+}
+
+// Fire-and-forget: recompute the user's subscription count and push it to
+// Brevo. Never awaited by callers so it can't slow down or fail their request.
+function syncSubCountToBrevo(userId, email) {
+  if (!email) return;
+  pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [userId])
+    .then((result) => syncBrevoSubCount(email, parseInt(result.rows[0].c)))
+    .catch((err) => console.error('[Brevo] Sub count lookup failed for user', userId, err.message));
 }
 
 // Verification/reset codes are emailed in plaintext but only the hash is stored,
@@ -229,6 +271,31 @@ function authMiddleware(req, res, next) {
 
 function trpc(data) { return { result: { data } }; }
 
+const REVENUECAT_SECRET_API_KEY = process.env.REVENUECAT_SECRET_API_KEY;
+const REVENUECAT_PREMIUM_ENTITLEMENT = 'Trimio Premium';
+
+// Looks up the subscriber directly on RevenueCat's servers so premium status
+// can't be granted by just calling our API with { isPremium: true } — the
+// client-reported value is only trusted as a fallback when this key isn't set.
+async function fetchPremiumEntitlementFromRevenueCat(openId) {
+  const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(openId)}`, {
+    headers: { Authorization: `Bearer ${REVENUECAT_SECRET_API_KEY}` },
+  });
+  if (!res.ok) throw new Error(`RevenueCat lookup failed with status ${res.status}`);
+  const data = await res.json();
+  const entitlement = data.subscriber?.entitlements?.[REVENUECAT_PREMIUM_ENTITLEMENT];
+  if (!entitlement) return false;
+  return !entitlement.expires_date || new Date(entitlement.expires_date) > new Date();
+}
+
+// Logs the full error server-side but never leaks internals (DB schema, stack
+// traces, etc.) to the client — callers should still send specific 400s for
+// validation failures before reaching this.
+function handleError(err, res) {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+}
+
 function nextBillingDate(billingCycle) {
   const d = new Date();
   if (billingCycle === 'weekly') d.setDate(d.getDate() + 7);
@@ -316,7 +383,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     res.json({ token, user: formatUser(user) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -335,7 +402,7 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: formatUser(user) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -345,7 +412,7 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(formatUser(result.rows[0]));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -371,7 +438,7 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json(formatUser(updated.rows[0]));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -389,7 +456,7 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(updated.rows[0]) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -416,7 +483,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -435,7 +502,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2', [hash, user.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -451,7 +518,7 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     await sendVerificationEmail(user.email, code).catch(e => console.error('Email send failed:', e));
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -467,22 +534,34 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
 // Called by the app after a successful RevenueCat purchase to sync premium status
 app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
   try {
-    const isPremium = req.body.isPremium === true;
+    const userResult = await pool.query('SELECT open_id, email FROM users WHERE id = $1', [req.userId]);
+    const user = userResult.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    let isPremium;
+    if (REVENUECAT_SECRET_API_KEY) {
+      isPremium = await fetchPremiumEntitlementFromRevenueCat(user.open_id);
+    } else {
+      // Degraded mode: no way to verify server-side, so trust the client.
+      isPremium = req.body.isPremium === true;
+    }
+
     await pool.query(
       'UPDATE users SET is_paid = $1, paid_at = CASE WHEN $1 AND paid_at IS NULL THEN NOW() ELSE paid_at END WHERE id = $2',
       [isPremium, req.userId]
     );
+    syncBrevoPlan(user.email, isPremium ? 'premium' : 'free');
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(result.rows[0]) });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -524,17 +603,19 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     const affectsPremium = entitlementIds.includes(PREMIUM_ENTITLEMENT);
 
     if (affectsPremium && GRANT_EVENTS.includes(event.type)) {
-      await pool.query(
-        "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1",
+      const result = await pool.query(
+        "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1 RETURNING email",
         [appUserId]
       );
+      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'premium');
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
-      await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1', [appUserId]);
+      const result = await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1 RETURNING email', [appUserId]);
+      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
     }
 
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -548,7 +629,7 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
     );
     res.json(trpc(result.rows.map(formatSub)));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -560,7 +641,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
 
-    const userResult = await pool.query('SELECT is_paid FROM users WHERE id = $1', [req.userId]);
+    const userResult = await pool.query('SELECT is_paid, email FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid;
     if (!isPaid) {
       const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
@@ -577,9 +658,10 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
       [req.userId, 'Subscription Added', `${name} ($${price}/${billingCycle}) was added.`, 'info']
     );
+    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -609,7 +691,7 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     );
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -622,9 +704,11 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
     );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
     await pool.query('DELETE FROM subscriptions WHERE id = $1 AND user_id = $2', [id, req.userId]);
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc({ success: true }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -652,7 +736,7 @@ app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) =>
     res.setHeader('Content-Type', 'text/csv');
     res.send(header + rows);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -671,7 +755,7 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
       alertThreshold: s.alert_threshold != null ? parseFloat(s.alert_threshold) : 50,
     }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -692,7 +776,7 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
     );
     res.json(trpc({ success: true }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -726,7 +810,7 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
       categoryBreakdown,
     }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -809,7 +893,7 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
 
     res.json(trpc(alerts));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -858,7 +942,7 @@ app.get('/api/trpc/insights.getRecommendations', authMiddleware, async (req, res
       estimatedSavings,
     }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -873,7 +957,7 @@ app.get('/api/trpc/notifications.getHistory', authMiddleware, async (req, res) =
     );
     res.json(trpc(result.rows.map(formatNotification)));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -885,7 +969,7 @@ app.get('/api/trpc/notifications.getUnreadCount', authMiddleware, async (req, re
     );
     res.json(trpc({ unreadCount: parseInt(result.rows[0].c) }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -899,7 +983,7 @@ app.post('/api/trpc/notifications.markAsRead', authMiddleware, async (req, res) 
     }
     res.json(trpc({ success: true }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -918,7 +1002,7 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
       emailReminders: p.email_reminders ?? false,
     }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -932,7 +1016,7 @@ app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req
     );
     res.json(trpc({ success: true }));
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 
@@ -1000,7 +1084,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
 
     res.json({ success: true, emailsSent: sent });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    handleError(err, res);
   }
 });
 

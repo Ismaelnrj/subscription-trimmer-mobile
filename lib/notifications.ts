@@ -34,7 +34,7 @@ export async function registerForPushNotificationsAsync() {
           projectId: Constants.expoConfig?.extra?.eas?.projectId,
         })
       ).data;
-      console.log("Push token:", token);
+      console.log("Push token obtained");
     } catch (err) {
       // Firebase not initialised (google-services.json missing) — local
       // scheduled notifications still work, so swallow this silently.
