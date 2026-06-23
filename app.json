@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Trimio",
-    "slug": "trimio",
+    "slug": "subtrimmer",
     "scheme": "trimio",
     "version": "1.0.1",
     "runtimeVersion": {
