@@ -4,9 +4,7 @@
     "slug": "trimio",
     "scheme": "trimio",
     "version": "1.0.1",
-    "runtimeVersion": {
-      "policy": "nativeVersion"
-    },
+    "runtimeVersion": "1.0.1",
     "updates": {
       "url": "https://u.expo.dev/18a3e059-0c9c-49df-b485-21240d7e283a",
       "enabled": true,
