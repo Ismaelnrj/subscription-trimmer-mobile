@@ -207,9 +207,11 @@ function syncNextRenewalToBrevo(userId, email) {
       const digest = digestResult.rows
         .map((r) => `${r.name} ($${parseFloat(r.price).toFixed(2)}/${r.billing_cycle}) – ${new Date(r.relevant_date).toISOString().slice(0, 10)}`)
         .join('; ');
+      const totalAmount = digestResult.rows.reduce((sum, r) => sum + parseFloat(r.price), 0);
       updateBrevoContact(email, {
         NEXT_RENEWAL_DATE: nextDate ? new Date(nextDate).toISOString().slice(0, 10) : null,
         UPCOMING_RENEWALS: digest || null,
+        TOTAL_AMOUNT: digestResult.rows.length ? totalAmount.toFixed(2) : null,
       });
     })
     .catch((err) => console.error('[Brevo] Next renewal lookup failed for user', userId, err.message));
