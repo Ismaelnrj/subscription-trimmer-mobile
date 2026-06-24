@@ -82,7 +82,7 @@ export default function UpgradeScreen() {
       } else {
         Alert.alert(
           "Purchase received",
-          "Your payment went through. It may take a minute for Premium to activate — if it doesn't, use \"Restore previous purchase\" below."
+          "Your payment went through. It may take a minute for Premium to activate. If it doesn't, use \"Restore previous purchase\" below."
         );
       }
     } catch (e: any) {
@@ -125,7 +125,7 @@ export default function UpgradeScreen() {
         <View style={styles.hero}>
           <MaterialCommunityIcons name="crown" size={48} color="#FCD34D" style={{ marginBottom: 12 }} />
           <Text style={styles.heroTitle}>Trimio Premium</Text>
-          <Text style={styles.heroSub}>Cancel anytime · Instant access · Supports the developer</Text>
+          <Text style={styles.heroSub}>Cancel anytime · Instant access · Instant results</Text>
         </View>
 
         {isPremium ? (
@@ -140,9 +140,9 @@ export default function UpgradeScreen() {
           <View style={styles.body}>
             <View style={styles.hookCard}>
               <Text style={styles.hookText}>
-                The average Trimio user finds <Text style={styles.hookBold}>$230+/year</Text> in subscriptions they'd forgotten about.
+                <Text style={styles.hookBold}>Stop leaking money</Text> on subscriptions you forgot you had.
               </Text>
-              <Text style={styles.hookSub}>Premium costs less than one coffee a month — and pays for itself on day one.</Text>
+              <Text style={styles.hookSub}>Premium costs less than one coffee a month. It pays for itself on day one.</Text>
             </View>
 
             <Text style={styles.sectionLabel}>Choose your plan</Text>
@@ -191,7 +191,7 @@ export default function UpgradeScreen() {
               {loading ? <ActivityIndicator color="#FFFFFF" /> : (
                 <View style={{ alignItems: "center" }}>
                   <Text style={styles.buyButtonText}>
-                    Unlock Premium — {selectedPlanInfo.price}
+                    Unlock Premium · {selectedPlanInfo.price}
                   </Text>
                   <Text style={styles.buyButtonSub}>{selectedPlanInfo.sub}</Text>
                 </View>

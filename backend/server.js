@@ -229,10 +229,12 @@ async function initDB() {
       spending_alerts BOOLEAN DEFAULT TRUE,
       weekly_summary BOOLEAN DEFAULT TRUE,
       push_enabled BOOLEAN DEFAULT TRUE,
-      email_reminders BOOLEAN DEFAULT FALSE
+      email_reminders BOOLEAN DEFAULT TRUE,
+      renewal_alert_days INTEGER DEFAULT 3
     )
   `);
-  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS email_reminders BOOLEAN DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS email_reminders BOOLEAN DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS renewal_alert_days INTEGER DEFAULT 3`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_settings (
       user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -818,12 +820,14 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   try {
-    const [subResult, settingsResult] = await Promise.all([
+    const [subResult, settingsResult, prefsResult] = await Promise.all([
       pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]),
       pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT renewal_alert_days FROM notification_preferences WHERE user_id = $1', [req.userId]),
     ]);
     const subs = subResult.rows;
     const sym = settingsResult.rows[0]?.currency_symbol || '$';
+    const renewalAlertDays = prefsResult.rows[0]?.renewal_alert_days ?? 3;
     const now = new Date();
     const alerts = [];
 
@@ -849,7 +853,7 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       }
 
       const days = Math.ceil((billingDate - now) / 86400000);
-      if (days <= 7 && days >= -1) {
+      if (days <= renewalAlertDays && days >= -1) {
         alerts.push({
           id: `renewal-${sub.id}`,
           type: 'renewal_alert',
@@ -1000,6 +1004,7 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
       weeklySummary: p.weekly_summary,
       pushEnabled: p.push_enabled,
       emailReminders: p.email_reminders ?? false,
+      renewalAlertDays: p.renewal_alert_days ?? 3,
     }));
   } catch (err) {
     handleError(err, res);
@@ -1008,11 +1013,13 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
 
 app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req, res) => {
   try {
-    const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders } = req.body;
+    const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders, renewalAlertDays } = req.body;
+    const allowedRenewalAlertDays = [1, 3, 7];
+    const safeRenewalAlertDays = allowedRenewalAlertDays.includes(renewalAlertDays) ? renewalAlertDays : 3;
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4, email_reminders = $5 WHERE user_id = $6',
-      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders ?? false, req.userId]
+      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4, email_reminders = $5, renewal_alert_days = $6 WHERE user_id = $7',
+      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders ?? false, safeRenewalAlertDays, req.userId]
     );
     res.json(trpc({ success: true }));
   } catch (err) {
@@ -1033,19 +1040,19 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       SELECT u.id, u.email, u.name
       FROM users u
       JOIN notification_preferences np ON np.user_id = u.id
-      WHERE np.email_reminders = TRUE AND u.is_verified = TRUE
+      WHERE np.email_reminders = TRUE AND u.is_verified = TRUE AND u.is_paid = TRUE
     `);
 
     let sent = 0;
     const now = new Date();
-    const in7Days = new Date(now.getTime() + 7 * 86400000);
+    const in3Days = new Date(now.getTime() + 3 * 86400000);
 
     for (const user of usersResult.rows) {
       const subsResult = await pool.query(
         `SELECT * FROM subscriptions
          WHERE user_id = $1
            AND next_billing_date BETWEEN $2 AND $3`,
-        [user.id, now.toISOString(), in7Days.toISOString()]
+        [user.id, now.toISOString(), in3Days.toISOString()]
       );
       if (subsResult.rows.length === 0) continue;
 
@@ -1059,10 +1066,10 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
 
       await sendEmail(
         user.email,
-        `Trimio — ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing this week`,
+        `Trimio: ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing soon`,
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
           <h2 style="color:#4F46E5;margin-bottom:4px">Hi ${user.name || 'there'}!</h2>
-          <p style="color:#374151;margin-bottom:20px">Here are your upcoming subscription renewals in the next 7 days:</p>
+          <p style="color:#374151;margin-bottom:20px">Here are your upcoming subscription renewals in the next 3 days:</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb">
             <thead>
               <tr style="background:#f3f4f6">

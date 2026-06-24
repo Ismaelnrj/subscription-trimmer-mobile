@@ -1,14 +1,20 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator, Animated, Easing } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
 import { useCurrencyStore, useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
+import { buildTips } from "../insights";
+import { USER_ESTIMATE_KEY } from "../onboarding";
+
+const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
+const ESTIMATE_BANNER_SHOWN_KEY = "estimate_banner_shown";
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
@@ -20,6 +26,8 @@ export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
+  const [recoBannerDismissed, setRecoBannerDismissed] = useState(true);
+  const [estimateBanner, setEstimateBanner] = useState<{ guess: number; actual: number } | null>(null);
   const { currency } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
@@ -70,6 +78,38 @@ export default function DashboardScreen() {
     (a) => !a.subscriptionId || activeSubIds.has(a.subscriptionId)
   ).length;
 
+  const yearlyTotal = summary?.yearlyTotal ?? 0;
+  const yearlyAnim = useRef(new Animated.Value(yearlyTotal)).current;
+  const [displayYearly, setDisplayYearly] = useState(yearlyTotal);
+  const prevSubsCount = useRef<number | null>(null);
+
+  useEffect(() => {
+    const id = yearlyAnim.addListener(({ value }) => setDisplayYearly(value));
+    return () => yearlyAnim.removeListener(id);
+  }, [yearlyAnim]);
+
+  useEffect(() => {
+    if (prevSubsCount.current === null) {
+      prevSubsCount.current = subscriptions.length;
+      yearlyAnim.setValue(yearlyTotal);
+      setDisplayYearly(yearlyTotal);
+      return;
+    }
+    const subscriptionAdded = subscriptions.length > prevSubsCount.current;
+    prevSubsCount.current = subscriptions.length;
+    if (subscriptionAdded) {
+      Animated.timing(yearlyAnim, {
+        toValue: yearlyTotal,
+        duration: 1200,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    } else {
+      yearlyAnim.setValue(yearlyTotal);
+      setDisplayYearly(yearlyTotal);
+    }
+  }, [yearlyTotal, subscriptions.length]);
+
   const trialsSoon = (subscriptions as any[]).filter((s) => {
     if (!s.trialEndDate) return false;
     const days = Math.ceil((new Date(s.trialEndDate).getTime() - Date.now()) / 86400000);
@@ -77,6 +117,36 @@ export default function DashboardScreen() {
   }).sort((a, b) =>
     new Date(a.trialEndDate).getTime() - new Date(b.trialEndDate).getTime()
   );
+
+  useEffect(() => {
+    (async () => {
+      const dismissedUntil = await SecureStore.getItemAsync(RECO_BANNER_DISMISSED_UNTIL_KEY);
+      setRecoBannerDismissed(!!dismissedUntil && new Date(dismissedUntil) > new Date());
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (subsLoading) return;
+    (async () => {
+      const [estimateStr, alreadyShown] = await Promise.all([
+        SecureStore.getItemAsync(USER_ESTIMATE_KEY),
+        SecureStore.getItemAsync(ESTIMATE_BANNER_SHOWN_KEY),
+      ]);
+      if (!estimateStr || alreadyShown || subscriptions.length === 0) return;
+      setEstimateBanner({ guess: parseInt(estimateStr, 10), actual: subscriptions.length });
+      await SecureStore.setItemAsync(ESTIMATE_BANNER_SHOWN_KEY, "true");
+    })();
+  }, [subsLoading, subscriptions.length]);
+
+  const allRecoTips = subscriptions.length >= 2 ? buildTips(subscriptions as any, fmtC) : [];
+  const recoTips = isPremium ? allRecoTips : allRecoTips.slice(0, 2);
+  const showRecoBanner = !recoBannerDismissed && recoTips.length > 0;
+
+  const dismissRecoBanner = async () => {
+    setRecoBannerDismissed(true);
+    const dismissedUntil = new Date(Date.now() + 7 * 86400000).toISOString();
+    await SecureStore.setItemAsync(RECO_BANNER_DISMISSED_UNTIL_KEY, dismissedUntil);
+  };
 
   if (isLoading) {
     return (
@@ -99,6 +169,38 @@ export default function DashboardScreen() {
             <Text style={styles.verifyBannerText}>Please verify your email address to secure your account.</Text>
             <Text style={styles.verifyBannerLink}>Verify →</Text>
           </TouchableOpacity>
+        )}
+
+        {estimateBanner && (
+          <View style={styles.estimateBanner}>
+            <MaterialCommunityIcons name="target" size={20} color={c.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.estimateBannerText}>
+                You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} subscription
+                {estimateBanner.actual !== 1 ? "s" : ""}.
+              </Text>
+            </View>
+            <TouchableOpacity onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {showRecoBanner && (
+          <View style={styles.recoBanner}>
+            <MaterialCommunityIcons name="lightbulb-on" size={20} color={c.success} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.recoBannerTitle}>
+                {recoTips.length} way{recoTips.length !== 1 ? "s" : ""} to save money
+              </Text>
+              <Text style={styles.recoBannerText} onPress={() => router.push("/insights")}>
+                See recommendations →
+              </Text>
+            </View>
+            <TouchableOpacity onPress={dismissRecoBanner} style={{ padding: 4 }}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
+            </TouchableOpacity>
+          </View>
         )}
 
         {!isPremium && (
@@ -188,14 +290,14 @@ export default function DashboardScreen() {
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="credit-card" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : (summary?.yearlyTotal ?? 0))}</Text>
+            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={20} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.yearlyTotal ?? 0) : (summary?.monthlyTotal ?? 0))}</Text>
+            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly Spend" : "Monthly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
@@ -229,7 +331,7 @@ export default function DashboardScreen() {
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyStateText}>No subscriptions yet. Add your first one!</Text>
+            <Text style={styles.emptyStateText}>Your subscriptions are costing you more than you think.</Text>
           </View>
         ) : (
           recentSubs.map((sub: any) => {
@@ -270,6 +372,18 @@ function makeStyles(c: AppColors) {
     },
     verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
     verifyBannerLink: { fontSize: 13, fontWeight: "700", color: c.warning },
+
+    estimateBanner: {
+      backgroundColor: c.primaryLight, borderRadius: 10, padding: 14, marginBottom: 16,
+      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.primary,
+    },
+    estimateBannerText: { fontSize: 13, fontWeight: "600", color: c.text },
+    recoBanner: {
+      backgroundColor: c.success + "1A", borderRadius: 10, padding: 14, marginBottom: 16,
+      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.success,
+    },
+    recoBannerTitle: { fontSize: 13, fontWeight: "700", color: c.text },
+    recoBannerText: { fontSize: 12, fontWeight: "600", color: c.success, marginTop: 2 },
 
     budgetCard: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,

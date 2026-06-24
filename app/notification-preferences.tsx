@@ -33,7 +33,7 @@ export default function NotificationPreferencesScreen() {
     onError: () => Alert.alert("Error", "Failed to save preferences. Please try again."),
   });
 
-  const toggle = (key: string, value: boolean) => {
+  const toggle = (key: string, value: boolean | number) => {
     if (!prefs) return;
     updateMutation.mutate({ ...prefs, [key]: value });
   };
@@ -56,17 +56,37 @@ export default function NotificationPreferencesScreen() {
         <View style={styles.scrollContent}>
           <Text style={styles.sectionTitle}>Alerts</Text>
           <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>Renewal Alerts</Text>
-                <Text style={styles.rowDesc}>Get notified 7 days before a subscription renews</Text>
+            <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start" }]}>
+              <View style={{ flexDirection: "row", width: "100%", alignItems: "center" }}>
+                <View style={{ flex: 1, marginRight: 16 }}>
+                  <Text style={styles.rowLabel}>Renewal Alerts</Text>
+                  <Text style={styles.rowDesc}>Get notified before a subscription renews</Text>
+                </View>
+                <Switch
+                  value={prefs.renewalAlerts}
+                  onValueChange={(v) => toggle("renewalAlerts", v)}
+                  trackColor={{ false: c.border, true: c.primary }}
+                  thumbColor="#FFFFFF"
+                />
               </View>
-              <Switch
-                value={prefs.renewalAlerts}
-                onValueChange={(v) => toggle("renewalAlerts", v)}
-                trackColor={{ false: c.border, true: c.primary }}
-                thumbColor="#FFFFFF"
-              />
+              {prefs.renewalAlerts && (
+                <View style={styles.dayChipRow}>
+                  {[1, 3, 7].map((days) => {
+                    const active = (prefs.renewalAlertDays ?? 3) === days;
+                    return (
+                      <TouchableOpacity
+                        key={days}
+                        style={[styles.dayChip, active && styles.dayChipActive]}
+                        onPress={() => toggle("renewalAlertDays", days)}
+                      >
+                        <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>
+                          {days} day{days !== 1 ? "s" : ""}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
             </View>
             <View style={[styles.row, styles.rowLast]}>
               <View style={{ flex: 1, marginRight: 16 }}>
@@ -120,8 +140,8 @@ export default function NotificationPreferencesScreen() {
                   </Text>
                   <Text style={styles.rowDesc}>
                     {isPremium
-                      ? "Get an email 7 days before any subscription renews"
-                      : "Premium feature — upgrade to enable email reminders"}
+                      ? "Get an email 3 days before any subscription renews"
+                      : "Premium feature. Upgrade to enable email reminders"}
                   </Text>
                 </View>
                 {isPremium ? (
@@ -189,6 +209,14 @@ function makeStyles(c: AppColors) {
     rowDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     sectionTitle: { fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 8 },
     emailRowTop: { flexDirection: "row", alignItems: "center", width: "100%" },
+    dayChipRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+    dayChip: {
+      paddingVertical: 6, paddingHorizontal: 14, borderRadius: 16,
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.bg,
+    },
+    dayChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    dayChipText: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
+    dayChipTextActive: { color: "#FFFFFF" },
     upcomingEmails: {
       marginTop: 12, backgroundColor: c.primaryLight, borderRadius: 8, padding: 10, width: "100%",
     },

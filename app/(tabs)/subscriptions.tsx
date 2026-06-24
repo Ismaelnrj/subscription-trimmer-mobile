@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
-  TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform, Animated,
+  TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform, Animated, Linking,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -25,7 +25,7 @@ function toMonthly(price: number, cycle: string) {
   return price;
 }
 
-const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "" };
+const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "", isFreeTrial: false };
 
 export default function SubscriptionsScreen() {
   const router = useRouter();
@@ -49,6 +49,10 @@ export default function SubscriptionsScreen() {
   const [showEmailPaste, setShowEmailPaste] = useState(false);
   const [emailText, setEmailText] = useState("");
   const [loadingExamples, setLoadingExamples] = useState(false);
+  const [savingsCard, setSavingsCard] = useState<{ name: string; yearly: number } | null>(null);
+
+  const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -127,9 +131,15 @@ export default function SubscriptionsScreen() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: number) =>
-      (await apiClient.post("/trpc/subscriptions.delete", { id })).data.result.data,
-    onSuccess: invalidate,
+    mutationFn: async (sub: any) =>
+      (await apiClient.post("/trpc/subscriptions.delete", { id: sub.id })).data.result.data,
+    onSuccess: (_data, sub) => {
+      invalidate();
+      const yearly = toMonthly(parseFloat(sub.price), sub.billingCycle) * 12;
+      setSavingsCard({ name: sub.name, yearly });
+      if (savingsTimer.current) clearTimeout(savingsTimer.current);
+      savingsTimer.current = setTimeout(() => setSavingsCard(null), 3000);
+    },
     onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
   });
 
@@ -151,6 +161,7 @@ export default function SubscriptionsScreen() {
     setFormData({
       name: sub.name, price: String(sub.price), billingCycle: sub.billingCycle,
       category: sub.category, trialEndDate: sub.trialEndDate ? sub.trialEndDate.slice(0, 10) : "",
+      isFreeTrial: !!sub.trialEndDate,
     });
     setShowCustomInput(false); setCustomCatDraft("");
     setShowModal(true);
@@ -192,6 +203,10 @@ export default function SubscriptionsScreen() {
     }
 
     let trialEndDate: string | null = null;
+    if (formData.isFreeTrial && !formData.trialEndDate.trim()) {
+      Alert.alert("Trial end date required", "Please enter when the free trial ends.");
+      return;
+    }
     if (formData.trialEndDate.trim()) {
       trialEndDate = normaliseDateInput(formData.trialEndDate);
       if (!trialEndDate) {
@@ -227,11 +242,21 @@ export default function SubscriptionsScreen() {
     else { createMutation.mutate(data); }
   };
 
-  const confirmDelete = (id: number, name: string) => {
-    Alert.alert("Delete Subscription", `Remove "${name}"?`, [
+  const confirmDelete = (sub: any) => {
+    Alert.alert("Delete Subscription", `Remove "${sub.name}"?`, [
       { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(id) },
+      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(sub) },
     ]);
+  };
+
+  const handleRateApp = async () => {
+    const market = "market://details?id=com.trimio.app";
+    const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
+    try {
+      await Linking.openURL(market);
+    } catch {
+      try { await Linking.openURL(web); } catch {}
+    }
   };
 
   const handleLoadExamples = async () => {
@@ -305,6 +330,26 @@ export default function SubscriptionsScreen() {
 
   return (
     <View style={styles.container}>
+      {savingsCard && (
+        <TouchableOpacity
+          style={styles.savingsCard}
+          activeOpacity={0.9}
+          onPress={() => {
+            if (savingsTimer.current) clearTimeout(savingsTimer.current);
+            setSavingsCard(null);
+          }}
+        >
+          <MaterialCommunityIcons name="party-popper" size={22} color="#FFFFFF" />
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={styles.savingsCardText}>
+              You just saved {fmtC(savingsCard.yearly)} this year by cutting {savingsCard.name}
+            </Text>
+            <Text style={styles.savingsCardRate} onPress={handleRateApp}>
+              Rate Now ⭐
+            </Text>
+          </View>
+        </TouchableOpacity>
+      )}
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
@@ -344,7 +389,7 @@ export default function SubscriptionsScreen() {
               {atLimit ? (
                 <TouchableOpacity onPress={() => router.push("/upgrade")}>
                   <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600" }]}>
-                    Limit reached — Upgrade for unlimited →
+                    Limit reached. Upgrade for unlimited →
                   </Text>
                 </TouchableOpacity>
               ) : (
@@ -444,7 +489,7 @@ export default function SubscriptionsScreen() {
                     const trans = progress.interpolate({ inputRange: [0, 1], outputRange: [80, 0] });
                     return (
                       <Animated.View style={[styles.swipeDeleteWrapper, { transform: [{ translateX: trans }] }]}>
-                        <TouchableOpacity style={styles.swipeDelete} onPress={() => confirmDelete(sub.id, sub.name)}>
+                        <TouchableOpacity style={styles.swipeDelete} onPress={() => confirmDelete(sub)}>
                           <MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
                           <Text style={styles.swipeDeleteText}>Delete</Text>
                         </TouchableOpacity>
@@ -479,7 +524,7 @@ export default function SubscriptionsScreen() {
                     <TouchableOpacity style={styles.iconButton} onPress={() => openEdit(sub)}>
                       <MaterialCommunityIcons name="pencil" size={18} color={c.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => confirmDelete(sub.id, sub.name)}>
+                    <TouchableOpacity style={styles.iconButton} onPress={() => confirmDelete(sub)}>
                       <MaterialCommunityIcons name="trash-can" size={18} color={c.danger} />
                     </TouchableOpacity>
                   </View>
@@ -519,7 +564,7 @@ export default function SubscriptionsScreen() {
               {showEmailPaste && (
                 <View style={styles.emailPasteBox}>
                   <Text style={styles.emailPasteLabel}>
-                    Paste your purchase / confirmation email below — we'll fill in the details for you.
+                    Paste your purchase / confirmation email below. We'll fill in the details for you.
                   </Text>
                   <TextInput
                     style={styles.emailPasteInput}
@@ -597,6 +642,20 @@ export default function SubscriptionsScreen() {
                 ))}
               </View>
 
+              <TouchableOpacity
+                style={[styles.chip, styles.trialToggle, formData.isFreeTrial && styles.chipActive]}
+                onPress={() => setFormData({ ...formData, isFreeTrial: !formData.isFreeTrial })}
+              >
+                <MaterialCommunityIcons
+                  name={formData.isFreeTrial ? "checkbox-marked" : "checkbox-blank-outline"}
+                  size={16}
+                  color={formData.isFreeTrial ? "#FFFFFF" : c.textSecondary}
+                />
+                <Text style={[styles.chipText, formData.isFreeTrial && styles.chipTextActive]}>
+                  This is a free trial
+                </Text>
+              </TouchableOpacity>
+
               <Text style={styles.label}>
                 Category{isPremium && customCategories.length > 0 ? "  ✦ custom" : ""}
               </Text>
@@ -647,7 +706,9 @@ export default function SubscriptionsScreen() {
                 </View>
               )}
 
-              <Text style={styles.label}>Trial End Date (optional)</Text>
+              <Text style={styles.label}>
+                {formData.isFreeTrial ? "Trial ends on" : "Trial End Date (optional)"}
+              </Text>
               <TextInput
                 style={styles.input}
                 placeholder="e.g. 15/06/2025 or 2025-06-15"
@@ -679,6 +740,14 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
+    savingsCard: {
+      position: "absolute", top: 12, left: 16, right: 16, zIndex: 50,
+      backgroundColor: c.success, borderRadius: 12, padding: 14,
+      flexDirection: "row", alignItems: "center",
+      shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    },
+    savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", lineHeight: 18 },
+    savingsCardRate: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 4 },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
@@ -762,6 +831,10 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
     },
     chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    trialToggle: {
+      flexDirection: "row", alignItems: "center", gap: 6,
+      alignSelf: "flex-start", marginBottom: 12,
+    },
     chipCustomActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
     chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
     chipText: { fontSize: 12, color: c.text, fontWeight: "500", textTransform: "capitalize" },

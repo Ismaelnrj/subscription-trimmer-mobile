@@ -34,36 +34,85 @@ const SLIDES = [
   },
 ];
 
+const ESTIMATE_OPTIONS = [
+  { label: "1-3", value: 2 },
+  { label: "4-7", value: 5 },
+  { label: "8-12", value: 10 },
+  { label: "13+", value: 15 },
+];
+
+export const USER_ESTIMATE_KEY = "user_subscription_estimate";
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
+  const [estimate, setEstimate] = useState<number | null>(null);
   const c = useTheme();
   const isDark = c.bg !== "#F9FAFB";
   const styles = makeStyles(c);
 
+  const isEstimateStep = current === SLIDES.length;
+
   const finish = async () => {
+    if (estimate !== null) {
+      await SecureStore.setItemAsync(USER_ESTIMATE_KEY, String(estimate));
+    }
     await SecureStore.setItemAsync("onboarding_done", "true");
     router.replace("/login");
   };
 
   const next = () => {
-    if (current < SLIDES.length - 1) {
+    if (current < SLIDES.length) {
       setCurrent(current + 1);
     } else {
       finish();
     }
   };
 
-  const slide = SLIDES[current];
-  const isLast = current === SLIDES.length - 1;
-
-  return (
-    <View style={styles.container}>
-      {!isLast && (
+  if (isEstimateStep) {
+    return (
+      <View style={styles.container}>
         <TouchableOpacity style={styles.skip} onPress={finish}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
-      )}
+
+        <View style={styles.content}>
+          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" }]}>
+            <MaterialCommunityIcons name="help-circle-outline" size={64} color={c.primary} />
+          </View>
+          <Text style={styles.title}>How many subscriptions do you think you have?</Text>
+          <Text style={styles.desc}>Just a guess. We'll show you how close you were once you've added them.</Text>
+
+          <View style={styles.estimateRow}>
+            {ESTIMATE_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.estimateChip, estimate === opt.value && styles.estimateChipActive]}
+                onPress={() => setEstimate(opt.value)}
+              >
+                <Text style={[styles.estimateChipText, estimate === opt.value && styles.estimateChipTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity style={[styles.button, { backgroundColor: c.primary }]} onPress={finish}>
+          <Text style={styles.buttonText}>Get Started</Text>
+          <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const slide = SLIDES[current];
+
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity style={styles.skip} onPress={finish}>
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
 
       <View style={styles.content}>
         <View style={[styles.iconCircle, { backgroundColor: isDark ? slide.bgDark : slide.bg }]}>
@@ -74,14 +123,14 @@ export default function OnboardingScreen() {
       </View>
 
       <View style={styles.dots}>
-        {SLIDES.map((_, i) => (
+        {[...SLIDES, null].map((_, i) => (
           <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
         ))}
       </View>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: slide.color }]} onPress={next}>
-        <Text style={styles.buttonText}>{isLast ? "Get Started" : "Next"}</Text>
-        <MaterialCommunityIcons name={isLast ? "arrow-right-circle" : "arrow-right"} size={20} color="#fff" />
+        <Text style={styles.buttonText}>Next</Text>
+        <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -108,6 +157,14 @@ function makeStyles(c: AppColors) {
       fontSize: 16, color: c.textSecondary, textAlign: "center",
       lineHeight: 26, maxWidth: width * 0.8,
     },
+    estimateRow: { flexDirection: "row", gap: 10, marginTop: 28, flexWrap: "wrap", justifyContent: "center" },
+    estimateChip: {
+      paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12,
+      borderWidth: 2, borderColor: c.border, backgroundColor: c.card,
+    },
+    estimateChipActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
+    estimateChipText: { fontSize: 15, fontWeight: "700", color: c.textSecondary },
+    estimateChipTextActive: { color: c.primary },
     dots: { flexDirection: "row", gap: 8, marginBottom: 40 },
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
     dotActive: { width: 24, backgroundColor: c.primary },

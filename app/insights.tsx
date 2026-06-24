@@ -9,11 +9,11 @@ import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
 
-type Sub = {
+export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
   category: string; nextBillingDate: string; trialEndDate?: string | null;
 };
-type Tip = {
+export type Tip = {
   id: string; icon: string; color: string;
   title: string; detail: string; priority: "high" | "medium" | "low";
   savingsHint?: string;
@@ -38,7 +38,7 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
 const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing this much or more per month
 const TOTAL_SPEND_THRESHOLD = 200; // flag total monthly spend at or above this amount
 
-function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD): Tip[] {
+export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD): Tip[] {
   if (subs.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();

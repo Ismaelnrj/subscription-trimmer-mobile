@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -26,16 +26,6 @@ export default function ProfileScreen() {
     const parts = name.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  };
-
-  const handleRateApp = async () => {
-    const market = "market://details?id=com.trimio.app";
-    const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
-    try {
-      await Linking.openURL(market);
-    } catch {
-      try { await Linking.openURL(web); } catch {}
-    }
   };
 
   const handleLogout = () => {
@@ -100,13 +90,15 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
-            <Text style={styles.menuItemLabel}>Tip Jar — Support the Dev</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
+        {!isPremium && (
+          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
+              <Text style={styles.menuItemLabel}>Tip Jar · Support the Dev</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.sectionTitle}>Settings</Text>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/notification-preferences")}>
@@ -134,13 +126,6 @@ export default function ProfileScreen() {
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="file-document-outline" size={20} color={c.primary} />
             <Text style={styles.menuItemLabel}>Terms of Service</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={handleRateApp}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="star-outline" size={20} color={c.warning} />
-            <Text style={styles.menuItemLabel}>Rate Trimio ⭐</Text>
           </View>
           <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
         </TouchableOpacity>
