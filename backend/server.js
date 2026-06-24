@@ -160,6 +160,10 @@ function syncBrevoSubCount(email, count) {
   updateBrevoContact(email, { SUB_COUNT: count });
 }
 
+function syncBrevoNextRenewalDate(email, date) {
+  updateBrevoContact(email, { NEXT_RENEWAL_DATE: date ? date.toISOString().slice(0, 10) : null });
+}
+
 // Fire-and-forget: recompute the user's subscription count and push it to
 // Brevo. Never awaited by callers so it can't slow down or fail their request.
 function syncSubCountToBrevo(userId, email) {
@@ -167,6 +171,22 @@ function syncSubCountToBrevo(userId, email) {
   pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [userId])
     .then((result) => syncBrevoSubCount(email, parseInt(result.rows[0].c)))
     .catch((err) => console.error('[Brevo] Sub count lookup failed for user', userId, err.message));
+}
+
+// Fire-and-forget: find the soonest upcoming renewal/trial-end date across
+// the user's subscriptions and push it to Brevo for renewal-reminder automations.
+function syncNextRenewalToBrevo(userId, email) {
+  if (!email) return;
+  pool.query(
+    `SELECT MIN(d) AS next_date FROM (
+       SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND next_billing_date >= NOW()
+       UNION ALL
+       SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND trial_end_date >= NOW()
+     ) t`,
+    [userId]
+  )
+    .then((result) => syncBrevoNextRenewalDate(email, result.rows[0]?.next_date || null))
+    .catch((err) => console.error('[Brevo] Next renewal lookup failed for user', userId, err.message));
 }
 
 // Verification/reset codes are emailed in plaintext but only the hash is stored,
@@ -661,6 +681,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       [req.userId, 'Subscription Added', `${name} ($${price}/${billingCycle}) was added.`, 'info']
     );
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
+    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -691,6 +712,8 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
       [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id, req.userId]
     );
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -708,6 +731,7 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
     await pool.query('DELETE FROM subscriptions WHERE id = $1 AND user_id = $2', [id, req.userId]);
     const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
+    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc({ success: true }));
   } catch (err) {
     handleError(err, res);
