@@ -6,11 +6,12 @@ import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
 import { PurchasesPackage } from "react-native-purchases";
 import { useTheme, AppColors } from "../lib/theme";
 import { useAuthStore } from "../lib/auth-store";
+import { TIP_PRICES } from "../lib/pricing";
 
 const TIPS = [
-  { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: "$0.99", desc: "A quick caffeine boost" },
-  { id: TIP_IDS.lunch,  emoji: "🍕", label: "Buy me a slice",  fallbackPrice: "$2.99", desc: "You're too kind!" },
-  { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",   fallbackPrice: "$4.99", desc: "Incredible — thank you!" },
+  { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: TIP_PRICES.coffee, desc: "A quick caffeine boost" },
+  { id: TIP_IDS.lunch,  emoji: "🍕", label: "Buy me a slice",  fallbackPrice: TIP_PRICES.lunch, desc: "You're too kind!" },
+  { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",   fallbackPrice: TIP_PRICES.dinner, desc: "Incredible — thank you!" },
 ];
 
 export default function TipJarScreen() {

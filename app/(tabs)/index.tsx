@@ -33,12 +33,12 @@ export default function DashboardScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: summary, isLoading: summaryLoading, refetch: refetchSummary } = useQuery({
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
-  const { data: subscriptions = [], isLoading: subsLoading, refetch: refetchSubs } = useQuery({
+  const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
     onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol),
@@ -63,6 +63,7 @@ export default function DashboardScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading || subsLoading;
+  const isError = summaryError || subsError;
   const recentSubs = subscriptions.slice(0, 3);
 
   const budgetGoal = settings?.budgetGoal;
@@ -152,6 +153,18 @@ export default function DashboardScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <Text style={styles.emptyStateText}>Couldn't load your dashboard.</Text>
+        <TouchableOpacity style={[styles.actionButton, { marginTop: 16, paddingHorizontal: 24 }]} onPress={onRefresh}>
+          <Text style={styles.actionButtonText}>Try Again</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -285,31 +298,39 @@ export default function DashboardScreen() {
           ))}
         </View>
 
+        <View style={styles.heroCard}>
+          <View style={styles.heroIcon}>
+            <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
+          </View>
+          <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+          <Text style={styles.heroLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
+        </View>
+
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="credit-card" size={20} color={c.primary} />
+              <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="chart-line" size={20} color={c.primary} />
+              <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly Spend" : "Monthly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="check-circle" size={20} color={c.primary} />
+              <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
             <Text style={styles.statLabel}>Active Subs</Text>
           </View>
           <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
             <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="alert-circle" size={20} color={activeAlertCount > 0 ? c.danger : c.primary} />
+              <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
             </View>
             <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]}>{activeAlertCount}</Text>
             <Text style={styles.statLabel}>Alerts</Text>
@@ -321,10 +342,10 @@ export default function DashboardScreen() {
           <Text style={styles.actionButtonText}>+ Add Subscription</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: c.textSecondary }]}
+          style={styles.actionButtonOutline}
           onPress={() => router.push("/insights")}
         >
-          <Text style={styles.actionButtonText}>View Recommendations</Text>
+          <Text style={styles.actionButtonOutlineText}>View Recommendations</Text>
         </TouchableOpacity>
 
         <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Subscriptions</Text>
@@ -417,23 +438,38 @@ function makeStyles(c: AppColors) {
     trialBadge: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 8 },
     trialBadgeText: { fontSize: 12, fontWeight: "800" },
 
-    statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 24 },
+    heroCard: {
+      backgroundColor: c.card, borderRadius: 16, padding: 20, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
+    heroIcon: {
+      width: 44, height: 44, borderRadius: 10, backgroundColor: c.primaryLight,
+      justifyContent: "center", alignItems: "center", marginBottom: 12,
+    },
+    heroValue: { fontSize: 38, fontWeight: "800", color: c.text, marginBottom: 4 },
+    heroLabel: { fontSize: 13, color: c.textSecondary },
+    statsGrid: { flexDirection: "row", gap: 12, marginBottom: 24 },
     statCard: {
-      flex: 1, minWidth: "48%", backgroundColor: c.card, borderRadius: 12,
-      padding: 16, borderWidth: 1, borderColor: c.border,
+      flex: 1, backgroundColor: c.card, borderRadius: 12,
+      padding: 14, borderWidth: 1, borderColor: c.border,
     },
     statIcon: {
-      width: 40, height: 40, borderRadius: 8, backgroundColor: c.primaryLight,
+      width: 34, height: 34, borderRadius: 8, backgroundColor: c.primaryLight,
       justifyContent: "center", alignItems: "center", marginBottom: 8,
     },
-    statValue: { fontSize: 24, fontWeight: "700", color: c.text, marginBottom: 4 },
-    statLabel: { fontSize: 12, color: c.textSecondary },
+    statValue: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 4 },
+    statLabel: { fontSize: 11, color: c.textSecondary },
     sectionTitle: { fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12 },
     actionButton: {
-      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 12,
       paddingHorizontal: 16, marginBottom: 12,
     },
     actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", textAlign: "center" },
+    actionButtonOutline: {
+      backgroundColor: "transparent", borderRadius: 10, paddingVertical: 12,
+      paddingHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: c.primary,
+    },
+    actionButtonOutlineText: { color: c.primary, fontSize: 14, fontWeight: "600", textAlign: "center" },
     emptyState: {
       backgroundColor: c.card, borderRadius: 12, padding: 24, alignItems: "center",
       borderWidth: 1, borderColor: c.border,

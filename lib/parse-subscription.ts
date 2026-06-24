@@ -35,6 +35,7 @@ const KNOWN_SERVICES: Record<string, string> = {
   proton: "Proton", mullvad: "Mullvad VPN", surfshark: "Surfshark",
   todoist: "Todoist", evernote: "Evernote", bear: "Bear",
   pocketcasts: "Pocket Casts", overcast: "Overcast",
+  shopify: "Shopify",
 };
 
 // Payment intermediaries — never use these as the subscription name

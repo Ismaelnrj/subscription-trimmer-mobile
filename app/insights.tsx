@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable } from "react-native";
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Pressable, RefreshControl } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
@@ -174,12 +174,12 @@ export default function InsightsScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
 
-  const { data: subscriptions = [], isLoading: subsLoading } = useQuery<Sub[]>({
+  const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs, isRefetching: subsRefetching } = useQuery<Sub[]>({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
 
-  const { data: summary, isLoading: summaryLoading } = useQuery({
+  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary, isRefetching: summaryRefetching } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -194,6 +194,9 @@ export default function InsightsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const isLoading = subsLoading || summaryLoading;
+  const isError = subsError || summaryError;
+  const isRefetching = subsRefetching || summaryRefetching;
+  const onRefresh = () => Promise.all([refetchSubs(), refetchSummary()]).catch(() => {});
   const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
   const allTips = useMemo(() => buildTips(subscriptions, fmtC, singleSubThreshold), [subscriptions, fmtC, singleSubThreshold]);
   const tips = isPremium ? allTips : allTips.slice(0, 2);
@@ -205,7 +208,11 @@ export default function InsightsScreen() {
   return (
     <>
       <Stack.Screen options={{ title: "Recommendations", headerShown: true }} />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} colors={[c.primary]} tintColor={c.primary} />}
+      >
         <View style={styles.content}>
           <View style={styles.banner}>
             <View style={styles.bannerLeft}>
@@ -237,6 +244,12 @@ export default function InsightsScreen() {
           {isLoading ? (
             <View style={styles.loading}>
               <ActivityIndicator size="large" color={c.primary} />
+            </View>
+          ) : isError ? (
+            <View style={styles.empty}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={52} color={c.border} />
+              <Text style={styles.emptyTitle}>Couldn't load recommendations</Text>
+              <Text style={styles.emptyText}>Pull down to retry.</Text>
             </View>
           ) : subscriptions.length === 0 ? (
             <View style={styles.empty}>

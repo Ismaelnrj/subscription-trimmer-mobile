@@ -369,8 +369,8 @@ export default function SubscriptionsScreen() {
             >
               <MaterialCommunityIcons
                 name={isPremium ? "file-chart" : "lock"}
-                size={22}
-                color={isPremium ? c.success : c.textMuted}
+                size={20}
+                color={isPremium ? "#FFFFFF" : c.textMuted}
               />
             </TouchableOpacity>
           </View>
@@ -406,8 +406,8 @@ export default function SubscriptionsScreen() {
           <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
             <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.emailHintTitle}>Got a purchase email?</Text>
-              <Text style={styles.emailHintSub}>Tap + → Auto-fill to add it in seconds</Text>
+              <Text style={styles.emailHintTitle}>Paste a receipt email — it fills itself in</Text>
+              <Text style={styles.emailHintSub}>Works with PayPal, Stripe, 24+ services</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={18} color={c.primary} />
           </TouchableOpacity>
@@ -578,9 +578,9 @@ export default function SubscriptionsScreen() {
                       const parsed = parseSubscriptionEmail(t);
                       setFormData((prev) => ({
                         ...prev,
-                        ...(parsed.name ? { name: parsed.name } : {}),
-                        ...(parsed.price ? { price: parsed.price } : {}),
-                        ...(parsed.billingCycle ? { billingCycle: parsed.billingCycle } : {}),
+                        name: parsed.name ?? "",
+                        price: parsed.price ?? "",
+                        billingCycle: parsed.billingCycle ?? prev.billingCycle,
                       }));
                     }}
                     textAlignVertical="top"
@@ -756,10 +756,10 @@ function makeStyles(c: AppColors) {
     addButtonLocked: { backgroundColor: c.textMuted },
     addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
     exportButton: {
-      backgroundColor: c.card, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
-      borderWidth: 1, borderColor: c.border, justifyContent: "center", alignItems: "center",
+      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
+      justifyContent: "center", alignItems: "center",
     },
-    exportButtonLocked: { backgroundColor: c.card, borderColor: c.border },
+    exportButtonLocked: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     limitBar: {
       backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 12,
       borderWidth: 1, borderColor: c.border,
@@ -772,7 +772,7 @@ function makeStyles(c: AppColors) {
     limitHint: { fontSize: 11, color: c.textSecondary, marginTop: 5 },
     searchBar: {
       backgroundColor: c.inputBg, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14,
-      borderWidth: 1, borderColor: c.border, fontSize: 14, color: c.text, marginBottom: 14,
+      borderWidth: 1.5, borderColor: c.textMuted, fontSize: 14, color: c.text, marginBottom: 14,
     },
     card: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,

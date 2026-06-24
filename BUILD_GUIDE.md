@@ -1,4 +1,4 @@
-# SubTrimmer Mobile App - Build & Deployment Guide
+# Trimio Mobile App - Build & Deployment Guide
 
 ## Pre-Build Checklist
 
@@ -77,7 +77,7 @@ eas build --platform android --type app-bundle
 
 2. **Create App**
    - Click "Create app"
-   - Enter app name: "SubTrimmer"
+   - Enter app name: "Trimio"
    - Select category: "Productivity" or "Finance"
    - Accept declarations
 

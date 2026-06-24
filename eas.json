@@ -12,13 +12,9 @@
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "withoutCredentials": false,
-        "nativeBuilding": false
+        "withoutCredentials": false
       },
       "channel": "production"
     }
-  },
-  "update": {
-    "channel": "production"
   }
 }

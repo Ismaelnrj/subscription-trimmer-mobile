@@ -12,6 +12,7 @@ import {
 } from "../lib/iap";
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
+import { PREMIUM_PRICES } from "../lib/pricing";
 
 const FEATURES = [
   { icon: "infinity",            label: "Subscriptions",             free: "Up to 5",    premium: "Unlimited" },
@@ -28,9 +29,9 @@ const FEATURES = [
 type PlanKey = "monthly" | "yearly" | "lifetime";
 
 const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
-  { key: "monthly",  label: "Monthly",  price: "$2.99", sub: "per month" },
-  { key: "yearly",   label: "Yearly",   price: "$19.99", sub: "per year", badge: "Save 44%" },
-  { key: "lifetime", label: "Lifetime", price: "$29.99", sub: "one-time · forever", badge: "Best Value" },
+  { key: "monthly",  label: "Monthly",  price: PREMIUM_PRICES.monthly, sub: "per month" },
+  { key: "yearly",   label: "Yearly",   price: PREMIUM_PRICES.yearly, sub: "per year", badge: "Save 44%" },
+  { key: "lifetime", label: "Lifetime", price: PREMIUM_PRICES.lifetime, sub: "one-time · forever", badge: "Best Value" },
 ];
 
 export default function UpgradeScreen() {

@@ -12,6 +12,8 @@ import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
 
+// Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
+// can only submit error events, not read project data. Safe to ship in client code.
 Sentry.init({
   dsn: "https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664",
   enableInExpoDevelopment: true,
@@ -126,6 +128,7 @@ export default function RootLayout() {
           <Stack.Screen name="verify-email" options={{ headerShown: true, title: "Verify Email" }} />
           <Stack.Screen name="insights" options={{ headerShown: true, title: "Recommendations" }} />
           <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: "Terms of Service" }} />
+          <Stack.Screen name="privacy-policy" options={{ headerShown: true, title: "Privacy Policy" }} />
           <Stack.Screen name="alerts" options={{ headerShown: true, title: "Alerts" }} />
           <Stack.Screen name="notifications" options={{ headerShown: true, title: "Notifications" }} />
           <Stack.Screen name="+not-found" />

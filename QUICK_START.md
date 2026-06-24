@@ -1,4 +1,4 @@
-# SubTrimmer Mobile App - Quick Start
+# Trimio Mobile App - Quick Start
 
 ## 🚀 Get Started in 5 Minutes
 

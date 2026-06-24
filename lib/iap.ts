@@ -24,6 +24,9 @@ import Purchases, {
 import * as SecureStore from "expo-secure-store";
 import apiClient from "./api";
 
+// RevenueCat public SDK key (Google platform) — safe to ship in client code,
+// it only authorizes this app to talk to RevenueCat and carries no secret
+// permissions. Server-side operations use a separate secret key.
 const REVENUECAT_API_KEY = "goog_gYpoGpYivXBffoumboUaOWdeOuG";
 
 const ENTITLEMENT_ID = "Trimio Premium";
@@ -154,17 +157,6 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<{ active: 
   return { active, synced };
 }
 
-/** Legacy helper used by the buy button when the package is already known. */
-export async function buyPremium(): Promise<void> {
-  const pkgs = await getOfferings();
-  const lifetime = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.lifetime);
-  const yearly   = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.yearly);
-  const monthly  = pkgs.find((p) => p.product.identifier === PRODUCT_IDS.monthly);
-  const target = lifetime ?? yearly ?? monthly;
-  if (!target) throw new Error("No available packages found.");
-  await purchasePackage(target);
-}
-
 export async function sendTip(productId: string): Promise<void> {
   // Tips may live in a separate "tips" offering or in the default one — check both.
   const offerings = await Purchases.getOfferings();
@@ -181,7 +173,7 @@ export async function restorePremium(): Promise<{ active: boolean; synced: boole
   try {
     const info = await Purchases.restorePurchases();
     const active = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-    const synced = active ? await syncPremiumWithBackend(true) : true;
+    const synced = await syncPremiumWithBackend(active);
     return { active, synced };
   } catch {
     return { active: false, synced: false };
