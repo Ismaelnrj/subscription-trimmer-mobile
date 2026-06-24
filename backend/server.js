@@ -201,17 +201,20 @@ function syncNextRenewalToBrevo(userId, email) {
        ORDER BY relevant_date ASC`,
       [userId]
     ),
+    pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [userId]),
   ])
-    .then(([dateResult, digestResult]) => {
+    .then(([dateResult, digestResult, settingsResult]) => {
       const nextDate = dateResult.rows[0]?.next_date || null;
+      const symbol = settingsResult.rows[0]?.currency_symbol || '$';
       const digest = digestResult.rows
-        .map((r) => `${r.name} ($${parseFloat(r.price).toFixed(2)}/${r.billing_cycle}) – ${new Date(r.relevant_date).toISOString().slice(0, 10)}`)
+        .map((r) => `${r.name} (${symbol}${parseFloat(r.price).toFixed(2)}/${r.billing_cycle}) – ${new Date(r.relevant_date).toISOString().slice(0, 10)}`)
         .join('; ');
       const totalAmount = digestResult.rows.reduce((sum, r) => sum + parseFloat(r.price), 0);
       updateBrevoContact(email, {
         NEXT_RENEWAL_DATE: nextDate ? new Date(nextDate).toISOString().slice(0, 10) : null,
         UPCOMING_RENEWALS: digest || null,
         TOTAL_AMOUNT: digestResult.rows.length ? totalAmount.toFixed(2) : null,
+        CURRENCY_SYMBOL: symbol,
       });
     })
     .catch((err) => console.error('[Brevo] Next renewal lookup failed for user', userId, err.message));
