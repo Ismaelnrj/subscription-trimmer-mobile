@@ -160,9 +160,8 @@ function syncBrevoSubCount(email, count) {
   updateBrevoContact(email, { SUB_COUNT: count });
 }
 
-function syncBrevoNextRenewalDate(email, date) {
-  updateBrevoContact(email, { NEXT_RENEWAL_DATE: date ? date.toISOString().slice(0, 10) : null });
-}
+// Must match the window used in the Brevo automation's "in the next N days" filter.
+const RENEWAL_DIGEST_WINDOW_DAYS = 3;
 
 // Fire-and-forget: recompute the user's subscription count and push it to
 // Brevo. Never awaited by callers so it can't slow down or fail their request.
@@ -174,18 +173,45 @@ function syncSubCountToBrevo(userId, email) {
 }
 
 // Fire-and-forget: find the soonest upcoming renewal/trial-end date across
-// the user's subscriptions and push it to Brevo for renewal-reminder automations.
+// the user's subscriptions, plus an itemized digest of everything renewing
+// within RENEWAL_DIGEST_WINDOW_DAYS, and push both to Brevo for the
+// renewal-reminder automation (date drives the trigger, digest drives the
+// email content so a contact with several renewals gets all of them listed).
 function syncNextRenewalToBrevo(userId, email) {
   if (!email) return;
-  pool.query(
-    `SELECT MIN(d) AS next_date FROM (
-       SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND next_billing_date >= NOW()
-       UNION ALL
-       SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND trial_end_date >= NOW()
-     ) t`,
-    [userId]
-  )
-    .then((result) => syncBrevoNextRenewalDate(email, result.rows[0]?.next_date || null))
+  Promise.all([
+    pool.query(
+      `SELECT MIN(d) AS next_date FROM (
+         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND next_billing_date >= NOW()
+         UNION ALL
+         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND trial_end_date >= NOW()
+       ) t`,
+      [userId]
+    ),
+    pool.query(
+      `SELECT name, price, billing_cycle,
+         CASE WHEN trial_end_date >= NOW() AND (next_billing_date IS NULL OR trial_end_date <= next_billing_date)
+              THEN trial_end_date ELSE next_billing_date END AS relevant_date
+       FROM subscriptions
+       WHERE user_id = $1
+         AND (
+           (next_billing_date >= NOW() AND next_billing_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
+           OR (trial_end_date >= NOW() AND trial_end_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
+         )
+       ORDER BY relevant_date ASC`,
+      [userId]
+    ),
+  ])
+    .then(([dateResult, digestResult]) => {
+      const nextDate = dateResult.rows[0]?.next_date || null;
+      const digest = digestResult.rows
+        .map((r) => `${r.name} ($${parseFloat(r.price).toFixed(2)}/${r.billing_cycle}) – ${new Date(r.relevant_date).toISOString().slice(0, 10)}`)
+        .join('; ');
+      updateBrevoContact(email, {
+        NEXT_RENEWAL_DATE: nextDate ? new Date(nextDate).toISOString().slice(0, 10) : null,
+        UPCOMING_RENEWALS: digest || null,
+      });
+    })
     .catch((err) => console.error('[Brevo] Next renewal lookup failed for user', userId, err.message));
 }
 
