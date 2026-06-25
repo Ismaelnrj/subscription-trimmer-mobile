@@ -677,9 +677,16 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
     } else if (affectsPremium && event.type === 'CANCELLATION') {
       // Access continues until EXPIRATION — only flag the contact for a win-back
-      // campaign, don't touch is_paid.
+      // campaign, don't touch is_paid. LAST_PLAN preserves the tier they're
+      // losing so the win-back email can reference it after PLAN flips to
+      // 'cancelling'.
       const result = await pool.query('SELECT email FROM users WHERE open_id = $1', [appUserId]);
-      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
+      if (result.rows[0]?.email) {
+        updateBrevoContact(result.rows[0].email, {
+          PLAN: 'cancelling',
+          LAST_PLAN: getPlanTierFromProductId(event.product_id),
+        });
+      }
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       const result = await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1 RETURNING email', [appUserId]);
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
