@@ -156,6 +156,16 @@ function syncBrevoPlan(email, plan) {
   updateBrevoContact(email, { PLAN: plan });
 }
 
+// Maps a RevenueCat product_id to a specific plan tier so Brevo campaigns
+// can target by plan (e.g. an annual-only upsell), not just premium/free.
+function getPlanTierFromProductId(productId = '') {
+  const id = productId.toLowerCase();
+  if (id.includes('lifetime')) return 'lifetime';
+  if (id.includes('annual') || id.includes('yearly')) return 'annual';
+  if (id.includes('monthly')) return 'monthly';
+  return 'premium';
+}
+
 function syncBrevoSubCount(email, count) {
   updateBrevoContact(email, { SUB_COUNT: count });
 }
@@ -638,7 +648,11 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     }
 
     const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'TRANSFER'];
-    const REVOKE_EVENTS = ['EXPIRATION', 'CANCELLATION'];
+    // CANCELLATION only means auto-renew was turned off — RevenueCat's own semantics
+    // keep the entitlement active until the paid period actually ends (EXPIRATION).
+    // Revoking access immediately on CANCELLATION would cut off users who already
+    // paid for the current period.
+    const REVOKE_EVENTS = ['EXPIRATION'];
     const PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
     // Sandbox/test purchases have a compressed billing cycle (RevenueCat/Play
@@ -660,7 +674,12 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
         "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1 RETURNING email",
         [appUserId]
       );
-      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'premium');
+      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
+    } else if (affectsPremium && event.type === 'CANCELLATION') {
+      // Access continues until EXPIRATION — only flag the contact for a win-back
+      // campaign, don't touch is_paid.
+      const result = await pool.query('SELECT email FROM users WHERE open_id = $1', [appUserId]);
+      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       const result = await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1 RETURNING email', [appUserId]);
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
