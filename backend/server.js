@@ -156,6 +156,29 @@ function syncBrevoPlan(email, plan) {
   updateBrevoContact(email, { PLAN: plan });
 }
 
+// Fires a Brevo tracked event so automations can trigger on "event occurs"
+// instead of "contact attribute updated" — the latter is gated behind
+// certain Brevo plans/UI versions, the former is supported broadly.
+async function trackBrevoEvent(email, eventName, properties) {
+  if (!email || !BREVO_API_KEY) return;
+  try {
+    const res = await fetch('https://api.brevo.com/v3/events', {
+      method: 'POST',
+      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_name: eventName,
+        identifiers: { email_id: email },
+        event_properties: properties,
+      }),
+    });
+    if (!res.ok) {
+      console.error('[Brevo] Event track failed for', email, eventName, res.status, await res.text());
+    }
+  } catch (err) {
+    console.error('[Brevo] Event track error for', email, eventName, err.message);
+  }
+}
+
 // Maps a RevenueCat product_id to a specific plan tier so Brevo campaigns
 // can target by plan (e.g. an annual-only upsell), not just premium/free.
 function getPlanTierFromProductId(productId = '') {
@@ -682,10 +705,10 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       // 'cancelling'.
       const result = await pool.query('SELECT email FROM users WHERE open_id = $1', [appUserId]);
       if (result.rows[0]?.email) {
-        updateBrevoContact(result.rows[0].email, {
-          PLAN: 'cancelling',
-          LAST_PLAN: getPlanTierFromProductId(event.product_id),
-        });
+        const email = result.rows[0].email;
+        const lastPlan = getPlanTierFromProductId(event.product_id);
+        updateBrevoContact(email, { PLAN: 'cancelling', LAST_PLAN: lastPlan });
+        trackBrevoEvent(email, 'subscription_cancelled', { plan: lastPlan });
       }
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       const result = await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1 RETURNING email', [appUserId]);
