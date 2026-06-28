@@ -619,8 +619,15 @@ app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
       isPremium = req.body.isPremium === true;
     }
 
+    // Clearing cancelled_at/win_back_sent_at here too (not just in the webhook's
+    // GRANT branch) matters because this endpoint can confirm a resubscribe
+    // before RevenueCat's webhook arrives — without this, the win-back cron
+    // could still email someone who already bought back in.
     await pool.query(
-      'UPDATE users SET is_paid = $1, paid_at = CASE WHEN $1 AND paid_at IS NULL THEN NOW() ELSE paid_at END WHERE id = $2',
+      `UPDATE users SET is_paid = $1, paid_at = CASE WHEN $1 AND paid_at IS NULL THEN NOW() ELSE paid_at END,
+       cancelled_at = CASE WHEN $1 THEN NULL ELSE cancelled_at END,
+       win_back_sent_at = CASE WHEN $1 THEN NULL ELSE win_back_sent_at END
+       WHERE id = $2`,
       [isPremium, req.userId]
     );
     syncBrevoPlan(user.email, isPremium ? 'premium' : 'free');
