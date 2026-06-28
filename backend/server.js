@@ -156,29 +156,6 @@ function syncBrevoPlan(email, plan) {
   updateBrevoContact(email, { PLAN: plan });
 }
 
-// Fires a Brevo tracked event so automations can trigger on "event occurs"
-// instead of "contact attribute updated" — the latter is gated behind
-// certain Brevo plans/UI versions, the former is supported broadly.
-async function trackBrevoEvent(email, eventName, properties) {
-  if (!email || !BREVO_API_KEY) return;
-  try {
-    const res = await fetch('https://api.brevo.com/v3/events', {
-      method: 'POST',
-      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event_name: eventName,
-        identifiers: { email_id: email },
-        event_properties: properties,
-      }),
-    });
-    if (!res.ok) {
-      console.error('[Brevo] Event track failed for', email, eventName, res.status, await res.text());
-    }
-  } catch (err) {
-    console.error('[Brevo] Event track error for', email, eventName, err.message);
-  }
-}
-
 // Maps a RevenueCat product_id to a specific plan tier so Brevo campaigns
 // can target by plan (e.g. an annual-only upsell), not just premium/free.
 function getPlanTierFromProductId(productId = '') {
@@ -281,6 +258,9 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_plan TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS win_back_sent_at TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -693,25 +673,28 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     const affectsPremium = entitlementIds.includes(PREMIUM_ENTITLEMENT);
 
     if (affectsPremium && GRANT_EVENTS.includes(event.type)) {
+      // Resubscribing (e.g. UNCANCELLATION) clears any pending win-back state.
       const result = await pool.query(
-        "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END WHERE open_id = $1 RETURNING email",
+        "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
         [appUserId]
       );
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
     } else if (affectsPremium && event.type === 'CANCELLATION') {
-      // Access continues until EXPIRATION — only flag the contact for a win-back
-      // campaign, don't touch is_paid. LAST_PLAN preserves the tier they're
-      // losing so the win-back email can reference it after PLAN flips to
-      // 'cancelling'.
-      const result = await pool.query('SELECT email FROM users WHERE open_id = $1', [appUserId]);
-      if (result.rows[0]?.email) {
-        const email = result.rows[0].email;
-        const lastPlan = getPlanTierFromProductId(event.product_id);
-        updateBrevoContact(email, { PLAN: 'cancelling', LAST_PLAN: lastPlan });
-        trackBrevoEvent(email, 'subscription_cancelled', { plan: lastPlan });
-      }
+      // Access continues until EXPIRATION — only record the cancellation so our
+      // own win-back cron (sendWinBackEmails) can email them after a delay.
+      // Don't overwrite cancelled_at if already set, so duplicate webhook
+      // deliveries don't keep pushing the win-back email out.
+      const lastPlan = getPlanTierFromProductId(event.product_id);
+      const result = await pool.query(
+        "UPDATE users SET cancelled_at = COALESCE(cancelled_at, NOW()), last_plan = $1 WHERE open_id = $2 RETURNING email",
+        [lastPlan, appUserId]
+      );
+      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
-      const result = await pool.query('UPDATE users SET is_paid = false WHERE open_id = $1 RETURNING email', [appUserId]);
+      const result = await pool.query(
+        "UPDATE users SET is_paid = false, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
+        [appUserId]
+      );
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
     }
 
@@ -1190,6 +1173,49 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
           </p>
         </div>`
       ).catch(e => console.error(`Email failed for user ${user.id}:`, e));
+      sent++;
+    }
+
+    res.json({ success: true, emailsSent: sent });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+// Sends a win-back email ~1 day after a user cancels (turns off auto-renew),
+// while they still have access until their period expires. Built directly on
+// our own transactional email sending rather than Brevo Automation, since
+// workflow configuration there is gated behind a plan we don't have.
+// Call this daily via the same cron job/scheduler as sendEmailReminders.
+app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
+  const secret = req.headers['x-cron-secret'];
+  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    const usersResult = await pool.query(`
+      SELECT id, email, name, last_plan
+      FROM users
+      WHERE is_paid = TRUE
+        AND is_verified = TRUE
+        AND cancelled_at IS NOT NULL
+        AND cancelled_at <= NOW() - INTERVAL '1 day'
+        AND win_back_sent_at IS NULL
+    `);
+
+    let sent = 0;
+    for (const user of usersResult.rows) {
+      const planLabel = { monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime' }[user.last_plan] || 'Premium';
+      await sendEmail(
+        user.email,
+        `We're sorry to see you go, ${user.name || 'there'}`,
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
+          <h2 style="color:#4F46E5;margin-bottom:8px">Your Trimio ${planLabel} plan is set to end</h2>
+          <p style="color:#374151">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
+          <p style="color:#9CA3AF;font-size:12px;margin-top:20px">This is an automatic reminder — no action needed if you meant to cancel.</p>
+        </div>`
+      ).catch(e => console.error(`Win-back email failed for user ${user.id}:`, e));
+      await pool.query('UPDATE users SET win_back_sent_at = NOW() WHERE id = $1', [user.id]);
       sent++;
     }
 
