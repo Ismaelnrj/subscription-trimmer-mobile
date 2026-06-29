@@ -3,7 +3,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "../../lib/auth-store";
 import { useTheme, AppColors } from "../../lib/theme";
-import { DEALS_TAB_ENABLED } from "../../lib/config";
 import { PREMIUM_PRICES } from "../../lib/pricing";
 
 export default function ProfileScreen() {
@@ -62,15 +61,13 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </TouchableOpacity>
         )}
-        {DEALS_TAB_ENABLED && (
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/deals")}>
-            <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="tag-multiple" size={20} color={c.primary} />
-              <Text style={styles.menuItemLabel}>Deals & Partnerships</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/refer-a-friend")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="account-multiple-plus-outline" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>Refer a Friend · Get 1 Month Free</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+        </TouchableOpacity>
         {!isPremium && (
           <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
             <View style={styles.menuItemLeft}>

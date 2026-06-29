@@ -261,6 +261,10 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_plan TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS win_back_sent_at TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id)`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -376,8 +380,49 @@ function toMonthly(price, billingCycle) {
   return price;
 }
 
+function hasBonusPremium(u) {
+  return !!u.bonus_premium_until && new Date(u.bonus_premium_until) > new Date();
+}
+
 function formatUser(u) {
-  return { id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role, isPaid: u.is_paid, paidAt: u.paid_at, isVerified: u.is_verified };
+  return {
+    id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role,
+    isPaid: u.is_paid || hasBonusPremium(u),
+    paidAt: u.paid_at, isVerified: u.is_verified,
+    referralCode: u.referral_code,
+    hasRedeemedReferral: u.referred_by != null,
+    bonusPremiumUntil: u.bonus_premium_until,
+  };
+}
+
+// Referral codes avoid visually ambiguous characters (0/O, 1/I/L).
+function generateReferralCode() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function assignReferralCode(userId) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = generateReferralCode();
+    try {
+      await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [code, userId]);
+      return code;
+    } catch (err) {
+      if (err.code !== '23505') throw err; // unique_violation on referral_code — retry with a new code
+    }
+  }
+  throw new Error('Failed to assign a unique referral code');
+}
+
+// Grants the referrer 1 free month of Premium, stacking onto any remaining bonus time.
+async function rewardReferrer(referrerId) {
+  await pool.query(
+    `UPDATE users SET bonus_premium_until = GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days'
+     WHERE id = $1`,
+    [referrerId]
+  );
 }
 
 function formatSub(s) {
@@ -434,6 +479,7 @@ app.post('/api/auth/register', async (req, res) => {
     );
     const user = result.rows[0];
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
+    user.referral_code = await assignReferralCode(user.id);
 
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
@@ -519,8 +565,57 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     if (!user.verification_token || user.verification_token !== hashToken(code)) return res.status(400).json({ error: 'Invalid code' });
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
+
+    if (user.referred_by && !user.referral_rewarded) {
+      await rewardReferrer(user.referred_by);
+      await pool.query('UPDATE users SET referral_rewarded = TRUE WHERE id = $1', [req.userId]);
+    }
+
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(updated.rows[0]) });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT referral_code, referred_by, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
+    const user = result.rows[0];
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({
+      referralCode: user.referral_code,
+      hasRedeemedReferral: user.referred_by != null,
+      bonusPremiumUntil: user.bonus_premium_until,
+    });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.post('/api/trpc/referrals.redeem', authMiddleware, async (req, res) => {
+  try {
+    const code = req.body.code?.trim().toUpperCase();
+    if (!code) return res.status(400).json({ error: 'Referral code required' });
+
+    const meResult = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+    const me = meResult.rows[0];
+    if (!me) return res.status(404).json({ error: 'User not found' });
+    if (me.referred_by) return res.status(400).json({ error: 'You already redeemed a referral code' });
+
+    const referrerResult = await pool.query('SELECT id FROM users WHERE referral_code = $1', [code]);
+    const referrer = referrerResult.rows[0];
+    if (!referrer) return res.status(404).json({ error: 'Invalid referral code' });
+    if (referrer.id === me.id) return res.status(400).json({ error: "You can't redeem your own referral code" });
+
+    await pool.query('UPDATE users SET referred_by = $1 WHERE id = $2', [referrer.id, me.id]);
+
+    if (me.is_verified && !me.referral_rewarded) {
+      await rewardReferrer(referrer.id);
+      await pool.query('UPDATE users SET referral_rewarded = TRUE WHERE id = $1', [me.id]);
+    }
+
+    res.json({ success: true });
   } catch (err) {
     handleError(err, res);
   }
@@ -733,8 +828,8 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
 
-    const userResult = await pool.query('SELECT is_paid, email FROM users WHERE id = $1', [req.userId]);
-    const isPaid = userResult.rows[0]?.is_paid;
+    const userResult = await pool.query('SELECT is_paid, email, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
+    const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
     if (!isPaid) {
       const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
       if (parseInt(countResult.rows[0].c) >= 5) {
@@ -1134,7 +1229,8 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       SELECT u.id, u.email, u.name
       FROM users u
       JOIN notification_preferences np ON np.user_id = u.id
-      WHERE np.email_reminders = TRUE AND u.is_verified = TRUE AND u.is_paid = TRUE
+      WHERE np.email_reminders = TRUE AND u.is_verified = TRUE
+        AND (u.is_paid = TRUE OR u.bonus_premium_until > NOW())
     `);
 
     let sent = 0;
