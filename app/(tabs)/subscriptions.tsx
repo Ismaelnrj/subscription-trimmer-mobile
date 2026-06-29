@@ -466,7 +466,7 @@ export default function SubscriptionsScreen() {
           {filtered.length === 0 ? (
             total === 0 ? (
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="receipt-text-outline" size={52} color={c.border} style={{ marginBottom: 12 }} />
+                <MaterialCommunityIcons name="receipt" size={52} color={c.border} style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyStateTitle}>What are you paying for?</Text>
                 <Text style={styles.emptyStateSubtext}>
                   Add your first subscription to start tracking your monthly spend.

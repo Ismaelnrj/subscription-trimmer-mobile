@@ -54,7 +54,7 @@ export const DARK = {
   skeletonHighlight: "#475569",
 } as const;
 
-export type AppColors = typeof LIGHT;
+export type AppColors = Record<keyof typeof LIGHT, string>;
 
 export function useTheme(): AppColors {
   const scheme = useColorScheme();
