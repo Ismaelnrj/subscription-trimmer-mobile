@@ -192,9 +192,9 @@ function syncNextRenewalToBrevo(userId, email) {
   Promise.all([
     pool.query(
       `SELECT MIN(d) AS next_date FROM (
-         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND next_billing_date >= NOW()
+         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND next_billing_date >= NOW()
          UNION ALL
-         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND trial_end_date >= NOW()
+         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND trial_end_date >= NOW()
        ) t`,
       [userId]
     ),
@@ -204,6 +204,7 @@ function syncNextRenewalToBrevo(userId, email) {
               THEN trial_end_date ELSE next_billing_date END AS relevant_date
        FROM subscriptions
        WHERE user_id = $1
+         AND is_active = TRUE
          AND (
            (next_billing_date >= NOW() AND next_billing_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
            OR (trial_end_date >= NOW() AND trial_end_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
@@ -265,6 +266,7 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id)`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -436,6 +438,7 @@ function formatSub(s) {
     nextBillingDate: s.next_billing_date,
     trialEndDate: s.trial_end_date || null,
     created_at: s.created_at,
+    isActive: s.is_active ?? true,
   };
 }
 
@@ -895,6 +898,25 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
   }
 });
 
+app.post('/api/trpc/subscriptions.setActive', authMiddleware, async (req, res) => {
+  try {
+    const { id, isActive } = req.body;
+    if (!id || typeof isActive !== 'boolean') return res.status(400).json({ error: 'id and isActive required' });
+
+    const result = await pool.query(
+      'UPDATE subscriptions SET is_active = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [isActive, id, req.userId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
+
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
+    res.json(trpc(formatSub(result.rows[0])));
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
 app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
   try {
     const { id } = req.body;
@@ -986,7 +1008,8 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
 app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
   try {
     const subsResult = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
-    const subs = subsResult.rows;
+    const allSubs = subsResult.rows;
+    const subs = allSubs.filter(s => s.is_active);
     const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
 
     const alertResult = await pool.query(
@@ -1004,7 +1027,7 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
 
     res.json(trpc({
       activeSubscriptions: subs.length,
-      totalSubscriptions: subs.length,
+      totalSubscriptions: allSubs.length,
       monthlyTotal,
       yearlyTotal: monthlyTotal * 12,
       alertCount,
@@ -1020,7 +1043,7 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
 app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   try {
     const [subResult, settingsResult, prefsResult] = await Promise.all([
-      pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE', [req.userId]),
       pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
       pool.query('SELECT renewal_alert_days FROM notification_preferences WHERE user_id = $1', [req.userId]),
     ]);
@@ -1104,7 +1127,7 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/insights.getRecommendations', authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
+    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE', [req.userId]);
     const subs = result.rows;
 
     if (subs.length === 0) {
@@ -1251,6 +1274,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       const subsResult = await pool.query(
         `SELECT * FROM subscriptions
          WHERE user_id = $1
+           AND is_active = TRUE
            AND next_billing_date BETWEEN $2 AND $3`,
         [user.id, now.toISOString(), in3Days.toISOString()]
       );

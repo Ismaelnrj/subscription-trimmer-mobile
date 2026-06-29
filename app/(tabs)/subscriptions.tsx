@@ -154,6 +154,13 @@ export default function SubscriptionsScreen() {
     onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
   });
 
+  const setActiveMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) =>
+      (await apiClient.post("/trpc/subscriptions.setActive", { id, isActive })).data.result.data,
+    onSuccess: invalidate,
+    onError: () => Alert.alert("Error", "Could not update subscription. Please try again."),
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -512,7 +519,7 @@ export default function SubscriptionsScreen() {
                     );
                   }}
                 >
-                <View style={styles.card}>
+                <View style={[styles.card, sub.isActive === false && styles.cardPaused]}>
                   <View style={styles.cardInfo}>
                     <Text style={styles.cardName}>{sub.name}</Text>
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
@@ -526,6 +533,11 @@ export default function SubscriptionsScreen() {
                           {sub.category}
                         </Text>
                       </View>
+                      {sub.isActive === false && (
+                        <View style={styles.pausedBadge}>
+                          <Text style={styles.pausedBadgeText}>Paused</Text>
+                        </View>
+                      )}
                       {trialDate && trialDaysLeft !== null && trialDaysLeft >= 0 && (
                         <View style={styles.trialBadge}>
                           <Text style={styles.trialBadgeText}>
@@ -536,6 +548,16 @@ export default function SubscriptionsScreen() {
                     </View>
                   </View>
                   <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      onPress={() => setActiveMutation.mutate({ id: sub.id, isActive: sub.isActive === false })}
+                    >
+                      <MaterialCommunityIcons
+                        name={sub.isActive === false ? "play-circle-outline" : "pause-circle-outline"}
+                        size={18}
+                        color={c.textSecondary}
+                      />
+                    </TouchableOpacity>
                     <TouchableOpacity style={styles.iconButton} onPress={() => openEdit(sub)}>
                       <MaterialCommunityIcons name="pencil" size={18} color={c.primary} />
                     </TouchableOpacity>
@@ -794,6 +816,7 @@ function makeStyles(c: AppColors) {
       borderWidth: 1, borderColor: c.border, flexDirection: "row",
       justifyContent: "space-between", alignItems: "flex-start",
     },
+    cardPaused: { opacity: 0.6 },
     cardInfo: { flex: 1 },
     cardName: { fontSize: 14, fontWeight: "600", color: c.text, marginBottom: 3 },
     cardPrice: { fontSize: 12, color: c.textSecondary, marginBottom: 2 },
@@ -811,6 +834,11 @@ function makeStyles(c: AppColors) {
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
     trialBadgeText: { fontSize: 10, color: c.warning, fontWeight: "600" },
+    pausedBadge: {
+      alignSelf: "flex-start", backgroundColor: c.border, borderRadius: 4,
+      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
+    },
+    pausedBadgeText: { fontSize: 10, color: c.textSecondary, fontWeight: "600" },
     actionButtons: { flexDirection: "row", gap: 8 },
     iconButton: {
       width: 36, height: 36, borderRadius: 6, backgroundColor: c.border,
