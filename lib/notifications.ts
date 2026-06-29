@@ -6,6 +6,8 @@ import Constants from "expo-constants";
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -60,7 +62,7 @@ export async function sendLocalNotification(
       sound: true,
       badge: 1,
     },
-    trigger: { seconds: 2 },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2 },
   });
 }
 
@@ -78,6 +80,6 @@ export async function sendScheduledNotification(
       sound: true,
       badge: 1,
     },
-    trigger: { seconds },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
   });
 }

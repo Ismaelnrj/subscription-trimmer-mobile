@@ -1,7 +1,7 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SecureStore from "expo-secure-store";
-import * as Sentry from "sentry-expo";
+import * as Sentry from "@sentry/react-native";
 import { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,7 +16,6 @@ import { useTheme } from "../lib/theme";
 // can only submit error events, not read project data. Safe to ship in client code.
 Sentry.init({
   dsn: "https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664",
-  enableInExpoDevelopment: true,
   debug: false,
 });
 
@@ -28,7 +27,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 
   componentDidCatch(error: Error) {
-    Sentry.Native.captureException(error);
+    Sentry.captureException(error);
   }
 
   render() {

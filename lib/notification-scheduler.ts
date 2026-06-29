@@ -36,7 +36,7 @@ export async function scheduleRenewalReminders(subscriptions: any[], currencySym
               body: `${currencySymbol}${Number(sub.price).toFixed(2)} will be charged on ${billing.toLocaleDateString()}.`,
               data: { subscriptionId: sub.id },
             },
-            trigger: { date: triggerDate },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
           });
           scheduled.push(`${sub.name} (${label})`);
         }
@@ -55,7 +55,7 @@ export async function scheduleRenewalReminders(subscriptions: any[], currencySym
               body: `Cancel now if you don't want to be charged ${currencySymbol}${Number(sub.price).toFixed(2)}.`,
               data: { subscriptionId: sub.id },
             },
-            trigger: { date: trialReminder },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trialReminder },
           });
         }
       }

@@ -2,32 +2,33 @@
 
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '23')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
-        kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
+        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
+        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
+        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '35')
+        kotlinVersion = findProperty('android.kotlinVersion') ?: '2.0.21'
 
         // NDK r27+ builds native libraries 16 KB-page-aligned by default, and AGP
         // 8.5.1+ auto-aligns uncompressed native libs at packaging time — both are
         // required for Google Play's 16 KB memory page size requirement.
         ndkVersion = "27.1.12297006"
     }
-    // Force Kotlin 1.9.23 so the React Native BOM cannot downgrade it to 1.8.
+    // Force Kotlin 2.0.21 (the version React Native 0.79's Gradle plugin BOM
+    // pins) so no transitive dependency can pull in a mismatched version.
     configurations.all {
-        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23'
-        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'
-        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23'
-        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21'
+        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21'
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:8.6.0')
+        classpath('com.android.tools.build:gradle:8.8.2')
         classpath('com.facebook.react:react-native-gradle-plugin')
-        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
+        classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21')
         classpath('com.google.gms:google-services:4.4.4')
     }
 }
@@ -38,11 +39,11 @@ buildscript {
 // top-level ext ensures they are always reachable by safeExtGet() calls in expo
 // and other library modules.
 ext {
-    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '34')
-    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '34')
-    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')
-    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
-    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'
+    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
+    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '35')
+    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '24')
+    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
+    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '2.0.21'
     ndkVersion        = "27.1.12297006"
 }
 
@@ -73,19 +74,19 @@ allprojects {
 allprojects {
     plugins.withId("com.android.library") {
         android {
-            compileSdk 34
+            compileSdk 35
         }
     }
 }
 
-// expo-modules-core@1.12.26 uses Kotlin 1.9 features (data objects, reload API).
-// Force languageVersion 1.9 on every KotlinCompile task so the React Native BOM
-// cannot silently downgrade it to 1.8 via the unversioned kotlin-gradle-plugin.
+// expo-modules-core (SDK 53) and the React Native 0.79 Gradle plugin both build
+// against Kotlin 2.0. Force languageVersion 2.0 on every KotlinCompile task so no
+// transitive dependency can silently downgrade it via an unversioned plugin.
 allprojects {
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
         kotlinOptions {
-            languageVersion = '1.9'
-            apiVersion      = '1.9'
+            languageVersion = '2.0'
+            apiVersion      = '2.0'
             jvmTarget       = '17'
         }
     }
