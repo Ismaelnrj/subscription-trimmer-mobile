@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # fix-gradle.sh
-# Fixes two Gradle 8 build errors in Expo SDK 50 / React Native 0.73+ projects:
+# Fixes two Gradle 8 build errors in Expo SDK 53 / React Native 0.79+ projects:
 #
 #   Error 1 — "compileSdkVersion is not specified. Please add it to build.gradle"
 #   Error 2 — "Could not get unknown property 'release' for SoftwareComponentContainer"
@@ -36,7 +36,7 @@ set -e
 ANDROID="android"
 NODE_MODULES="node_modules"
 
-echo "Applying Gradle 8 compatibility fixes for Expo SDK 50..."
+echo "Applying Gradle 8 compatibility fixes for Expo SDK 53..."
 echo ""
 
 # ── Prerequisite check ────────────────────────────────────────────────────────
@@ -70,10 +70,10 @@ ext_block = (
     "ext {\n"
     "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')\n"
     "    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '35')\n"
-    "    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')\n"
+    "    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '24')\n"
     "    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'\n"
-    "    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'\n"
-    "    ndkVersion        = \"26.1.10909125\"\n"
+    "    kotlinVersion     = findProperty('android.kotlinVersion')     ?: '2.0.21'\n"
+    "    ndkVersion        = \"27.1.12297006\"\n"
     "}\n\n"
 )
 
@@ -119,17 +119,16 @@ with open(path, 'a') as f:
 print("      OK   — allprojects compileSdk hook added")
 PYEOF
 
-# ── Fix 3 (NEW): Pin Kotlin 1.9.23 + force language version 1.9 ──────────────
-# expo-modules-core@1.12.26 uses Kotlin 1.9 features:
-#   - 'data object' syntax  (Either.kt:13)  → requires languageVersion = 1.9
-#   - 'reload' reference    (CoreModule.kt) → requires Kotlin 1.9 stdlib/API
-# Root cause: React Native 0.73.x BOM provides kotlin-gradle-plugin without a
-# version, resolving it at a version whose default language level is 1.8.
-# Fix A: pin classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
-# Fix B: add allprojects { tasks.withType(KotlinCompile) } to force 1.9 on all
+# ── Fix 3: Pin Kotlin 2.0.21 + force matching language version ──────────────
+# expo-modules-core (SDK 53) and React Native 0.79's Gradle plugin both build
+# against Kotlin 2.0 (e.g. the org.jetbrains.kotlin.plugin.compose plugin
+# requires Kotlin >= 2.0). React Native's BOM provides kotlin-gradle-plugin
+# without a version pin, so we force it here.
+# Fix A: pin classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21')
+# Fix B: add allprojects { tasks.withType(KotlinCompile) } to force 2.0 on all
 #        submodules, so even if the BOM overrides the plugin version the
-#        language version is still explicitly 1.9.
-echo "[3/5] android/build.gradle — pin Kotlin 1.9.23 + language version 1.9 ..."
+#        language version is still explicitly 2.0.
+echo "[3/5] android/build.gradle — pin Kotlin 2.0.21 + language version 2.0 ..."
 
 python3 - "$ANDROID/build.gradle" << 'PYEOF'
 import sys, re
@@ -141,31 +140,31 @@ modified = False
 
 # Fix A: pin Kotlin gradle plugin version.
 # expo prebuild generates double-quote form; handle both single and double quotes.
-if 'kotlin-gradle-plugin:1.9.23' not in content:
+if 'kotlin-gradle-plugin:2.0.21' not in content:
     # Match both classpath('...') and classpath("...") forms
     pattern = r"""classpath\(['"]org\.jetbrains\.kotlin:kotlin-gradle-plugin['"]\)"""
     if re.search(pattern, content):
         content = re.sub(pattern,
-            "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')",
+            "classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21')",
             content, count=1)
-        print("      OK   — Kotlin plugin classpath pinned to 1.9.23")
+        print("      OK   — Kotlin plugin classpath pinned to 2.0.21")
         modified = True
     else:
         print("      WARN — Kotlin classpath line not found; Fix A skipped")
 else:
     print("      SKIP — Kotlin plugin already pinned")
 
-# Fix B: add buildscript resolutionStrategy to force Kotlin 1.9.23 even if
-# the React Native BOM provides an older version via dependency management.
+# Fix B: add buildscript resolutionStrategy to force Kotlin 2.0.21 even if
+# the React Native BOM provides a different version via dependency management.
 if 'resolutionStrategy' not in content:
     # Insert resolutionStrategy into the buildscript block right before repositories
     bom_override = (
-        "    // Force Kotlin 1.9.23 so BOM cannot downgrade it to 1.8.\n"
+        "    // Force Kotlin 2.0.21 so BOM cannot downgrade it.\n"
         "    configurations.all {\n"
-        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23'\n"
-        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:1.9.23'\n"
-        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23'\n"
-        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib:2.0.21'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.0.21'\n"
+        "        resolutionStrategy.force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.21'\n"
         "    }\n"
     )
     # Insert before the first repositories { block inside buildscript
@@ -173,7 +172,7 @@ if 'resolutionStrategy' not in content:
     m = re.search(repos_pattern, content, re.DOTALL)
     if m:
         content = content[:m.start(2)] + bom_override + content[m.start(2):]
-        print("      OK   — buildscript resolutionStrategy added (forces Kotlin 1.9.23)")
+        print("      OK   — buildscript resolutionStrategy added (forces Kotlin 2.0.21)")
         modified = True
     else:
         print("      WARN — buildscript repositories marker not found; Fix B skipped")
@@ -184,21 +183,21 @@ else:
 if 'languageVersion' not in content:
     hook = (
         "\n"
-        "// expo-modules-core@1.12.26 requires Kotlin language version 1.9.\n"
+        "// expo-modules-core (SDK 53) requires Kotlin language version 2.0.\n"
         "// Force it on every KotlinCompile task across all subprojects so the\n"
-        "// React Native BOM cannot silently downgrade it to 1.8.\n"
+        "// React Native BOM cannot silently downgrade it.\n"
         "allprojects {\n"
         "    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {\n"
         "        kotlinOptions {\n"
-        "            languageVersion = '1.8'\n"
-        "            apiVersion      = '1.8'\n"
+        "            languageVersion = '2.0'\n"
+        "            apiVersion      = '2.0'\n"
         "            jvmTarget       = '17'\n"
         "        }\n"
         "    }\n"
         "}\n"
     )
     content += hook
-    print("      OK   — Kotlin languageVersion 1.9 hook added to allprojects")
+    print("      OK   — Kotlin languageVersion 2.0 hook added to allprojects")
     modified = True
 else:
     print("      SKIP — languageVersion already set")
@@ -462,8 +461,8 @@ echo ""
 echo "  android/build.gradle"
 echo "    + root-level ext {}  (compileSdkVersion on rootProject.ext)"
 echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 35 } }"
-echo "    + Kotlin plugin pinned to 1.9.23 (was unversioned, resolved to 1.8 via BOM)"
-echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 1.9 } }"
+echo "    + Kotlin plugin pinned to 2.0.21 (was unversioned, resolved via BOM)"
+echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 2.0 } }"
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
