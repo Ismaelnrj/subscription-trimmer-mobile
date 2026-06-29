@@ -1476,9 +1476,12 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
             </thead>
             <tbody>${rows}</tbody>
           </table>
+          <div style="text-align:center;margin-top:24px">
+            <a href="trimio://subscriptions" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
+          </div>
           <p style="color:#9ca3af;font-size:12px;margin-top:20px">
             You're receiving this because you enabled email reminders in Trimio.
-            Open the app to manage your notification preferences.
+            Tap the button above (or open the app) to manage your notification preferences.
           </p>
         </div>`
       ).catch(e => console.error(`Email failed for user ${user.id}:`, e));
@@ -1521,6 +1524,9 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
           <h2 style="color:#4F46E5;margin-bottom:8px">Your Trimio ${planLabel} plan is set to end</h2>
           <p style="color:#374151">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
+          <div style="text-align:center;margin-top:24px">
+            <a href="trimio://upgrade" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
+          </div>
           <p style="color:#9CA3AF;font-size:12px;margin-top:20px">This is an automatic reminder — no action needed if you meant to cancel.</p>
         </div>`
       ).catch(e => console.error(`Win-back email failed for user ${user.id}:`, e));
