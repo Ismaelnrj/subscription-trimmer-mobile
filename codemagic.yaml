@@ -72,6 +72,7 @@ workflows:
           cd ..
     artifacts:
       - android/app/build/outputs/bundle/**/*.aab
+      - android/app/build/outputs/mapping/**/mapping.txt
     publishing:
       scripts:
         - name: Generate Download URL
