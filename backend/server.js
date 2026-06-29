@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
+const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -31,6 +32,9 @@ if (!process.env.REVENUECAT_WEBHOOK_SECRET) {
 }
 if (!process.env.REVENUECAT_SECRET_API_KEY) {
   console.warn('WARNING: REVENUECAT_SECRET_API_KEY is not set. /api/auth/verify-premium will trust the client-reported premium status instead of verifying it against RevenueCat — set this before going to production.');
+}
+if (!process.env.GOOGLE_CLIENT_IDS) {
+  console.warn('WARNING: GOOGLE_CLIENT_IDS is not set. /api/auth/google will reject all requests until it is set to a comma-separated list of your Android/iOS/Web Google OAuth client IDs.');
 }
 
 app.use(cors());
@@ -240,6 +244,16 @@ function hashToken(token) {
 const ACCESS_TOKEN_EXPIRY = '1h';
 const REFRESH_TOKEN_EXPIRY_MS = 90 * 24 * 60 * 60 * 1000;
 
+// Accepts ID tokens minted for any of our Android/iOS/Web Google OAuth clients —
+// Google issues a different audience per client ID, so all three must be allowed.
+const GOOGLE_CLIENT_IDS = (process.env.GOOGLE_CLIENT_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+const googleOAuthClient = new OAuth2Client();
+
+async function verifyGoogleIdToken(idToken) {
+  const ticket = await googleOAuthClient.verifyIdToken({ idToken, audience: GOOGLE_CLIENT_IDS });
+  return ticket.getPayload();
+}
+
 // Short-lived JWT access token + opaque, rotating refresh token (stored hashed,
 // like verification/reset codes) — lets the client stay signed in past 1h without
 // re-entering credentials, while a stolen access token only has a 1h window.
@@ -286,6 +300,9 @@ async function initDB() {
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
+  // Google sign-in accounts have no password, so password_hash can no longer be NOT NULL.
+  await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -529,8 +546,62 @@ app.post('/api/auth/login', async (req, res) => {
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+    if (!user || !user.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const { accessToken, refreshToken } = await issueTokens(user.id);
+    res.json({ token: accessToken, refreshToken, user: formatUser(user) });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    if (GOOGLE_CLIENT_IDS.length === 0) return res.status(503).json({ error: 'Google sign-in is not configured' });
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ error: 'idToken required' });
+
+    let payload;
+    try {
+      payload = await verifyGoogleIdToken(idToken);
+    } catch {
+      return res.status(401).json({ error: 'Invalid Google token' });
+    }
+    if (!payload?.email_verified) return res.status(401).json({ error: 'Google account email is not verified' });
+    const email = payload.email.trim().toLowerCase();
+    const googleId = payload.sub;
+
+    let result = await pool.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+    let user = result.rows[0];
+
+    if (!user) {
+      // Link to an existing email/password account rather than creating a duplicate.
+      result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      user = result.rows[0];
+      if (user) {
+        await pool.query('UPDATE users SET google_id = $1, is_verified = TRUE WHERE id = $2', [googleId, user.id]);
+        user.google_id = googleId;
+        user.is_verified = true;
+      }
+    }
+
+    if (!user) {
+      const openId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const insertResult = await pool.query(
+        'INSERT INTO users (open_id, email, name, password_hash, google_id, is_verified) VALUES ($1, $2, $3, NULL, $4, TRUE) RETURNING *',
+        [openId, email, payload.name || null, googleId]
+      );
+      user = insertResult.rows[0];
+      user.referral_code = await assignReferralCode(user.id);
+
+      await pool.query(
+        'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+        [user.id, 'Welcome to Trimio!', 'Start adding your subscriptions to track your spending.', 'info']
+      );
+      await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
+      await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
     }
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
@@ -586,7 +657,7 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
 
     if (newPassword) {
       if (!currentPassword) return res.status(400).json({ error: 'Current password required' });
-      const valid = await bcrypt.compare(currentPassword, user.password_hash);
+      const valid = user.password_hash && (await bcrypt.compare(currentPassword, user.password_hash));
       if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
       const hash = await bcrypt.hash(newPassword, 10);
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.userId]);
