@@ -397,6 +397,7 @@ if [ -f "$GRADLE_PROPS" ]; then
         -e '/^org\.gradle\.workers\.max/d'                       \
         -e '/^org\.gradle\.java\.installations\.auto-download/d' \
         -e '/^kotlin\.daemon\.jvm\.options/d'                    \
+        -e '/^ksp\.useKsp2/d'                                    \
         "$GRADLE_PROPS"
     rm -f "$GRADLE_PROPS.bak"
 
@@ -410,6 +411,10 @@ org.gradle.workers.max=2
 org.gradle.java.installations.auto-download=false
 # Kotlin daemon — keep small to fit within linux_x2's 4GB total RAM
 kotlin.daemon.jvm.options=-Xmx768m -XX:MaxMetaspaceSize=256m
+# KSP2 (the K2-based implementation) avoids the legacy language/api-version
+# compatibility check that fails Room's annotation processing (expo-updates)
+# under Kotlin 2.0 with "-api-version cannot be greater than -language-version".
+ksp.useKsp2=true
 EOF
     echo "      OK   — gradle.properties updated"
 else
