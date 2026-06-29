@@ -403,7 +403,7 @@ if [ -f "$GRADLE_PROPS" ]; then
         -e '/^org\.gradle\.workers\.max/d'                       \
         -e '/^org\.gradle\.java\.installations\.auto-download/d' \
         -e '/^kotlin\.daemon\.jvm\.options/d'                    \
-        -e '/^ksp\.useKsp2/d'                                    \
+        -e '/^ksp\.useKsp2/Id'                                   \
         "$GRADLE_PROPS"
     rm -f "$GRADLE_PROPS.bak"
 
@@ -420,7 +420,8 @@ kotlin.daemon.jvm.options=-Xmx768m -XX:MaxMetaspaceSize=256m
 # KSP2 (the K2-based implementation) avoids the legacy language/api-version
 # compatibility check that fails Room's annotation processing (expo-updates)
 # under Kotlin 2.0 with "-api-version cannot be greater than -language-version".
-ksp.useKsp2=true
+# Property name is case-sensitive: "useKSP2", not "useKsp2".
+ksp.useKSP2=true
 EOF
     echo "      OK   — gradle.properties updated"
 else
