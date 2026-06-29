@@ -822,7 +822,7 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
   try {
-    const { name, billingCycle = 'monthly', category = 'other', trialEndDate } = req.body;
+    const { name, billingCycle = 'monthly', category = 'other', trialEndDate, force } = req.body;
     const price = parseFloat(req.body.price);
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
@@ -834,6 +834,16 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
       if (parseInt(countResult.rows[0].c) >= 5) {
         return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
+      }
+    }
+
+    if (!force) {
+      const dupResult = await pool.query(
+        'SELECT id, name FROM subscriptions WHERE user_id = $1 AND LOWER(TRIM(name)) = LOWER(TRIM($2))',
+        [req.userId, name]
+      );
+      if (dupResult.rows.length > 0) {
+        return res.status(409).json({ error: 'DUPLICATE_SUBSCRIPTION', existingName: dupResult.rows[0].name });
       }
     }
 

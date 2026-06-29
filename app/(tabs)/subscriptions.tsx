@@ -114,12 +114,22 @@ export default function SubscriptionsScreen() {
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/subscriptions.create", data)).data.result.data,
     onSuccess: () => { invalidate(); closeModal(); },
-    onError: (err: any) => {
-      if (err.response?.data?.error === "FREE_LIMIT_REACHED") {
+    onError: (err: any, variables: any) => {
+      const code = err.response?.data?.error;
+      if (code === "FREE_LIMIT_REACHED") {
         closeModal();
         router.push("/upgrade");
+      } else if (code === "DUPLICATE_SUBSCRIPTION") {
+        Alert.alert(
+          "Duplicate subscription",
+          `You already have "${err.response.data.existingName}" in your list. Add it anyway?`,
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Add anyway", onPress: () => createMutation.mutate({ ...variables, force: true }) },
+          ]
+        );
       } else {
-        Alert.alert("Error", err.response?.data?.error || "Could not add subscription.");
+        Alert.alert("Error", code || "Could not add subscription.");
       }
     },
   });
@@ -224,7 +234,7 @@ export default function SubscriptionsScreen() {
         `You already have "${duplicate.name}" in your list. Add it anyway?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Add anyway", onPress: () => submitData(price, trialEndDate) },
+          { text: "Add anyway", onPress: () => submitData(price, trialEndDate, true) },
         ]
       );
       return;
@@ -232,11 +242,11 @@ export default function SubscriptionsScreen() {
     submitData(price, trialEndDate);
   };
 
-  const submitData = (price: number, trialEndDate: string | null) => {
+  const submitData = (price: number, trialEndDate: string | null, force = false) => {
     const data = {
       name: formData.name.trim(), price,
       billingCycle: formData.billingCycle, category: formData.category,
-      trialEndDate,
+      trialEndDate, force,
     };
     if (editingId !== null) { updateMutation.mutate({ id: editingId, ...data }); }
     else { createMutation.mutate(data); }
