@@ -311,28 +311,28 @@ export default function DashboardScreen() {
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly Spend" : "Monthly Spend"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
             </View>
-            <Text style={styles.statValue}>{summary?.activeSubscriptions ?? 0}</Text>
+            <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
             <Text style={styles.statLabel}>Active Subs</Text>
           </View>
           <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
             </View>
-            <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]}>{activeAlertCount}</Text>
+            <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]} numberOfLines={1}>{activeAlertCount}</Text>
             <Text style={styles.statLabel}>Alerts</Text>
           </TouchableOpacity>
         </View>
@@ -441,6 +441,7 @@ function makeStyles(c: AppColors) {
     heroCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 20, marginBottom: 12,
       borderWidth: 1, borderColor: c.border,
+      shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
     },
     heroIcon: {
       width: 44, height: 44, borderRadius: 10, backgroundColor: c.primaryLight,
@@ -452,12 +453,13 @@ function makeStyles(c: AppColors) {
     statCard: {
       flex: 1, backgroundColor: c.card, borderRadius: 12,
       padding: 14, borderWidth: 1, borderColor: c.border,
+      shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2,
     },
     statIcon: {
       width: 34, height: 34, borderRadius: 8, backgroundColor: c.primaryLight,
       justifyContent: "center", alignItems: "center", marginBottom: 8,
     },
-    statValue: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 4 },
+    statValue: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 4 },
     statLabel: { fontSize: 11, color: c.textSecondary },
     sectionTitle: { fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12 },
     actionButton: {
