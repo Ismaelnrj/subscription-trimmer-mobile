@@ -33,8 +33,9 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const res = await apiClient.post("/auth/register", { name, email: email.trim().toLowerCase(), password });
-      const { token, user } = res.data;
+      const { token, refreshToken, user } = res.data;
       await SecureStore.setItemAsync("auth_token", token);
+      await SecureStore.setItemAsync("refresh_token", refreshToken);
       setUser(user);
       router.replace("/(tabs)");
     } catch (err: any) {

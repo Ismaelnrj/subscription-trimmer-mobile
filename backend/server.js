@@ -237,6 +237,23 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+const ACCESS_TOKEN_EXPIRY = '1h';
+const REFRESH_TOKEN_EXPIRY_MS = 90 * 24 * 60 * 60 * 1000;
+
+// Short-lived JWT access token + opaque, rotating refresh token (stored hashed,
+// like verification/reset codes) — lets the client stay signed in past 1h without
+// re-entering credentials, while a stolen access token only has a 1h window.
+async function issueTokens(userId) {
+  const accessToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  const refreshToken = crypto.randomBytes(40).toString('hex');
+  const expires = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
+  await pool.query(
+    'UPDATE users SET refresh_token_hash = $1, refresh_token_expires = $2 WHERE id = $3',
+    [hashToken(refreshToken), expires, userId]
+  );
+  return { accessToken, refreshToken };
+}
+
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -267,6 +284,8 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS subscriptions (
       id SERIAL PRIMARY KEY,
@@ -481,7 +500,6 @@ app.post('/api/auth/register', async (req, res) => {
       [openId, email, name || null, passwordHash]
     );
     const user = result.rows[0];
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
     user.referral_code = await assignReferralCode(user.id);
 
     await pool.query(
@@ -496,7 +514,8 @@ app.post('/api/auth/register', async (req, res) => {
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     await sendVerificationEmail(email, code).catch(e => console.error('Email send failed:', e));
 
-    res.json({ token, user: formatUser(user) });
+    const { accessToken, refreshToken } = await issueTokens(user.id);
+    res.json({ token: accessToken, refreshToken, user: formatUser(user) });
   } catch (err) {
     handleError(err, res);
   }
@@ -514,8 +533,35 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: formatUser(user) });
+    const { accessToken, refreshToken } = await issueTokens(user.id);
+    res.json({ token: accessToken, refreshToken, user: formatUser(user) });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+
+    const result = await pool.query('SELECT * FROM users WHERE refresh_token_hash = $1', [hashToken(refreshToken)]);
+    const user = result.rows[0];
+    if (!user || !user.refresh_token_expires || new Date(user.refresh_token_expires) < new Date()) {
+      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    }
+
+    const { accessToken, refreshToken: newRefreshToken } = await issueTokens(user.id);
+    res.json({ token: accessToken, refreshToken: newRefreshToken });
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.post('/api/auth/logout', authMiddleware, async (req, res) => {
+  try {
+    await pool.query('UPDATE users SET refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $1', [req.userId]);
+    res.json({ success: true });
   } catch (err) {
     handleError(err, res);
   }

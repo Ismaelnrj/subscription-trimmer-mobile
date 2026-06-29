@@ -40,7 +40,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
+      const apiClient = (await import("./api")).default;
+      await apiClient.post("/auth/logout").catch(() => {});
       await SecureStore.deleteItemAsync("auth_token");
+      await SecureStore.deleteItemAsync("refresh_token");
       set({
         user: null,
         isAuthenticated: false,
@@ -60,6 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch {
       await SecureStore.deleteItemAsync("auth_token");
+      await SecureStore.deleteItemAsync("refresh_token");
       set({ user: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
