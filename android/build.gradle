@@ -91,3 +91,16 @@ allprojects {
         }
     }
 }
+
+// KSP tasks (e.g. Room's annotation processor used by expo-updates) don't
+// extend KotlinCompile, so the hook above never reaches them — they fall back
+// to a default languageVersion that can lag behind the apiVersion Gradle
+// infers from the Kotlin 2.0.21 toolchain, causing "api-version cannot be
+// greater than language-version". Match by task name so we don't need a
+// compile-time reference to the KSP plugin's task class.
+allprojects {
+    tasks.matching { it.name.startsWith("ksp") && it.name.endsWith("Kotlin") }.configureEach {
+        if (it.hasProperty("languageVersion")) it.languageVersion.set("2.0")
+        if (it.hasProperty("apiVersion")) it.apiVersion.set("2.0")
+    }
+}

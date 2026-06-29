@@ -195,9 +195,22 @@ if 'languageVersion' not in content:
         "        }\n"
         "    }\n"
         "}\n"
+        "\n"
+        "// KSP tasks (Room's annotation processor, used by expo-updates) don't\n"
+        "// extend KotlinCompile, so the hook above never reaches them — they fall\n"
+        "// back to a default languageVersion that can lag behind the apiVersion\n"
+        "// Gradle infers from the Kotlin 2.0.21 toolchain, causing\n"
+        "// \"api-version cannot be greater than language-version\". Match by task\n"
+        "// name so we don't need a compile-time reference to the KSP task class.\n"
+        "allprojects {\n"
+        "    tasks.matching { it.name.startsWith(\"ksp\") && it.name.endsWith(\"Kotlin\") }.configureEach {\n"
+        "        if (it.hasProperty(\"languageVersion\")) it.languageVersion.set(\"2.0\")\n"
+        "        if (it.hasProperty(\"apiVersion\")) it.apiVersion.set(\"2.0\")\n"
+        "    }\n"
+        "}\n"
     )
     content += hook
-    print("      OK   — Kotlin languageVersion 2.0 hook added to allprojects")
+    print("      OK   — Kotlin languageVersion 2.0 hook + KSP task fix added to allprojects")
     modified = True
 else:
     print("      SKIP — languageVersion already set")
@@ -463,6 +476,7 @@ echo "    + root-level ext {}  (compileSdkVersion on rootProject.ext)"
 echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 35 } }"
 echo "    + Kotlin plugin pinned to 2.0.21 (was unversioned, resolved via BOM)"
 echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 2.0 } }"
+echo "    + allprojects { tasks ksp*Kotlin { languageVersion = apiVersion = 2.0 } }"
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
