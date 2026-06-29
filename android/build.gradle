@@ -8,7 +8,10 @@ buildscript {
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '34')
         kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.23'
 
-        ndkVersion = "26.1.10909125"
+        // NDK r27+ builds native libraries 16 KB-page-aligned by default, and AGP
+        // 8.5.1+ auto-aligns uncompressed native libs at packaging time — both are
+        // required for Google Play's 16 KB memory page size requirement.
+        ndkVersion = "27.1.12297006"
     }
     // Force Kotlin 1.9.23 so the React Native BOM cannot downgrade it to 1.8.
     configurations.all {
@@ -22,7 +25,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle')
+        classpath('com.android.tools.build:gradle:8.6.0')
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23')
         classpath('com.google.gms:google-services:4.4.4')
@@ -40,7 +43,7 @@ ext {
     minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '23')
     buildToolsVersion = findProperty('android.buildToolsVersion') ?: '34.0.0'
     kotlinVersion     = findProperty('android.kotlinVersion')     ?: '1.9.23'
-    ndkVersion        = "26.1.10909125"
+    ndkVersion        = "27.1.12297006"
 }
 
 apply plugin: "com.facebook.react.rootproject"

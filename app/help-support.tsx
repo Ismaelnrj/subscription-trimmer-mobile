@@ -51,11 +51,11 @@ export default function HelpSupportScreen() {
                 <Text style={styles.contactValue}>Trimio@subtrimio.com</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL("https://trimio-privacyp.netlify.app")}>
+            <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL("https://subscription-trimmer-mobile-production.up.railway.app/privacy-policy")}>
               <MaterialCommunityIcons name="shield-outline" size={22} color={c.primary} />
               <View>
                 <Text style={styles.contactLabel}>Privacy Policy</Text>
-                <Text style={styles.contactValue}>trimio-privacyp.netlify.app</Text>
+                <Text style={styles.contactValue}>View our privacy policy</Text>
               </View>
             </TouchableOpacity>
           </View>
