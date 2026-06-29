@@ -1302,7 +1302,7 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
       WHERE is_paid = TRUE
         AND is_verified = TRUE
         AND cancelled_at IS NOT NULL
-        AND cancelled_at <= NOW() - INTERVAL '1 day'
+        AND cancelled_at <= NOW() - INTERVAL '4 days'
         AND win_back_sent_at IS NULL
     `);
 
