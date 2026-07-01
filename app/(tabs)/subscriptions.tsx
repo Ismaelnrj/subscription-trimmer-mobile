@@ -15,10 +15,12 @@ import { useAuthStore } from "../../lib/auth-store";
 import { normaliseDateInput } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
+import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
+import { sendLocalNotification } from "../../lib/notifications";
+import * as SecureStore from "expo-secure-store";
 
 const FREE_LIMIT = 5;
 const BILLING_CYCLES = ["monthly", "yearly", "weekly"];
-const DEFAULT_CATEGORIES = ["entertainment", "streaming", "software", "health", "fitness", "food", "education", "other"];
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
@@ -64,7 +66,31 @@ export default function SubscriptionsScreen() {
 
   const { data: subscriptions = [], refetch } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: async () => {
+      const data = (await apiClient.get("/trpc/subscriptions.list")).data.result.data;
+      // Fire a local push for any subscription whose price increased in the last 30 days.
+      // We only want to notify once per change, so we key by subscription id + changedAt.
+      const notifiedKey = "price_increase_notified";
+      const raw = await SecureStore.getItemAsync(notifiedKey).catch(() => null);
+      const seen: string[] = raw ? JSON.parse(raw) : [];
+      const newSeen = [...seen];
+      for (const sub of data) {
+        if (!sub.priceIncrease) continue;
+        const key = `${sub.id}:${sub.priceIncrease.changedAt}`;
+        if (!seen.includes(key)) {
+          const diff = (sub.priceIncrease.to - sub.priceIncrease.from).toFixed(2);
+          sendLocalNotification(
+            `${sub.name} price went up by $${diff}`,
+            `Your subscription increased from $${sub.priceIncrease.from.toFixed(2)} to $${sub.priceIncrease.to.toFixed(2)} per ${sub.billingCycle}.`
+          );
+          newSeen.push(key);
+        }
+      }
+      if (newSeen.length !== seen.length) {
+        SecureStore.setItemAsync(notifiedKey, JSON.stringify(newSeen.slice(-50))).catch(() => {});
+      }
+      return data;
+    },
   });
 
   const { data: settings } = useQuery({
@@ -501,7 +527,7 @@ export default function SubscriptionsScreen() {
               const trialDaysLeft = trialDate
                 ? Math.ceil((trialDate.getTime() - Date.now()) / 86400000)
                 : null;
-              const isCustomCat = !DEFAULT_CATEGORIES.includes(sub.category);
+              const isCustomCat = !(DEFAULT_CATEGORIES as readonly string[]).includes(sub.category);
               return (
                 <Swipeable
                   key={sub.id}
@@ -542,6 +568,14 @@ export default function SubscriptionsScreen() {
                         <View style={styles.trialBadge}>
                           <Text style={styles.trialBadgeText}>
                             Trial ends {trialDaysLeft === 0 ? "today" : `in ${trialDaysLeft}d`}
+                          </Text>
+                        </View>
+                      )}
+                      {sub.priceIncrease && (
+                        <View style={styles.priceIncreaseBadge}>
+                          <MaterialCommunityIcons name="trending-up" size={10} color="#fff" />
+                          <Text style={styles.priceIncreaseBadgeText}>
+                            Price up +${(sub.priceIncrease.to - sub.priceIncrease.from).toFixed(2)}
                           </Text>
                         </View>
                       )}
@@ -640,7 +674,14 @@ export default function SubscriptionsScreen() {
                 placeholder="Subscription name (e.g. Netflix)"
                 placeholderTextColor={c.placeholder}
                 value={formData.name}
-                onChangeText={(t) => setFormData({ ...formData, name: t })}
+                onChangeText={(t) => {
+                  const guessed = guessCategory(t);
+                  setFormData((prev) => ({
+                    ...prev,
+                    name: t,
+                    category: prev.category === "other" && guessed !== "other" ? guessed : prev.category,
+                  }));
+                }}
               />
               <TextInput
                 style={styles.input}
@@ -698,7 +739,7 @@ export default function SubscriptionsScreen() {
               </Text>
               <View style={styles.chipRow}>
                 {allCategories.map((cat) => {
-                  const isCustom = !DEFAULT_CATEGORIES.includes(cat);
+                  const isCustom = !(DEFAULT_CATEGORIES as readonly string[]).includes(cat);
                   const isActive = formData.category === cat;
                   return (
                     <TouchableOpacity
@@ -839,6 +880,12 @@ function makeStyles(c: AppColors) {
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
     pausedBadgeText: { fontSize: 10, color: c.textSecondary, fontWeight: "600" },
+    priceIncreaseBadge: {
+      alignSelf: "flex-start", backgroundColor: c.danger, borderRadius: 4,
+      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
+      flexDirection: "row", alignItems: "center", gap: 3,
+    },
+    priceIncreaseBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
     actionButtons: { flexDirection: "row", gap: 8 },
     iconButton: {
       width: 36, height: 36, borderRadius: 6, backgroundColor: c.border,

@@ -8,10 +8,12 @@ import { useFmt } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
+import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
 
 export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
   category: string; nextBillingDate: string; trialEndDate?: string | null;
+  priceIncrease?: { from: number; to: number; changedAt: string } | null;
 };
 export type Tip = {
   id: string; icon: string; color: string;
@@ -19,8 +21,6 @@ export type Tip = {
   savingsHint?: string;
 };
 
-const STREAMING_KEYWORDS = ["netflix", "disney", "hulu", "hbo", "max", "apple tv", "amazon prime", "prime video", "paramount", "peacock", "crunchyroll", "mubi", "discovery"];
-const FITNESS_KEYWORDS = ["gym", "peloton", "fitbit", "myfitnesspal", "strava", "nike", "headspace", "calm", "noom", "beachbody", "whoop", "planet fitness"];
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
@@ -81,6 +81,17 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
       title: `${fitnessSubs.length} health & fitness subscriptions`,
       detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmtC(fitTotal)}/mo in this category.`,
       priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo` });
+  }
+
+  // Price increase alerts
+  for (const s of subs) {
+    if (!s.priceIncrease) continue;
+    const diff = s.priceIncrease.to - s.priceIncrease.from;
+    const annualExtra = toMonthly(diff, s.billingCycle) * 12;
+    tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#DC2626",
+      title: `${s.name} quietly raised its price`,
+      detail: `It went from ${fmtC(s.priceIncrease.from)} to ${fmtC(s.priceIncrease.to)} per ${s.billingCycle}. That's an extra ${fmtC(annualExtra)} per year you may not have noticed.`,
+      priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo` });
   }
 
   // Trial alerts

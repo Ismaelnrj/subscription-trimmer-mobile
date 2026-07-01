@@ -373,6 +373,16 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_end_date TIMESTAMPTZ`);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS price_history (
+      id SERIAL PRIMARY KEY,
+      subscription_id INTEGER NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      old_price NUMERIC NOT NULL,
+      new_price NUMERIC NOT NULL,
+      changed_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS notifications (
       id SERIAL PRIMARY KEY,
       user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -986,10 +996,32 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
 app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY created_at DESC',
+      `SELECT s.*,
+         ph.new_price  AS ph_new_price,
+         ph.old_price  AS ph_old_price,
+         ph.changed_at AS ph_changed_at
+       FROM subscriptions s
+       LEFT JOIN LATERAL (
+         SELECT new_price, old_price, changed_at
+         FROM price_history
+         WHERE subscription_id = s.id
+           AND new_price > old_price
+           AND changed_at >= NOW() - INTERVAL '30 days'
+         ORDER BY changed_at DESC
+         LIMIT 1
+       ) ph ON TRUE
+       WHERE s.user_id = $1
+       ORDER BY s.created_at DESC`,
       [req.userId]
     );
-    res.json(trpc(result.rows.map(formatSub)));
+    res.json(trpc(result.rows.map(r => ({
+      ...formatSub(r),
+      priceIncrease: r.ph_changed_at ? {
+        from: parseFloat(r.ph_old_price),
+        to: parseFloat(r.ph_new_price),
+        changedAt: r.ph_changed_at,
+      } : null,
+    }))));
   } catch (err) {
     handleError(err, res);
   }
@@ -1062,9 +1094,46 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
       [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id, req.userId]
     );
+
+    const oldPrice = parseFloat(existing.price);
+    if (price !== oldPrice) {
+      await pool.query(
+        'INSERT INTO price_history (subscription_id, user_id, old_price, new_price) VALUES ($1, $2, $3, $4)',
+        [id, req.userId, oldPrice, price]
+      );
+      if (price > oldPrice) {
+        const diff = (price - oldPrice).toFixed(2);
+        await pool.query(
+          `INSERT INTO notifications (user_id, title, message, type)
+           VALUES ($1, $2, $3, 'price_increase')`,
+          [req.userId, `${name} increased by $${diff}`, `Your ${name} subscription went from $${oldPrice.toFixed(2)} to $${price.toFixed(2)} per ${billingCycle}.`]
+        );
+      }
+    }
+
     const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
     syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.get('/api/trpc/subscriptions.priceHistory', authMiddleware, async (req, res) => {
+  try {
+    const { subscriptionId } = req.query;
+    if (!subscriptionId) return res.status(400).json({ error: 'subscriptionId required' });
+    const result = await pool.query(
+      `SELECT old_price, new_price, changed_at FROM price_history
+       WHERE subscription_id = $1 AND user_id = $2
+       ORDER BY changed_at DESC LIMIT 20`,
+      [subscriptionId, req.userId]
+    );
+    res.json(trpc(result.rows.map(r => ({
+      oldPrice: parseFloat(r.old_price),
+      newPrice: parseFloat(r.new_price),
+      changedAt: r.changed_at,
+    }))));
   } catch (err) {
     handleError(err, res);
   }
