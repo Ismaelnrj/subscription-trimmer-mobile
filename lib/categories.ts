@@ -6,6 +6,10 @@ export const DEFAULT_CATEGORIES = [
   "fitness",
   "food",
   "education",
+  "utilities",
+  "insurance",
+  "memberships",
+  "finance",
   "other",
 ] as const;
 
@@ -34,7 +38,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     "canva", "lastpass", "1password", "bitwarden", "dashlane", "nordvpn",
     "expressvpn", "surfshark", "mullvad", "tailscale", "cloudflare",
     "icloud", "google one", "dropbox", "onedrive", "backblaze", "box",
-    "pcloud", "mega", "notion", "monday", "asana", "clickup", "trello",
+    "pcloud", "mega", "monday", "asana", "clickup", "trello",
     "jira", "confluence", "basecamp", "harvest", "toggl", "freshbooks",
     "quickbooks", "xero", "shopify", "squarespace", "wix", "webflow",
     "mailchimp", "convertkit", "substack", "ghost",
@@ -48,9 +52,8 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   ],
   health: [
     "cerebral", "teladoc", "one medical", "weight watchers", "ww",
-    "hims", "hers", "roman", "noom health", "babylon", "life", "medical",
-    "therapy", "betterhelp", "talkspace", "mental", "dental", "vision",
-    "health insurance", "medic",
+    "hims", "hers", "roman", "noom health", "babylon", "betterhelp",
+    "talkspace", "mental health", "medic",
   ],
   food: [
     "hellofresh", "blue apron", "instacart", "doordash", "ubereats",
@@ -62,7 +65,39 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     "duolingo", "masterclass", "skillshare", "coursera", "udemy",
     "linkedin learning", "brilliant", "babbel", "rosetta stone",
     "pluralsight", "codecademy", "treehouse", "datacamp", "khan",
-    "chegg", "bartleby", "quizlet", "scribd", "readwise", "blinkist",
+    "chegg", "bartleby", "quizlet", "readwise", "blinkist",
+  ],
+  utilities: [
+    "electricity", "electric", "gas bill", "water bill", "internet",
+    "broadband", "fiber", "cable", "phone bill", "mobile plan",
+    "at&t", "att", "verizon", "t-mobile", "tmobile", "sprint",
+    "comcast", "xfinity", "spectrum", "cox", "frontier", "optimum",
+    "centurylink", "lumen", "utility", "power bill", "energy bill",
+    "sewage", "trash", "waste management", "heating", "cooling",
+  ],
+  insurance: [
+    "insurance", "geico", "allstate", "state farm", "progressive",
+    "liberty mutual", "nationwide", "usaa", "aaa", "farmers", "travelers",
+    "aetna", "cigna", "humana", "anthem", "blue cross", "bluecross",
+    "united health", "unitedhealthcare", "oscar health", "oscar",
+    "lemonade", "hippo", "toggle", "metlife", "sunlife", "zurich",
+    "renters policy", "home policy", "auto policy", "car policy",
+    "life policy", "pet insurance", "dental insurance", "vision insurance",
+    "dental plan", "vision plan", "health plan",
+  ],
+  memberships: [
+    "costco", "sam's club", "sams club", "bj's wholesale", "bjs",
+    "linkedin premium", "linkedin",
+    "wework", "regus", "coworking", "co-working space",
+    "gym membership", "club membership",
+    "amazon business", "prime business",
+    "professional association", "trade association",
+  ],
+  finance: [
+    "loan payment", "mortgage", "car payment", "auto loan", "student loan",
+    "personal loan", "installment", "financing", "credit card fee",
+    "annual fee", "bank fee", "maintenance fee", "account fee",
+    "service charge", "interest payment", "line of credit",
   ],
 };
 

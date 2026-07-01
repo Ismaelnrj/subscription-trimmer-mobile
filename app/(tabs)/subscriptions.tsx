@@ -549,10 +549,10 @@ export default function SubscriptionsScreen() {
                 <MaterialCommunityIcons name="receipt" size={52} color={c.border} style={{ marginBottom: 12 }} />
                 <Text style={styles.emptyStateTitle}>What are you paying for?</Text>
                 <Text style={styles.emptyStateSubtext}>
-                  Add your first subscription to start tracking your monthly spend.
+                  Add subscriptions, utilities, insurance, or any recurring expense to track your monthly spend.
                 </Text>
                 <TouchableOpacity style={styles.emptyStateButton} onPress={openAdd}>
-                  <Text style={styles.emptyStateButtonText}>+ Add Subscription</Text>
+                  <Text style={styles.emptyStateButtonText}>+ Add Expense</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.examplesButton}
@@ -673,7 +673,7 @@ export default function SubscriptionsScreen() {
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
-                {editingId ? "Edit Subscription" : "Add Subscription"}
+                {editingId ? "Edit Expense" : "Add Expense"}
               </Text>
 
               {!editingId && (
@@ -860,7 +860,7 @@ export default function SubscriptionsScreen() {
                 {isPending
                   ? <ActivityIndicator color="#FFFFFF" />
                   : <Text style={styles.submitButtonText}>
-                      {editingId ? "Save Changes" : "Add Subscription"}
+                      {editingId ? "Save Changes" : "Add Expense"}
                     </Text>
                 }
               </TouchableOpacity>

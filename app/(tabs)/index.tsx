@@ -189,7 +189,7 @@ export default function DashboardScreen() {
             <MaterialCommunityIcons name="target" size={20} color={c.primary} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.estimateBannerText}>
-                You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} subscription
+                You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} recurring expense
                 {estimateBanner.actual !== 1 ? "s" : ""}.
               </Text>
             </View>
@@ -326,7 +326,7 @@ export default function DashboardScreen() {
               <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
-            <Text style={styles.statLabel}>Active Subs</Text>
+            <Text style={styles.statLabel}>Active</Text>
           </View>
           <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
             <View style={styles.statIcon}>
@@ -339,7 +339,7 @@ export default function DashboardScreen() {
 
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-          <Text style={styles.actionButtonText}>+ Add Subscription</Text>
+          <Text style={styles.actionButtonText}>+ Add Expense</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButtonOutline}
@@ -348,11 +348,11 @@ export default function DashboardScreen() {
           <Text style={styles.actionButtonOutlineText}>View Recommendations</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Subscriptions</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Expenses</Text>
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyStateText}>Your subscriptions are costing you more than you think.</Text>
+            <Text style={styles.emptyStateText}>Your recurring expenses are costing you more than you think.</Text>
           </View>
         ) : (
           recentSubs.map((sub: any) => {
