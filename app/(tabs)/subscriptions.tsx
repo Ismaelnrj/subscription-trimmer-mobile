@@ -326,6 +326,50 @@ export default function SubscriptionsScreen() {
     }
   };
 
+  const exportCalendar = async () => {
+    if (!isPremium) { router.push("/upgrade"); return; }
+    const subsWithDates = subscriptions.filter((s: any) => s.nextBillingDate);
+    if (subsWithDates.length === 0) {
+      Alert.alert("No billing dates", "None of your subscriptions have billing dates yet.");
+      return;
+    }
+
+    const fmtIcsDate = (iso: string) => iso.slice(0, 10).replace(/-/g, "");
+    const nextDay = (iso: string) => {
+      const d = new Date(iso);
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().slice(0, 10).replace(/-/g, "");
+    };
+
+    const events = subsWithDates.map((s: any) => [
+      "BEGIN:VEVENT",
+      `UID:trimio-${s.id}-${fmtIcsDate(s.nextBillingDate)}@trimio.app`,
+      `DTSTART;VALUE=DATE:${fmtIcsDate(s.nextBillingDate)}`,
+      `DTEND;VALUE=DATE:${nextDay(s.nextBillingDate)}`,
+      `SUMMARY:${s.name} billing`,
+      `DESCRIPTION:${fmtC(s.price)} ${s.billingCycle}`,
+      "END:VEVENT",
+    ].join("\r\n")).join("\r\n");
+
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Trimio//Subscription Tracker//EN",
+      "CALSCALE:GREGORIAN",
+      events,
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    try {
+      const path = `${FileSystem.cacheDirectory}trimio-billing.ics`;
+      await FileSystem.writeAsStringAsync(path, ics, { encoding: FileSystem.EncodingType.UTF8 });
+      const shareUri = Platform.OS === "android" ? await FileSystem.getContentUriAsync(path) : path;
+      await Share.share({ url: shareUri, title: "Trimio Calendar Export" });
+    } catch {
+      await Share.share({ message: ics, title: "Trimio Calendar Export" });
+    }
+  };
+
   const exportReport = async () => {
     if (!isPremium) { router.push("/upgrade"); return; }
     if (subscriptions.length === 0) { Alert.alert("No data", "Add some subscriptions first."); return; }
@@ -417,6 +461,16 @@ export default function SubscriptionsScreen() {
             >
               <MaterialCommunityIcons
                 name={isPremium ? "file-chart" : "lock"}
+                size={20}
+                color={isPremium ? "#FFFFFF" : c.textMuted}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
+              onPress={exportCalendar}
+            >
+              <MaterialCommunityIcons
+                name={isPremium ? "calendar-export" : "lock"}
                 size={20}
                 color={isPremium ? "#FFFFFF" : c.textMuted}
               />
@@ -580,6 +634,13 @@ export default function SubscriptionsScreen() {
                         </View>
                       )}
                     </View>
+                    <TouchableOpacity
+                      style={styles.cancelGuideLink}
+                      onPress={() => router.push(`/cancel-guide?name=${encodeURIComponent(sub.name)}`)}
+                    >
+                      <MaterialCommunityIcons name="format-list-numbered" size={11} color={c.textMuted} />
+                      <Text style={styles.cancelGuideLinkText}>How to cancel</Text>
+                    </TouchableOpacity>
                   </View>
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
@@ -997,5 +1058,10 @@ function makeStyles(c: AppColors) {
       paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,
     },
     examplesButtonText: { color: c.textSecondary, fontSize: 13 },
+    cancelGuideLink: {
+      flexDirection: "row", alignItems: "center", gap: 4,
+      marginTop: 8, alignSelf: "flex-start",
+    },
+    cancelGuideLinkText: { fontSize: 11, color: c.textMuted, fontWeight: "500" },
   });
 }
