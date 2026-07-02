@@ -58,6 +58,7 @@ export default function SubscriptionsScreen() {
   const [emailText, setEmailText] = useState("");
   const [loadingExamples, setLoadingExamples] = useState(false);
   const [savingsCard, setSavingsCard] = useState<{ name: string; yearly: number } | null>(null);
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
@@ -66,23 +67,42 @@ export default function SubscriptionsScreen() {
     if (from !== "renewal_reminder") return;
     (async () => {
       const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-      const state: { lastShown: number; count: number } = raw
+      const state: { lastShown: number; count: number; happy?: boolean } = raw
         ? JSON.parse(raw)
         : { lastShown: 0, count: 0 };
 
+      if (state.happy) return;
       if (state.count >= REVIEW_MAX_ATTEMPTS) return;
       if (state.lastShown && Date.now() - state.lastShown < REVIEW_COOLDOWN_MS) return;
 
       await new Promise((r) => setTimeout(r, 8000));
-      if (await StoreReview.hasAction()) {
-        await StoreReview.requestReview();
-        await SecureStore.setItemAsync(
-          REVIEW_KEY,
-          JSON.stringify({ lastShown: Date.now(), count: state.count + 1 })
-        ).catch(() => {});
-      }
+      setShowReviewPrompt(true);
     })();
   }, [from]);
+
+  const handleReviewHappy = async () => {
+    setShowReviewPrompt(false);
+    const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
+    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
+    await SecureStore.setItemAsync(
+      REVIEW_KEY,
+      JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: true })
+    ).catch(() => {});
+    if (await StoreReview.hasAction()) {
+      await StoreReview.requestReview();
+    }
+  };
+
+  const handleReviewUnhappy = async () => {
+    setShowReviewPrompt(false);
+    const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
+    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
+    await SecureStore.setItemAsync(
+      REVIEW_KEY,
+      JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: false })
+    ).catch(() => {});
+    Linking.openURL("mailto:support@trimio.app?subject=Trimio%20Feedback").catch(() => {});
+  };
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -695,6 +715,27 @@ export default function SubscriptionsScreen() {
         </View>
       </ScrollView>
 
+      <Modal visible={showReviewPrompt} animationType="fade" transparent onRequestClose={() => setShowReviewPrompt(false)}>
+        <View style={styles.reviewOverlay}>
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewEmoji}>⭐</Text>
+            <Text style={styles.reviewTitle}>Are you enjoying Trimio?</Text>
+            <Text style={styles.reviewSubtitle}>
+              Your feedback helps us keep improving the app.
+            </Text>
+            <TouchableOpacity style={styles.reviewHappyButton} onPress={handleReviewHappy}>
+              <Text style={styles.reviewHappyText}>❤️  Yes, I love it!</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.reviewUnhappyButton} onPress={handleReviewUnhappy}>
+              <Text style={styles.reviewUnhappyText}>Not really — send feedback</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowReviewPrompt(false)} style={{ marginTop: 12 }}>
+              <Text style={styles.reviewDismissText}>Maybe later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showModal} animationType="slide" transparent onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <ScrollView keyboardShouldPersistTaps="handled">
@@ -1090,5 +1131,37 @@ function makeStyles(c: AppColors) {
       marginTop: 8, alignSelf: "flex-start",
     },
     cancelGuideLinkText: { fontSize: 11, color: c.textMuted, fontWeight: "500" },
+    reviewOverlay: {
+      flex: 1, backgroundColor: c.overlay,
+      justifyContent: "center", alignItems: "center", padding: 32,
+    },
+    reviewCard: {
+      backgroundColor: c.card, borderRadius: 20, padding: 28,
+      alignItems: "center", width: "100%",
+      shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 20,
+      shadowOffset: { width: 0, height: 8 }, elevation: 10,
+      borderWidth: 1, borderColor: c.border,
+    },
+    reviewEmoji: { fontSize: 40, marginBottom: 12 },
+    reviewTitle: {
+      fontSize: 20, fontWeight: "700", color: c.text,
+      textAlign: "center", marginBottom: 8,
+    },
+    reviewSubtitle: {
+      fontSize: 14, color: c.textSecondary, textAlign: "center",
+      lineHeight: 20, marginBottom: 24,
+    },
+    reviewHappyButton: {
+      width: "100%", backgroundColor: c.primary, borderRadius: 12,
+      paddingVertical: 14, alignItems: "center", marginBottom: 10,
+    },
+    reviewHappyText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    reviewUnhappyButton: {
+      width: "100%", backgroundColor: c.card, borderRadius: 12,
+      paddingVertical: 14, alignItems: "center",
+      borderWidth: 1, borderColor: c.border,
+    },
+    reviewUnhappyText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
+    reviewDismissText: { fontSize: 13, color: c.textMuted },
   });
 }
