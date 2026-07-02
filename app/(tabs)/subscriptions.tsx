@@ -101,7 +101,7 @@ export default function SubscriptionsScreen() {
       REVIEW_KEY,
       JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: false })
     ).catch(() => {});
-    Linking.openURL("mailto:support@trimio.app?subject=Trimio%20Feedback").catch(() => {});
+    Linking.openURL("mailto:Trimio@subtrimio.com?subject=Trimio%20Feedback").catch(() => {});
   };
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
