@@ -30,7 +30,9 @@ function toMonthly(price: number, cycle: string) {
 
 const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "", isFreeTrial: false };
 
-const REVIEW_PROMPTED_KEY = "review_prompted_renewal";
+const REVIEW_KEY = "review_renewal_state";
+const REVIEW_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+const REVIEW_MAX_ATTEMPTS = 3;
 
 export default function SubscriptionsScreen() {
   const router = useRouter();
@@ -63,12 +65,21 @@ export default function SubscriptionsScreen() {
   useEffect(() => {
     if (from !== "renewal_reminder") return;
     (async () => {
-      const already = await SecureStore.getItemAsync(REVIEW_PROMPTED_KEY).catch(() => null);
-      if (already) return;
-      await new Promise((r) => setTimeout(r, 2000));
+      const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
+      const state: { lastShown: number; count: number } = raw
+        ? JSON.parse(raw)
+        : { lastShown: 0, count: 0 };
+
+      if (state.count >= REVIEW_MAX_ATTEMPTS) return;
+      if (state.lastShown && Date.now() - state.lastShown < REVIEW_COOLDOWN_MS) return;
+
+      await new Promise((r) => setTimeout(r, 8000));
       if (await StoreReview.hasAction()) {
         await StoreReview.requestReview();
-        await SecureStore.setItemAsync(REVIEW_PROMPTED_KEY, "true").catch(() => {});
+        await SecureStore.setItemAsync(
+          REVIEW_KEY,
+          JSON.stringify({ lastShown: Date.now(), count: state.count + 1 })
+        ).catch(() => {});
       }
     })();
   }, [from]);
