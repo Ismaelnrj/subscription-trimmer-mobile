@@ -9,7 +9,6 @@ export const DEFAULT_CATEGORIES = [
   "utilities",
   "insurance",
   "memberships",
-  "finance",
   "other",
 ] as const;
 
@@ -93,12 +92,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     "amazon business", "prime business",
     "professional association", "trade association",
   ],
-  finance: [
-    "loan payment", "mortgage", "car payment", "auto loan", "student loan",
-    "personal loan", "installment", "financing", "credit card fee",
-    "annual fee", "bank fee", "maintenance fee", "account fee",
-    "service charge", "interest payment", "line of credit",
-  ],
+
 };
 
 export function guessCategory(name: string): string {
