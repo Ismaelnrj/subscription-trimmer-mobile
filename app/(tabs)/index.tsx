@@ -303,7 +303,7 @@ export default function DashboardScreen() {
             <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
           </View>
           <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-          <Text style={styles.heroLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
+          <Text style={styles.heroLabel}>{viewMode === "monthly" ? "Total this month" : "Total this year"}</Text>
         </View>
 
         <View style={styles.statsGrid}>
@@ -312,14 +312,14 @@ export default function DashboardScreen() {
               <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly Spend" : "Yearly Spend"}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly" : "Yearly"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly Spend" : "Monthly Spend"}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly" : "Monthly"}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
