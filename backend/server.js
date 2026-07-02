@@ -1546,7 +1546,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
             <tbody>${rows}</tbody>
           </table>
           <div style="text-align:center;margin-top:24px">
-            <a href="trimio://subscriptions" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
+            <a href="trimio://subscriptions?from=renewal_reminder" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
           </div>
           <p style="color:#9ca3af;font-size:12px;margin-top:20px">
             You're receiving this because you enabled email reminders in Trimio.

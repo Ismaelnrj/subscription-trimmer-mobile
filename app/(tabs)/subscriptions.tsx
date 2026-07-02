@@ -5,7 +5,7 @@ import {
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import * as StoreReview from "expo-store-review";
 import apiClient from "../../lib/api";
@@ -30,8 +30,11 @@ function toMonthly(price: number, cycle: string) {
 
 const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "", isFreeTrial: false };
 
+const REVIEW_PROMPTED_KEY = "review_prompted_renewal";
+
 export default function SubscriptionsScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
@@ -56,6 +59,19 @@ export default function SubscriptionsScreen() {
 
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
+
+  useEffect(() => {
+    if (from !== "renewal_reminder") return;
+    (async () => {
+      const already = await SecureStore.getItemAsync(REVIEW_PROMPTED_KEY).catch(() => null);
+      if (already) return;
+      await new Promise((r) => setTimeout(r, 2000));
+      if (await StoreReview.hasAction()) {
+        await StoreReview.requestReview();
+        await SecureStore.setItemAsync(REVIEW_PROMPTED_KEY, "true").catch(() => {});
+      }
+    })();
+  }, [from]);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
