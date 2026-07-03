@@ -19,6 +19,7 @@ export type Tip = {
   id: string; icon: string; color: string;
   title: string; detail: string; priority: "high" | "medium" | "low";
   savingsHint?: string;
+  savingsValue?: number;
 };
 
 
@@ -53,7 +54,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#DC2626",
         title: `${list.length} "${cat}" subscriptions`,
         detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmtC(catTotal)}/mo. Could you cut one?`,
-        priority: "high", savingsHint: `Could save up to ${fmtC(catTotal * 0.5)}/mo` });
+        priority: "high", savingsHint: `Could save up to ${fmtC(catTotal * 0.5)}/mo`, savingsValue: catTotal * 0.5 });
     } else if (list.length === 2) {
       tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#D97706",
         title: `2 "${cat}" subscriptions`,
@@ -70,7 +71,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#DC2626",
       title: `${streamingSubs.length} streaming services — that's a lot`,
       detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmtC(streamTotal)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
-      priority: "high", savingsHint: `Save ~${fmtC(toMonthly(cheapest.price, cheapest.billingCycle))}/mo by pausing one` });
+      priority: "high", savingsHint: `Save ~${fmtC(toMonthly(cheapest.price, cheapest.billingCycle))}/mo by pausing one`, savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
   }
 
   // Fitness overlap (2+ fitness services)
@@ -80,7 +81,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
     tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#7C3AED",
       title: `${fitnessSubs.length} health & fitness subscriptions`,
       detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmtC(fitTotal)}/mo in this category.`,
-      priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo` });
+      priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo`, savingsValue: fitTotal * 0.5 });
   }
 
   // Price increase alerts
@@ -91,7 +92,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
     tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#DC2626",
       title: `${s.name} quietly raised its price`,
       detail: `It went from ${fmtC(s.priceIncrease.from)} to ${fmtC(s.priceIncrease.to)} per ${s.billingCycle}. That's an extra ${fmtC(annualExtra)} per year you may not have noticed.`,
-      priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo` });
+      priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo`, savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
   }
 
   // Trial alerts
@@ -131,7 +132,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
     tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#059669",
       title: "Switch to yearly and save",
       detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmtC(annualSaving)}/year.`,
-      priority: "medium", savingsHint: `~${fmtC(annualSaving)}/yr` });
+      priority: "medium", savingsHint: `~${fmtC(annualSaving)}/yr`, savingsValue: annualSaving / 12 });
   }
 
   // No yearly plans at all — nudge harder
@@ -170,9 +171,7 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
 function calcSavingsPotential(tips: Tip[]): number {
   let total = 0;
   for (const t of tips) {
-    if (!t.savingsHint) continue;
-    const match = t.savingsHint.match(/[\d.]+/);
-    if (match) total += parseFloat(match[0]);
+    if (typeof t.savingsValue === "number") total += t.savingsValue;
   }
   return total;
 }

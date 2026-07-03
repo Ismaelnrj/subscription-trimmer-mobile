@@ -96,7 +96,12 @@ export default function AccountSettingsScreen() {
       await logout();
       router.replace("/login");
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.error || "Could not delete account. Please try again or contact support.");
+      const code = err.response?.data?.error;
+      if (code === "GOOGLE_ACCOUNT") {
+        Alert.alert("Google account", "This account uses Google Sign-In. To delete it, please contact Trimio@subtrimio.com.");
+      } else {
+        Alert.alert("Error", code || "Could not delete account. Please try again or contact support.");
+      }
     } finally {
       setDeleting(false);
     }
@@ -250,6 +255,13 @@ export default function AccountSettingsScreen() {
           </View>
 
           <Text style={styles.sectionTitle}>Change Password</Text>
+          {user?.hasPassword === false ? (
+            <View style={styles.card}>
+              <Text style={{ color: c.textSecondary, fontSize: 13, lineHeight: 20 }}>
+                You signed in with Google — password changes are managed through your Google account.
+              </Text>
+            </View>
+          ) : (
           <View style={styles.card}>
             <Text style={styles.label}>Current Password</Text>
             <TextInput style={styles.input} value={currentPassword} onChangeText={setCurrentPassword}
@@ -267,6 +279,7 @@ export default function AccountSettingsScreen() {
               }
             </TouchableOpacity>
           </View>
+          )}
 
           <View style={styles.deleteSection}>
             <Text style={styles.deleteSectionTitle}>Danger Zone</Text>

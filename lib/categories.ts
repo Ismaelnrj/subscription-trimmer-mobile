@@ -18,7 +18,7 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
   streaming: [
     "netflix", "disney+", "disney plus", "hulu", "hbo", "hbo max", "max",
     "apple tv+", "apple tv", "amazon prime video", "prime video", "amazon prime",
-    "paramount+", "paramount plus", "peacock", "crunchyroll", "mubi",
+    "paramount+", "paramount plus", "peacock", "crunchyroll", "mubi", "youtube tv",
     "discovery+", "discovery plus", "dazn", "funimation", "shudder",
     "criterion", "britbox", "acorn", "amc+", "starz", "showtime",
   ],

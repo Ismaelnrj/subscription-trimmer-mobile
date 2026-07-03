@@ -127,8 +127,8 @@ export default function SubscriptionsScreen() {
         if (!seen.includes(key)) {
           const diff = (sub.priceIncrease.to - sub.priceIncrease.from).toFixed(2);
           sendLocalNotification(
-            `${sub.name} price went up by $${diff}`,
-            `Your subscription increased from $${sub.priceIncrease.from.toFixed(2)} to $${sub.priceIncrease.to.toFixed(2)} per ${sub.billingCycle}.`
+            `${sub.name} price went up`,
+            `Your subscription increased from ${fmtC(sub.priceIncrease.from)} to ${fmtC(sub.priceIncrease.to)} per ${sub.billingCycle}.`
           );
           newSeen.push(key);
         }
@@ -212,6 +212,7 @@ export default function SubscriptionsScreen() {
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/subscriptions.update", data)).data.result.data,
     onSuccess: () => { invalidate(); closeModal(); },
+    onError: () => Alert.alert("Error", "Could not save changes. Please try again."),
   });
 
   const deleteMutation = useMutation({
@@ -363,7 +364,8 @@ export default function SubscriptionsScreen() {
     ];
     try {
       for (const ex of examples) {
-        await apiClient.post("/trpc/subscriptions.create", ex);
+        const res = await apiClient.post("/trpc/subscriptions.create", ex).catch((e: any) => e.response);
+        if (res?.data?.error === "FREE_LIMIT_REACHED") break;
       }
       invalidate();
     } catch {
@@ -387,14 +389,16 @@ export default function SubscriptionsScreen() {
       d.setDate(d.getDate() + 1);
       return d.toISOString().slice(0, 10).replace(/-/g, "");
     };
+    const icsEscape = (s: string) =>
+      s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
 
     const events = subsWithDates.map((s: any) => [
       "BEGIN:VEVENT",
       `UID:trimio-${s.id}-${fmtIcsDate(s.nextBillingDate)}@trimio.app`,
       `DTSTART;VALUE=DATE:${fmtIcsDate(s.nextBillingDate)}`,
       `DTEND;VALUE=DATE:${nextDay(s.nextBillingDate)}`,
-      `SUMMARY:${s.name} billing`,
-      `DESCRIPTION:${fmtC(s.price)} ${s.billingCycle}`,
+      `SUMMARY:${icsEscape(s.name)} billing`,
+      `DESCRIPTION:${icsEscape(`${fmtC(s.price)} ${s.billingCycle}`)}`,
       "END:VEVENT",
     ].join("\r\n")).join("\r\n");
 
@@ -676,7 +680,7 @@ export default function SubscriptionsScreen() {
                         <View style={styles.priceIncreaseBadge}>
                           <MaterialCommunityIcons name="trending-up" size={10} color="#fff" />
                           <Text style={styles.priceIncreaseBadgeText}>
-                            Price up +${(sub.priceIncrease.to - sub.priceIncrease.from).toFixed(2)}
+                            Price up +{fmtC(sub.priceIncrease.to - sub.priceIncrease.from)}
                           </Text>
                         </View>
                       )}

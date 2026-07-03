@@ -10,6 +10,7 @@ interface User {
   isPaid: boolean;
   paidAt: string | null;
   isVerified: boolean;
+  hasPassword: boolean;
 }
 
 interface AuthState {

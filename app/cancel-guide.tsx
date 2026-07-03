@@ -12,7 +12,7 @@ export default function CancelGuideScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>How to cancel {name}</Text>
+      <Text style={styles.heading}>How to cancel{name ? ` ${name}` : ""}</Text>
 
       {guide.note && (
         <View style={styles.noteBox}>
@@ -35,7 +35,7 @@ export default function CancelGuideScreen() {
       {!!guide.url && (
         <TouchableOpacity
           style={styles.linkButton}
-          onPress={() => Linking.openURL(guide.url)}
+          onPress={() => Linking.openURL(guide.url).catch(() => {})}
         >
           <MaterialCommunityIcons name="open-in-new" size={18} color="#FFFFFF" />
           <Text style={styles.linkButtonText}>Open cancellation page</Text>
