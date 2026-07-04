@@ -1,9 +1,11 @@
 import { Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { useTheme } from "../../lib/theme";
 
 export default function TabLayout() {
   const c = useTheme();
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -32,8 +34,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
-          tabBarLabel: "Dashboard",
+          title: t("tabs.dashboard"),
+          tabBarLabel: t("tabs.dashboard"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="home" size={24} color={color} />
           ),
@@ -43,34 +45,34 @@ export default function TabLayout() {
       <Tabs.Screen
         name="subscriptions"
         options={{
-          title: "Subscriptions",
-          tabBarLabel: "Subscriptions",
+          title: t("tabs.subscriptions"),
+          tabBarLabel: t("tabs.subscriptions"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="credit-card" size={24} color={color} />
           ),
-          headerTitle: "My Subscriptions",
+          headerTitle: t("tabs.headerSubscriptions"),
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
-          title: "Analytics",
-          tabBarLabel: "Analytics",
+          title: t("tabs.analytics"),
+          tabBarLabel: t("tabs.analytics"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="chart-bar" size={24} color={color} />
           ),
-          headerTitle: "Spending Analytics",
+          headerTitle: t("tabs.headerAnalytics"),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarLabel: "Profile",
+          title: t("tabs.profile"),
+          tabBarLabel: t("tabs.profile"),
           tabBarIcon: ({ color }) => (
             <MaterialCommunityIcons name="account" size={24} color={color} />
           ),
-          headerTitle: "My Profile",
+          headerTitle: t("tabs.headerProfile"),
         }}
       />
     </Tabs>

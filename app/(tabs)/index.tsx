@@ -12,6 +12,7 @@ import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
 import { buildTips } from "../insights";
 import { USER_ESTIMATE_KEY } from "../onboarding";
+import { useTranslation } from "react-i18next";
 
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
 const ESTIMATE_BANNER_SHOWN_KEY = "estimate_banner_shown";
@@ -32,6 +33,7 @@ export default function DashboardScreen() {
   const fmtC = useFmt();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -71,7 +73,7 @@ export default function DashboardScreen() {
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
   const budgetPct = Math.min(budgetRaw, 100);
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
-  const budgetStatus = budgetRaw >= 100 ? "Over budget" : budgetRaw >= 80 ? "Getting close" : "On track";
+  const budgetStatus = budgetRaw >= 100 ? t("dashboard.overBudget") : budgetRaw >= 80 ? t("dashboard.gettingClose") : t("dashboard.onTrack");
   const budgetStatusIcon = budgetRaw >= 80 ? "alert-circle-outline" : "check-circle-outline";
 
   const activeSubIds = new Set((subscriptions as any[]).map((s) => s.id));
@@ -161,9 +163,9 @@ export default function DashboardScreen() {
     return (
       <View style={styles.loadingContainer}>
         <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
-        <Text style={styles.emptyStateText}>Couldn't load your dashboard.</Text>
+        <Text style={styles.emptyStateText}>{t("dashboard.couldntLoad")}</Text>
         <TouchableOpacity style={[styles.actionButton, { marginTop: 16, paddingHorizontal: 24 }]} onPress={onRefresh}>
-          <Text style={styles.actionButtonText}>Try Again</Text>
+          <Text style={styles.actionButtonText}>{t("dashboard.tryAgain")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -179,8 +181,8 @@ export default function DashboardScreen() {
         {user && !user.isVerified && (
           <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
             <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
-            <Text style={styles.verifyBannerText}>Please verify your email address to secure your account.</Text>
-            <Text style={styles.verifyBannerLink}>Verify →</Text>
+            <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
+            <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
           </TouchableOpacity>
         )}
 
@@ -204,10 +206,10 @@ export default function DashboardScreen() {
             <MaterialCommunityIcons name="lightbulb-on" size={20} color={c.success} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.recoBannerTitle}>
-                {recoTips.length} way{recoTips.length !== 1 ? "s" : ""} to save money
+                {t("dashboard.waysToSave", { count: recoTips.length })}
               </Text>
               <Text style={styles.recoBannerText} onPress={() => router.push("/insights")}>
-                See recommendations →
+                {t("dashboard.seeRecommendations")} →
               </Text>
             </View>
             <TouchableOpacity onPress={dismissRecoBanner} style={{ padding: 4 }}>
@@ -227,7 +229,7 @@ export default function DashboardScreen() {
           <View style={[styles.budgetCard, { borderLeftColor: budgetColor }]}>
             <View style={styles.budgetRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.budgetLabel}>Monthly Budget</Text>
+                <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
                 <Text style={styles.budgetAmount}>
                   {fmtC(monthlyTotal)}{" "}
                   <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
@@ -249,8 +251,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.budgetRemaining}>
                 {budgetRaw >= 100
-                  ? `${fmtC(monthlyTotal - budgetGoal)} over limit`
-                  : `${fmtC(budgetGoal - monthlyTotal)} remaining`}
+                  ? t("dashboard.overLimit", { amount: fmtC(monthlyTotal - budgetGoal) })
+                  : t("dashboard.remaining", { amount: fmtC(budgetGoal - monthlyTotal) })}
               </Text>
             </View>
           </View>
@@ -260,7 +262,7 @@ export default function DashboardScreen() {
           <View style={styles.trialsSection}>
             <View style={styles.trialsSectionHeader}>
               <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />
-              <Text style={styles.trialsSectionTitle}>Trials Ending Soon</Text>
+              <Text style={styles.trialsSectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
             </View>
             {trialsSoon.map((sub: any) => {
               const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
@@ -270,12 +272,12 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.trialName}>{sub.name}</Text>
                     <Text style={styles.trialCharge}>
-                      {fmtC(sub.price)}/{sub.billingCycle} charged on expiry
+                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: sub.billingCycle })}
                     </Text>
                   </View>
                   <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
                     <Text style={[styles.trialBadgeText, { color: urgency }]}>
-                      {days === 0 ? "Today!" : `${days}d left`}
+                      {days === 0 ? t("dashboard.today") : t("dashboard.daysLeft", { count: days })}
                     </Text>
                   </View>
                 </View>
@@ -292,7 +294,7 @@ export default function DashboardScreen() {
               onPress={() => setViewMode(mode)}
             >
               <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
-                {mode === "monthly" ? "Monthly" : "Yearly"}
+                {mode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}
               </Text>
             </TouchableOpacity>
           ))}
@@ -303,7 +305,7 @@ export default function DashboardScreen() {
             <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
           </View>
           <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-          <Text style={styles.heroLabel}>{viewMode === "monthly" ? "Total this month" : "Total this year"}</Text>
+          <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
         </View>
 
         <View style={styles.statsGrid}>
@@ -312,47 +314,47 @@ export default function DashboardScreen() {
               <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Monthly" : "Yearly"}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? "Yearly" : "Monthly"}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
           </View>
           <View style={styles.statCard}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
             </View>
             <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
-            <Text style={styles.statLabel}>Active</Text>
+            <Text style={styles.statLabel}>{t("dashboard.active")}</Text>
           </View>
           <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
             <View style={styles.statIcon}>
               <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
             </View>
             <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]} numberOfLines={1}>{activeAlertCount}</Text>
-            <Text style={styles.statLabel}>Alerts</Text>
+            <Text style={styles.statLabel}>{t("dashboard.alerts")}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-          <Text style={styles.actionButtonText}>+ Add Expense</Text>
+          <Text style={styles.actionButtonText}>{t("dashboard.addExpense")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButtonOutline}
           onPress={() => router.push("/insights")}
         >
-          <Text style={styles.actionButtonOutlineText}>View Recommendations</Text>
+          <Text style={styles.actionButtonOutlineText}>{t("dashboard.viewRecommendations")}</Text>
         </TouchableOpacity>
 
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>Recent Expenses</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t("dashboard.recentExpenses")}</Text>
         {recentSubs.length === 0 ? (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyStateText}>Your recurring expenses are costing you more than you think.</Text>
+            <Text style={styles.emptyStateText}>{t("dashboard.emptyExpenses")}</Text>
           </View>
         ) : (
           recentSubs.map((sub: any) => {

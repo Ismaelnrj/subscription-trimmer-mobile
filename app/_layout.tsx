@@ -11,6 +11,8 @@ import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
+import { useLanguageStore } from "../lib/language-store";
+import "../lib/i18n";
 
 // Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
 // can only submit error events, not read project data. Safe to ship in client code.
@@ -61,6 +63,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const { isAuthenticated, isLoading, restoreToken } = useAuthStore();
   const { loadCurrency, fetchRates } = useCurrencyStore();
+  const { loadLanguage } = useLanguageStore();
   const router = useRouter();
   const segments = useSegments();
   const c = useTheme();
@@ -74,6 +77,7 @@ export default function RootLayout() {
           loadCurrency(),
           SecureStore.getItemAsync("onboarding_done"),
         ]);
+        await loadLanguage();
         fetchRates();
         setOnboardingDone(done === "true");
         requestNotificationPermission();

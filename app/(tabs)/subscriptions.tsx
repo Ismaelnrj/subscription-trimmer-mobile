@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import * as StoreReview from "expo-store-review";
+import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
@@ -17,6 +18,7 @@ import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
+import { ServiceTemplate, searchTemplates, formatTemplatePrice } from "../../lib/service-templates";
 import * as SecureStore from "expo-secure-store";
 
 const FREE_LIMIT = 5;
@@ -44,6 +46,7 @@ export default function SubscriptionsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -59,6 +62,8 @@ export default function SubscriptionsScreen() {
   const [loadingExamples, setLoadingExamples] = useState(false);
   const [savingsCard, setSavingsCard] = useState<{ name: string; yearly: number } | null>(null);
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
 
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
@@ -263,6 +268,22 @@ export default function SubscriptionsScreen() {
     setShowModal(false); setEditingId(null); setFormData(emptyForm);
     setShowCustomInput(false); setCustomCatDraft("");
     setShowEmailPaste(false); setEmailText("");
+    setShowTemplatePicker(false); setTemplateSearch("");
+  };
+
+  const filteredTemplates = useMemo(() => searchTemplates(templateSearch), [templateSearch]);
+
+  const applyTemplate = (tpl: ServiceTemplate) => {
+    const guessed = guessCategory(tpl.name);
+    setFormData((prev) => ({
+      ...prev,
+      name: tpl.name,
+      price: String(tpl.defaultPrice),
+      billingCycle: tpl.billingCycle,
+      category: guessed !== "other" ? guessed : tpl.category,
+    }));
+    setShowTemplatePicker(false);
+    setTemplateSearch("");
   };
 
   const addCustomCategory = () => {
@@ -335,9 +356,9 @@ export default function SubscriptionsScreen() {
   };
 
   const confirmDelete = (sub: any) => {
-    Alert.alert("Delete Subscription", `Remove "${sub.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(sub) },
+    Alert.alert(t("subscriptions.deleteTitle"), t("subscriptions.deleteConfirm", { name: sub.name }), [
+      { text: t("subscriptions.cancel"), style: "cancel" },
+      { text: t("subscriptions.delete"), style: "destructive", onPress: () => deleteMutation.mutate(sub) },
     ]);
   };
 
@@ -485,10 +506,10 @@ export default function SubscriptionsScreen() {
           <MaterialCommunityIcons name="party-popper" size={22} color="#FFFFFF" />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.savingsCardText}>
-              You just saved {fmtC(savingsCard.yearly)} this year by cutting {savingsCard.name}
+              {t("subscriptions.savedThisYear", { amount: fmtC(savingsCard.yearly), name: savingsCard.name })}
             </Text>
             <Text style={styles.savingsCardRate} onPress={handleRateApp}>
-              Rate Now ⭐
+              {t("subscriptions.rateNow")} ⭐
             </Text>
           </View>
         </TouchableOpacity>
@@ -504,7 +525,7 @@ export default function SubscriptionsScreen() {
               onPress={openAdd}
             >
               <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>{atLimit ? "Limit reached" : "Add"}</Text>
+              <Text style={styles.addButtonText}>{atLimit ? t("subscriptions.limitReached") : t("subscriptions.add")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
@@ -531,7 +552,7 @@ export default function SubscriptionsScreen() {
           {!isPremium && (
             <View style={styles.limitBar}>
               <View style={styles.limitRow}>
-                <Text style={styles.limitLabel}>Free plan</Text>
+                <Text style={styles.limitLabel}>{t("subscriptions.freePlan")}</Text>
                 <Text style={[styles.limitCount, { color: limitColor }]}>
                   {total} / {FREE_LIMIT} subscriptions
                 </Text>
@@ -542,14 +563,14 @@ export default function SubscriptionsScreen() {
               {atLimit ? (
                 <TouchableOpacity onPress={() => router.push("/upgrade")}>
                   <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600" }]}>
-                    Limit reached. Upgrade for unlimited →
+                    {t("subscriptions.upgradeUnlimited")} →
                   </Text>
                 </TouchableOpacity>
               ) : (
                 <Text style={styles.limitHint}>
-                  {FREE_LIMIT - total} slot{FREE_LIMIT - total !== 1 ? "s" : ""} remaining ·{" "}
+                  {t("subscriptions.slot", { count: FREE_LIMIT - total })} ·{" "}
                   <Text style={{ color: c.primary }} onPress={() => router.push("/upgrade")}>
-                    Go unlimited
+                    {t("subscriptions.goUnlimited")}
                   </Text>
                 </Text>
               )}
@@ -559,15 +580,15 @@ export default function SubscriptionsScreen() {
           <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
             <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.emailHintTitle}>Paste a receipt email — it fills itself in</Text>
-              <Text style={styles.emailHintSub}>Works with PayPal, Stripe, 24+ services</Text>
+              <Text style={styles.emailHintTitle}>{t("subscriptions.emailHintTitle")}</Text>
+              <Text style={styles.emailHintSub}>{t("subscriptions.emailHintSub")}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={18} color={c.primary} />
           </TouchableOpacity>
 
           <TextInput
             style={styles.searchBar}
-            placeholder="Search subscriptions..."
+            placeholder={t("subscriptions.search")}
             placeholderTextColor={c.placeholder}
             value={search}
             onChangeText={setSearch}
@@ -576,7 +597,7 @@ export default function SubscriptionsScreen() {
 
           {total > 0 && (
             <View style={styles.sortRow}>
-              {([ ["date", "Recent"], ["name", "A–Z"], ["price_desc", "Price ↓"] ] as ["date"|"name"|"price_desc", string][]).map(([key, label]) => (
+              {([ ["date", t("subscriptions.recent")], ["name", "A-Z"], ["price_desc", `${t("subscriptions.priceDesc")} ↓`] ] as ["date"|"name"|"price_desc", string][]).map(([key, label]) => (
                 <TouchableOpacity
                   key={key}
                   style={[styles.sortChip, sort === key && styles.sortChipActive]}
@@ -590,7 +611,7 @@ export default function SubscriptionsScreen() {
 
           {total > 0 && (
             <Text style={styles.countText}>
-              {filtered.length} of {total} subscription{total !== 1 ? "s" : ""}
+              {t("subscriptions.countOf", { count: total, filtered: filtered.length, total })}
             </Text>
           )}
 
@@ -598,12 +619,10 @@ export default function SubscriptionsScreen() {
             total === 0 ? (
               <View style={styles.emptyState}>
                 <MaterialCommunityIcons name="receipt" size={52} color={c.border} style={{ marginBottom: 12 }} />
-                <Text style={styles.emptyStateTitle}>What are you paying for?</Text>
-                <Text style={styles.emptyStateSubtext}>
-                  Add subscriptions, utilities, insurance, or any recurring expense to track your monthly spend.
-                </Text>
+                <Text style={styles.emptyStateTitle}>{t("subscriptions.emptyTitle")}</Text>
+                <Text style={styles.emptyStateSubtext}>{t("subscriptions.emptySubtext")}</Text>
                 <TouchableOpacity style={styles.emptyStateButton} onPress={openAdd}>
-                  <Text style={styles.emptyStateButtonText}>+ Add Expense</Text>
+                  <Text style={styles.emptyStateButtonText}>{t("subscriptions.addExpense")}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.examplesButton}
@@ -612,17 +631,15 @@ export default function SubscriptionsScreen() {
                 >
                   {loadingExamples
                     ? <ActivityIndicator color={c.primary} size="small" />
-                    : <Text style={styles.examplesButtonText}>Try with example subscriptions</Text>
+                    : <Text style={styles.examplesButtonText}>{t("subscriptions.tryExamples")}</Text>
                   }
                 </TouchableOpacity>
-                <Text style={styles.emptyStateHint}>
-                  You can also paste a purchase confirmation email and we'll fill it in for you.
-                </Text>
+                <Text style={styles.emptyStateHint}>{t("subscriptions.pasteEmailHint")}</Text>
               </View>
             ) : (
               <View style={styles.emptyState}>
                 <MaterialCommunityIcons name="inbox" size={48} color={c.border} style={{ marginBottom: 12 }} />
-                <Text style={styles.emptyStateText}>No results found</Text>
+                <Text style={styles.emptyStateText}>{t("subscriptions.noResults")}</Text>
               </View>
             )
           ) : (
@@ -656,7 +673,9 @@ export default function SubscriptionsScreen() {
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
-                      Next: {sub.nextBillingDate ? new Date(sub.nextBillingDate).toLocaleDateString() : "—"}
+                      {sub.nextBillingDate
+                        ? t("subscriptions.next", { date: new Date(sub.nextBillingDate).toLocaleDateString() })
+                        : t("subscriptions.noDate")}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                       <View style={[styles.categoryBadge, isCustomCat && styles.customCategoryBadge]}>
@@ -666,13 +685,15 @@ export default function SubscriptionsScreen() {
                       </View>
                       {sub.isActive === false && (
                         <View style={styles.pausedBadge}>
-                          <Text style={styles.pausedBadgeText}>Paused</Text>
+                          <Text style={styles.pausedBadgeText}>{t("subscriptions.paused")}</Text>
                         </View>
                       )}
                       {trialDate && trialDaysLeft !== null && trialDaysLeft >= 0 && (
                         <View style={styles.trialBadge}>
                           <Text style={styles.trialBadgeText}>
-                            Trial ends {trialDaysLeft === 0 ? "today" : `in ${trialDaysLeft}d`}
+                            {trialDaysLeft === 0
+                              ? t("subscriptions.trialEndsSoon_today")
+                              : t("subscriptions.trialEndsSoon_days", { days: trialDaysLeft })}
                           </Text>
                         </View>
                       )}
@@ -680,7 +701,7 @@ export default function SubscriptionsScreen() {
                         <View style={styles.priceIncreaseBadge}>
                           <MaterialCommunityIcons name="trending-up" size={10} color="#fff" />
                           <Text style={styles.priceIncreaseBadgeText}>
-                            Price up +{fmtC(sub.priceIncrease.to - sub.priceIncrease.from)}
+                            {t("subscriptions.priceUp", { amount: fmtC(sub.priceIncrease.to - sub.priceIncrease.from) })}
                           </Text>
                         </View>
                       )}
@@ -690,7 +711,7 @@ export default function SubscriptionsScreen() {
                       onPress={() => router.push(`/cancel-guide?name=${encodeURIComponent(sub.name)}`)}
                     >
                       <MaterialCommunityIcons name="format-list-numbered" size={11} color={c.textMuted} />
-                      <Text style={styles.cancelGuideLinkText}>How to cancel</Text>
+                      <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.actionButtons}>
@@ -723,18 +744,16 @@ export default function SubscriptionsScreen() {
         <View style={styles.reviewOverlay}>
           <View style={styles.reviewCard}>
             <Text style={styles.reviewEmoji}>⭐</Text>
-            <Text style={styles.reviewTitle}>Are you enjoying Trimio?</Text>
-            <Text style={styles.reviewSubtitle}>
-              Your feedback helps us keep improving the app.
-            </Text>
+            <Text style={styles.reviewTitle}>{t("review.title")}</Text>
+            <Text style={styles.reviewSubtitle}>{t("review.subtitle")}</Text>
             <TouchableOpacity style={styles.reviewHappyButton} onPress={handleReviewHappy}>
-              <Text style={styles.reviewHappyText}>❤️  Yes, I love it!</Text>
+              <Text style={styles.reviewHappyText}>❤️  {t("review.happy")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.reviewUnhappyButton} onPress={handleReviewUnhappy}>
-              <Text style={styles.reviewUnhappyText}>Not really — send feedback</Text>
+              <Text style={styles.reviewUnhappyText}>{t("review.unhappy")}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowReviewPrompt(false)} style={{ marginTop: 12 }}>
-              <Text style={styles.reviewDismissText}>Maybe later</Text>
+              <Text style={styles.reviewDismissText}>{t("review.later")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -745,8 +764,45 @@ export default function SubscriptionsScreen() {
           <ScrollView keyboardShouldPersistTaps="handled">
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>
-                {editingId ? "Edit Expense" : "Add Expense"}
+                {editingId ? t("subscriptions.editExpenseTitle") : t("subscriptions.addExpenseTitle")}
               </Text>
+
+              {!editingId && (
+                <TouchableOpacity
+                  style={styles.templatePickerButton}
+                  onPress={() => { setShowTemplatePicker(!showTemplatePicker); if (showTemplatePicker) setTemplateSearch(""); }}
+                >
+                  <MaterialCommunityIcons name="apps" size={16} color={c.primary} />
+                  <Text style={styles.templatePickerButtonText}>
+                    {showTemplatePicker ? t("subscriptions.hideServices") : t("subscriptions.browseServices")}
+                  </Text>
+                  <MaterialCommunityIcons name={showTemplatePicker ? "chevron-up" : "chevron-down"} size={16} color={c.primary} />
+                </TouchableOpacity>
+              )}
+
+              {!editingId && showTemplatePicker && (
+                <View style={styles.templatePickerBox}>
+                  <TextInput
+                    style={styles.templateSearchInput}
+                    placeholder={t("subscriptions.searchServices")}
+                    placeholderTextColor={c.placeholder}
+                    value={templateSearch}
+                    onChangeText={setTemplateSearch}
+                    clearButtonMode="while-editing"
+                  />
+                  {!templateSearch && (
+                    <Text style={styles.templateSectionLabel}>{t("subscriptions.popularServices")}</Text>
+                  )}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll} contentContainerStyle={styles.templateScrollContent}>
+                    {filteredTemplates.map((tpl) => (
+                      <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
+                        <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
+                        <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
 
               {!editingId && (
                 <TouchableOpacity
@@ -755,7 +811,7 @@ export default function SubscriptionsScreen() {
                 >
                   <MaterialCommunityIcons name="email-fast-outline" size={16} color={c.primary} />
                   <Text style={styles.emailFillButtonText}>
-                    {showEmailPaste ? "Hide auto-fill" : "Auto-fill from purchase email"}
+                    {showEmailPaste ? t("subscriptions.hideAutoFill") : t("subscriptions.autoFillEmail")}
                   </Text>
                   <MaterialCommunityIcons
                     name={showEmailPaste ? "chevron-up" : "chevron-down"}
@@ -767,14 +823,12 @@ export default function SubscriptionsScreen() {
 
               {showEmailPaste && (
                 <View style={styles.emailPasteBox}>
-                  <Text style={styles.emailPasteLabel}>
-                    Paste your purchase / confirmation email below. We'll fill in the details for you.
-                  </Text>
+                  <Text style={styles.emailPasteLabel}>{t("subscriptions.emailPasteLabel")}</Text>
                   <TextInput
                     style={styles.emailPasteInput}
                     multiline
                     numberOfLines={5}
-                    placeholder="Paste email text here..."
+                    placeholder={t("subscriptions.emailPastePlaceholder")}
                     placeholderTextColor={c.placeholder}
                     value={emailText}
                     onChangeText={(t) => {
@@ -793,7 +847,7 @@ export default function SubscriptionsScreen() {
                     <View style={styles.parsedPreview}>
                       <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
                       <Text style={styles.parsedPreviewText}>
-                        Detected:{formData.name ? ` ${formData.name}` : ""}
+                        {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
                         {formData.price ? ` · ${baseCurrencyCode} ${formData.price}` : ""}
                         {formData.billingCycle ? ` · ${formData.billingCycle}` : ""}
                       </Text>
@@ -804,7 +858,7 @@ export default function SubscriptionsScreen() {
 
               <TextInput
                 style={styles.input}
-                placeholder="Subscription name (e.g. Netflix)"
+                placeholder={t("subscriptions.namePlaceholder")}
                 placeholderTextColor={c.placeholder}
                 value={formData.name}
                 onChangeText={(t) => {
@@ -818,7 +872,7 @@ export default function SubscriptionsScreen() {
               />
               <TextInput
                 style={styles.input}
-                placeholder={`Price in ${baseCurrencyCode} (e.g. 9.99)`}
+                placeholder={t("subscriptions.pricePlaceholder", { currency: baseCurrencyCode })}
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
                 value={formData.price}
@@ -838,7 +892,7 @@ export default function SubscriptionsScreen() {
                 return null;
               })()}
 
-              <Text style={styles.label}>Billing Cycle</Text>
+              <Text style={styles.label}>{t("subscriptions.billingCycle")}</Text>
               <View style={styles.chipRow}>
                 {BILLING_CYCLES.map((cycle) => (
                   <TouchableOpacity
@@ -863,12 +917,12 @@ export default function SubscriptionsScreen() {
                   color={formData.isFreeTrial ? "#FFFFFF" : c.textSecondary}
                 />
                 <Text style={[styles.chipText, formData.isFreeTrial && styles.chipTextActive]}>
-                  This is a free trial
+                  {t("subscriptions.isFreeTrialLabel")}
                 </Text>
               </TouchableOpacity>
 
               <Text style={styles.label}>
-                Category{isPremium && customCategories.length > 0 ? "  ✦ custom" : ""}
+                {t("subscriptions.category")}{isPremium && customCategories.length > 0 ? `  ✦ ${t("subscriptions.customCategory")}` : ""}
               </Text>
               <View style={styles.chipRow}>
                 {allCategories.map((cat) => {
@@ -894,7 +948,7 @@ export default function SubscriptionsScreen() {
                     style={[styles.chip, styles.chipAdd]}
                     onPress={() => setShowCustomInput(true)}
                   >
-                    <Text style={[styles.chipText, { color: "#7C3AED" }]}>+ custom</Text>
+                    <Text style={[styles.chipText, { color: "#7C3AED" }]}>+ {t("subscriptions.customCategory")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -918,11 +972,11 @@ export default function SubscriptionsScreen() {
               )}
 
               <Text style={styles.label}>
-                {formData.isFreeTrial ? "Trial ends on" : "Trial End Date (optional)"}
+                {formData.isFreeTrial ? t("subscriptions.trialEndsOn") : t("subscriptions.trialEndDate")}
               </Text>
               <TextInput
                 style={styles.input}
-                placeholder="e.g. 15/06/2025 or 2025-06-15"
+                placeholder={t("subscriptions.datePlaceholder")}
                 placeholderTextColor={c.placeholder}
                 value={formData.trialEndDate}
                 onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
@@ -932,12 +986,12 @@ export default function SubscriptionsScreen() {
                 {isPending
                   ? <ActivityIndicator color="#FFFFFF" />
                   : <Text style={styles.submitButtonText}>
-                      {editingId ? "Save Changes" : "Add Expense"}
+                      {editingId ? t("subscriptions.saveChanges") : t("subscriptions.addExpense")}
                     </Text>
                 }
               </TouchableOpacity>
               <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t("subscriptions.cancel")}</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -1167,5 +1221,32 @@ function makeStyles(c: AppColors) {
     },
     reviewUnhappyText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
     reviewDismissText: { fontSize: 13, color: c.textMuted },
+    templatePickerButton: {
+      flexDirection: "row", alignItems: "center", gap: 8,
+      backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
+      borderWidth: 1, borderColor: c.primary,
+    },
+    templatePickerButtonText: { flex: 1, fontSize: 13, fontWeight: "600", color: c.primary },
+    templatePickerBox: {
+      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
+      borderColor: c.primary, padding: 12, marginBottom: 14,
+    },
+    templateSearchInput: {
+      borderWidth: 1, borderColor: c.border, borderRadius: 8,
+      paddingVertical: 8, paddingHorizontal: 12, fontSize: 13,
+      color: c.text, backgroundColor: c.inputBg, marginBottom: 10,
+    },
+    templateSectionLabel: {
+      fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase",
+      letterSpacing: 0.5, marginBottom: 8,
+    },
+    templateScroll: { flexGrow: 0 },
+    templateScrollContent: { gap: 8, paddingBottom: 4 },
+    templateChip: {
+      backgroundColor: c.card, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12,
+      borderWidth: 1, borderColor: c.border, minWidth: 100, maxWidth: 150,
+    },
+    templateChipName: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 2 },
+    templateChipPrice: { fontSize: 11, color: c.primary, fontWeight: "500" },
   });
 }
