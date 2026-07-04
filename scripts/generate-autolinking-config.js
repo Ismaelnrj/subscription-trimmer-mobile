@@ -35,7 +35,7 @@ try {
   );
 
   if (result.status === 0 && result.stdout) {
-    config = JSON.parse(result.stdout.toString());
+    try { config = JSON.parse(result.stdout.toString()); } catch (_) {}
   }
 } catch (_) {}
 

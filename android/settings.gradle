@@ -24,15 +24,36 @@ def getRNMinorVersion() {
 }
 
 if (getRNMinorVersion() >= 75) {
+  // ── Step 1: run our script via plain Groovy exec (not settings.providers.exec)
+  // to get the full autolinking config as JSON.
+  def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
+  def scriptOut = new StringWriter()
+  def scriptErr = new StringWriter()
+  def scriptProc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
+  scriptProc.consumeProcessOutput(scriptOut, scriptErr)
+  scriptProc.waitFor()
+  def configJson = scriptOut.toString().trim()
+
+  if (scriptProc.exitValue() != 0 || configJson.isEmpty()) {
+    throw new GradleException("[autolinking] script failed (exit=${scriptProc.exitValue()}): ${scriptErr.toString().take(500)}")
+  }
+
+  // ── Step 2: write autolinking.json DIRECTLY so generateAutolinkingPackageList
+  // always reads the correct file regardless of RNGP caching.
+  def autolinkingJson = new File(rootDir, 'build/generated/autolinking/autolinking.json')
+  autolinkingJson.parentFile.mkdirs()
+  autolinkingJson.text = configJson
+
+  // ── Step 3: tell RNGP which libraries to include as Gradle subprojects.
+  // We pass a staging file (not autolinking.json itself) so copyTo never
+  // operates on the same source and destination.
+  def stagingFile = new File(rootDir, 'build/generated/autolinking/autolinking-staging.json')
+  stagingFile.text = configJson
+
   extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-    // Use autolinkLibrariesFromCommand so RNGP owns the write to autolinking.json.
-    // This avoids any same-file copyTo issue and leverages RNGP's built-in cache
-    // invalidation: it always re-runs when packageName is null in the cached file.
-    def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
-    ex.autolinkLibrariesFromCommand(
-      ['node', '--no-warnings', scriptPath],
-      rootDir.parentFile
-    )
+    ex.autolinkLibrariesFromConfigFile(stagingFile)
+    // autolinkLibrariesFromConfigFile copies stagingFile -> autolinking.json (same
+    // content) and calls linkLibraries() to settings.include each Android library.
   }
 }
 
