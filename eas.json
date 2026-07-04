@@ -14,7 +14,10 @@
         "buildType": "app-bundle",
         "withoutCredentials": false
       },
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+      }
     }
   }
 }
