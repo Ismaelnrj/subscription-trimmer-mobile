@@ -16,7 +16,8 @@
       },
       "channel": "production",
       "env": {
-        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true",
+        "EXPO_UNSTABLE_CORE_AUTOLINKING": "1"
       }
     }
   }
