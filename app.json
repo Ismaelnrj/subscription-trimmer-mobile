@@ -72,6 +72,10 @@
           "icon": "./assets/notification-icon.png",
           "color": "#7746DD"
         }
+      ],
+      [
+        "./plugins/withBillingLibraryOverride",
+        { "version": "8.3.0" }
       ]
     ],
     "owner": "ismaelnrj"
