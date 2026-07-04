@@ -205,47 +205,49 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// Safety net: guarantee autolinking.json has packageName right before generateAutolinkingPackageList
-// reads it. tasks.named() works for Gradle 8 lazy tasks (tasks.findByName returns null for them).
-tasks.named('generateAutolinkingPackageList').configure { genTask ->
-    genTask.doFirst {
-        def autolinkingFile = rootProject.layout.buildDirectory
-            .file("generated/autolinking/autolinking.json").get().asFile
-        autolinkingFile.parentFile.mkdirs()
+// Safety net: runs after ALL tasks are configured and the execution graph is built,
+// but before any task starts executing. This is the most reliable place to add doFirst
+// because the task is guaranteed to be fully realized by this point.
+gradle.taskGraph.whenReady { graph ->
+    graph.allTasks.each { task ->
+        if (task.path == ':app:generateAutolinkingPackageList') {
+            task.doFirst {
+                def autolinkingFile = rootProject.layout.buildDirectory
+                    .file("generated/autolinking/autolinking.json").get().asFile
+                autolinkingFile.parentFile.mkdirs()
 
-        // Try our committed script first — gives full dependency list + guaranteed packageName
-        def scriptFile = new File(project.rootDir.parent, 'scripts/generate-autolinking-config.js')
-        if (scriptFile.exists()) {
-            def stdout = new StringWriter()
-            def stderr = new StringWriter()
-            def proc = ['node', '--no-warnings', scriptFile.absolutePath].execute(null, project.rootDir.parent)
-            proc.consumeProcessOutput(stdout, stderr)
-            proc.waitFor()
-            def json = stdout.toString().trim()
-            println "[fix-autolinking] script exit=${proc.exitValue()} length=${json.length()}"
-            if (!stderr.toString().isEmpty()) {
-                println "[fix-autolinking] stderr=${stderr.toString().take(300)}"
-            }
-            if (proc.exitValue() == 0 && !json.isEmpty()) {
-                autolinkingFile.text = json
-                println "[fix-autolinking] wrote autolinking.json from script"
-                return
+                def scriptFile = new File(project.rootDir.parent, 'scripts/generate-autolinking-config.js')
+                if (scriptFile.exists()) {
+                    def stdout = new StringWriter()
+                    def stderr = new StringWriter()
+                    def proc = ['node', '--no-warnings', scriptFile.absolutePath].execute(null, project.rootDir.parent)
+                    proc.consumeProcessOutput(stdout, stderr)
+                    proc.waitFor()
+                    def json = stdout.toString().trim()
+                    println "[fix-autolinking] script exit=${proc.exitValue()} length=${json.length()}"
+                    if (proc.exitValue() == 0 && !json.isEmpty()) {
+                        autolinkingFile.text = json
+                        println "[fix-autolinking] wrote autolinking.json from script"
+                        return
+                    }
+                    println "[fix-autolinking] script failed, using fallback patch"
+                }
+
+                // Fallback: patch packageName into whatever RNGP wrote
+                def text = autolinkingFile.exists() ? autolinkingFile.text : '{}'
+                def parsed = new groovy.json.JsonSlurper().parseText(text)
+                parsed.project = parsed.project ?: [:]
+                parsed.project.android = parsed.project.android ?: [:]
+                parsed.project.android.packageName = 'com.subtrimmer'
+                parsed.project.android.applicationId = parsed.project.android.applicationId ?: 'com.subtrimmer'
+                parsed.project.android.sourceDir = parsed.project.android.sourceDir ?: project.file('..').absolutePath
+                parsed.project.android.appName = parsed.project.android.appName ?: 'app'
+                parsed.project.android.mainActivity = parsed.project.android.mainActivity ?: '.MainActivity'
+                parsed.reactNativeVersion = parsed.reactNativeVersion ?: '0.79.6'
+                autolinkingFile.text = groovy.json.JsonOutput.toJson(parsed)
+                println "[fix-autolinking] patched packageName in autolinking.json"
             }
         }
-
-        // Fallback: patch packageName into whatever RNGP wrote
-        def text = autolinkingFile.exists() ? autolinkingFile.text : '{}'
-        def parsed = new groovy.json.JsonSlurper().parseText(text)
-        parsed.project = parsed.project ?: [:]
-        parsed.project.android = parsed.project.android ?: [:]
-        parsed.project.android.packageName = 'com.subtrimmer'
-        parsed.project.android.applicationId = parsed.project.android.applicationId ?: 'com.subtrimmer'
-        parsed.project.android.sourceDir = parsed.project.android.sourceDir ?: project.file('..').absolutePath
-        parsed.project.android.appName = parsed.project.android.appName ?: 'app'
-        parsed.project.android.mainActivity = parsed.project.android.mainActivity ?: '.MainActivity'
-        parsed.reactNativeVersion = parsed.reactNativeVersion ?: '0.79.6'
-        autolinkingFile.text = groovy.json.JsonOutput.toJson(parsed)
-        println "[fix-autolinking] patched packageName in autolinking.json"
     }
 }
 
