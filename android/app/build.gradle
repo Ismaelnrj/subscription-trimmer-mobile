@@ -205,12 +205,9 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// Guarantee autolinking.json has a valid packageName before generateAutolinkingPackageList reads it.
-// autolinkLibrariesWithApp() (above) may trigger RNGP's default command which produces null
-// packageName on pnpm/EAS builds. doFirst runs last — right before the task action reads the file.
-afterEvaluate {
-    def genTask = tasks.findByName('generateAutolinkingPackageList')
-    if (genTask == null) return
+// Safety net: guarantee autolinking.json has packageName right before generateAutolinkingPackageList
+// reads it. tasks.named() works for Gradle 8 lazy tasks (tasks.findByName returns null for them).
+tasks.named('generateAutolinkingPackageList').configure { genTask ->
     genTask.doFirst {
         def autolinkingFile = rootProject.layout.buildDirectory
             .file("generated/autolinking/autolinking.json").get().asFile

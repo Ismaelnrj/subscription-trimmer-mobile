@@ -57,15 +57,16 @@ if (getRNMinorVersion() >= 75) {
       println "[autolinking] WARNING: packageName missing! first 300 chars: ${configJson.take(300)}"
     }
 
-    // Write directly to the exact path that generateAutolinkingPackageList reads:
-    // project.rootProject.layout.buildDirectory / "generated/autolinking/autolinking.json"
-    // rootDir here is the android/ directory, whose build dir is android/build/.
-    def autolinkingJson = new File(rootDir, "build/generated/autolinking/autolinking.json")
-    autolinkingJson.parentFile.mkdirs()
-    autolinkingJson.text = configJson
-    println "[autolinking] wrote ${configJson.length()} bytes to ${autolinkingJson.absolutePath}"
+    // Write to a DIFFERENT path than RNGP's outputFile (autolinking.json).
+    // autolinkLibrariesFromConfigFile does copyTo(outputFile, overwrite=true).
+    // If we pass the same path, Kotlin deletes the file then fails to reopen it.
+    // Using autolinking-input.json avoids the same-file copyTo bug.
+    def inputFile = new File(rootDir, "build/generated/autolinking/autolinking-input.json")
+    inputFile.parentFile.mkdirs()
+    inputFile.text = configJson
+    println "[autolinking] wrote ${configJson.length()} bytes to ${inputFile.absolutePath}"
 
-    ex.autolinkLibrariesFromConfigFile(autolinkingJson)
+    ex.autolinkLibrariesFromConfigFile(inputFile)
   }
 }
 
