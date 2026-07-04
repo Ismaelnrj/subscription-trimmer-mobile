@@ -25,58 +25,47 @@ def getRNMinorVersion() {
 
 if (getRNMinorVersion() >= 75) {
   extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
-    if (System.getenv('EXPO_UNSTABLE_CORE_AUTOLINKING') == '1') {
-      println('[32mUsing expo-modules-autolinking as core autolinking source[0m')
-      def command = [
-        'node',
-        '--no-warnings',
-        '--eval',
-        'require(require.resolve(\'expo-modules-autolinking\', { paths: [require.resolve(\'expo/package.json\')] }))(process.argv.slice(1))',
-        'react-native-config',
-        '--json',
-        '--platform',
-        'android'
-      ].toList()
-      ex.autolinkLibrariesFromCommand(command)
-    } else {
-      // Run our committed script via Groovy exec (no Gradle provider, no npx) and
-      // bypass autolinkLibrariesFromCommand entirely to avoid its caching layer.
-      def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
-      println "[autolinking] Running: node ${scriptPath}"
+    // Always run our committed script regardless of EXPO_UNSTABLE_CORE_AUTOLINKING.
+    // EAS may set that env var internally; the expo-modules-autolinking command it
+    // triggers can omit packageName on pnpm projects. Our script has three fallbacks
+    // that guarantee packageName is always present.
+    def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
+    println "[autolinking] running: node ${scriptPath}"
 
-      def stdout = new StringWriter()
-      def stderr = new StringWriter()
-      def proc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
-      proc.consumeProcessOutput(stdout, stderr)
-      proc.waitFor()
+    def stdout = new StringWriter()
+    def stderr = new StringWriter()
+    def proc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
+    proc.consumeProcessOutput(stdout, stderr)
+    proc.waitFor()
 
-      def configJson = stdout.toString()
-      def exitCode = proc.exitValue()
+    def configJson = stdout.toString().trim()
+    def exitCode = proc.exitValue()
 
-      println "[autolinking] exit=${exitCode}, stdout_length=${configJson.length()}"
-      if (!stderr.toString().isEmpty()) {
-        println "[autolinking] stderr=${stderr.toString().take(500)}"
-      }
-
-      if (exitCode != 0 || configJson.isEmpty()) {
-        throw new GradleException("[autolinking] generate-autolinking-config.js failed (exit=${exitCode})\nstderr: ${stderr}")
-      }
-
-      // Verify packageName is present before passing the file to RNGP
-      def pkgNameMatch = configJson =~ /"packageName"\s*:\s*"([^"]+)"/
-      if (pkgNameMatch) {
-        println "[autolinking] packageName found: ${pkgNameMatch[0][1]}"
-      } else {
-        println "[autolinking] WARNING: packageName NOT found in script output!"
-        println "[autolinking] first 300 chars: ${configJson.take(300)}"
-      }
-
-      def inputFile = settings.layout.rootDirectory.file("build/generated/autolinking/autolinking-input.json").asFile
-      inputFile.parentFile.mkdirs()
-      inputFile.text = configJson
-
-      ex.autolinkLibrariesFromConfigFile(inputFile)
+    println "[autolinking] exit=${exitCode} length=${configJson.length()}"
+    if (!stderr.toString().isEmpty()) {
+      println "[autolinking] stderr=${stderr.toString().take(500)}"
     }
+
+    if (exitCode != 0 || configJson.isEmpty()) {
+      throw new GradleException("[autolinking] script failed (exit=${exitCode}): ${stderr}")
+    }
+
+    def pkgNameMatch = configJson =~ /"packageName"\s*:\s*"([^"]+)"/
+    if (pkgNameMatch) {
+      println "[autolinking] packageName=${pkgNameMatch[0][1]}"
+    } else {
+      println "[autolinking] WARNING: packageName missing! first 300 chars: ${configJson.take(300)}"
+    }
+
+    // Write directly to the exact path that generateAutolinkingPackageList reads:
+    // project.rootProject.layout.buildDirectory / "generated/autolinking/autolinking.json"
+    // rootDir here is the android/ directory, whose build dir is android/build/.
+    def autolinkingJson = new File(rootDir, "build/generated/autolinking/autolinking.json")
+    autolinkingJson.parentFile.mkdirs()
+    autolinkingJson.text = configJson
+    println "[autolinking] wrote ${configJson.length()} bytes to ${autolinkingJson.absolutePath}"
+
+    ex.autolinkLibrariesFromConfigFile(autolinkingJson)
   }
 }
 
