@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useFmt } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
@@ -176,13 +177,14 @@ function calcSavingsPotential(tips: Tip[]): number {
   return total;
 }
 
-const PRIORITY_LABEL: Record<string, string> = { high: "Action needed", medium: "Worth reviewing", low: "FYI" };
+const PRIORITY_LABEL_KEY: Record<string, string> = { high: "insights.actionNeeded", medium: "insights.worthReviewing", low: "insights.fyi" };
 
 export default function InsightsScreen() {
   const router = useRouter();
   const fmtC = useFmt();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs, isRefetching: subsRefetching } = useQuery<Sub[]>({
     queryKey: ["subscriptions", "list"],
@@ -228,7 +230,7 @@ export default function InsightsScreen() {
             <View style={styles.bannerLeft}>
               <MaterialCommunityIcons name="lightbulb-on-outline" size={26} color={c.primary} />
               <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={styles.bannerTitle}>Spending snapshot</Text>
+                <Text style={styles.bannerTitle}>{t("insights.spendingSnapshot")}</Text>
                 <Text style={styles.bannerSub}>
                   {subscriptions.length} subscription{subscriptions.length !== 1 ? "s" : ""}
                   {"  ·  "}{fmtC(monthlyTotal)}/mo
@@ -245,7 +247,7 @@ export default function InsightsScreen() {
               <View style={styles.savingsRow}>
                 <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
                 <Text style={styles.savingsText}>
-                  Potential savings: up to {fmtC(savingsPotential)}/mo
+                  {t("insights.potential", { amount: fmtC(savingsPotential) })}
                 </Text>
               </View>
             )}
@@ -258,18 +260,16 @@ export default function InsightsScreen() {
           ) : isError ? (
             <View style={styles.empty}>
               <MaterialCommunityIcons name="alert-circle-outline" size={52} color={c.border} />
-              <Text style={styles.emptyTitle}>Couldn't load recommendations</Text>
-              <Text style={styles.emptyText}>Pull down to retry.</Text>
+              <Text style={styles.emptyTitle}>{t("insights.couldntLoad")}</Text>
+              <Text style={styles.emptyText}>{t("insights.pullToRetry")}</Text>
             </View>
           ) : subscriptions.length === 0 ? (
             <View style={styles.empty}>
               <MaterialCommunityIcons name="inbox-outline" size={52} color={c.border} />
-              <Text style={styles.emptyTitle}>No subscriptions yet</Text>
-              <Text style={styles.emptyText}>
-                Add your subscriptions and we'll analyse your spending and flag anything worth reviewing.
-              </Text>
+              <Text style={styles.emptyTitle}>{t("insights.noSubsTitle")}</Text>
+              <Text style={styles.emptyText}>{t("insights.noSubsDesc")}</Text>
               <TouchableOpacity style={styles.addButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-                <Text style={styles.addButtonText}>Add Subscription</Text>
+                <Text style={styles.addButtonText}>{t("insights.addSub")}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -281,8 +281,8 @@ export default function InsightsScreen() {
 
               {lockedCount > 0 && (
                 <PremiumGate
-                  title={`${lockedCount} more recommendation${lockedCount !== 1 ? "s" : ""} available`}
-                  description="Upgrade to see your full personalised analysis and every money-saving opportunity."
+                  title={t("insights.premiumGateTitle", { count: lockedCount })}
+                  description={t("insights.premiumGateDesc")}
                 />
               )}
 
@@ -297,7 +297,7 @@ export default function InsightsScreen() {
                         <Text style={styles.cardTitle} numberOfLines={2}>{tip.title}</Text>
                         <View style={[styles.badge, { backgroundColor: tip.color + "18" }]}>
                           <Text style={[styles.badgeText, { color: tip.color }]}>
-                            {PRIORITY_LABEL[tip.priority]}
+                            {t(PRIORITY_LABEL_KEY[tip.priority])}
                           </Text>
                         </View>
                       </View>
@@ -310,7 +310,7 @@ export default function InsightsScreen() {
                       )}
                     </View>
                   </View>
-                  <Text style={styles.tapHint}>Tap to read more →</Text>
+                  <Text style={styles.tapHint}>{t("insights.tapToRead")} →</Text>
                 </TouchableOpacity>
               ))}
 
@@ -325,7 +325,7 @@ export default function InsightsScreen() {
                           </View>
                           <View style={[styles.badge, { backgroundColor: selectedTip.color + "18", alignSelf: "flex-start" }]}>
                             <Text style={[styles.badgeText, { color: selectedTip.color }]}>
-                              {PRIORITY_LABEL[selectedTip.priority]}
+                              {t(PRIORITY_LABEL_KEY[selectedTip.priority])}
                             </Text>
                           </View>
                         </View>
@@ -338,7 +338,7 @@ export default function InsightsScreen() {
                           </View>
                         )}
                         <TouchableOpacity style={[styles.modalClose, { backgroundColor: selectedTip.color }]} onPress={() => setSelectedTip(null)}>
-                          <Text style={styles.modalCloseText}>Got it</Text>
+                          <Text style={styles.modalCloseText}>{t("insights.gotIt")}</Text>
                         </TouchableOpacity>
                       </>
                     )}

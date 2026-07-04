@@ -3,6 +3,7 @@ import { MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
@@ -20,6 +21,7 @@ export default function RegisterScreen() {
   const [emailError, setEmailError] = useState("");
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
   const [googleRequest, googleResponse, promptGoogleAuth] = useGoogleAuth();
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function RegisterScreen() {
           setUser(user);
           router.replace("/(tabs)");
         } catch (err: any) {
-          Alert.alert("Google sign-in failed", err.response?.data?.error || "Something went wrong.");
+          Alert.alert(t("common.error"), err.response?.data?.error || t("register.errGoogleFailed"));
         } finally {
           setLoading(false);
         }
@@ -45,11 +47,11 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter your email and password.");
+      Alert.alert(t("common.error"), t("register.errEmptyFields"));
       return;
     }
     if (!isPasswordValid(password)) {
-      Alert.alert("Weak password", "Your password must be at least 8 characters and include one uppercase letter and one number.");
+      Alert.alert(t("common.error"), t("register.errWeakPassword"));
       return;
     }
     setEmailError("");
@@ -64,9 +66,9 @@ export default function RegisterScreen() {
     } catch (err: any) {
       const msg = err.response?.data?.error || "Something went wrong.";
       if (msg.toLowerCase().includes("already")) {
-        setEmailError("This email is already registered. Try signing in instead.");
+        setEmailError(t("register.emailAlreadyRegistered"));
       } else {
-        Alert.alert("Registration failed", msg);
+        Alert.alert(t("common.error"), msg || t("register.errRegistrationFailed"));
       }
     } finally {
       setLoading(false);
@@ -77,20 +79,20 @@ export default function RegisterScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Trimio</Text>
-        <Text style={styles.subtitle}>Create your account</Text>
+        <Text style={styles.subtitle}>{t("register.subtitle")}</Text>
       </View>
 
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder="Name (optional)"
+          placeholder={t("register.namePlaceholder")}
           placeholderTextColor={c.placeholder}
           value={name}
           onChangeText={setName}
         />
         <TextInput
           style={[styles.input, emailError ? styles.inputError : null]}
-          placeholder="Email"
+          placeholder={t("register.emailPlaceholder")}
           placeholderTextColor={c.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -101,7 +103,7 @@ export default function RegisterScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{emailError}</Text>
             <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={styles.errorLink}>Sign in →</Text>
+              <Text style={styles.errorLink}>{t("register.signInLink")} →</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -109,7 +111,7 @@ export default function RegisterScreen() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password"
+            placeholder={t("register.passwordPlaceholder")}
             placeholderTextColor={c.placeholder}
             secureTextEntry={!showPassword}
             value={password}
@@ -122,14 +124,14 @@ export default function RegisterScreen() {
         <PasswordStrengthMeter password={password} />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Account</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
         </TouchableOpacity>
 
         {isGoogleAuthConfigured() ? (
           <>
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t("register.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
             <TouchableOpacity
@@ -138,13 +140,13 @@ export default function RegisterScreen() {
               disabled={!googleRequest || loading}
             >
               <AntDesign name="google" size={18} color={c.text} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t("register.continueGoogle")}</Text>
             </TouchableOpacity>
           </>
         ) : null}
 
         <TouchableOpacity style={styles.link} onPress={() => router.push("/login")}>
-          <Text style={styles.linkText}>Already have an account? <Text style={styles.linkBold}>Sign In</Text></Text>
+          <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
         </TouchableOpacity>
       </View>
     </View>

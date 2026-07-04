@@ -3,6 +3,7 @@ import { MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
@@ -17,11 +18,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
   const [googleRequest, googleResponse, promptGoogleAuth] = useGoogleAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please enter your email and password.");
+      Alert.alert(t("common.error"), t("login.errEmptyFields"));
       return;
     }
     setLoading(true);
@@ -33,7 +35,7 @@ export default function LoginScreen() {
       setUser(user);
       router.replace("/(tabs)");
     } catch (err: any) {
-      Alert.alert("Login failed", err.response?.data?.error || "Something went wrong.");
+      Alert.alert(t("common.error"), err.response?.data?.error || t("login.errLoginFailed"));
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ export default function LoginScreen() {
           setUser(user);
           router.replace("/(tabs)");
         } catch (err: any) {
-          Alert.alert("Google sign-in failed", err.response?.data?.error || "Something went wrong.");
+          Alert.alert(t("common.error"), err.response?.data?.error || t("login.errGoogleFailed"));
         } finally {
           setLoading(false);
         }
@@ -64,13 +66,13 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Trimio</Text>
-        <Text style={styles.subtitle}>Sign in to manage your subscriptions</Text>
+        <Text style={styles.subtitle}>{t("login.subtitle")}</Text>
       </View>
 
       <View style={styles.form}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={t("login.emailPlaceholder")}
           placeholderTextColor={c.placeholder}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -81,7 +83,7 @@ export default function LoginScreen() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.passwordInput}
-            placeholder="Password"
+            placeholder={t("login.passwordPlaceholder")}
             placeholderTextColor={c.placeholder}
             secureTextEntry={!showPassword}
             value={password}
@@ -93,14 +95,14 @@ export default function LoginScreen() {
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("login.signIn")}</Text>}
         </TouchableOpacity>
 
         {isGoogleAuthConfigured() ? (
           <>
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t("login.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
             <TouchableOpacity
@@ -109,17 +111,17 @@ export default function LoginScreen() {
               disabled={!googleRequest || loading}
             >
               <AntDesign name="google" size={18} color={c.text} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
+              <Text style={styles.googleButtonText}>{t("login.continueGoogle")}</Text>
             </TouchableOpacity>
           </>
         ) : null}
 
         <TouchableOpacity style={styles.forgotLink} onPress={() => router.push("/forgot-password")}>
-          <Text style={styles.forgotText}>Forgot your password?</Text>
+          <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.link} onPress={() => router.push("/register")}>
-          <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Sign Up</Text></Text>
+          <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
         </TouchableOpacity>
       </View>
     </View>

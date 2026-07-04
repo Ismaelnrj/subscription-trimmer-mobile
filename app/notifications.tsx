@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -10,6 +11,7 @@ export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: notifications = [], isLoading, isError, refetch: refetchHistory } = useQuery({
@@ -56,7 +58,7 @@ export default function NotificationsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: unreadCount > 0 ? `Notifications (${unreadCount})` : "Notifications" }} />
+      <Stack.Screen options={{ title: unreadCount > 0 ? t("notifications.titleWithCount", { count: unreadCount }) : t("notifications.title") }} />
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -65,7 +67,7 @@ export default function NotificationsScreen() {
         <View style={styles.scrollContent}>
           {unreadCount > 0 && (
             <TouchableOpacity style={styles.markAllButton} onPress={() => markAsReadMutation.mutate(undefined)}>
-              <Text style={styles.markAllButtonText}>Mark all as read</Text>
+              <Text style={styles.markAllButtonText}>{t("notifications.markAllRead")}</Text>
             </TouchableOpacity>
           )}
 
@@ -74,12 +76,12 @@ export default function NotificationsScreen() {
           ) : isError ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
-              <Text style={styles.emptyStateText}>Couldn't load notifications. Pull down to retry.</Text>
+              <Text style={styles.emptyStateText}>{t("notifications.couldntLoad")}</Text>
             </View>
           ) : notifications.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="bell-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
-              <Text style={styles.emptyStateText}>No notifications yet</Text>
+              <Text style={styles.emptyStateText}>{t("notifications.noNotifications")}</Text>
             </View>
           ) : (
             notifications.map((n: any) => (
@@ -94,7 +96,7 @@ export default function NotificationsScreen() {
                   {!n.read && (
                     <View style={styles.notificationActions}>
                       <TouchableOpacity style={styles.actionButton} onPress={() => markAsReadMutation.mutate(n.id)}>
-                        <Text style={styles.actionButtonText}>Mark as read</Text>
+                        <Text style={styles.actionButtonText}>{t("notifications.markRead")}</Text>
                       </TouchableOpacity>
                     </View>
                   )}

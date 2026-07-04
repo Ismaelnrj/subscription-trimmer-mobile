@@ -4,6 +4,7 @@ import { useAuthStore } from "../lib/auth-store";
 import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -14,6 +15,7 @@ export default function NotificationPreferencesScreen() {
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const { data: subscriptions = [] } = useQuery<any[]>({
     queryKey: ["subscriptions", "list"],
@@ -30,7 +32,7 @@ export default function NotificationPreferencesScreen() {
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/notifications.updatePreferences", data)).data.result.data,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] }),
-    onError: () => Alert.alert("Error", "Failed to save preferences. Please try again."),
+    onError: () => Alert.alert(t("common.error"), t("notifPrefs.errSave")),
   });
 
   const toggle = (key: string, value: boolean | number) => {
@@ -41,9 +43,9 @@ export default function NotificationPreferencesScreen() {
   if (isLoading || !prefs) {
     return (
       <>
-        <Stack.Screen options={{ title: "Notification Preferences" }} />
+        <Stack.Screen options={{ title: t("profile.notifications") }} />
         <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-          <Text style={{ color: c.textSecondary }}>Loading...</Text>
+          <Text style={{ color: c.textSecondary }}>{t("notifPrefs.loading")}</Text>
         </View>
       </>
     );
@@ -51,16 +53,16 @@ export default function NotificationPreferencesScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Notification Preferences" }} />
+      <Stack.Screen options={{ title: t("profile.notifications") }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
-          <Text style={styles.sectionTitle}>Alerts</Text>
+          <Text style={styles.sectionTitle}>{t("notifPrefs.alerts")}</Text>
           <View style={styles.card}>
             <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start" }]}>
               <View style={{ flexDirection: "row", width: "100%", alignItems: "center" }}>
                 <View style={{ flex: 1, marginRight: 16 }}>
-                  <Text style={styles.rowLabel}>Renewal Alerts</Text>
-                  <Text style={styles.rowDesc}>Get notified before a subscription renews</Text>
+                  <Text style={styles.rowLabel}>{t("notifPrefs.renewalAlerts")}</Text>
+                  <Text style={styles.rowDesc}>{t("notifPrefs.renewalAlertsDesc")}</Text>
                 </View>
                 <Switch
                   value={prefs.renewalAlerts}
@@ -80,7 +82,7 @@ export default function NotificationPreferencesScreen() {
                         onPress={() => toggle("renewalAlertDays", days)}
                       >
                         <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>
-                          {days} day{days !== 1 ? "s" : ""}
+                          {t("notifPrefs.day", { count: days })}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -90,8 +92,8 @@ export default function NotificationPreferencesScreen() {
             </View>
             <View style={[styles.row, styles.rowLast]}>
               <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>Spending Alerts</Text>
-                <Text style={styles.rowDesc}>Get notified when monthly spend is high</Text>
+                <Text style={styles.rowLabel}>{t("notifPrefs.spendingAlerts")}</Text>
+                <Text style={styles.rowDesc}>{t("notifPrefs.spendingAlertsDesc")}</Text>
               </View>
               <Switch
                 value={prefs.spendingAlerts}
@@ -102,12 +104,12 @@ export default function NotificationPreferencesScreen() {
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>Summary</Text>
+          <Text style={styles.sectionTitle}>{t("notifPrefs.summary")}</Text>
           <View style={styles.card}>
             <View style={[styles.row, styles.rowLast]}>
               <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>Weekly Summary</Text>
-                <Text style={styles.rowDesc}>Receive a weekly overview of your spending</Text>
+                <Text style={styles.rowLabel}>{t("notifPrefs.weeklySummary")}</Text>
+                <Text style={styles.rowDesc}>{t("notifPrefs.weeklySummaryDesc")}</Text>
               </View>
               <Switch
                 value={prefs.weeklySummary}
@@ -118,12 +120,12 @@ export default function NotificationPreferencesScreen() {
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>General</Text>
+          <Text style={styles.sectionTitle}>{t("notifPrefs.general")}</Text>
           <View style={styles.card}>
             <View style={styles.row}>
               <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>Push Notifications</Text>
-                <Text style={styles.rowDesc}>Enable all push notifications from Trimio</Text>
+                <Text style={styles.rowLabel}>{t("notifPrefs.pushNotifications")}</Text>
+                <Text style={styles.rowDesc}>{t("notifPrefs.pushNotificationsDesc")}</Text>
               </View>
               <Switch
                 value={prefs.pushEnabled}
@@ -136,12 +138,12 @@ export default function NotificationPreferencesScreen() {
               <View style={styles.emailRowTop}>
                 <View style={{ flex: 1, marginRight: 16 }}>
                   <Text style={styles.rowLabel}>
-                    Email Reminders{!isPremium ? "  🔒" : ""}
+                    {t("notifPrefs.emailReminders")}{!isPremium ? "  🔒" : ""}
                   </Text>
                   <Text style={styles.rowDesc}>
                     {isPremium
-                      ? "Get an email 3 days before any subscription renews"
-                      : "Premium feature. Upgrade to enable email reminders"}
+                      ? t("notifPrefs.emailRemindersDesc")
+                      : t("notifPrefs.emailRemindersPremiumDesc")}
                   </Text>
                 </View>
                 {isPremium ? (
@@ -156,7 +158,7 @@ export default function NotificationPreferencesScreen() {
                     onPress={() => router.push("/upgrade")}
                     style={{ backgroundColor: c.primary, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
                   >
-                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>Upgrade</Text>
+                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>{t("notifPrefs.upgradeBtn")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -175,7 +177,7 @@ export default function NotificationPreferencesScreen() {
                 if (upcoming.length === 0) return null;
                 return (
                   <View style={styles.upcomingEmails}>
-                    <Text style={styles.upcomingLabel}>Next scheduled emails:</Text>
+                    <Text style={styles.upcomingLabel}>{t("notifPrefs.nextEmails")}</Text>
                     {upcoming.map((s, i) => (
                       <View key={i} style={styles.upcomingRow}>
                         <MaterialCommunityIcons name="email-outline" size={13} color={c.primary} />

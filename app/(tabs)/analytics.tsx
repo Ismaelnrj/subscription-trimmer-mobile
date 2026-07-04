@@ -2,6 +2,7 @@ import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
 import { useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
@@ -15,6 +16,7 @@ export default function AnalyticsScreen() {
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const { data: summary, isLoading, isError, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -44,9 +46,9 @@ export default function AnalyticsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
-        <Text style={styles.emptyStateText}>Couldn't load analytics.</Text>
+        <Text style={styles.emptyStateText}>{t("analytics.couldntLoad")}</Text>
         <TouchableOpacity style={{ marginTop: 16 }} onPress={onRefresh}>
-          <Text style={{ color: c.primary, fontWeight: "600" }}>Try Again</Text>
+          <Text style={{ color: c.primary, fontWeight: "600" }}>{t("common.tryAgain")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -65,27 +67,27 @@ export default function AnalyticsScreen() {
       <View style={styles.scrollContent}>
         <View style={styles.summaryRowCompact}>
           <View style={styles.summaryCardCompact}>
-            <Text style={styles.summaryTitleCompact}>Monthly Spend</Text>
+            <Text style={styles.summaryTitleCompact}>{t("analytics.monthlySpend")}</Text>
             <Text style={styles.summaryValueCompact}>{fmtC(monthly)}</Text>
             {budgetGoal != null && (
               <Text style={{ fontSize: 11, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 2 }}>
-                {monthly > budgetGoal ? "Over budget" : `${fmtC(budgetGoal - monthly)} left`}
+                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtC(budgetGoal - monthly) })}
               </Text>
             )}
           </View>
 
           <View style={styles.summaryCardCompact}>
-            <Text style={styles.summaryTitleCompact}>Yearly Projection</Text>
+            <Text style={styles.summaryTitleCompact}>{t("analytics.yearlyProjection")}</Text>
             <Text style={styles.summaryValueCompact}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Spending by Category</Text>
+        <Text style={styles.sectionTitle}>{t("analytics.spendingByCategory")}</Text>
 
         {(!summary?.categoryBreakdown || summary.categoryBreakdown.length === 0) ? (
           <View style={styles.emptyStateCompact}>
             <MaterialCommunityIcons name="chart-box-outline" size={28} color={c.border} style={{ marginBottom: 6 }} />
-            <Text style={styles.emptyStateText}>No spending data yet</Text>
+            <Text style={styles.emptyStateText}>{t("analytics.noSpendingData")}</Text>
           </View>
         ) : isPremium ? (
           summary.categoryBreakdown
@@ -122,23 +124,23 @@ export default function AnalyticsScreen() {
             })}
             {summary.categoryBreakdown.length > 1 && (
               <PremiumGate
-                title={`${summary.categoryBreakdown.length - 1} more categor${summary.categoryBreakdown.length - 1 === 1 ? "y" : "ies"} hidden`}
-                description="See your full spending breakdown by category and identify exactly where your money is going."
+                title={t("analytics.hiddenCategories", { count: summary.categoryBreakdown.length - 1 })}
+                description={t("analytics.hiddenCategoriesDesc")}
               />
             )}
           </>
         )}
 
-        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Summary</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t("analytics.summary")}</Text>
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>Active Now</Text>
+              <Text style={styles.statPairLabel}>{t("analytics.activeNow")}</Text>
               <Text style={styles.statPairValue}>{summary?.activeSubscriptions ?? 0}</Text>
             </View>
             <View style={styles.divider} />
             <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>Total Added (All Time)</Text>
+              <Text style={styles.statPairLabel}>{t("analytics.totalAdded")}</Text>
               <Text style={styles.statPairValue}>{summary?.totalSubscriptions ?? 0}</Text>
             </View>
           </View>
@@ -147,12 +149,12 @@ export default function AnalyticsScreen() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
               <View style={styles.statPair}>
-                <Text style={styles.statPairLabel}>Avg per Subscription</Text>
+                <Text style={styles.statPairLabel}>{t("analytics.avgPerSub")}</Text>
                 <Text style={styles.statPairValue}>{fmtC(monthly / (summary?.activeSubscriptions ?? 1))}/mo</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.statPair}>
-                <Text style={styles.statPairLabel}>Avg per Year</Text>
+                <Text style={styles.statPairLabel}>{t("analytics.avgPerYear")}</Text>
                 <Text style={styles.statPairValue}>{fmtC((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}/yr</Text>
               </View>
             </View>

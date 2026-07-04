@@ -3,35 +3,15 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { useTranslation } from "react-i18next";
 import { useTheme, AppColors } from "../lib/theme";
 
 const { width } = Dimensions.get("window");
 
-const SLIDES = [
-  {
-    icon: "view-dashboard-outline",
-    color: "#4F46E5",
-    bg: "#EEF2FF",
-    bgDark: "#1E1B4B",
-    title: "Track every subscription",
-    desc: "Add all your subscriptions in one place and always know exactly what you're paying — monthly and yearly.",
-  },
-  {
-    icon: "bell-alert-outline",
-    color: "#F59E0B",
-    bg: "#FEF3C7",
-    bgDark: "#1C1508",
-    title: "Never get surprised",
-    desc: "Get alerts before renewal dates and track free trial end dates so you never forget to cancel.",
-  },
-  {
-    icon: "lightbulb-on-outline",
-    color: "#10B981",
-    bg: "#ECFDF5",
-    bgDark: "#052E16",
-    title: "Save money intelligently",
-    desc: "See spending by category, set a monthly budget, and get personalised tips to cut unnecessary costs.",
-  },
+const SLIDE_ICONS = [
+  { icon: "view-dashboard-outline", color: "#4F46E5", bg: "#EEF2FF", bgDark: "#1E1B4B" },
+  { icon: "bell-alert-outline", color: "#F59E0B", bg: "#FEF3C7", bgDark: "#1C1508" },
+  { icon: "lightbulb-on-outline", color: "#10B981", bg: "#ECFDF5", bgDark: "#052E16" },
 ];
 
 const ESTIMATE_OPTIONS = [
@@ -50,6 +30,13 @@ export default function OnboardingScreen() {
   const c = useTheme();
   const isDark = c.bg !== "#F9FAFB";
   const styles = makeStyles(c);
+  const { t } = useTranslation();
+
+  const SLIDES = [
+    { ...SLIDE_ICONS[0], title: t("onboarding.slide1Title"), desc: t("onboarding.slide1Desc") },
+    { ...SLIDE_ICONS[1], title: t("onboarding.slide2Title"), desc: t("onboarding.slide2Desc") },
+    { ...SLIDE_ICONS[2], title: t("onboarding.slide3Title"), desc: t("onboarding.slide3Desc") },
+  ];
 
   const isEstimateStep = current === SLIDES.length;
 
@@ -73,15 +60,15 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.container}>
         <TouchableOpacity style={styles.skip} onPress={finish}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
         </TouchableOpacity>
 
         <View style={styles.content}>
           <View style={[styles.iconCircle, { backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" }]}>
             <MaterialCommunityIcons name="help-circle-outline" size={64} color={c.primary} />
           </View>
-          <Text style={styles.title}>How many subscriptions do you think you have?</Text>
-          <Text style={styles.desc}>Just a guess. We'll show you how close you were once you've added them.</Text>
+          <Text style={styles.title}>{t("onboarding.estimateTitle")}</Text>
+          <Text style={styles.desc}>{t("onboarding.estimateDesc")}</Text>
 
           <View style={styles.estimateRow}>
             {ESTIMATE_OPTIONS.map((opt) => (
@@ -99,7 +86,7 @@ export default function OnboardingScreen() {
         </View>
 
         <TouchableOpacity style={[styles.button, { backgroundColor: c.primary }]} onPress={finish}>
-          <Text style={styles.buttonText}>Get Started</Text>
+          <Text style={styles.buttonText}>{t("onboarding.getStarted")}</Text>
           <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -111,7 +98,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.skip} onPress={finish}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -129,7 +116,7 @@ export default function OnboardingScreen() {
       </View>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: slide.color }]} onPress={next}>
-        <Text style={styles.buttonText}>Next</Text>
+        <Text style={styles.buttonText}>{t("onboarding.next")}</Text>
         <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
       </TouchableOpacity>
     </View>

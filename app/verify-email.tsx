@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
@@ -15,21 +16,22 @@ export default function VerifyEmailScreen() {
   const [resent, setResent] = useState(false);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const handleVerify = async () => {
     if (code.length !== 6) {
-      Alert.alert("Error", "Please enter the 6-digit code from your email.");
+      Alert.alert(t("common.error"), t("verifyEmail.errEnterCode"));
       return;
     }
     setLoading(true);
     try {
       const res = await apiClient.post("/auth/verify-email", { code });
       setUser(res.data.user);
-      Alert.alert("Verified!", "Your email has been confirmed.", [
-        { text: "Continue", onPress: () => router.replace("/(tabs)") },
+      Alert.alert(t("verifyEmail.verifiedTitle"), t("verifyEmail.verifiedMsg"), [
+        { text: t("verifyEmail.continueBtn"), onPress: () => router.replace("/(tabs)") },
       ]);
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.error || "Invalid code. Please try again.");
+      Alert.alert(t("common.error"), err.response?.data?.error || t("verifyEmail.errInvalidCode"));
     } finally {
       setLoading(false);
     }
@@ -40,16 +42,16 @@ export default function VerifyEmailScreen() {
     try {
       const res = await apiClient.post("/auth/resend-verification");
       if (res.data?.alreadyVerified) {
-        Alert.alert("Already verified", "Your email is already verified.", [
-          { text: "Continue", onPress: () => router.replace("/(tabs)") },
+        Alert.alert(t("verifyEmail.alreadyVerifiedTitle"), t("verifyEmail.alreadyVerifiedMsg"), [
+          { text: t("verifyEmail.continueBtn"), onPress: () => router.replace("/(tabs)") },
         ]);
         return;
       }
       setResent(true);
-      Alert.alert("Sent!", "A new verification code has been sent to your email.");
+      Alert.alert(t("verifyEmail.codeSentTitle"), t("verifyEmail.codeSentMsg"));
     } catch (err: any) {
       const msg = err.response?.data?.error || err.message || "Unknown error";
-      Alert.alert("Error", `Could not resend code: ${msg}`);
+      Alert.alert(t("common.error"), `${t("verifyEmail.errResend")}: ${msg}`);
     } finally {
       setResending(false);
     }
@@ -62,9 +64,9 @@ export default function VerifyEmailScreen() {
         <View style={styles.icon}>
           <MaterialCommunityIcons name="email-check-outline" size={56} color={c.primary} />
         </View>
-        <Text style={styles.title}>Check your inbox</Text>
+        <Text style={styles.title}>{t("verifyEmail.checkInbox")}</Text>
         <Text style={styles.subtitle}>
-          We sent a 6-digit code to{"\n"}
+          {t("verifyEmail.sentCodeTo")}{"\n"}
           <Text style={styles.email}>{user?.email}</Text>
         </Text>
 
@@ -72,7 +74,7 @@ export default function VerifyEmailScreen() {
           style={styles.codeInput}
           value={code}
           onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
-          placeholder="000000"
+          placeholder={t("verifyEmail.codePlaceholder")}
           placeholderTextColor={c.textMuted}
           keyboardType="number-pad"
           maxLength={6}
@@ -82,18 +84,18 @@ export default function VerifyEmailScreen() {
         <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={loading || code.length !== 6}>
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Verify Email</Text>
+            : <Text style={styles.buttonText}>{t("verifyEmail.verifyBtn")}</Text>
           }
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.resendButton} onPress={handleResend} disabled={resending}>
           <Text style={styles.resendText}>
-            {resending ? "Sending..." : resent ? "Code resent ✓" : "Didn't receive it? Resend code"}
+            {resending ? t("verifyEmail.sending") : resent ? `${t("verifyEmail.codeSent")} ✓` : t("verifyEmail.resendCode")}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.skipButton} onPress={() => router.replace("/(tabs)")}>
-          <Text style={styles.skipText}>Skip for now</Text>
+          <Text style={styles.skipText}>{t("verifyEmail.skipForNow")}</Text>
         </TouchableOpacity>
       </View>
     </>

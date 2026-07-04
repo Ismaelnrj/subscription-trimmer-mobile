@@ -2,17 +2,12 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
 import { PurchasesPackage } from "react-native-purchases";
 import { useTheme, AppColors } from "../lib/theme";
 import { useAuthStore } from "../lib/auth-store";
 import { TIP_PRICES } from "../lib/pricing";
-
-const TIPS = [
-  { id: TIP_IDS.coffee, emoji: "☕", label: "Buy me a coffee", fallbackPrice: TIP_PRICES.coffee, desc: "A quick caffeine boost" },
-  { id: TIP_IDS.lunch,  emoji: "🍕", label: "Buy me a slice",  fallbackPrice: TIP_PRICES.lunch, desc: "You're too kind!" },
-  { id: TIP_IDS.dinner, emoji: "🍔", label: "Buy me dinner",   fallbackPrice: TIP_PRICES.dinner, desc: "Incredible — thank you!" },
-];
 
 export default function TipJarScreen() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -22,6 +17,13 @@ export default function TipJarScreen() {
   const { user } = useAuthStore();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
+
+  const TIPS = [
+    { id: TIP_IDS.coffee, emoji: "☕", label: t("tipJar.coffee"), fallbackPrice: TIP_PRICES.coffee, desc: t("tipJar.coffeeDesc") },
+    { id: TIP_IDS.lunch,  emoji: "🍕", label: t("tipJar.slice"),  fallbackPrice: TIP_PRICES.lunch,  desc: t("tipJar.sliceDesc") },
+    { id: TIP_IDS.dinner, emoji: "🍔", label: t("tipJar.dinner"), fallbackPrice: TIP_PRICES.dinner, desc: t("tipJar.dinnerDesc") },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -41,17 +43,17 @@ export default function TipJarScreen() {
 
   const handleTip = async (id: string) => {
     if (!iapReady) {
-      Alert.alert("Not available", "In-app purchases are not available in this build. Please download the latest version from the Play Store.");
+      Alert.alert(t("common.error"), t("tipJar.errNotAvailable"));
       return;
     }
     setLoadingId(id);
     try {
       await sendTip(id);
       setTipped(true);
-      Alert.alert("Thank you! 🙏", "Your support means the world and helps keep Trimio free and improving!");
+      Alert.alert(t("tipJar.thankYouTitle"), t("tipJar.thankYouMsg"));
     } catch (e: any) {
       if (!e?.message?.toLowerCase().includes("cancel")) {
-        Alert.alert("Error", "Could not complete the purchase. Please try again.");
+        Alert.alert(t("common.error"), t("tipJar.errPurchase"));
       }
     } finally {
       setLoadingId(null);
@@ -64,17 +66,15 @@ export default function TipJarScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🫙</Text>
-          <Text style={styles.headerTitle}>Support the Developer</Text>
-          <Text style={styles.headerDesc}>
-            Trimio is built and maintained by one person. If it saves you money, consider buying me a treat!
-          </Text>
+          <Text style={styles.headerTitle}>{t("tipJar.title")}</Text>
+          <Text style={styles.headerDesc}>{t("tipJar.desc")}</Text>
         </View>
 
         <View style={styles.body}>
           {tipped && (
             <View style={styles.thankCard}>
               <MaterialCommunityIcons name="heart" size={28} color={c.danger} />
-              <Text style={styles.thankText}>Thank you so much! 🙏</Text>
+              <Text style={styles.thankText}>{t("tipJar.thankYou")} 🙏</Text>
             </View>
           )}
 
@@ -101,10 +101,7 @@ export default function TipJarScreen() {
             </View>
           ))}
 
-          <Text style={styles.note}>
-            Tips are optional and non-refundable.{"\n"}
-            They do not unlock any additional features.
-          </Text>
+          <Text style={styles.note}>{t("tipJar.footerNote")}</Text>
         </View>
       </ScrollView>
     </>

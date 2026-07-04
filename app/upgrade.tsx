@@ -5,6 +5,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { PurchasesPackage } from "react-native-purchases";
 import {
   setupIAP, checkIsPremium, getOfferings,
@@ -14,25 +15,7 @@ import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
 import { PREMIUM_PRICES } from "../lib/pricing";
 
-const FEATURES = [
-  { icon: "infinity",            label: "Subscriptions",             free: "Up to 5",    premium: "Unlimited" },
-  { icon: "chart-bar",           label: "Spending by category",      free: "Top 1 only", premium: "Full breakdown" },
-  { icon: "lightbulb-on",        label: "AI Recommendations",        free: "Top 2 only", premium: "All insights" },
-  { icon: "target",              label: "Budget goal & progress bar", free: "—",          premium: "✓" },
-  { icon: "clock-alert-outline", label: "Trial date tracker",        free: "—",          premium: "✓" },
-  { icon: "tag-multiple",        label: "Custom categories",         free: "—",          premium: "✓" },
-  { icon: "file-chart",          label: "Export report (CSV)",       free: "—",          premium: "✓" },
-  { icon: "email-fast-outline",  label: "Email renewal reminders",   free: "—",          premium: "✓" },
-  { icon: "headset",             label: "Priority support",          free: "—",          premium: "✓" },
-];
-
 type PlanKey = "monthly" | "yearly" | "lifetime";
-
-const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
-  { key: "monthly",  label: "Monthly",  price: PREMIUM_PRICES.monthly, sub: "per month" },
-  { key: "yearly",   label: "Yearly",   price: PREMIUM_PRICES.yearly, sub: "per year", badge: "Save 44%" },
-  { key: "lifetime", label: "Lifetime", price: PREMIUM_PRICES.lifetime, sub: "one-time · forever", badge: "Best Value" },
-];
 
 export default function UpgradeScreen() {
   const router = useRouter();
@@ -45,6 +28,25 @@ export default function UpgradeScreen() {
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
+
+  const FEATURES = [
+    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions"), premium: "Unlimited" },
+    { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: "Full breakdown" },
+    { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: "All insights" },
+    { icon: "target",              label: t("upgrade.feat_budget"),         free: "—",                             premium: "✓" },
+    { icon: "clock-alert-outline", label: t("upgrade.feat_trial"),          free: "—",                             premium: "✓" },
+    { icon: "tag-multiple",        label: t("upgrade.feat_customCat"),      free: "—",                             premium: "✓" },
+    { icon: "file-chart",          label: t("upgrade.feat_export"),         free: "—",                             premium: "✓" },
+    { icon: "email-fast-outline",  label: t("upgrade.feat_email"),          free: "—",                             premium: "✓" },
+    { icon: "headset",             label: t("upgrade.feat_support"),        free: "—",                             premium: "✓" },
+  ];
+
+  const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
+    { key: "monthly",  label: t("upgrade.monthly"),  price: PREMIUM_PRICES.monthly, sub: t("upgrade.perMonth") },
+    { key: "yearly",   label: t("upgrade.yearly"),   price: PREMIUM_PRICES.yearly,  sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
+    { key: "lifetime", label: t("upgrade.lifetime"), price: PREMIUM_PRICES.lifetime, sub: t("upgrade.oneTime"), badge: t("upgrade.bestValue") },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -63,12 +65,12 @@ export default function UpgradeScreen() {
 
   const handleBuy = async () => {
     if (!iapReady) {
-      Alert.alert("Not available", "Purchases are not available in this build. Please update the app from the Play Store.");
+      Alert.alert(t("common.error"), t("upgrade.errNotAvailable"));
       return;
     }
     const pkg = getPackageForPlan(selectedPlan);
     if (!pkg) {
-      Alert.alert("Not available", "This plan is not available yet. Please try another.");
+      Alert.alert(t("common.error"), t("upgrade.errPlanNotAvailable"));
       return;
     }
     setLoading(true);
@@ -77,18 +79,15 @@ export default function UpgradeScreen() {
       if (active && synced) {
         setIsPremium(true);
         if (user) setUser({ ...user, isPaid: true });
-        Alert.alert("Welcome to Premium! 🎉", "All features are now unlocked. Thank you for supporting Trimio!", [
-          { text: "Let's go!", onPress: () => router.back() },
+        Alert.alert(t("upgrade.welcomeTitle"), t("upgrade.welcomeMsg"), [
+          { text: t("upgrade.welcomeBtn"), onPress: () => router.back() },
         ]);
       } else {
-        Alert.alert(
-          "Purchase received",
-          "Your payment went through. It may take a minute for Premium to activate. If it doesn't, use \"Restore previous purchase\" below."
-        );
+        Alert.alert(t("upgrade.purchaseReceivedTitle"), t("upgrade.purchaseReceivedMsg"));
       }
     } catch (e: any) {
       if (!e?.message?.toLowerCase().includes("cancel")) {
-        Alert.alert("Purchase failed", "Something went wrong. Please try again.");
+        Alert.alert(t("upgrade.purchaseFailedTitle"), t("upgrade.purchaseFailedMsg"));
       }
     } finally {
       setLoading(false);
@@ -103,14 +102,14 @@ export default function UpgradeScreen() {
       if (active && synced) {
         setIsPremium(true);
         if (user) setUser({ ...user, isPaid: true });
-        Alert.alert("Restored!", "Your premium access has been restored.");
+        Alert.alert(t("upgrade.restoredTitle"), t("upgrade.restoredMsg"));
       } else if (active) {
-        Alert.alert("Almost there", "Your purchase was found but syncing is taking longer than expected. Please try again shortly.");
+        Alert.alert(t("upgrade.almostThereTitle"), t("upgrade.almostThereMsg"));
       } else {
-        Alert.alert("No purchase found", "No previous purchase was found for this account.");
+        Alert.alert(t("upgrade.noPurchaseTitle"), t("upgrade.noPurchaseMsg"));
       }
     } catch {
-      Alert.alert("Error", "Could not restore purchases. Please try again.");
+      Alert.alert(t("upgrade.errRestoreTitle"), t("upgrade.errRestoreMsg"));
     } finally {
       setRestoring(false);
     }
@@ -120,33 +119,33 @@ export default function UpgradeScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Upgrade to Premium", headerShown: true }} />
+      <Stack.Screen options={{ title: t("upgrade.title"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
 
         <View style={styles.hero}>
           <MaterialCommunityIcons name="crown" size={48} color="#FCD34D" style={{ marginBottom: 12 }} />
-          <Text style={styles.heroTitle}>Trimio Premium</Text>
-          <Text style={styles.heroSub}>Cancel anytime · Instant access · Instant results</Text>
+          <Text style={styles.heroTitle}>{t("upgrade.heroTitle")}</Text>
+          <Text style={styles.heroSub}>{t("upgrade.heroSubtitle")}</Text>
         </View>
 
         {isPremium ? (
           <View style={styles.body}>
             <View style={styles.alreadyCard}>
               <MaterialCommunityIcons name="check-circle" size={40} color={c.success} />
-              <Text style={styles.alreadyTitle}>You're a Premium user!</Text>
-              <Text style={styles.alreadySub}>All features are unlocked. Thank you for supporting Trimio.</Text>
+              <Text style={styles.alreadyTitle}>{t("upgrade.alreadyPremiumTitle")}</Text>
+              <Text style={styles.alreadySub}>{t("upgrade.alreadyPremiumSub")}</Text>
             </View>
           </View>
         ) : (
           <View style={styles.body}>
             <View style={styles.hookCard}>
               <Text style={styles.hookText}>
-                <Text style={styles.hookBold}>Stop leaking money</Text> on subscriptions you forgot you had.
+                <Text style={styles.hookBold}>{t("upgrade.stopLeaking")}</Text>{t("upgrade.stopLeakingSuffix")}
               </Text>
-              <Text style={styles.hookSub}>Premium costs less than one coffee a month. It pays for itself on day one.</Text>
+              <Text style={styles.hookSub}>{t("upgrade.costNote")}</Text>
             </View>
 
-            <Text style={styles.sectionLabel}>Choose your plan</Text>
+            <Text style={styles.sectionLabel}>{t("upgrade.choosePlan")}</Text>
             <View style={styles.planRow}>
               {PLANS.map((plan) => {
                 const active = selectedPlan === plan.key;
@@ -169,12 +168,12 @@ export default function UpgradeScreen() {
               })}
             </View>
 
-            <Text style={styles.sectionLabel}>What's included</Text>
+            <Text style={styles.sectionLabel}>{t("upgrade.whatsIncluded")}</Text>
             <View style={styles.table}>
               <View style={styles.tableHeader}>
                 <Text style={[styles.col, styles.featureCol]} />
-                <Text style={[styles.col, styles.headerText]}>Free</Text>
-                <Text style={[styles.col, styles.headerText, styles.premiumColText]}>Premium</Text>
+                <Text style={[styles.col, styles.headerText]}>{t("upgrade.free")}</Text>
+                <Text style={[styles.col, styles.headerText, styles.premiumColText]}>{t("upgrade.premium")}</Text>
               </View>
               {FEATURES.map((f, i) => (
                 <View key={f.label} style={[styles.row, i % 2 === 0 && styles.rowAlt]}>
@@ -192,7 +191,7 @@ export default function UpgradeScreen() {
               {loading ? <ActivityIndicator color="#FFFFFF" /> : (
                 <View style={{ alignItems: "center" }}>
                   <Text style={styles.buyButtonText}>
-                    Unlock Premium · {selectedPlanInfo.price}
+                    {t("upgrade.unlockButton", { price: selectedPlanInfo.price })}
                   </Text>
                   <Text style={styles.buyButtonSub}>{selectedPlanInfo.sub}</Text>
                 </View>
@@ -200,12 +199,10 @@ export default function UpgradeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={restoring}>
-              <Text style={styles.restoreText}>{restoring ? "Restoring..." : "Restore previous purchase"}</Text>
+              <Text style={styles.restoreText}>{restoring ? t("upgrade.restoring") : t("upgrade.restorePurchase")}</Text>
             </TouchableOpacity>
 
-            <Text style={styles.legalNote}>
-              Subscriptions auto-renew unless cancelled 24h before the renewal date. Manage in Google Play.
-            </Text>
+            <Text style={styles.legalNote}>{t("upgrade.legalNote")}</Text>
           </View>
         )}
       </ScrollView>

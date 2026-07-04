@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, A
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -9,6 +10,7 @@ export default function AlertsScreen() {
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const { data: alerts = [], isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["alerts", "list"],
@@ -53,12 +55,12 @@ export default function AlertsScreen() {
           ) : isError ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
-              <Text style={styles.emptyStateText}>Couldn't load alerts. Pull down to retry.</Text>
+              <Text style={styles.emptyStateText}>{t("alerts.couldntLoad")}</Text>
             </View>
           ) : alerts.length === 0 ? (
             <View style={styles.emptyState}>
               <MaterialCommunityIcons name="check-circle" size={48} color={c.success} style={styles.emptyStateIcon} />
-              <Text style={styles.emptyStateText}>All clear! No alerts at the moment.</Text>
+              <Text style={styles.emptyStateText}>{t("alerts.allClear")}</Text>
             </View>
           ) : (
             alerts.map((alert: any) => {
@@ -79,10 +81,10 @@ export default function AlertsScreen() {
                   {alert.subscriptionName && (
                     <View style={styles.alertAction}>
                       <Text style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
-                        Service: <Text style={{ fontWeight: "600" }}>{alert.subscriptionName}</Text>
+                        {t("alerts.service")} <Text style={{ fontWeight: "600" }}>{alert.subscriptionName}</Text>
                       </Text>
                       <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-                        <Text style={styles.actionButtonText}>View Subscription</Text>
+                        <Text style={styles.actionButtonText}>{t("alerts.viewSubscription")}</Text>
                       </TouchableOpacity>
                     </View>
                   )}

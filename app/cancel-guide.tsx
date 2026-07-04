@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { getCancellationGuide } from "../lib/cancellation-guides";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -8,6 +9,7 @@ export default function CancelGuideScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
   const guide = getCancellationGuide(name ?? "");
 
   return (
@@ -38,15 +40,13 @@ export default function CancelGuideScreen() {
           onPress={() => Linking.openURL(guide.url).catch(() => {})}
         >
           <MaterialCommunityIcons name="open-in-new" size={18} color="#FFFFFF" />
-          <Text style={styles.linkButtonText}>Open cancellation page</Text>
+          <Text style={styles.linkButtonText}>{t("cancelGuide.openPage")}</Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.footerNote}>
         <MaterialCommunityIcons name="shield-check-outline" size={14} color={c.textMuted} />
-        <Text style={styles.footerNoteText}>
-          Steps are based on current service UIs and may change. Always confirm cancellation via email.
-        </Text>
+        <Text style={styles.footerNoteText}>{t("cancelGuide.footerNote")}</Text>
       </View>
     </ScrollView>
   );

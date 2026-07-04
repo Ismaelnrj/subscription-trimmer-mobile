@@ -2,21 +2,23 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "r
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTheme, AppColors } from "../lib/theme";
-
-const FAQ = [
-  { q: "How do I add a subscription?", a: "Go to the Subscriptions tab and tap the '+ Add Subscription' button. Fill in the name, price, billing cycle and category." },
-  { q: "Can I edit a subscription?", a: "Yes. On the Subscriptions tab, tap the pencil icon on any subscription to edit its details." },
-  { q: "How is monthly spend calculated?", a: "Weekly subscriptions are annualised (×52/12), yearly subscriptions are divided by 12, and monthly ones are taken as-is." },
-  { q: "Will my data be saved if I uninstall the app?", a: "Yes. Your data is stored securely on our server, so reinstalling the app and logging in restores everything." },
-  { q: "How do I get renewal alerts?", a: "Go to Profile → Notification Preferences and enable Renewal Alerts. You will be notified 7 days before any subscription renews." },
-  { q: "How do I delete my account?", a: "Go to Profile → Account Settings and scroll to the bottom. Tap 'Delete Account' and confirm. Your account and all data will be permanently deleted immediately. You can also email Trimio@subtrimio.com." },
-];
 
 export default function HelpSupportScreen() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
+
+  const FAQ = [
+    { q: t("helpSupport.faq1Q"), a: t("helpSupport.faq1A") },
+    { q: t("helpSupport.faq2Q"), a: t("helpSupport.faq2A") },
+    { q: t("helpSupport.faq3Q"), a: t("helpSupport.faq3A") },
+    { q: t("helpSupport.faq4Q"), a: t("helpSupport.faq4A") },
+    { q: t("helpSupport.faq5Q"), a: t("helpSupport.faq5A") },
+    { q: t("helpSupport.faq6Q"), a: t("helpSupport.faq6A") },
+  ];
 
   const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
 
@@ -25,7 +27,7 @@ export default function HelpSupportScreen() {
       <Stack.Screen options={{ title: "Help & Support" }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          <Text style={styles.sectionTitle}>{t("helpSupport.faq")}</Text>
           <View style={styles.faqCard}>
             {FAQ.map((item, i) => (
               <View key={i} style={[styles.faqItem, i === FAQ.length - 1 && styles.faqItemLast]}>
@@ -42,26 +44,24 @@ export default function HelpSupportScreen() {
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>Contact Us</Text>
+          <Text style={styles.sectionTitle}>{t("helpSupport.contactUs")}</Text>
           <View style={styles.contactCard}>
             <TouchableOpacity style={styles.contactItem} onPress={() => Linking.openURL("mailto:Trimio@subtrimio.com")}>
               <MaterialCommunityIcons name="email-outline" size={22} color={c.primary} />
               <View>
-                <Text style={styles.contactLabel}>Email Support</Text>
+                <Text style={styles.contactLabel}>{t("helpSupport.emailSupport")}</Text>
                 <Text style={styles.contactValue}>Trimio@subtrimio.com</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL("https://subscription-trimmer-mobile-production.up.railway.app/privacy-policy")}>
               <MaterialCommunityIcons name="shield-outline" size={22} color={c.primary} />
               <View>
-                <Text style={styles.contactLabel}>Privacy Policy</Text>
-                <Text style={styles.contactValue}>View our privacy policy</Text>
+                <Text style={styles.contactLabel}>{t("helpSupport.privacyPolicy")}</Text>
+                <Text style={styles.contactValue}>{t("helpSupport.viewPrivacyPolicy")}</Text>
               </View>
             </TouchableOpacity>
           </View>
-          <Text style={styles.contactNote}>
-            Trimio@subtrimio.com is our official support address — yes, the domain is "subtrimio.com" even though the app is called Trimio.
-          </Text>
+          <Text style={styles.contactNote}>{t("helpSupport.footerNote")}</Text>
         </View>
       </ScrollView>
     </>

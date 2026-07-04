@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, useFmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
@@ -23,6 +24,7 @@ export default function AccountSettingsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const [name, setName] = useState(user?.name || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -53,17 +55,17 @@ export default function AccountSettingsScreen() {
 
   const profileMutation = useMutation({
     mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
-    onSuccess: (data) => { setUser(data); Alert.alert("Saved", "Display name updated."); },
-    onError: (err: any) => Alert.alert("Error", err.response?.data?.error || "Failed to update."),
+    onSuccess: (data) => { setUser(data); Alert.alert(t("accountSettings.saved"), t("accountSettings.savedName")); },
+    onError: (err: any) => Alert.alert(t("common.error"), err.response?.data?.error || t("accountSettings.errUpdate")),
   });
 
   const passwordMutation = useMutation({
     mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
     onSuccess: () => {
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-      Alert.alert("Done", "Password changed successfully.");
+      Alert.alert(t("accountSettings.done"), t("accountSettings.passwordChanged"));
     },
-    onError: (err: any) => Alert.alert("Error", err.response?.data?.error || "Failed to change password."),
+    onError: (err: any) => Alert.alert(t("common.error"), err.response?.data?.error || t("accountSettings.errPassword")),
   });
 
   const settingsMutation = useMutation({
@@ -72,9 +74,9 @@ export default function AccountSettingsScreen() {
       setBudgetDirty(false);
       setThresholdDirty(false);
       queryClient.invalidateQueries({ queryKey: ["settings"] });
-      Alert.alert("Saved", "Settings updated.");
+      Alert.alert(t("accountSettings.saved"), t("accountSettings.settingsSaved"));
     },
-    onError: () => Alert.alert("Error", "Failed to save settings."),
+    onError: () => Alert.alert(t("common.error"), t("accountSettings.errSettings")),
   });
 
   const handleSaveName = () => profileMutation.mutate({ name: name.trim() });
@@ -86,7 +88,7 @@ export default function AccountSettingsScreen() {
 
   const handleConfirmDelete = async () => {
     if (!deletePassword) {
-      Alert.alert("Error", "Please enter your password to confirm.");
+      Alert.alert(t("common.error"), t("accountSettings.errPasswordRequired"));
       return;
     }
     setDeleting(true);
@@ -98,9 +100,9 @@ export default function AccountSettingsScreen() {
     } catch (err: any) {
       const code = err.response?.data?.error;
       if (code === "GOOGLE_ACCOUNT") {
-        Alert.alert("Google account", "This account uses Google Sign-In. To delete it, please contact Trimio@subtrimio.com.");
+        Alert.alert(t("common.error"), t("accountSettings.errGoogleAccount"));
       } else {
-        Alert.alert("Error", code || "Could not delete account. Please try again or contact support.");
+        Alert.alert(t("common.error"), code || t("accountSettings.errDeleteAccount"));
       }
     } finally {
       setDeleting(false);
@@ -109,12 +111,12 @@ export default function AccountSettingsScreen() {
 
   const handleChangePassword = () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Error", "Please fill in all password fields.");
+      Alert.alert(t("common.error"), t("accountSettings.errPasswordFields"));
       return;
     }
-    if (newPassword !== confirmPassword) { Alert.alert("Error", "New passwords do not match."); return; }
+    if (newPassword !== confirmPassword) { Alert.alert(t("common.error"), t("accountSettings.errPasswordMatch")); return; }
     if (!isPasswordValid(newPassword)) {
-      Alert.alert("Weak password", "New password must be at least 8 characters with one uppercase letter and one number.");
+      Alert.alert(t("common.error"), t("accountSettings.errWeakPassword"));
       return;
     }
     passwordMutation.mutate({ currentPassword, newPassword });
@@ -122,13 +124,13 @@ export default function AccountSettingsScreen() {
 
   const handleSaveBudget = () => {
     const goal = budgetInput ? parseFloat(budgetInput) : null;
-    if (budgetInput && isNaN(goal!)) { Alert.alert("Error", "Please enter a valid number."); return; }
+    if (budgetInput && isNaN(goal!)) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
     settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
   };
 
   const handleSaveAlertThreshold = () => {
     const threshold = alertThresholdInput ? parseFloat(alertThresholdInput) : 50;
-    if (isNaN(threshold)) { Alert.alert("Error", "Please enter a valid number."); return; }
+    if (isNaN(threshold)) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
     settingsMutation.mutate({ alertThreshold: threshold, budgetGoal: settings?.budgetGoal ?? null, currency: currency.code, currencySymbol: currency.symbol });
   };
 
@@ -140,13 +142,13 @@ export default function AccountSettingsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Account Settings" }} />
+      <Stack.Screen options={{ title: t("profile.accountSettings") }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
 
-          <Text style={styles.sectionTitle}>Currency</Text>
+          <Text style={styles.sectionTitle}>{t("accountSettings.currency")}</Text>
           <View style={styles.card}>
-            <Text style={styles.label}>Display Currency</Text>
+            <Text style={styles.label}>{t("accountSettings.displayCurrency")}</Text>
             <TouchableOpacity style={styles.currencyButton} onPress={() => setShowCurrencyPicker(true)}>
               <View style={styles.currencyButtonLeft}>
                 <Text style={styles.currencySymbol}>{currency.symbol}</Text>
@@ -157,138 +159,134 @@ export default function AccountSettingsScreen() {
               </View>
               <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
             </TouchableOpacity>
-            <Text style={styles.infoText}>Changes how prices are displayed throughout the app.</Text>
+            <Text style={styles.infoText}>{t("accountSettings.currencyInfo")}</Text>
           </View>
 
-          <Text style={styles.sectionTitle}>Budget Goal</Text>
+          <Text style={styles.sectionTitle}>{t("accountSettings.budgetGoal")}</Text>
           {!isPremium ? (
             <PremiumGate
-              title="Monthly Budget Goal"
-              description="Set a spending limit and track progress directly on your dashboard."
+              title={t("accountSettings.premiumBudgetTitle")}
+              description={t("accountSettings.premiumBudgetDesc")}
             />
           ) : (
             <View style={styles.card}>
-              <Text style={styles.label}>Monthly Spending Limit ({currency.symbol})</Text>
+              <Text style={styles.label}>{t("accountSettings.monthlyLimit", { symbol: currency.symbol })}</Text>
               <TextInput
                 style={styles.input}
                 value={budgetInput}
                 onChangeText={(v) => { setBudgetDirty(true); setBudgetInput(v); }}
-                placeholder="e.g. 50.00"
+                placeholder={t("accountSettings.limitPlaceholder")}
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
               />
               <Text style={styles.infoText}>
-                A warning appears on your dashboard when you reach 80% of this limit.
-                {settings?.budgetGoal != null ? `\nCurrent goal: ${fmtC(settings.budgetGoal)}/mo` : ""}
+                {t("accountSettings.budgetHint")}
+                {settings?.budgetGoal != null ? `\n${t("accountSettings.currentGoal", { amount: `${fmtC(settings.budgetGoal)}` })}` : ""}
               </Text>
               <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
                 <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
                   {settingsMutation.isLoading
                     ? <ActivityIndicator color="#FFFFFF" />
-                    : <Text style={styles.saveButtonText}>Save Goal</Text>
+                    : <Text style={styles.saveButtonText}>{t("accountSettings.saveGoal")}</Text>
                   }
                 </TouchableOpacity>
                 {settings?.budgetGoal != null && (
                   <TouchableOpacity style={styles.clearButton} onPress={() => { setBudgetInput(""); settingsMutation.mutate({ budgetGoal: null, currency: currency.code, currencySymbol: currency.symbol }); }}>
-                    <Text style={styles.clearButtonText}>Clear</Text>
+                    <Text style={styles.clearButtonText}>{t("accountSettings.clear")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
             </View>
           )}
 
-          <Text style={styles.sectionTitle}>Spending Alert Threshold</Text>
+          <Text style={styles.sectionTitle}>{t("accountSettings.alertThreshold")}</Text>
           {!isPremium ? (
             <PremiumGate
-              title="Custom Alert Threshold"
-              description="Choose your own limit for the 'expensive subscription' alert instead of the default."
+              title={t("accountSettings.premiumThresholdTitle")}
+              description={t("accountSettings.premiumThresholdDesc")}
             />
           ) : (
             <View style={styles.card}>
-              <Text style={styles.label}>Alert me when a subscription exceeds</Text>
+              <Text style={styles.label}>{t("accountSettings.alertWhen")}</Text>
               <View style={styles.prefixInputRow}>
                 <Text style={styles.prefixSymbol}>{currency.symbol}</Text>
                 <TextInput
                   style={[styles.input, styles.prefixInput]}
                   value={alertThresholdInput}
                   onChangeText={(v) => { setThresholdDirty(true); setAlertThresholdInput(v); }}
-                  placeholder="e.g. 50"
+                  placeholder={t("accountSettings.thresholdPlaceholder")}
                   placeholderTextColor={c.placeholder}
                   keyboardType="decimal-pad"
                 />
               </View>
-              <Text style={styles.infoText}>
-                Subscriptions costing more than this per month will be flagged in Recommendations. Default: {currency.symbol}50/mo.
-              </Text>
+              <Text style={styles.infoText}>{t("accountSettings.thresholdHint", { symbol: currency.symbol })}</Text>
               <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveAlertThreshold} disabled={settingsMutation.isLoading}>
                 {settingsMutation.isLoading
                   ? <ActivityIndicator color="#FFFFFF" />
-                  : <Text style={styles.saveButtonText}>Save Threshold</Text>
+                  : <Text style={styles.saveButtonText}>{t("accountSettings.saveThreshold")}</Text>
                 }
               </TouchableOpacity>
             </View>
           )}
 
-          <Text style={styles.sectionTitle}>Profile</Text>
+          <Text style={styles.sectionTitle}>{t("accountSettings.profileSection")}</Text>
           <View style={styles.card}>
-            <Text style={styles.label}>Display Name</Text>
+            <Text style={styles.label}>{t("accountSettings.displayName")}</Text>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="Your name"
+              placeholder={t("accountSettings.namePlaceholder")}
               placeholderTextColor={c.placeholder}
             />
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t("accountSettings.email")}</Text>
             <TextInput
               style={[styles.input, { color: c.textMuted }]}
               value={user?.email || ""}
               editable={false}
             />
-            <Text style={styles.infoText}>Email cannot be changed.</Text>
+            <Text style={styles.infoText}>{t("accountSettings.emailCannotChange")}</Text>
             <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveName} disabled={profileMutation.isLoading}>
               {profileMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
-                : <Text style={styles.saveButtonText}>Save Name</Text>
+                : <Text style={styles.saveButtonText}>{t("accountSettings.saveName")}</Text>
               }
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.sectionTitle}>Change Password</Text>
+          <Text style={styles.sectionTitle}>{t("accountSettings.changePassword")}</Text>
           {user?.hasPassword === false ? (
             <View style={styles.card}>
               <Text style={{ color: c.textSecondary, fontSize: 13, lineHeight: 20 }}>
-                You signed in with Google — password changes are managed through your Google account.
+                {t("accountSettings.googleAccountNote")}
               </Text>
             </View>
           ) : (
           <View style={styles.card}>
-            <Text style={styles.label}>Current Password</Text>
+            <Text style={styles.label}>{t("accountSettings.currentPassword")}</Text>
             <TextInput style={styles.input} value={currentPassword} onChangeText={setCurrentPassword}
-              placeholder="Enter current password" placeholderTextColor={c.placeholder} secureTextEntry />
-            <Text style={styles.label}>New Password</Text>
+              placeholder={t("accountSettings.currentPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
+            <Text style={styles.label}>{t("accountSettings.newPassword")}</Text>
             <TextInput style={styles.input} value={newPassword} onChangeText={setNewPassword}
-              placeholder="Min 8 chars, 1 uppercase, 1 number" placeholderTextColor={c.placeholder} secureTextEntry />
-            <Text style={styles.label}>Confirm New Password</Text>
+              placeholder={t("accountSettings.newPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
+            <Text style={styles.label}>{t("accountSettings.confirmPassword")}</Text>
             <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword}
-              placeholder="Confirm new password" placeholderTextColor={c.placeholder} secureTextEntry />
+              placeholder={t("accountSettings.confirmPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
             <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isLoading}>
               {passwordMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
-                : <Text style={styles.saveButtonText}>Change Password</Text>
+                : <Text style={styles.saveButtonText}>{t("accountSettings.changePasswordBtn")}</Text>
               }
             </TouchableOpacity>
           </View>
           )}
 
           <View style={styles.deleteSection}>
-            <Text style={styles.deleteSectionTitle}>Danger Zone</Text>
+            <Text style={styles.deleteSectionTitle}>{t("accountSettings.dangerZone")}</Text>
             <View style={styles.deleteCard}>
-              <Text style={styles.deleteDesc}>
-                Permanently delete your account and all associated subscription data. This action cannot be undone.
-              </Text>
+              <Text style={styles.deleteDesc}>{t("accountSettings.deleteDesc")}</Text>
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
-                <Text style={styles.deleteButtonText}>Delete My Account</Text>
+                <Text style={styles.deleteButtonText}>{t("accountSettings.deleteBtn")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -298,7 +296,7 @@ export default function AccountSettingsScreen() {
       <Modal visible={showCurrencyPicker} transparent animationType="slide" onRequestClose={() => setShowCurrencyPicker(false)}>
         <View style={styles.pickerOverlay}>
           <View style={styles.pickerSheet}>
-            <Text style={styles.pickerTitle}>Select Currency</Text>
+            <Text style={styles.pickerTitle}>{t("accountSettings.selectCurrency")}</Text>
             <FlatList
               data={CURRENCIES}
               keyExtractor={(item) => item.code}
@@ -324,15 +322,13 @@ export default function AccountSettingsScreen() {
       <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
         <View style={styles.pickerOverlay}>
           <View style={[styles.pickerSheet, { borderTopLeftRadius: 16, borderTopRightRadius: 16 }]}>
-            <Text style={styles.pickerTitle}>Confirm Account Deletion</Text>
-            <Text style={styles.deleteDesc}>
-              Enter your password to permanently delete your account and all subscription data. This cannot be undone.
-            </Text>
+            <Text style={styles.pickerTitle}>{t("accountSettings.deleteModalTitle")}</Text>
+            <Text style={styles.deleteDesc}>{t("accountSettings.deleteModalDesc")}</Text>
             <TextInput
               style={styles.input}
               value={deletePassword}
               onChangeText={setDeletePassword}
-              placeholder="Current password"
+              placeholder={t("accountSettings.deletePasswordPlaceholder")}
               placeholderTextColor={c.placeholder}
               secureTextEntry
               autoFocus
@@ -343,12 +339,12 @@ export default function AccountSettingsScreen() {
                 onPress={() => setShowDeleteModal(false)}
                 disabled={deleting}
               >
-                <Text style={[styles.clearButtonText, { color: c.text }]}>Cancel</Text>
+                <Text style={[styles.clearButtonText, { color: c.text }]}>{t("accountSettings.deleteCancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.deleteButton, { flex: 1 }]} onPress={handleConfirmDelete} disabled={deleting}>
                 {deleting
                   ? <ActivityIndicator color={c.danger} />
-                  : <Text style={styles.deleteButtonText}>Delete permanently</Text>
+                  : <Text style={styles.deleteButtonText}>{t("accountSettings.deletePermanently")}</Text>
                 }
               </TouchableOpacity>
             </View>

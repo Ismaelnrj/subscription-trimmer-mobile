@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
 import { useTheme, AppColors } from "../lib/theme";
@@ -16,34 +17,35 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const handleSendCode = async () => {
-    if (!email.trim()) { Alert.alert("Error", "Please enter your email address."); return; }
+    if (!email.trim()) { Alert.alert(t("common.error"), t("forgotPassword.errEmail")); return; }
     setLoading(true);
     try {
       await apiClient.post("/auth/forgot-password", { email: email.trim().toLowerCase() });
       setStep(2);
     } catch {
-      Alert.alert("Error", "Something went wrong. Please try again.");
+      Alert.alert(t("common.error"), t("forgotPassword.errGeneric"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleReset = async () => {
-    if (code.length !== 6) { Alert.alert("Error", "Please enter the 6-digit code."); return; }
+    if (code.length !== 6) { Alert.alert(t("common.error"), t("forgotPassword.errCode")); return; }
     if (!isPasswordValid(newPassword)) {
-      Alert.alert("Weak password", "Your new password must be at least 8 characters and include one uppercase letter and one number.");
+      Alert.alert(t("common.error"), t("forgotPassword.errWeakPassword"));
       return;
     }
     setLoading(true);
     try {
       await apiClient.post("/auth/reset-password", { email: email.trim().toLowerCase(), code, newPassword });
-      Alert.alert("Done!", "Your password has been reset. You can now sign in.", [
-        { text: "Sign In", onPress: () => router.replace("/login") },
+      Alert.alert(t("forgotPassword.doneTitle"), t("forgotPassword.doneMsg"), [
+        { text: t("forgotPassword.signInBtn"), onPress: () => router.replace("/login") },
       ]);
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.error || "Invalid or expired code.");
+      Alert.alert(t("common.error"), err.response?.data?.error || t("forgotPassword.errInvalidCode"));
     } finally {
       setLoading(false);
     }
@@ -64,13 +66,11 @@ export default function ForgotPasswordScreen() {
 
       {step === 1 ? (
         <>
-          <Text style={styles.title}>Forgot your password?</Text>
-          <Text style={styles.subtitle}>
-            Enter your email and we'll send you a 6-digit code to reset your password.
-          </Text>
+          <Text style={styles.title}>{t("forgotPassword.step1Title")}</Text>
+          <Text style={styles.subtitle}>{t("forgotPassword.step1Subtitle")}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Your email address"
+            placeholder={t("forgotPassword.emailPlaceholder")}
             placeholderTextColor={c.placeholder}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -78,23 +78,23 @@ export default function ForgotPasswordScreen() {
             onChangeText={setEmail}
           />
           <TouchableOpacity style={styles.button} onPress={handleSendCode} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send Reset Code</Text>}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("forgotPassword.sendCode")}</Text>}
           </TouchableOpacity>
         </>
       ) : (
         <>
-          <Text style={styles.title}>Check your inbox</Text>
+          <Text style={styles.title}>{t("forgotPassword.step2Title")}</Text>
           <Text style={styles.subtitle}>
-            We sent a 6-digit code to{" "}
-            <Text style={styles.emailHighlight}>{email}</Text>.
-            Enter it below along with your new password.
+            {t("forgotPassword.step2SubtitlePre")}
+            <Text style={styles.emailHighlight}>{email}</Text>
+            {t("forgotPassword.step2SubtitlePost")}
           </Text>
 
           <TextInput
             style={styles.codeInput}
             value={code}
-            onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
-            placeholder="000000"
+            onChangeText={(v) => setCode(v.replace(/[^0-9]/g, "").slice(0, 6))}
+            placeholder={t("forgotPassword.codePlaceholder")}
             placeholderTextColor={c.textMuted}
             keyboardType="number-pad"
             maxLength={6}
@@ -104,7 +104,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.passwordWrapper}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="New password"
+              placeholder={t("forgotPassword.newPasswordPlaceholder")}
               placeholderTextColor={c.placeholder}
               secureTextEntry={!showPassword}
               value={newPassword}
@@ -117,17 +117,17 @@ export default function ForgotPasswordScreen() {
           <PasswordStrengthMeter password={newPassword} />
 
           <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Reset Password</Text>}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.resend} onPress={handleSendCode} disabled={loading}>
-            <Text style={styles.resendText}>Didn't receive it? Send again</Text>
+            <Text style={styles.resendText}>{t("forgotPassword.resendCode")}</Text>
           </TouchableOpacity>
         </>
       )}
 
       <TouchableOpacity style={styles.backToLogin} onPress={() => router.replace("/login")}>
-        <Text style={styles.backToLoginText}>Back to Sign In</Text>
+        <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
       </TouchableOpacity>
     </View>
   );

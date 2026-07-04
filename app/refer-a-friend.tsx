@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, ActivityIn
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
@@ -14,6 +15,7 @@ export default function ReferAFriendScreen() {
   const [redeeming, setRedeeming] = useState(false);
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   const load = useCallback(async () => {
     try {
@@ -36,7 +38,7 @@ export default function ReferAFriendScreen() {
     if (!referralCode) return;
     try {
       await Share.share({
-        message: `I've been using Trimio to track and cut my subscriptions. Use my code ${referralCode} when you sign up and we both get 1 month of Premium free!`,
+        message: t("referFriend.shareMessage", { code: referralCode }),
       });
     } catch {
       // user cancelled the share sheet — nothing to do
@@ -49,11 +51,11 @@ export default function ReferAFriendScreen() {
     setRedeeming(true);
     try {
       await apiClient.post("/trpc/referrals.redeem", { code });
-      Alert.alert("Code applied!", "Verify your email (if you haven't already) to unlock your free month.");
+      Alert.alert(t("referFriend.codeAppliedTitle"), t("referFriend.codeAppliedMsg"));
       setRedeemCode("");
       load();
     } catch (e: any) {
-      Alert.alert("Couldn't redeem code", e?.response?.data?.error || "Please check the code and try again.");
+      Alert.alert(t("referFriend.errRedeemTitle"), e?.response?.data?.error || t("referFriend.errRedeemMsg"));
     } finally {
       setRedeeming(false);
     }
@@ -67,10 +69,8 @@ export default function ReferAFriendScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🎁</Text>
-          <Text style={styles.headerTitle}>Give a month, get a month</Text>
-          <Text style={styles.headerDesc}>
-            Share your code with a friend. When they sign up and verify their email, you both get 1 month of Premium free.
-          </Text>
+          <Text style={styles.headerTitle}>{t("referFriend.title")}</Text>
+          <Text style={styles.headerDesc}>{t("referFriend.desc")}</Text>
         </View>
 
         <View style={styles.body}>
@@ -82,27 +82,27 @@ export default function ReferAFriendScreen() {
                 <View style={styles.bonusCard}>
                   <MaterialCommunityIcons name="crown" size={22} color={c.success} />
                   <Text style={styles.bonusText}>
-                    Bonus Premium active until {new Date(bonusPremiumUntil!).toLocaleDateString()}
+                    {t("referFriend.bonusActive", { date: new Date(bonusPremiumUntil!).toLocaleDateString() })}
                   </Text>
                 </View>
               )}
 
-              <Text style={styles.sectionLabel}>Your referral code</Text>
+              <Text style={styles.sectionLabel}>{t("referFriend.yourCode")}</Text>
               <View style={styles.codeCard}>
                 <Text style={styles.codeText}>{referralCode || "—"}</Text>
                 <TouchableOpacity style={styles.shareButton} onPress={handleShare} disabled={!referralCode}>
                   <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
-                  <Text style={styles.shareButtonText}>Share</Text>
+                  <Text style={styles.shareButtonText}>{t("referFriend.share")}</Text>
                 </TouchableOpacity>
               </View>
 
               {!hasRedeemed && (
                 <>
-                  <Text style={styles.sectionLabel}>Have a friend's code?</Text>
+                  <Text style={styles.sectionLabel}>{t("referFriend.haveCode")}</Text>
                   <View style={styles.redeemRow}>
                     <TextInput
                       style={styles.redeemInput}
-                      placeholder="Enter code"
+                      placeholder={t("referFriend.codePlaceholder")}
                       placeholderTextColor={c.textMuted}
                       autoCapitalize="characters"
                       autoCorrect={false}
@@ -114,14 +114,14 @@ export default function ReferAFriendScreen() {
                       onPress={handleRedeem}
                       disabled={!redeemCode.trim() || redeeming}
                     >
-                      {redeeming ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.redeemButtonText}>Apply</Text>}
+                      {redeeming ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.redeemButtonText}>{t("referFriend.apply")}</Text>}
                     </TouchableOpacity>
                   </View>
                 </>
               )}
 
               {hasRedeemed && (
-                <Text style={styles.note}>You've already redeemed a referral code on this account.</Text>
+                <Text style={styles.note}>{t("referFriend.alreadyRedeemed")}</Text>
               )}
             </>
           )}
