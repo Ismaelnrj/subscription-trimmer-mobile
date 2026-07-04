@@ -39,11 +39,43 @@ if (getRNMinorVersion() >= 75) {
       ].toList()
       ex.autolinkLibrariesFromCommand(command)
     } else {
-      // Use a committed wrapper script to generate autolinking.json.
-      // This avoids npx resolution issues on EAS (pnpm isolated modules + npx
-      // can silently produce config output missing project.android.packageName).
+      // Run our committed script via Groovy exec (no Gradle provider, no npx) and
+      // bypass autolinkLibrariesFromCommand entirely to avoid its caching layer.
       def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
-      ex.autolinkLibrariesFromCommand(['node', '--no-warnings', scriptPath].toList())
+      println "[autolinking] Running: node ${scriptPath}"
+
+      def stdout = new StringWriter()
+      def stderr = new StringWriter()
+      def proc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
+      proc.consumeProcessOutput(stdout, stderr)
+      proc.waitFor()
+
+      def configJson = stdout.toString()
+      def exitCode = proc.exitValue()
+
+      println "[autolinking] exit=${exitCode}, stdout_length=${configJson.length()}"
+      if (!stderr.toString().isEmpty()) {
+        println "[autolinking] stderr=${stderr.toString().take(500)}"
+      }
+
+      if (exitCode != 0 || configJson.isEmpty()) {
+        throw new GradleException("[autolinking] generate-autolinking-config.js failed (exit=${exitCode})\nstderr: ${stderr}")
+      }
+
+      // Verify packageName is present before passing the file to RNGP
+      def pkgNameMatch = configJson =~ /"packageName"\s*:\s*"([^"]+)"/
+      if (pkgNameMatch) {
+        println "[autolinking] packageName found: ${pkgNameMatch[0][1]}"
+      } else {
+        println "[autolinking] WARNING: packageName NOT found in script output!"
+        println "[autolinking] first 300 chars: ${configJson.take(300)}"
+      }
+
+      def inputFile = settings.layout.rootDirectory.file("build/generated/autolinking/autolinking-input.json").asFile
+      inputFile.parentFile.mkdirs()
+      inputFile.text = configJson
+
+      ex.autolinkLibrariesFromConfigFile(inputFile)
     }
   }
 }
