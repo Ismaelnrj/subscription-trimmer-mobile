@@ -63,8 +63,8 @@ importers:
         specifier: ~7.1.7
         version: 7.1.7(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       expo-localization:
-        specifier: ^57.0.0
-        version: 57.0.0(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react@19.0.0)
+        specifier: ~16.1.6
+        version: 16.1.6(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react@19.0.0)
       expo-notifications:
         specifier: ~0.31.5
         version: 0.31.5(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
@@ -2073,8 +2073,8 @@ packages:
       react: '*'
       react-native: '*'
 
-  expo-localization@57.0.0:
-    resolution: {integrity: sha512-6/o4SE4p1K8f0vXrm5oqt7SxyRPLomdhsANsZOwAqduTC/rzkLsqh5FidgppoTR6lPKT58z+jfk5R3grmbjQtA==}
+  expo-localization@16.1.6:
+    resolution: {integrity: sha512-v4HwNzs8QvyKHwl40MvETNEKr77v1o9/eVC8WCBY++DIlBAvonHyJe2R9CfqpZbC4Tlpl7XV+07nLXc8O5PQsA==}
     peerDependencies:
       expo: '*'
       react: '*'
@@ -6708,7 +6708,7 @@ snapshots:
       - expo
       - supports-color
 
-  expo-localization@57.0.0(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react@19.0.0):
+  expo-localization@16.1.6(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react@19.0.0):
     dependencies:
       expo: 53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.6(@babel/core@7.29.7)(@react-native-community/cli@15.1.3(typescript@5.3.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react: 19.0.0
