@@ -252,10 +252,11 @@ def patchAutolinkingProvider = tasks.register('patchAutolinkingJson') {
     }
 }
 
-afterEvaluate {
-    tasks.named('generateAutolinkingPackageList').configure { task ->
-        task.dependsOn(patchAutolinkingProvider)
-    }
+// tasks.matching + configureEach is lazy and order-independent: it fires whenever
+// a task named 'generateAutolinkingPackageList' is added to the task container,
+// even if RNGP registers it inside an AGP finalizeDsl callback after afterEvaluate.
+tasks.matching { it.name == 'generateAutolinkingPackageList' }.configureEach { task ->
+    task.dependsOn(patchAutolinkingProvider)
 }
 
 // Strip sensitive permissions from the merged manifest after Gradle merges it.
