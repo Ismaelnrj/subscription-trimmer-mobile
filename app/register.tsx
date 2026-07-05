@@ -1,6 +1,6 @@
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import { MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,8 @@ import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
 import { useTheme, AppColors } from "../lib/theme";
-import { useGoogleAuth, isGoogleAuthConfigured } from "../lib/google-auth";
+import { isGoogleAuthConfigured } from "../lib/google-auth";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -22,28 +23,22 @@ export default function RegisterScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
-  const [googleRequest, googleResponse, promptGoogleAuth] = useGoogleAuth();
 
-  useEffect(() => {
-    if (googleResponse?.type === "success") {
-      const idToken = googleResponse.params.id_token;
-      (async () => {
-        setLoading(true);
-        try {
-          const res = await apiClient.post("/auth/google", { idToken });
-          const { token, refreshToken, user } = res.data;
-          await SecureStore.setItemAsync("auth_token", token);
-          await SecureStore.setItemAsync("refresh_token", refreshToken);
-          setUser(user);
-          router.replace("/(tabs)");
-        } catch (err: any) {
-          Alert.alert(t("common.error"), err.response?.data?.error || t("register.errGoogleFailed"));
-        } finally {
-          setLoading(false);
-        }
-      })();
+  const handleGoogleIdToken = async (idToken: string) => {
+    setLoading(true);
+    try {
+      const res = await apiClient.post("/auth/google", { idToken });
+      const { token, refreshToken, user } = res.data;
+      await SecureStore.setItemAsync("auth_token", token);
+      await SecureStore.setItemAsync("refresh_token", refreshToken);
+      setUser(user);
+      router.replace("/(tabs)");
+    } catch (err: any) {
+      Alert.alert(t("common.error"), err.response?.data?.error || t("register.errGoogleFailed"));
+    } finally {
+      setLoading(false);
     }
-  }, [googleResponse]);
+  };
 
   const handleRegister = async () => {
     if (!email || !password) {
@@ -134,14 +129,14 @@ export default function RegisterScreen() {
               <Text style={styles.dividerText}>{t("register.or")}</Text>
               <View style={styles.dividerLine} />
             </View>
-            <TouchableOpacity
-              style={styles.googleButton}
-              onPress={() => promptGoogleAuth()}
-              disabled={!googleRequest || loading}
-            >
-              <AntDesign name="google" size={18} color={c.text} />
-              <Text style={styles.googleButtonText}>{t("register.continueGoogle")}</Text>
-            </TouchableOpacity>
+            <GoogleSignInButton
+              label={t("register.continueGoogle")}
+              onIdToken={handleGoogleIdToken}
+              disabled={loading}
+              buttonStyle={styles.googleButton}
+              textStyle={styles.googleButtonText}
+              iconColor={c.text}
+            />
           </>
         ) : null}
 
