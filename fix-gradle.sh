@@ -68,7 +68,7 @@ ext_block = (
     "// Gradle 8: expose SDK versions on rootProject.ext so submodule\n"
     "// safeExtGet() calls find them via rootProject.ext.has()/.get().\n"
     "ext {\n"
-    "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')\n"
+    "    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '36')\n"
     "    targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '35')\n"
     "    minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '24')\n"
     "    buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'\n"
@@ -108,7 +108,7 @@ hook = (
     "allprojects {\n"
     "    plugins.withId(\"com.android.library\") {\n"
     "        android {\n"
-    "            compileSdk 35\n"
+    "            compileSdk 36\n"
     "        }\n"
     "    }\n"
     "}\n"
@@ -128,7 +128,7 @@ PYEOF
 # Fix B: add allprojects { tasks.withType(KotlinCompile) } to force 2.0 on all
 #        submodules, so even if the BOM overrides the plugin version the
 #        language version is still explicitly 2.0.
-echo "[3/5] android/build.gradle — pin Kotlin 2.0.21 + language version 2.0 ..."
+echo "[3/5] android/build.gradle — pin AGP 8.9.1 + Kotlin 2.0.21 + language version 2.0 ..."
 
 python3 - "$ANDROID/build.gradle" << 'PYEOF'
 import sys, re
@@ -137,6 +137,25 @@ with open(path) as f:
     content = f.read()
 
 modified = False
+
+# Fix 0: pin the Android Gradle Plugin version. expo prebuild generates an
+# unversioned classpath('com.android.tools.build:gradle'), which resolves
+# through React Native's BOM to whatever that RN/Expo release pinned at the
+# time — for Expo SDK 53 that's 8.8.2. Some transitive deps (e.g. a newer
+# androidx.core pulled in by expo-splash-screen or other modules) require
+# AGP 8.9.1+ and compileSdk 36+, so both must move together.
+if 'com.android.tools.build:gradle:' not in content:
+    pattern = r"""classpath\(['"]com\.android\.tools\.build:gradle['"]\)"""
+    if re.search(pattern, content):
+        content = re.sub(pattern,
+            "classpath('com.android.tools.build:gradle:8.9.1')",
+            content, count=1)
+        print("      OK   — AGP classpath pinned to 8.9.1")
+        modified = True
+    else:
+        print("      WARN — AGP classpath line not found; Fix 0 skipped")
+else:
+    print("      SKIP — AGP classpath already pinned")
 
 # Fix A: pin Kotlin gradle plugin version.
 # expo prebuild generates double-quote form; handle both single and double quotes.
@@ -484,8 +503,9 @@ echo ""
 echo "All fixes applied."
 echo ""
 echo "  android/build.gradle"
-echo "    + root-level ext {}  (compileSdkVersion on rootProject.ext)"
-echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 35 } }"
+echo "    + root-level ext {}  (compileSdkVersion 36 on rootProject.ext)"
+echo "    + allprojects { plugins.withId('com.android.library') { compileSdk 36 } }"
+echo "    + AGP classpath pinned to 8.9.1 (was unversioned, resolved via BOM to 8.8.2)"
 echo "    + Kotlin plugin pinned to 2.0.21 (was unversioned, resolved via BOM)"
 echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 2.0 } }"
 echo "    + allprojects { kotlin { compilerOptions { languageVersion = apiVersion = 2.0 } } } (for KSP)"
