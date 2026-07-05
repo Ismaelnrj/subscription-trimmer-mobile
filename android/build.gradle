@@ -4,7 +4,7 @@ buildscript {
     ext {
         buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
         minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '24')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
+        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '36')
         targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '35')
         kotlinVersion = findProperty('android.kotlinVersion') ?: '2.0.21'
 
@@ -26,7 +26,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:8.8.2')
+        classpath('com.android.tools.build:gradle:8.9.1')
         classpath('com.facebook.react:react-native-gradle-plugin')
         classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21')
         classpath('com.google.gms:google-services:4.4.4')
@@ -39,7 +39,7 @@ buildscript {
 // top-level ext ensures they are always reachable by safeExtGet() calls in expo
 // and other library modules.
 ext {
-    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '35')
+    compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '36')
     targetSdkVersion  = Integer.parseInt(findProperty('android.targetSdkVersion')  ?: '35')
     minSdkVersion     = Integer.parseInt(findProperty('android.minSdkVersion')      ?: '24')
     buildToolsVersion = findProperty('android.buildToolsVersion') ?: '35.0.0'
@@ -74,7 +74,7 @@ allprojects {
 allprojects {
     plugins.withId("com.android.library") {
         android {
-            compileSdk 35
+            compileSdk 36
         }
     }
 }
