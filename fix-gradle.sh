@@ -264,7 +264,7 @@ path = sys.argv[1]
 with open(path) as f:
     content = f.read()
 
-if 'generateAutolinkingNewArchitectureFiles' in content and 'appProject.tasks.matching' in content:
+if 'generateAutolinkingNewArchitectureFiles' in content and 'appProject.tasks.findByName' in content:
     print("      SKIP — already present")
 else:
     hook = (
@@ -274,11 +274,17 @@ else:
         "gradle.projectsEvaluated {\n"
         "    def appProject = rootProject.findProject(\":app\")\n"
         "    if (appProject == null) return\n"
-        "    appProject.tasks.matching { it.name == \"generateAutolinkingNewArchitectureFiles\" }.configureEach { autolinkTask ->\n"
-        "        rootProject.subprojects.each { sub ->\n"
-        "            sub.tasks.matching { it.name == \"generateCodegenArtifactsFromSchema\" }.configureEach { codegenTask ->\n"
-        "                autolinkTask.dependsOn(codegenTask)\n"
-        "            }\n"
+        "    // findByName (not tasks.matching{}.configureEach{}) — by projectsEvaluated\n"
+        "    // time these tasks are already registered, and configureEach's lazy-\n"
+        "    // registration API has stricter context rules that collide with Gradle's\n"
+        "    // own task-graph resolution already in flight at this point\n"
+        "    // (\"configureEach(Action) on task set cannot be executed in the current context\").\n"
+        "    def autolinkTask = appProject.tasks.findByName(\"generateAutolinkingNewArchitectureFiles\")\n"
+        "    if (autolinkTask == null) return\n"
+        "    rootProject.subprojects.each { sub ->\n"
+        "        def codegenTask = sub.tasks.findByName(\"generateCodegenArtifactsFromSchema\")\n"
+        "        if (codegenTask != null) {\n"
+        "            autolinkTask.dependsOn(codegenTask)\n"
         "        }\n"
         "    }\n"
         "}\n"

@@ -125,11 +125,17 @@ allprojects {
 gradle.projectsEvaluated {
     def appProject = rootProject.findProject(":app")
     if (appProject == null) return
-    appProject.tasks.matching { it.name == "generateAutolinkingNewArchitectureFiles" }.configureEach { autolinkTask ->
-        rootProject.subprojects.each { sub ->
-            sub.tasks.matching { it.name == "generateCodegenArtifactsFromSchema" }.configureEach { codegenTask ->
-                autolinkTask.dependsOn(codegenTask)
-            }
+    // findByName (not tasks.matching{}.configureEach{}) — by projectsEvaluated time
+    // these tasks are already registered, and configureEach's lazy-registration API
+    // has stricter context rules that collide with Gradle's own task-graph
+    // resolution already in flight at this point ("configureEach(Action) on task
+    // set cannot be executed in the current context").
+    def autolinkTask = appProject.tasks.findByName("generateAutolinkingNewArchitectureFiles")
+    if (autolinkTask == null) return
+    rootProject.subprojects.each { sub ->
+        def codegenTask = sub.tasks.findByName("generateCodegenArtifactsFromSchema")
+        if (codegenTask != null) {
+            autolinkTask.dependsOn(codegenTask)
         }
     }
 }
