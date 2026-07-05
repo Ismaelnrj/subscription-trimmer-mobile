@@ -499,6 +499,67 @@ else
     echo "      WARN — $PROGUARD_FILE not found; skipping"
 fi
 
+# ── Fix 8: Guard generated Android-autolinking.cmake against missing codegen output
+# GenerateAutolinkingNewArchitecturesFileTask (React Native's own Gradle plugin)
+# blindly emits `add_subdirectory("<path>" <target>)` for every autolinked module
+# that declares a codegenConfig in its package.json, and lists a matching
+# `react_codegen_<name>` entry in AUTOLINKED_LIBRARIES — without ever checking
+# whether that module's own build actually finished generating
+# android/build/generated/source/codegen/jni/CMakeLists.txt yet. When a module
+# (e.g. @sentry/react-native, react-native-gesture-handler) hasn't produced that
+# output in time, CMake fails with "add_subdirectory given source ... which is
+# not an existing directory", then a second failure trying to
+# target_link_libraries() against a target that was never built.
+# Fix: hook the task that generates that file and strip out any add_subdirectory
+# line (and its matching AUTOLINKED_LIBRARIES entry) whose CMakeLists.txt doesn't
+# actually exist yet — mirroring the if(EXISTS ...) guard the upstream
+# ReactNative-application.cmake already uses for the app's own codegen output,
+# which this per-module list never got.
+echo "[8/8] android/app/build.gradle — guard autolinking cmake against missing codegen output ..."
+
+APP_BUILD_GRADLE="$ANDROID/app/build.gradle"
+if [ -f "$APP_BUILD_GRADLE" ]; then
+    if grep -q "autolinking-fix" "$APP_BUILD_GRADLE" 2>/dev/null; then
+        echo "      SKIP — already present"
+    else
+        cat >> "$APP_BUILD_GRADLE" << 'EOF'
+
+// Guard the generated Android-autolinking.cmake against autolinked modules
+// whose own codegen output (android/build/generated/source/codegen/jni/) wasn't
+// actually produced yet when this file was generated — see fix-gradle.sh Fix 8.
+tasks.matching { it.name == "generateAutolinkingNewArchitectureFiles" }.configureEach {
+    doLast {
+        def cmakeFile = new File(project.buildDir, "generated/autolinking/src/main/jni/Android-autolinking.cmake")
+        if (!cmakeFile.exists()) return
+
+        def text = cmakeFile.text
+        def missingLibraries = [] as Set
+
+        text = text.replaceAll(/(?m)^add_subdirectory\("([^"]+)"\s+(\S+)\)$/) { full, path, buildName ->
+            if (new File(path, "CMakeLists.txt").exists()) return full
+            def libraryName = buildName.replaceAll(/_cxxmodule_autolinked_build$|_autolinked_build$/, "")
+            missingLibraries << libraryName
+            return "# [autolinking-fix] skipped, no codegen output yet: ${full}"
+        }
+
+        if (!missingLibraries.isEmpty()) {
+            missingLibraries.each { libName ->
+                text = text.replaceAll(/(?m)^(\s*)react_codegen_${libName}\s*$/) { fullLine, indent ->
+                    "${indent}# [autolinking-fix] skipped react_codegen_${libName}, no codegen output yet"
+                }
+            }
+            cmakeFile.text = text
+            println("[autolinking-fix] Skipped autolinked libraries with no codegen output: ${missingLibraries.join(', ')}")
+        }
+    }
+}
+EOF
+        echo "      OK   — autolinking cmake guard added"
+    fi
+else
+    echo "      WARN — $APP_BUILD_GRADLE not found; skipping"
+fi
+
 echo ""
 echo "All fixes applied."
 echo ""
@@ -514,5 +575,8 @@ echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
 echo "  android/gradle.properties — JVM 1.5 GB heap, G1GC, parallel builds, Kotlin daemon 768 MB"
 echo "  android/.gradle           — cache cleared"
+echo "  android/app/build.gradle"
+echo "    + ProGuard keep rules for RN/Expo/Reanimated bridge classes"
+echo "    + guard against autolinked modules with no codegen output yet (Fix 8)"
 echo ""
 echo "You can now build with:  cd android && ./gradlew assembleRelease"

@@ -261,3 +261,33 @@ afterEvaluate {
         }
     }
 }
+
+// Guard the generated Android-autolinking.cmake against autolinked modules
+// whose own codegen output (android/build/generated/source/codegen/jni/) wasn't
+// actually produced yet when this file was generated — see fix-gradle.sh Fix 8.
+tasks.matching { it.name == "generateAutolinkingNewArchitectureFiles" }.configureEach {
+    doLast {
+        def cmakeFile = new File(project.buildDir, "generated/autolinking/src/main/jni/Android-autolinking.cmake")
+        if (!cmakeFile.exists()) return
+
+        def text = cmakeFile.text
+        def missingLibraries = [] as Set
+
+        text = text.replaceAll(/(?m)^add_subdirectory\("([^"]+)"\s+(\S+)\)$/) { full, path, buildName ->
+            if (new File(path, "CMakeLists.txt").exists()) return full
+            def libraryName = buildName.replaceAll(/_cxxmodule_autolinked_build$|_autolinked_build$/, "")
+            missingLibraries << libraryName
+            return "# [autolinking-fix] skipped, no codegen output yet: ${full}"
+        }
+
+        if (!missingLibraries.isEmpty()) {
+            missingLibraries.each { libName ->
+                text = text.replaceAll(/(?m)^(\s*)react_codegen_${libName}\s*$/) { fullLine, indent ->
+                    "${indent}# [autolinking-fix] skipped react_codegen_${libName}, no codegen output yet"
+                }
+            }
+            cmakeFile.text = text
+            println("[autolinking-fix] Skipped autolinked libraries with no codegen output: ${missingLibraries.join(', ')}")
+        }
+    }
+}
