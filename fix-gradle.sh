@@ -609,6 +609,46 @@ else
     echo "      WARN — $APP_BUILD_GRADLE not found; skipping"
 fi
 
+# ── Fix 9: Native Sentry auto-init via AndroidManifest meta-data ─────────────
+# Sentry.init() in app/_layout.tsx only runs once the JS bundle loads, so it can
+# never catch a crash that happens before or during native startup (a broken
+# native module, a bad Activity theme, etc.) — exactly the class of crash this
+# fix-gradle.sh's own fixes have been chasing. Adding these meta-data tags lets
+# the underlying Android Sentry SDK self-initialize at process start (via its
+# own ContentProvider), independent of JS, so native/early startup crashes are
+# still reported.
+echo "[9/9] AndroidManifest.xml — native Sentry auto-init meta-data ..."
+
+MANIFEST_FILE="$ANDROID/app/src/main/AndroidManifest.xml"
+if [ -f "$MANIFEST_FILE" ]; then
+    if grep -q "io.sentry.dsn" "$MANIFEST_FILE" 2>/dev/null; then
+        echo "      SKIP — already present"
+    else
+        python3 - "$MANIFEST_FILE" << 'PYEOF'
+import sys, re
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+
+meta = (
+    '    <meta-data android:name="io.sentry.dsn" android:value="https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664"/>\n'
+    '    <meta-data android:name="io.sentry.auto-init" android:value="true"/>\n'
+)
+
+m = re.search(r'(<application\b[^>]*>\n)', content)
+if not m:
+    print("      WARN — <application> tag not found; skipping")
+else:
+    content = content[:m.end()] + meta + content[m.end():]
+    with open(path, 'w') as f:
+        f.write(content)
+    print("      OK   — native Sentry auto-init meta-data added")
+PYEOF
+    fi
+else
+    echo "      WARN — $MANIFEST_FILE not found; skipping"
+fi
+
 echo ""
 echo "All fixes applied."
 echo ""
