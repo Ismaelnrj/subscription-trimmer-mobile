@@ -79,26 +79,34 @@ jobs:
           fi
           ls -la android/app/release.keystore
 
-      - name: Build Android App Bundle
+      - name: Build Android App Bundle + APK
         working-directory: ${{ env.PROJECT_DIR }}/android
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease \
+          ./gradlew bundleRelease assembleRelease \
             -Pandroid.injected.signing.store.file="$(pwd)/app/release.keystore" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
         env:
           JAVA_OPTS: '-Xmx4096m'
-      
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
           path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
-      
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release.apk
+          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
       - name: Create Release
+        id: create_release
         if: success()
         uses: actions/create-release@v1
         env:
@@ -107,15 +115,14 @@ jobs:
           tag_name: v${{ github.run_number }}
           release_name: Build ${{ github.run_number }}
           body: |
-            Android App Bundle (AAB) built successfully!
-            
-            Download the app-release.aab file from the artifacts.
-            
-            Ready to upload to Google Play Store.
+            Android App Bundle (AAB) + APK built successfully!
+
+            - app-release.aab: upload this to Google Play Console.
+            - app-release.apk: sideload this directly on a device for testing.
           draft: false
           prerelease: false
-      
-      - name: Upload Release Asset
+
+      - name: Upload AAB Release Asset
         if: success()
         uses: actions/upload-release-asset@v1
         env:
@@ -124,4 +131,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
           asset_name: app-release.aab
+          asset_content_type: application/octet-stream
+
+      - name: Upload APK Release Asset
+        if: success()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/release/app-release.apk
+          asset_name: app-release.apk
           asset_content_type: application/octet-stream
