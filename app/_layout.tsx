@@ -6,6 +6,7 @@ import { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
@@ -109,6 +110,7 @@ export default function RootLayout() {
   }, [isAuthenticated, isLoading, onboardingDone, segments]);
 
   return (
+    <SafeAreaProvider>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -148,5 +150,6 @@ export default function RootLayout() {
       </QueryClientProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
