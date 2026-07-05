@@ -32,7 +32,7 @@
          self-initialize at process start (via its own ContentProvider), independent
          of JS, so native/early startup crashes are still reported. -->
     <meta-data android:name="io.sentry.dsn" android:value="https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664"/>
-    <meta-data android:name="io.sentry.auto-init" android:value="true"/>
+    <meta-data android:name="io.sentry.auto-init" android:value="true" tools:replace="android:value"/>
     <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>

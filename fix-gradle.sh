@@ -632,7 +632,7 @@ with open(path) as f:
 
 meta = (
     '    <meta-data android:name="io.sentry.dsn" android:value="https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664"/>\n'
-    '    <meta-data android:name="io.sentry.auto-init" android:value="true"/>\n'
+    '    <meta-data android:name="io.sentry.auto-init" android:value="true" tools:replace="android:value"/>\n'
 )
 
 m = re.search(r'(<application\b[^>]*>\n)', content)
