@@ -1,8 +1,21 @@
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Google's OAuth server only allows custom-URI-scheme redirects for
+// Android/iOS-type clients under the *reversed client ID* scheme
+// (com.googleusercontent.apps.<client-id>:/...) — expo-auth-session's
+// default redirectUri uses this app's own package name instead
+// (com.trimio.app:/oauthredirect), which Google rejects with
+// "Custom URI scheme is not enabled for your Android client."
+function reversedClientIdRedirectUri(clientId?: string): string | undefined {
+  if (!clientId) return undefined;
+  const prefix = clientId.replace(/\.apps\.googleusercontent\.com$/, "");
+  return `com.googleusercontent.apps.${prefix}:/oauthredirect`;
+}
 
 // Client IDs come from app.json's extra block (set GOOGLE_ANDROID/IOS/WEB_CLIENT_ID
 // there from Google Cloud Console — see https://console.cloud.google.com/apis/credentials).
@@ -19,11 +32,18 @@ WebBrowser.maybeCompleteAuthSession();
 // hook in its own leaf component wrapped in a local error boundary instead.
 export function useGoogleAuth() {
   const extra = Constants.expoConfig?.extra || {};
+  const androidClientId = extra.googleAndroidClientId || undefined;
+  const iosClientId = extra.googleIosClientId || undefined;
+  const webClientId = extra.googleWebClientId || undefined;
+  const nativeClientId = Platform.select({ android: androidClientId, ios: iosClientId, default: undefined });
+  const redirectUri = reversedClientIdRedirectUri(nativeClientId);
+
   return Google.useAuthRequest({
-    androidClientId: extra.googleAndroidClientId || undefined,
-    iosClientId: extra.googleIosClientId || undefined,
-    webClientId: extra.googleWebClientId || undefined,
+    androidClientId,
+    iosClientId,
+    webClientId,
     responseType: "id_token",
+    ...(redirectUri ? { redirectUri } : {}),
   });
 }
 

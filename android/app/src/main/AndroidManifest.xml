@@ -44,6 +44,14 @@
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="trimio"/>
       </intent-filter>
+      <!-- Google Sign-In OAuth redirect: Google only allows the reversed
+           Android-client-ID scheme for this client type (see lib/google-auth.ts) -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <data android:scheme="com.googleusercontent.apps.555155282969-6n0085a1n6oe0c8cdq2lqhh2aeh7274m"/>
+      </intent-filter>
     </activity>
     <activity android:name="com.facebook.react.devsupport.DevSettingsActivity" android:exported="false"/>
   </application>
