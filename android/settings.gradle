@@ -24,27 +24,30 @@ def getRNMinorVersion() {
 }
 
 if (getRNMinorVersion() >= 75) {
-  // ── Step 1: run our script via plain Groovy exec (not settings.providers.exec)
-  // to get the full autolinking config as JSON.
   def scriptPath = new File(rootDir.parentFile, 'scripts/generate-autolinking-config.js').absolutePath
-  def scriptOut = new StringWriter()
-  def scriptErr = new StringWriter()
-  def scriptProc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
-  scriptProc.consumeProcessOutput(scriptOut, scriptErr)
-  scriptProc.waitFor()
-  def configJson = scriptOut.toString().trim()
+  def autolinkingJson = new File(rootDir, 'build/generated/autolinking/autolinking.json')
 
-  if (scriptProc.exitValue() != 0 || configJson.isEmpty()) {
-    throw new GradleException("[autolinking] script failed (exit=${scriptProc.exitValue()}): ${scriptErr.toString().take(500)}")
+  // Runs scripts/generate-autolinking-config.js (which guarantees
+  // project.android.packageName is set) and returns its JSON stdout.
+  def generateAutolinkingConfig = {
+    def out = new StringWriter(), err = new StringWriter()
+    def proc = ['node', '--no-warnings', scriptPath].execute(null, rootDir.parentFile)
+    proc.consumeProcessOutput(out, err)
+    proc.waitFor()
+    def json = out.toString().trim()
+    if (proc.exitValue() != 0 || json.isEmpty()) {
+      throw new GradleException("[autolinking] script failed (exit=${proc.exitValue()}): ${err.toString().take(500)}")
+    }
+    return json
   }
 
-  // ── Step 2: write autolinking.json DIRECTLY so generateAutolinkingPackageList
+  // ── Step 1: write autolinking.json DIRECTLY so generateAutolinkingPackageList
   // always reads the correct file regardless of RNGP caching.
-  def autolinkingJson = new File(rootDir, 'build/generated/autolinking/autolinking.json')
+  def configJson = generateAutolinkingConfig()
   autolinkingJson.parentFile.mkdirs()
   autolinkingJson.text = configJson
 
-  // ── Step 3: tell RNGP which libraries to include as Gradle subprojects.
+  // ── Step 2: tell RNGP which libraries to include as Gradle subprojects.
   // We pass a staging file (not autolinking.json itself) so copyTo never
   // operates on the same source and destination.
   def stagingFile = new File(rootDir, 'build/generated/autolinking/autolinking-staging.json')
@@ -54,6 +57,28 @@ if (getRNMinorVersion() >= 75) {
     ex.autolinkLibrariesFromConfigFile(stagingFile)
     // autolinkLibrariesFromConfigFile copies stagingFile -> autolinking.json (same
     // content) and calls linkLibraries() to settings.include each Android library.
+  }
+
+  // ── Step 3: safety net. Prior fixes tried to patch autolinking.json via a
+  // doFirst added through tasks.withType(GeneratePackageListTask).configureEach
+  // in app/build.gradle, but that never visibly ran (no diagnostic output ever
+  // appeared in build logs across several attempts) — likely because that task
+  // is registered inside RNGP's own includeBuild composite build, so referencing
+  // its class by name from app/build.gradle is unreliable. gradle.taskGraph
+  // .beforeTask has no such dependency: it's a core Gradle API that fires for
+  // every task in the graph, matched purely by name, right before that task's
+  // actions run — so re-generate autolinking.json there as the final guard.
+  gradle.taskGraph.beforeTask { task ->
+    if (task.name == 'generateAutolinkingPackageList' || task.name == 'generateAutolinkingNewArchitectureFiles') {
+      def json = generateAutolinkingConfig()
+      autolinkingJson.parentFile.mkdirs()
+      autolinkingJson.text = json
+      def pkg = new groovy.json.JsonSlurper().parseText(json)?.project?.android?.packageName
+      println("[autolinking] beforeTask ${task.name}: wrote autolinking.json, packageName=${pkg}")
+      if (!pkg) {
+        throw new GradleException("[autolinking] beforeTask ${task.name}: generated config is still missing project.android.packageName")
+      }
+    }
   }
 }
 
