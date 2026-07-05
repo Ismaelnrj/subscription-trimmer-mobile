@@ -205,58 +205,91 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-// EAS runs `./gradlew clean bundleRelease` — `clean` deletes android/build/ AFTER
-// settings.gradle writes autolinking.json there, so the file is gone by the time
-// generateAutolinkingPackageList executes. A registered task with an explicit dependsOn
-// relationship is the only reliable way to re-write the file at execution time.
-def patchAutolinkingProvider = tasks.register('patchAutolinkingJson') {
-    doLast {
-        def autolinkingFile = rootProject.layout.buildDirectory
-            .file("generated/autolinking/autolinking.json").get().asFile
-        autolinkingFile.parentFile.mkdirs()
+// ── Autolinking JSON patch ────────────────────────────────────────────────────
+// All dependsOn-based approaches failed because generateAutolinkingPackageList is
+// realized too late in Gradle's graph-building phase for the hook to register the
+// dependency. The correct fix: tasks.withType(GeneratePackageListTask).configureEach
+// { doFirst } — adds an action directly to the task so it runs before @TaskAction,
+// with no dependency-graph change required.
 
-        def scriptFile = new File(rootProject.projectDir.parent, 'scripts/generate-autolinking-config.js')
-        if (scriptFile.exists()) {
-            def stdout = new StringWriter()
-            def stderr = new StringWriter()
-            def proc = ['node', '--no-warnings', scriptFile.absolutePath].execute(null, rootProject.projectDir.parent)
-            proc.consumeProcessOutput(stdout, stderr)
+// Layer 1: Configuration-time diagnostic + write (logger.warn always visible in logs).
+{
+    def autolinkFile = rootProject.layout.buildDirectory
+        .file("generated/autolinking/autolinking.json").get().asFile
+    if (autolinkFile.exists()) {
+        try {
+            def p = new groovy.json.JsonSlurper().parseText(autolinkFile.text)
+            logger.warn("[patchAutolinking] cfg: packageName=${p?.project?.android?.packageName} deps=${p?.dependencies?.size()}")
+        } catch (e) {
+            logger.error("[patchAutolinking] cfg: parse error: ${e.message}")
+        }
+    } else {
+        logger.warn("[patchAutolinking] cfg: autolinking.json missing — writing now")
+    }
+    autolinkFile.parentFile.mkdirs()
+    def cfgScript = new File(rootProject.projectDir.parentFile, 'scripts/generate-autolinking-config.js')
+    if (cfgScript.exists()) {
+        def out = new StringWriter(), err = new StringWriter()
+        def proc = ['node', '--no-warnings', cfgScript.absolutePath].execute(null, rootProject.projectDir.parentFile)
+        proc.consumeProcessOutput(out, err)
+        proc.waitFor()
+        def json = out.toString().trim()
+        if (proc.exitValue() == 0 && !json.isEmpty()) {
+            autolinkFile.text = json
+            logger.warn("[patchAutolinking] cfg write OK: ${json.length()} bytes")
+        } else {
+            logger.error("[patchAutolinking] cfg write FAILED: exit=${proc.exitValue()} err=${err.toString().take(300)}")
+        }
+    } else {
+        logger.error("[patchAutolinking] cfg: script not found at ${cfgScript}")
+    }
+}
+
+// Layer 2: Execution-time doFirst — fires when the task is configured (realized),
+// before @TaskAction runs. No dependency-graph changes needed.
+tasks.withType(com.facebook.react.tasks.GeneratePackageListTask).configureEach { task ->
+    task.doFirst {
+        def f = task.autolinkInputFile.get().asFile
+        if (f.exists()) {
+            try {
+                def cur = new groovy.json.JsonSlurper().parseText(f.text)
+                System.err.println("[patchAutolinking] doFirst: packageName=${cur?.project?.android?.packageName} deps=${cur?.dependencies?.size()}")
+                if (cur?.project?.android?.packageName) return
+            } catch (e) {
+                System.err.println("[patchAutolinking] doFirst: parse error: ${e.message}")
+            }
+        } else {
+            System.err.println("[patchAutolinking] doFirst: file missing")
+        }
+        f.parentFile.mkdirs()
+        def sf = new File(rootProject.projectDir.parentFile, 'scripts/generate-autolinking-config.js')
+        if (sf.exists()) {
+            def out = new StringWriter(), err = new StringWriter()
+            def proc = ['node', '--no-warnings', sf.absolutePath].execute(null, rootProject.projectDir.parentFile)
+            proc.consumeProcessOutput(out, err)
             proc.waitFor()
-            def json = stdout.toString().trim()
-            println "[patchAutolinking] script exit=${proc.exitValue()} json.length=${json.length()}"
+            def json = out.toString().trim()
+            System.err.println("[patchAutolinking] doFirst script: exit=${proc.exitValue()} len=${json.length()}")
             if (proc.exitValue() == 0 && !json.isEmpty()) {
-                autolinkingFile.text = json
-                println "[patchAutolinking] wrote autolinking.json from script"
+                f.text = json
+                System.err.println("[patchAutolinking] doFirst: wrote autolinking.json")
                 return
             }
-            println "[patchAutolinking] script failed stderr=${stderr.toString().take(300)}"
-        } else {
-            println "[patchAutolinking] script not found: ${scriptFile}"
+            System.err.println("[patchAutolinking] doFirst script failed: ${err.toString().take(200)}")
         }
-
-        // Fallback: patch the existing file or create minimal config
-        def text = autolinkingFile.exists() ? autolinkingFile.text : '{}'
+        def text = f.exists() ? f.text : '{}'
         def parsed = new groovy.json.JsonSlurper().parseText(text)
         parsed.project = parsed.project ?: [:]
         parsed.project.android = parsed.project.android ?: [:]
-        if (!parsed.project.android.packageName) {
-            parsed.project.android.packageName = 'com.subtrimmer'
-        }
+        if (!parsed.project.android.packageName) { parsed.project.android.packageName = 'com.subtrimmer' }
         parsed.project.android.applicationId = parsed.project.android.applicationId ?: 'com.subtrimmer'
         parsed.project.android.sourceDir = parsed.project.android.sourceDir ?: rootProject.projectDir.absolutePath
         parsed.project.android.appName = parsed.project.android.appName ?: 'app'
         parsed.project.android.mainActivity = parsed.project.android.mainActivity ?: '.MainActivity'
         if (!parsed.reactNativeVersion) { parsed.reactNativeVersion = '0.79.6' }
-        autolinkingFile.text = groovy.json.JsonOutput.toJson(parsed)
-        println "[patchAutolinking] patched autolinking.json packageName=${parsed.project.android.packageName}"
+        f.text = groovy.json.JsonOutput.toJson(parsed)
+        System.err.println("[patchAutolinking] doFirst fallback: packageName=${parsed.project.android.packageName}")
     }
-}
-
-// tasks.matching + configureEach is lazy and order-independent: it fires whenever
-// a task named 'generateAutolinkingPackageList' is added to the task container,
-// even if RNGP registers it inside an AGP finalizeDsl callback after afterEvaluate.
-tasks.matching { it.name == 'generateAutolinkingPackageList' }.configureEach { task ->
-    task.dependsOn(patchAutolinkingProvider)
 }
 
 // Strip sensitive permissions from the merged manifest after Gradle merges it.
