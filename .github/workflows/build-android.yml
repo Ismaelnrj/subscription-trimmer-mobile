@@ -63,21 +63,32 @@ jobs:
       - name: Decode keystore
         working-directory: ${{ env.PROJECT_DIR }}
         run: |
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "::error::KEYSTORE_BASE64 repo secret is empty or unset. Without it, this build" \
+                 "cannot produce a properly signed release AAB. Set KEYSTORE_BASE64," \
+                 "KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD in" \
+                 "Settings > Secrets and variables > Actions before re-running."
+            exit 1
+          fi
           mkdir -p android/app
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          if [ ! -s android/app/release.keystore ]; then
+            echo "::error::Decoded keystore is empty — KEYSTORE_BASE64 is not valid base64 of a keystore file."
+            exit 1
+          fi
           ls -la android/app/release.keystore
-      
+
       - name: Build Android App Bundle
         working-directory: ${{ env.PROJECT_DIR }}/android
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file="$(pwd)/app/release.keystore" \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
         env:
           JAVA_OPTS: '-Xmx4096m'
-          KEYSTORE_PATH: 'app/release.keystore'
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
