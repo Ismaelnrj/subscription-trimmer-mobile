@@ -245,6 +245,49 @@ if modified:
         f.write(content)
 PYEOF
 
+# ── Fix 3b: Force codegen-before-autolinking task ordering ──────────────────
+# :app:generateAutolinkingNewArchitectureFiles writes autolinking.cpp/.cmake,
+# unconditionally listing every autolinked module with a codegenConfig in its
+# package.json — assuming that module's own generateCodegenArtifactsFromSchema
+# task has already produced its android/build/generated/source/codegen/jni/
+# output. Gradle's task graph doesn't guarantee that ordering by default, so
+# modules like @sentry/react-native and react-native-gesture-handler can lose
+# the race: the generated autolinking.cpp then #includes a header
+# (e.g. RNSentrySpec.h) that doesn't exist yet, and the native build fails at
+# C++ compile time with no earlier warning. Force the correct ordering
+# explicitly once every subproject has been configured.
+echo "[3b/5] android/build.gradle — force codegen-before-autolinking task ordering ..."
+
+python3 - "$ANDROID/build.gradle" << 'PYEOF'
+import sys
+path = sys.argv[1]
+with open(path) as f:
+    content = f.read()
+
+if 'generateAutolinkingNewArchitectureFiles' in content and 'appProject.tasks.matching' in content:
+    print("      SKIP — already present")
+else:
+    hook = (
+        "\n"
+        "// Force generateAutolinkingNewArchitectureFiles to wait for every\n"
+        "// subproject's own codegen task — see fix-gradle.sh Fix 3b.\n"
+        "gradle.projectsEvaluated {\n"
+        "    def appProject = rootProject.findProject(\":app\")\n"
+        "    if (appProject == null) return\n"
+        "    appProject.tasks.matching { it.name == \"generateAutolinkingNewArchitectureFiles\" }.configureEach { autolinkTask ->\n"
+        "        rootProject.subprojects.each { sub ->\n"
+        "            sub.tasks.matching { it.name == \"generateCodegenArtifactsFromSchema\" }.configureEach { codegenTask ->\n"
+        "                autolinkTask.dependsOn(codegenTask)\n"
+        "            }\n"
+        "        }\n"
+        "    }\n"
+        "}\n"
+    )
+    with open(path, 'a') as f:
+        f.write(hook)
+    print("      OK   — codegen-before-autolinking task ordering added")
+PYEOF
+
 # ── Fix 4: Patch CoreModule.kt — reactDelegate.reload() missing in RN < 0.74 ──
 # expo-modules-core@1.12.x calls ReactDelegate.reload() which was added in
 # React Native 0.74. This project uses RN 0.73.6 where that method doesn't

@@ -110,3 +110,26 @@ allprojects {
         }
     }
 }
+
+// :app:generateAutolinkingNewArchitectureFiles writes autolinking.cpp/.cmake,
+// unconditionally listing every autolinked module that declares a codegenConfig
+// in its package.json — assuming that module's own generateCodegenArtifactsFromSchema
+// task has already produced its android/build/generated/source/codegen/jni/ output.
+// Gradle's task graph doesn't actually guarantee that ordering by default, so
+// modules like @sentry/react-native and react-native-gesture-handler can lose
+// the race, producing generated code that #includes a header
+// (e.g. RNSentrySpec.h) which doesn't exist yet — a native build failure with
+// no error until C++ compilation. Force the correct ordering explicitly once
+// every subproject has been configured (and its own codegen task, if any,
+// registered).
+gradle.projectsEvaluated {
+    def appProject = rootProject.findProject(":app")
+    if (appProject == null) return
+    appProject.tasks.matching { it.name == "generateAutolinkingNewArchitectureFiles" }.configureEach { autolinkTask ->
+        rootProject.subprojects.each { sub ->
+            sub.tasks.matching { it.name == "generateCodegenArtifactsFromSchema" }.configureEach { codegenTask ->
+                autolinkTask.dependsOn(codegenTask)
+            }
+        }
+    }
+}
