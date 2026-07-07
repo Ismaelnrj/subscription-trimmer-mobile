@@ -36,7 +36,7 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.container, containerStyle]} pointerEvents="none">
-      <Image source={require("../assets/splash.png")} style={styles.image} resizeMode="contain" />
+      <Image source={require("../assets/splash.png")} style={styles.image} resizeMode="cover" />
     </Animated.View>
   );
 }
