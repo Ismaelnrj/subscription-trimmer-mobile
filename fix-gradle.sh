@@ -649,48 +649,6 @@ else
     echo "      WARN — $MANIFEST_FILE not found; skipping"
 fi
 
-# ── Fix 10: Google Sign-In OAuth redirect intent-filter ──────────────────────
-# Google's OAuth server only allows custom-URI-scheme redirects for "Android"
-# type OAuth clients under the reversed-client-ID scheme
-# (com.googleusercontent.apps.<client-id>:/...) — see lib/google-auth.ts,
-# which builds the redirect URI in that exact format. Without a matching
-# intent-filter, Android has nothing to route that redirect back into once
-# Google accepts it.
-echo "[10/10] AndroidManifest.xml — Google Sign-In OAuth redirect intent-filter ..."
-
-if [ -f "$MANIFEST_FILE" ]; then
-    if grep -q "com.googleusercontent.apps.555155282969-6n0085a1n6oe0c8cdq2lqhh2aeh7274m" "$MANIFEST_FILE" 2>/dev/null; then
-        echo "      SKIP — already present"
-    else
-        python3 - "$MANIFEST_FILE" << 'PYEOF'
-import sys, re
-path = sys.argv[1]
-with open(path) as f:
-    content = f.read()
-
-intent_filter = (
-    '      <intent-filter>\n'
-    '        <action android:name="android.intent.action.VIEW"/>\n'
-    '        <category android:name="android.intent.category.DEFAULT"/>\n'
-    '        <category android:name="android.intent.category.BROWSABLE"/>\n'
-    '        <data android:scheme="com.googleusercontent.apps.555155282969-6n0085a1n6oe0c8cdq2lqhh2aeh7274m"/>\n'
-    '      </intent-filter>\n'
-)
-
-m = re.search(r'(<data android:scheme="trimio"\s*/>\s*\n\s*</intent-filter>\n)', content)
-if not m:
-    print("      WARN — trimio scheme intent-filter not found; skipping")
-else:
-    content = content[:m.end()] + intent_filter + content[m.end():]
-    with open(path, 'w') as f:
-        f.write(content)
-    print("      OK   — Google Sign-In redirect intent-filter added")
-PYEOF
-    fi
-else
-    echo "      WARN — $MANIFEST_FILE not found; skipping"
-fi
-
 echo ""
 echo "All fixes applied."
 echo ""

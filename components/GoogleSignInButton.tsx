@@ -1,27 +1,8 @@
-import { Component, ReactNode, useEffect } from "react";
+import { useState } from "react";
 import { TouchableOpacity, Text, StyleProp, ViewStyle, TextStyle } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-import { useGoogleAuth, isGoogleAuthConfigured } from "../lib/google-auth";
-
-// expo-auth-session's Google provider can throw synchronously from inside its
-// own useMemo when the OAuth client config doesn't validate against Google
-// Cloud Console (e.g. a package name or SHA-1 signing-certificate mismatch).
-// That's a throw from within a hook's internals, so a try/catch around the
-// call site can't safely recover — it leaves React's hook bookkeeping for
-// whichever component called it corrupted for that render, which is its own
-// fatal crash. Isolating the hook in this leaf component means only this
-// component's instance is affected, and this local boundary lets it
-// disappear instead of taking the whole screen (email/password fields, main
-// sign-in button) down with it.
-class GoogleButtonBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  state = { hasError: false };
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  render() {
-    return this.state.hasError ? null : this.props.children;
-  }
-}
+import { isErrorWithCode, statusCodes } from "@react-native-google-signin/google-signin";
+import { isGoogleAuthConfigured, signInWithGoogle } from "../lib/google-auth";
 
 type Props = {
   label: string;
@@ -32,28 +13,30 @@ type Props = {
   iconColor: string;
 };
 
-function GoogleSignInButtonInner({ label, onIdToken, disabled, buttonStyle, textStyle, iconColor }: Props) {
-  const [googleRequest, googleResponse, promptGoogleAuth] = useGoogleAuth();
+export function GoogleSignInButton({ label, onIdToken, disabled, buttonStyle, textStyle, iconColor }: Props) {
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (googleResponse?.type === "success") {
-      onIdToken(googleResponse.params.id_token);
+  if (!isGoogleAuthConfigured()) return null;
+
+  const handlePress = async () => {
+    setLoading(true);
+    try {
+      const idToken = await signInWithGoogle();
+      if (idToken) onIdToken(idToken);
+    } catch (e) {
+      // User cancelling the sign-in sheet isn't an error worth surfacing.
+      if (!isErrorWithCode(e) || e.code !== statusCodes.SIGN_IN_CANCELLED) {
+        console.warn("[GoogleSignIn] failed:", e);
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [googleResponse]);
+  };
 
   return (
-    <TouchableOpacity style={buttonStyle} onPress={() => promptGoogleAuth()} disabled={!googleRequest || disabled}>
+    <TouchableOpacity style={buttonStyle} onPress={handlePress} disabled={disabled || loading}>
       <AntDesign name="google" size={18} color={iconColor} />
       <Text style={textStyle}>{label}</Text>
     </TouchableOpacity>
-  );
-}
-
-export function GoogleSignInButton(props: Props) {
-  if (!isGoogleAuthConfigured()) return null;
-  return (
-    <GoogleButtonBoundary>
-      <GoogleSignInButtonInner {...props} />
-    </GoogleButtonBoundary>
   );
 }

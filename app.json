@@ -29,7 +29,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 28,
+      "versionCode": 29,
       "edgeToEdgeEnabled": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
@@ -71,6 +71,7 @@
     },
     "plugins": [
       "expo-updates",
+      "@react-native-google-signin/google-signin",
       [
         "expo-notifications",
         {
