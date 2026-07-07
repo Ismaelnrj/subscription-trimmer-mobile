@@ -20,9 +20,10 @@ export default function ReferAFriendScreen() {
   const load = useCallback(async () => {
     try {
       const { data } = await apiClient.get("/trpc/referrals.me");
-      setReferralCode(data.referralCode);
-      setHasRedeemed(data.hasRedeemedReferral);
-      setBonusPremiumUntil(data.bonusPremiumUntil);
+      const result = data.result.data;
+      setReferralCode(result.referralCode);
+      setHasRedeemed(result.hasRedeemedReferral);
+      setBonusPremiumUntil(result.bonusPremiumUntil);
     } catch {
       // ignore — leave the screen empty rather than block on a transient error
     } finally {
