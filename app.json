@@ -8,7 +8,10 @@
     "updates": {
       "url": "https://u.expo.dev/18a3e059-0c9c-49df-b485-21240d7e283a",
       "enabled": true,
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
 
     "icon": "./assets/icon.png",
@@ -26,7 +29,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 27,
+      "versionCode": 28,
       "edgeToEdgeEnabled": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
