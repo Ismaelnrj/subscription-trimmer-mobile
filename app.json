@@ -15,9 +15,9 @@
     "primaryColor": "#7746DD",
 
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F9FAFB"
+      "backgroundColor": "#7746DD"
     },
 
     "assetBundlePatterns": [
