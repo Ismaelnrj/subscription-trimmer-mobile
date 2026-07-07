@@ -184,7 +184,7 @@ export default function SubscriptionsScreen() {
         currencySymbol: settings?.currencySymbol ?? "$",
         customCategories: cats,
       });
-      return res.data;
+      return res.data.result.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
   });
