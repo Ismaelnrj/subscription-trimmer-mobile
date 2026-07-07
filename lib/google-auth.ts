@@ -42,7 +42,14 @@ export function useGoogleAuth() {
     androidClientId,
     iosClientId,
     webClientId,
-    responseType: "id_token",
+    // No explicit responseType: on native platforms expo-auth-session
+    // defaults to the authorization-code flow (with PKCE), which is what
+    // Google's server expects for "Android"/"iOS" type OAuth clients.
+    // Forcing responseType: "id_token" here used the implicit flow instead,
+    // which Google's server rejects for this client type with a generic
+    // "Error 400: invalid_request" / "Trimio's request is invalid" — the
+    // code flow still yields an id_token via the library's automatic code
+    // exchange (see GoogleSignInButton.tsx's use of googleResponse.params.id_token).
     ...(redirectUri ? { redirectUri } : {}),
   });
 }
