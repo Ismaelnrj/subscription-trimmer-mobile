@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -46,16 +46,19 @@ export default function ProfileScreen() {
 
         <Text style={styles.sectionTitle}>{t("profile.upgrade")}</Text>
         {isPremium ? (
-          <View style={[styles.premiumItem, { borderColor: c.success }]}>
+          <TouchableOpacity
+            style={[styles.premiumItem, { borderColor: c.success }]}
+            onPress={() => Linking.openURL("https://play.google.com/store/account/subscriptions?package=com.trimio.app")}
+          >
             <View style={styles.menuItemLeft}>
               <MaterialCommunityIcons name="crown" size={20} color={c.success} />
               <View>
                 <Text style={[styles.menuItemLabel, { color: c.success }]}>{t("profile.premiumMember")}</Text>
-                <Text style={{ fontSize: 11, color: c.textSecondary, marginTop: 1 }}>{t("profile.allFeaturesUnlocked")}</Text>
+                <Text style={{ fontSize: 11, color: c.textSecondary, marginTop: 1 }}>{t("profile.manageSubscription")}</Text>
               </View>
             </View>
-            <MaterialCommunityIcons name="check-circle" size={20} color={c.success} />
-          </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.success} />
+          </TouchableOpacity>
         ) : (
           <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
             <View style={styles.menuItemLeft}>

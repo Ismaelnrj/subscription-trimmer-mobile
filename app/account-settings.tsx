@@ -14,6 +14,7 @@ import { PremiumGate } from "../components/PremiumGate";
 import { isPasswordValid } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
+import { signInWithGoogle } from "../lib/google-auth";
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
@@ -87,6 +88,23 @@ export default function AccountSettingsScreen() {
   };
 
   const handleConfirmDelete = async () => {
+    if (user?.hasPassword === false) {
+      setDeleting(true);
+      try {
+        const idToken = await signInWithGoogle();
+        if (!idToken) { setDeleting(false); return; } // user cancelled the Google sheet
+        await apiClient.delete("/auth/account", { data: { idToken } });
+        setShowDeleteModal(false);
+        await logout();
+        router.replace("/login");
+      } catch (err: any) {
+        Alert.alert(t("common.error"), err.response?.data?.error || t("accountSettings.errDeleteAccount"));
+      } finally {
+        setDeleting(false);
+      }
+      return;
+    }
+
     if (!deletePassword) {
       Alert.alert(t("common.error"), t("accountSettings.errPasswordRequired"));
       return;
@@ -98,12 +116,7 @@ export default function AccountSettingsScreen() {
       await logout();
       router.replace("/login");
     } catch (err: any) {
-      const code = err.response?.data?.error;
-      if (code === "GOOGLE_ACCOUNT") {
-        Alert.alert(t("common.error"), t("accountSettings.errGoogleAccount"));
-      } else {
-        Alert.alert(t("common.error"), code || t("accountSettings.errDeleteAccount"));
-      }
+      Alert.alert(t("common.error"), err.response?.data?.error || t("accountSettings.errDeleteAccount"));
     } finally {
       setDeleting(false);
     }
@@ -324,15 +337,21 @@ export default function AccountSettingsScreen() {
           <View style={[styles.pickerSheet, { borderTopLeftRadius: 16, borderTopRightRadius: 16 }]}>
             <Text style={styles.pickerTitle}>{t("accountSettings.deleteModalTitle")}</Text>
             <Text style={styles.deleteDesc}>{t("accountSettings.deleteModalDesc")}</Text>
-            <TextInput
-              style={styles.input}
-              value={deletePassword}
-              onChangeText={setDeletePassword}
-              placeholder={t("accountSettings.deletePasswordPlaceholder")}
-              placeholderTextColor={c.placeholder}
-              secureTextEntry
-              autoFocus
-            />
+            {user?.hasPassword === false ? (
+              <Text style={[styles.deleteDesc, { marginBottom: 12 }]}>
+                {t("accountSettings.deleteGoogleConfirmNote")}
+              </Text>
+            ) : (
+              <TextInput
+                style={styles.input}
+                value={deletePassword}
+                onChangeText={setDeletePassword}
+                placeholder={t("accountSettings.deletePasswordPlaceholder")}
+                placeholderTextColor={c.placeholder}
+                secureTextEntry
+                autoFocus
+              />
+            )}
             <View style={{ flexDirection: "row", gap: 8 }}>
               <TouchableOpacity
                 style={[styles.clearButton, { flex: 1, backgroundColor: c.card, borderColor: c.border }]}
@@ -344,7 +363,9 @@ export default function AccountSettingsScreen() {
               <TouchableOpacity style={[styles.deleteButton, { flex: 1 }]} onPress={handleConfirmDelete} disabled={deleting}>
                 {deleting
                   ? <ActivityIndicator color={c.danger} />
-                  : <Text style={styles.deleteButtonText}>{t("accountSettings.deletePermanently")}</Text>
+                  : <Text style={styles.deleteButtonText}>
+                      {user?.hasPassword === false ? t("accountSettings.deleteConfirmWithGoogle") : t("accountSettings.deletePermanently")}
+                    </Text>
                 }
               </TouchableOpacity>
             </View>

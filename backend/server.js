@@ -871,17 +871,32 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
 
 app.delete('/api/auth/account', authMiddleware, async (req, res) => {
   try {
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ error: 'Password required' });
+    const { password, idToken } = req.body;
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (!user.password_hash) {
-      return res.status(400).json({ error: 'GOOGLE_ACCOUNT' });
+
+    if (user.password_hash) {
+      if (!password) return res.status(400).json({ error: 'Password required' });
+      if (!(await bcrypt.compare(password, user.password_hash))) {
+        return res.status(401).json({ error: 'Incorrect password' });
+      }
+    } else {
+      // Google-only accounts have no password — confirm deletion with a
+      // fresh Google sign-in instead, matched against the account's stored
+      // google_id so one Google user can't delete another's account.
+      if (!idToken) return res.status(400).json({ error: 'GOOGLE_ID_TOKEN_REQUIRED' });
+      let payload;
+      try {
+        payload = await verifyGoogleIdToken(idToken);
+      } catch {
+        return res.status(401).json({ error: 'Invalid Google token' });
+      }
+      if (payload.sub !== user.google_id) {
+        return res.status(401).json({ error: 'Google account does not match' });
+      }
     }
-    if (!(await bcrypt.compare(password, user.password_hash))) {
-      return res.status(401).json({ error: 'Incorrect password' });
-    }
+
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {
