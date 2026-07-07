@@ -27,7 +27,7 @@ export default function TermsOfServiceScreen() {
       <Stack.Screen options={{ title: "Terms of Service", headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <Text style={styles.updated}>Last updated: April 2026</Text>
+          <Text style={styles.updated}>Last updated: June 16, 2026</Text>
           <Text style={styles.intro}>Please read these Terms of Service carefully before using Trimio.</Text>
           {SECTIONS.map((s) => (
             <View key={s.title} style={styles.section}>
