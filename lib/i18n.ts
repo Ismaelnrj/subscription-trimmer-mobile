@@ -15,7 +15,7 @@ i18n.use(initReactI18next).init({
   lng: defaultLng,
   fallbackLng: "en",
   interpolation: { escapeValue: false },
-  initImmediate: false,
+  initAsync: false,
 });
 
 export default i18n;
