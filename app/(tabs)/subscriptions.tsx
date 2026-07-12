@@ -320,7 +320,7 @@ export default function SubscriptionsScreen() {
       Alert.alert("Trial end date required", "Please enter when the free trial ends.");
       return;
     }
-    if (formData.trialEndDate.trim()) {
+    if (formData.isFreeTrial && formData.trialEndDate.trim()) {
       trialEndDate = normaliseDateInput(formData.trialEndDate);
       if (!trialEndDate) {
         Alert.alert("Invalid date", "Please enter the trial end date as DD/MM/YYYY or YYYY-MM-DD.");
