@@ -67,6 +67,7 @@ export default function NotificationPreferencesScreen() {
                 <Switch
                   value={prefs.renewalAlerts}
                   onValueChange={(v) => toggle("renewalAlerts", v)}
+                  disabled={updateMutation.isLoading}
                   trackColor={{ false: c.border, true: c.primary }}
                   thumbColor="#FFFFFF"
                 />
@@ -80,6 +81,7 @@ export default function NotificationPreferencesScreen() {
                         key={days}
                         style={[styles.dayChip, active && styles.dayChipActive]}
                         onPress={() => toggle("renewalAlertDays", days)}
+                        disabled={updateMutation.isLoading}
                       >
                         <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>
                           {t("notifPrefs.day", { count: days })}
@@ -98,6 +100,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.spendingAlerts}
                 onValueChange={(v) => toggle("spendingAlerts", v)}
+                disabled={updateMutation.isLoading}
                 trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
@@ -114,6 +117,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.weeklySummary}
                 onValueChange={(v) => toggle("weeklySummary", v)}
+                disabled={updateMutation.isLoading}
                 trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
@@ -130,6 +134,7 @@ export default function NotificationPreferencesScreen() {
               <Switch
                 value={prefs.pushEnabled}
                 onValueChange={(v) => toggle("pushEnabled", v)}
+                disabled={updateMutation.isLoading}
                 trackColor={{ false: c.border, true: c.primary }}
                 thumbColor="#FFFFFF"
               />
@@ -150,6 +155,7 @@ export default function NotificationPreferencesScreen() {
                   <Switch
                     value={prefs.emailReminders ?? false}
                     onValueChange={(v) => toggle("emailReminders", v)}
+                    disabled={updateMutation.isLoading}
                     trackColor={{ false: c.border, true: c.primary }}
                     thumbColor="#FFFFFF"
                   />
