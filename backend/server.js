@@ -1392,55 +1392,6 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   }
 });
 
-// ── Insights ──────────────────────────────────────────────────────────────────
-
-app.get('/api/trpc/insights.getRecommendations', authMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE', [req.userId]);
-    const subs = result.rows;
-
-    if (subs.length === 0) {
-      return res.json(trpc({
-        keyInsights: 'Add your first subscription to get personalized insights about your spending habits.',
-        topRecommendations: [
-          'Track all your subscriptions in one place.',
-          'Set billing cycle correctly to get accurate yearly projections.',
-          'Review your subscriptions monthly to cancel unused ones.',
-        ],
-        estimatedSavings: 0,
-      }));
-    }
-
-    const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
-    const byCategory = {};
-    for (const s of subs) {
-      byCategory[s.category] = (byCategory[s.category] || 0) + toMonthly(parseFloat(s.price), s.billing_cycle);
-    }
-    const topCategory = Object.entries(byCategory).sort((a, b) => b[1] - a[1])[0];
-    const estimatedSavings = +(monthlyTotal * 0.2).toFixed(2);
-
-    const recommendations = [];
-    if (topCategory && topCategory[1] > 20) {
-      recommendations.push(`Review your ${topCategory[0]} subscriptions ($${topCategory[1].toFixed(2)}/mo) — you may be able to downgrade or cancel some.`);
-    }
-    if (subs.length > 5) {
-      recommendations.push(`You have ${subs.length} active subscriptions. Consider auditing for duplicates or unused services.`);
-    }
-    recommendations.push(`Switching some monthly plans to annual billing could save up to 20% per year.`);
-    if (monthlyTotal > 50) {
-      recommendations.push(`Your monthly spend of $${monthlyTotal.toFixed(2)} is above average. Look for bundle deals to reduce costs.`);
-    }
-
-    res.json(trpc({
-      keyInsights: `You have ${subs.length} active subscription${subs.length !== 1 ? 's' : ''} costing $${monthlyTotal.toFixed(2)}/month ($${(monthlyTotal * 12).toFixed(2)}/year). ${topCategory ? `Your biggest category is ${topCategory[0]} at $${topCategory[1].toFixed(2)}/month.` : ''}`,
-      topRecommendations: recommendations,
-      estimatedSavings,
-    }));
-  } catch (err) {
-    handleError(err, res);
-  }
-});
-
 // ── Notifications ─────────────────────────────────────────────────────────────
 
 app.get('/api/trpc/notifications.getHistory', authMiddleware, async (req, res) => {
