@@ -215,7 +215,11 @@ export default function InsightsScreen() {
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;
   const highCount = tips.filter(t => t.priority === "high").length;
-  const savingsPotential = isPremium ? calcSavingsPotential(allTips) : 0;
+  // Multiple tips can reference the same underlying subscription (e.g. a sub can be
+  // both "part of a duplicate category" and "individually expensive"), so their
+  // savingsValue fields aren't mutually exclusive and can't just be summed as-is.
+  // Cap at the user's actual total spend, since real savings can never exceed that.
+  const savingsPotential = isPremium ? Math.min(calcSavingsPotential(allTips), monthlyTotal) : 0;
 
   return (
     <>
