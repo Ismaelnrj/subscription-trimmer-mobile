@@ -37,7 +37,7 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
 
 // Configurable thresholds — these can be tuned without code changes if they
 // turn out to be too aggressive or too lax for most users.
-const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing this much or more per month
+export const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing this much or more per month
 const TOTAL_SPEND_THRESHOLD = 200; // flag total monthly spend at or above this amount
 
 export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD): Tip[] {

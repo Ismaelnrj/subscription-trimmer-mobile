@@ -1248,6 +1248,12 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
 app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
   try {
     const { budgetGoal, currency, currencySymbol, customCategories, alertThreshold } = req.body;
+    if (budgetGoal != null && (typeof budgetGoal !== 'number' || !Number.isFinite(budgetGoal) || budgetGoal <= 0)) {
+      return res.status(400).json({ error: 'budgetGoal must be a positive number or null' });
+    }
+    if (alertThreshold !== undefined && alertThreshold !== null && (typeof alertThreshold !== 'number' || !Number.isFinite(alertThreshold) || alertThreshold <= 0)) {
+      return res.status(400).json({ error: 'alertThreshold must be a positive number' });
+    }
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
       `UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3,

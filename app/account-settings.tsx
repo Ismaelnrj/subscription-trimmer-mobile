@@ -137,13 +137,13 @@ export default function AccountSettingsScreen() {
 
   const handleSaveBudget = () => {
     const goal = budgetInput ? parseFloat(budgetInput) : null;
-    if (budgetInput && isNaN(goal!)) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
+    if (budgetInput && (isNaN(goal!) || goal! <= 0)) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
     settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
   };
 
   const handleSaveAlertThreshold = () => {
     const threshold = alertThresholdInput ? parseFloat(alertThresholdInput) : 50;
-    if (isNaN(threshold)) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
+    if (isNaN(threshold) || threshold <= 0) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
     settingsMutation.mutate({ alertThreshold: threshold, budgetGoal: settings?.budgetGoal ?? null, currency: currency.code, currencySymbol: currency.symbol });
   };
 

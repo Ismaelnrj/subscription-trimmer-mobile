@@ -10,7 +10,7 @@ import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
-import { buildTips } from "../insights";
+import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
 
@@ -141,7 +141,8 @@ export default function DashboardScreen() {
     })();
   }, [subsLoading, subscriptions.length]);
 
-  const allRecoTips = subscriptions.length >= 2 ? buildTips(subscriptions as any, fmtC) : [];
+  const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
+  const allRecoTips = subscriptions.length >= 2 ? buildTips(subscriptions as any, fmtC, singleSubThreshold) : [];
   const recoTips = isPremium ? allRecoTips : allRecoTips.slice(0, 2);
   const showRecoBanner = !recoBannerDismissed && recoTips.length > 0;
 
