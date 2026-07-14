@@ -524,24 +524,21 @@ export default function SubscriptionsScreen() {
   return (
     <View style={styles.container}>
       {savingsCard && (
-        <TouchableOpacity
-          style={styles.savingsCard}
-          activeOpacity={0.9}
-          onPress={() => {
-            if (savingsTimer.current) clearTimeout(savingsTimer.current);
-            setSavingsCard(null);
-          }}
-        >
+        <View style={styles.savingsCard}>
           <MaterialCommunityIcons name="party-popper" size={22} color="#FFFFFF" />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.savingsCardText}>
               {t("subscriptions.savedThisYear", { amount: fmtC(savingsCard.yearly), name: savingsCard.name })}
             </Text>
-            <Text style={styles.savingsCardRate} onPress={handleRateApp}>
-              {t("subscriptions.rateNow")} ⭐
-            </Text>
+            <TouchableOpacity
+              onPress={handleRateApp}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.savingsCardRateButton}
+            >
+              <Text style={styles.savingsCardRate}>{t("subscriptions.rateNow")} ⭐</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       )}
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -1041,7 +1038,8 @@ function makeStyles(c: AppColors) {
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
     savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", lineHeight: 18 },
-    savingsCardRate: { color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700", marginTop: 4 },
+    savingsCardRateButton: { alignSelf: "flex-start", marginTop: 6, paddingVertical: 4 },
+    savingsCardRate: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", textDecorationLine: "underline" },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
