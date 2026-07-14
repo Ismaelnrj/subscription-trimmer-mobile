@@ -85,7 +85,7 @@ export default function SubscriptionsScreen() {
     if (await reviewEligible()) setShowReviewPrompt(true);
   };
 
-  const handleReviewHappy = async () => {
+  const handleStarTap = async () => {
     setShowReviewPrompt(false);
     const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
     const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
@@ -93,20 +93,7 @@ export default function SubscriptionsScreen() {
       REVIEW_KEY,
       JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: true })
     ).catch(() => {});
-    if (await StoreReview.hasAction()) {
-      await StoreReview.requestReview();
-    }
-  };
-
-  const handleReviewUnhappy = async () => {
-    setShowReviewPrompt(false);
-    const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
-    await SecureStore.setItemAsync(
-      REVIEW_KEY,
-      JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: false })
-    ).catch(() => {});
-    Linking.openURL("mailto:Trimio@subtrimio.com?subject=Trimio%20Feedback").catch(() => {});
+    await handleRateApp();
   };
 
   const handleReviewLater = async () => {
@@ -530,13 +517,6 @@ export default function SubscriptionsScreen() {
             <Text style={styles.savingsCardText}>
               {t("subscriptions.savedThisYear", { amount: fmtC(savingsCard.yearly), name: savingsCard.name })}
             </Text>
-            <TouchableOpacity
-              onPress={handleRateApp}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={styles.savingsCardRateButton}
-            >
-              <Text style={styles.savingsCardRate}>{t("subscriptions.rateNow")} ⭐</Text>
-            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -769,16 +749,21 @@ export default function SubscriptionsScreen() {
       <Modal visible={showReviewPrompt} animationType="fade" transparent onRequestClose={handleReviewLater}>
         <View style={styles.reviewOverlay}>
           <View style={styles.reviewCard}>
-            <Text style={styles.reviewEmoji}>⭐</Text>
+            <Text style={styles.reviewEmoji}>🎉</Text>
             <Text style={styles.reviewTitle}>{t("review.title")}</Text>
             <Text style={styles.reviewSubtitle}>{t("review.subtitle")}</Text>
-            <TouchableOpacity style={styles.reviewHappyButton} onPress={handleReviewHappy}>
-              <Text style={styles.reviewHappyText}>❤️  {t("review.happy")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.reviewUnhappyButton} onPress={handleReviewUnhappy}>
-              <Text style={styles.reviewUnhappyText}>{t("review.unhappy")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleReviewLater} style={{ marginTop: 12 }}>
+            <View style={styles.starRow}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <TouchableOpacity
+                  key={n}
+                  onPress={handleStarTap}
+                  hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                >
+                  <MaterialCommunityIcons name="star-outline" size={38} color="#FCD34D" />
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity onPress={handleReviewLater} style={{ marginTop: 16 }}>
               <Text style={styles.reviewDismissText}>{t("review.later")}</Text>
             </TouchableOpacity>
           </View>
@@ -1038,8 +1023,6 @@ function makeStyles(c: AppColors) {
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
     savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", lineHeight: 18 },
-    savingsCardRateButton: { alignSelf: "flex-start", marginTop: 6, paddingVertical: 4 },
-    savingsCardRate: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", textDecorationLine: "underline" },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
@@ -1236,17 +1219,9 @@ function makeStyles(c: AppColors) {
       fontSize: 14, color: c.textSecondary, textAlign: "center",
       lineHeight: 20, marginBottom: 24,
     },
-    reviewHappyButton: {
-      width: "100%", backgroundColor: c.primary, borderRadius: 12,
-      paddingVertical: 14, alignItems: "center", marginBottom: 10,
+    starRow: {
+      flexDirection: "row", gap: 10, marginBottom: 8,
     },
-    reviewHappyText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    reviewUnhappyButton: {
-      width: "100%", backgroundColor: c.card, borderRadius: 12,
-      paddingVertical: 14, alignItems: "center",
-      borderWidth: 1, borderColor: c.border,
-    },
-    reviewUnhappyText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
     reviewDismissText: { fontSize: 13, color: c.textMuted },
     templatePickerButton: {
       flexDirection: "row", alignItems: "center", gap: 8,

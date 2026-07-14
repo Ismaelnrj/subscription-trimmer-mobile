@@ -113,7 +113,6 @@
     "errDelete": "Abonnement konnte nicht gelöscht werden. Erneut versuchen.",
     "errUpdate": "Abonnement konnte nicht aktualisiert werden. Erneut versuchen.",
     "savedThisYear": "Du hast dieses Jahr {{amount}} gespart, indem du {{name}} gekündigt hast",
-    "rateNow": "Jetzt bewerten",
     "trialEndsSoon_today": "Testphase endet heute",
     "trialEndsSoon_days": "Testphase endet in {{days}} Tagen",
     "countOf_one": "{{filtered}} von {{total}} Abonnement",
@@ -146,9 +145,7 @@
   },
   "review": {
     "title": "Gefällt dir Trimio?",
-    "subtitle": "Dein Feedback hilft uns, die App zu verbessern.",
-    "happy": "Ja, ich liebe es!",
-    "unhappy": "Nicht wirklich, Feedback senden",
+    "subtitle": "Tippe auf einen Stern, um uns bei Google Play zu bewerten",
     "later": "Vielleicht später"
   },
   "analytics": {

@@ -113,7 +113,6 @@
     "errDelete": "Could not delete subscription. Please try again.",
     "errUpdate": "Could not update subscription. Please try again.",
     "savedThisYear": "You just saved {{amount}} this year by cutting {{name}}",
-    "rateNow": "Rate Now",
     "trialEndsSoon_today": "Trial ends today",
     "trialEndsSoon_days": "Trial ends in {{days}}d",
     "countOf_one": "{{filtered}} of {{total}} subscription",
@@ -145,10 +144,8 @@
     "language": "Language / Sprache"
   },
   "review": {
-    "title": "Are you enjoying Trimio?",
-    "subtitle": "Your feedback helps us keep improving the app.",
-    "happy": "Yes, I love it!",
-    "unhappy": "Not really - send feedback",
+    "title": "Enjoying Trimio?",
+    "subtitle": "Tap a star to rate us on Google Play",
     "later": "Maybe later"
   },
   "analytics": {
