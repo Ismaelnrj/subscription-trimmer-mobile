@@ -36,6 +36,17 @@ const REVIEW_KEY = "review_renewal_state";
 const REVIEW_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const REVIEW_MAX_ATTEMPTS = 3;
 
+async function reviewEligible(): Promise<boolean> {
+  const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
+  const state: { lastShown: number; count: number; happy?: boolean } = raw
+    ? JSON.parse(raw)
+    : { lastShown: 0, count: 0 };
+  if (state.happy) return false;
+  if (state.count >= REVIEW_MAX_ATTEMPTS) return false;
+  if (state.lastShown && Date.now() - state.lastShown < REVIEW_COOLDOWN_MS) return false;
+  return true;
+}
+
 export default function SubscriptionsScreen() {
   const router = useRouter();
   const { from } = useLocalSearchParams<{ from?: string }>();
@@ -68,22 +79,11 @@ export default function SubscriptionsScreen() {
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
 
-  useEffect(() => {
-    if (from !== "renewal_reminder") return;
-    (async () => {
-      const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-      const state: { lastShown: number; count: number; happy?: boolean } = raw
-        ? JSON.parse(raw)
-        : { lastShown: 0, count: 0 };
-
-      if (state.happy) return;
-      if (state.count >= REVIEW_MAX_ATTEMPTS) return;
-      if (state.lastShown && Date.now() - state.lastShown < REVIEW_COOLDOWN_MS) return;
-
-      await new Promise((r) => setTimeout(r, 8000));
-      setShowReviewPrompt(true);
-    })();
-  }, [from]);
+  const maybeShowReview = async (delayMs: number) => {
+    if (!(await reviewEligible())) return;
+    await new Promise((r) => setTimeout(r, delayMs));
+    if (await reviewEligible()) setShowReviewPrompt(true);
+  };
 
   const handleReviewHappy = async () => {
     setShowReviewPrompt(false);
@@ -107,6 +107,18 @@ export default function SubscriptionsScreen() {
       JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: false })
     ).catch(() => {});
     Linking.openURL("mailto:Trimio@subtrimio.com?subject=Trimio%20Feedback").catch(() => {});
+  };
+
+  const handleReviewLater = async () => {
+    setShowReviewPrompt(false);
+    const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
+    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
+    // Don't count a "maybe later" against the lifetime attempt cap, only
+    // record lastShown so the cooldown still prevents asking again right away.
+    await SecureStore.setItemAsync(
+      REVIEW_KEY,
+      JSON.stringify({ ...state, lastShown: Date.now() })
+    ).catch(() => {});
   };
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,6 +156,19 @@ export default function SubscriptionsScreen() {
       return data;
     },
   });
+
+  useEffect(() => {
+    if (from === "renewal_reminder") {
+      maybeShowReview(8000);
+      return;
+    }
+    // General fallback: once someone is tracking a meaningful number of
+    // subscriptions they've had real hands-on time with the app, so it's a
+    // reasonable moment to ask even if they never came from the reminder email.
+    if (subscriptions.length >= 3) {
+      maybeShowReview(8000);
+    }
+  }, [from, subscriptions.length]);
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -229,6 +254,10 @@ export default function SubscriptionsScreen() {
       setSavingsCard({ name: sub.name, yearly });
       if (savingsTimer.current) clearTimeout(savingsTimer.current);
       savingsTimer.current = setTimeout(() => setSavingsCard(null), 3000);
+      // Cancelling a subscription is the clearest "this app just saved me
+      // money" moment there is, ask for a review right after the savings
+      // toast has had a chance to be seen.
+      maybeShowReview(3500);
     },
     onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
   });
@@ -740,7 +769,7 @@ export default function SubscriptionsScreen() {
         </View>
       </ScrollView>
 
-      <Modal visible={showReviewPrompt} animationType="fade" transparent onRequestClose={() => setShowReviewPrompt(false)}>
+      <Modal visible={showReviewPrompt} animationType="fade" transparent onRequestClose={handleReviewLater}>
         <View style={styles.reviewOverlay}>
           <View style={styles.reviewCard}>
             <Text style={styles.reviewEmoji}>⭐</Text>
@@ -752,7 +781,7 @@ export default function SubscriptionsScreen() {
             <TouchableOpacity style={styles.reviewUnhappyButton} onPress={handleReviewUnhappy}>
               <Text style={styles.reviewUnhappyText}>{t("review.unhappy")}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowReviewPrompt(false)} style={{ marginTop: 12 }}>
+            <TouchableOpacity onPress={handleReviewLater} style={{ marginTop: 12 }}>
               <Text style={styles.reviewDismissText}>{t("review.later")}</Text>
             </TouchableOpacity>
           </View>
