@@ -3,5 +3,12 @@
 node_modules/
 dist/
 
+# Regenerated fresh by `npx expo prebuild --clean` on every Codemagic build.
+# A committed copy made EAS tooling detect this project as bare workflow for
+# Android while iOS (no committed ios/) stayed managed, a split-brain state
+# that broke runtime version resolution for OTA updates.
+android/
+ios/
+
 # Google Play service account key used by `eas submit` — never commit this
 google-play-service-account.json
