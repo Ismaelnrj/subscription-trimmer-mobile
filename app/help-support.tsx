@@ -3,6 +3,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as Updates from "expo-updates";
+import Constants from "expo-constants";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function HelpSupportScreen() {
@@ -62,6 +64,19 @@ export default function HelpSupportScreen() {
             </TouchableOpacity>
           </View>
           <Text style={styles.contactNote}>{t("helpSupport.footerNote")}</Text>
+
+          <Text style={styles.sectionTitle}>Build Info</Text>
+          <View style={styles.contactCard}>
+            <View style={{ padding: 16, gap: 6 }}>
+              <Text style={styles.debugText}>App version: {Constants.expoConfig?.version ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Native build: {Constants.expoConfig?.android?.versionCode ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Channel: {Updates.channel ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Runtime version: {Updates.runtimeVersion ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Embedded launch (no OTA applied): {String(Updates.isEmbeddedLaunch)}</Text>
+              <Text style={styles.debugText}>Update ID: {Updates.updateId ?? "none"}</Text>
+              <Text style={styles.debugText}>Update published: {Updates.createdAt?.toISOString() ?? "n/a"}</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </>
@@ -89,5 +104,6 @@ function makeStyles(c: AppColors) {
     contactLabel: { fontSize: 14, fontWeight: "500", color: c.text },
     contactValue: { fontSize: 12, color: c.primary, marginTop: 2 },
     contactNote: { fontSize: 11, color: c.textMuted, lineHeight: 16, marginTop: -8, marginBottom: 8 },
+    debugText: { fontSize: 11, color: c.textMuted, fontFamily: "monospace" },
   });
 }
