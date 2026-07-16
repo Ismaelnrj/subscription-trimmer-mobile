@@ -80,7 +80,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#7746DD"
         }
-      ]
+      ],
+      "./plugins/withGradleFixes.js"
     ],
     "owner": "ismaelnrj"
   }
