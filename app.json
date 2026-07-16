@@ -81,7 +81,8 @@
           "color": "#7746DD"
         }
       ],
-      "./plugins/withGradleFixes.js"
+      "./plugins/withGradleFixes.js",
+      "./plugins/withAutolinkingConfigFix.js"
     ],
     "owner": "ismaelnrj"
   }
