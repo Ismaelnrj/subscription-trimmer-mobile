@@ -31,7 +31,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 30,
+      "versionCode": 31,
       "edgeToEdgeEnabled": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
