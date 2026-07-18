@@ -425,6 +425,12 @@
     "signInBtn": "Anmelden",
     "errInvalidCode": "Ungültiger oder abgelaufener Code."
   },
+  "updateAvailable": {
+    "title": "Update verfügbar",
+    "message": "Eine neue Version von Trimio ist da, mit Verbesserungen und Fehlerbehebungen. Bitte aktualisiere die App, damit alles reibungslos weiterläuft.",
+    "updateNow": "Jetzt aktualisieren",
+    "later": "Später"
+  },
   "helpSupport": {
     "faq": "Häufig gestellte Fragen",
     "contactUs": "Kontakt",

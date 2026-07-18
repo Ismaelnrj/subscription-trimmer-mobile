@@ -1588,6 +1588,18 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
   }
 });
 
+// ── App version check ──────────────────────────────────────────────────────
+// Lets the app nudge users still on an old native build to update from the
+// Play Store — set MIN_ANDROID_VERSION_CODE in Railway to require an update;
+// leave it unset (defaults to 0) to never prompt.
+
+app.get('/api/trpc/appVersion.check', (_, res) => {
+  res.json({
+    minVersionCode: parseInt(process.env.MIN_ANDROID_VERSION_CODE, 10) || 0,
+    updateUrl: 'https://play.google.com/store/apps/details?id=com.trimio.app',
+  });
+});
+
 // ── Health ────────────────────────────────────────────────────────────────────
 
 app.get('/health', (_, res) => res.json({ status: 'ok' }));

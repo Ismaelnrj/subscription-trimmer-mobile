@@ -14,6 +14,7 @@ import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 import { AnimatedSplash } from "../components/AnimatedSplash";
+import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
 import "../lib/i18n";
 
 // Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
@@ -147,6 +148,7 @@ export default function RootLayout() {
             onFinish={() => setShowAnimatedSplash(false)}
           />
         ) : null}
+        <UpdateAvailableModal />
       </QueryClientProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
