@@ -18,9 +18,9 @@
     "primaryColor": "#7746DD",
 
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FBFBFD"
+      "backgroundColor": "#7746DD"
     },
 
     "assetBundlePatterns": [
@@ -29,7 +29,7 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 33,
+      "versionCode": 34,
       "edgeToEdgeEnabled": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

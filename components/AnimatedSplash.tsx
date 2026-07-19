@@ -10,9 +10,11 @@ type Props = {
   onFinish: () => void;
 };
 
-// Renders the exact same image as the native splash screen (app.json's
-// "splash.image") so there's no handoff moment where the design changes —
-// this component only owns the fade-to-app transition once loading is done.
+// Android 12+'s native Splash Screen API can only show a small centered
+// icon on a solid color — it can't render a full illustrated scene, so the
+// rich design lives here instead, in a normal full-screen Image unconstrained
+// by that OS rule. This briefly follows the native icon-only splash rather
+// than replacing it. This component only owns the fade-to-app transition.
 export function AnimatedSplash({ ready, onFinish }: Props) {
   const mountedAt = useRef(Date.now());
   const containerOpacity = useSharedValue(1);
