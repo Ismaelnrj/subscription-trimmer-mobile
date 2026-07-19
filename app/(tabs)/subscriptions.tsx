@@ -31,7 +31,10 @@ function toMonthly(price: number, cycle: string) {
 
 const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "", isFreeTrial: false };
 
-const REVIEW_KEY = "review_renewal_state";
+// v2: bumped to invalidate stale "happy" flags set while the star tap
+// silently no-op'd (before it reliably opened the Play Store), which had
+// permanently locked users out of ever seeing this prompt again.
+const REVIEW_KEY = "review_renewal_state_v2";
 const REVIEW_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const REVIEW_MAX_ATTEMPTS = 3;
 
