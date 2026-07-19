@@ -9,7 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 const MIN_DISPLAY_MS = 1100;
-const SPLASH_BACKGROUND_COLOR = "#7746DD";
+const SPLASH_BACKGROUND_COLOR = "#F9FAFB";
 
 type Props = {
   ready: boolean;
@@ -49,7 +49,7 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
   return (
     <Animated.View style={[styles.container, containerStyle]} pointerEvents="none">
       <Animated.View style={logoStyle}>
-        <Image source={require("../assets/adaptive-icon.png")} style={styles.logo} resizeMode="contain" />
+        <Image source={require("../assets/icon.png")} style={styles.logo} resizeMode="contain" />
       </Animated.View>
       <Animated.Text style={[styles.title, logoStyle]}>Trimio</Animated.Text>
     </Animated.View>
@@ -67,12 +67,14 @@ const styles = StyleSheet.create({
   logo: {
     width: 180,
     height: 180,
+    borderRadius: 40,
+    overflow: "hidden",
   },
   title: {
     marginTop: 12,
     fontSize: 32,
     fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#7746DD",
     letterSpacing: 0.5,
   },
 });
