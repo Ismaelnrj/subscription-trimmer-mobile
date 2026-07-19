@@ -1,0 +1,45 @@
+appId: com.trimio.app
+---
+# Regression guard for the two review-prompt bugs fixed this session:
+# 1) the prompt never showing again once a star had been tapped once
+#    (a stale SecureStore flag), and 2) tapping a star doing nothing
+#    because it relied on Android's unreliable native review dialog
+#    instead of just opening the Play Store page.
+#
+# Needs 3+ subscriptions to exist for the general fallback trigger to fire
+# (see subscriptions.length >= 3 in app/(tabs)/subscriptions.tsx). Run this
+# against a fresh test account, or one with fewer than 3 subs already, so
+# adding these three is actually what crosses the threshold.
+- launchApp
+- tapOn:
+    text: "Subscriptions"
+
+- repeat:
+    times: 3
+    commands:
+      - tapOn:
+          text: "Add"
+      - tapOn:
+          text: "Subscription name (e.g. Netflix)"
+      - inputText: "Maestro Review Test"
+      - tapOn:
+          text: "Price in.*"
+      - inputText: "4.99"
+      - hideKeyboard
+      - tapOn:
+          text: "^Add$"
+
+# The general fallback fires ~4s after mount once 3+ subs are loaded.
+- assertVisible:
+    text: "Enjoying Trimio\\?"
+    timeout: 10000
+- assertVisible: "Tap a star to rate us on Google Play"
+- tapOn:
+    id: "review-star-1"
+- assertNotVisible:
+    text: "Enjoying Trimio\\?"
+    timeout: 3000
+# Maestro can't reliably assert "a different app came to the foreground"
+# without a stable, locale-independent anchor in the Play Store UI, so this
+# flow stops at "the modal responded to the tap and closed." Confirm by eye
+# that the Play Store listing actually opens when running this manually.

@@ -2,11 +2,10 @@ import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator, Modal, FlatList,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, useFmt } from "../lib/currency-store";

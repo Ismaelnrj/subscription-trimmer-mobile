@@ -34,7 +34,7 @@ export default function PrivacyPolicyScreen() {
         <View style={styles.content}>
           <Text style={styles.updated}>Effective date: April 27, 2025 · Last updated: June 29, 2026</Text>
           <Text style={styles.intro}>
-            Thank you for choosing Trimio. This Privacy Policy explains how Trimio collects, uses, stores, protects, and shares your information when you use the Trimio mobile application and related services (the "Service"). By creating an account or using the Service, you acknowledge that you have read and understood this Privacy Policy.
+            Thank you for choosing Trimio. This Privacy Policy explains how Trimio collects, uses, stores, protects, and shares your information when you use the Trimio mobile application and related services (the &quot;Service&quot;). By creating an account or using the Service, you acknowledge that you have read and understood this Privacy Policy.
           </Text>
           {SECTIONS.map((s) => (
             <View key={s.title} style={styles.section}>

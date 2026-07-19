@@ -201,8 +201,6 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "swisscom-ch", name: "Swisscom Natel CH", defaultPrice: 35.00, currency: "CHF", billingCycle: "monthly", category: "utilities", region: "CH" },
 ];
 
-const POPULAR_IDS = new Set(SERVICE_TEMPLATES.filter((t) => t.popular).map((t) => t.id));
-
 export function getPopularTemplates(): ServiceTemplate[] {
   return SERVICE_TEMPLATES.filter((t) => t.popular);
 }

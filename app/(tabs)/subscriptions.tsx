@@ -131,7 +131,6 @@ export default function SubscriptionsScreen() {
         if (!sub.priceIncrease) continue;
         const key = `${sub.id}:${sub.priceIncrease.changedAt}`;
         if (!seen.includes(key)) {
-          const diff = (sub.priceIncrease.to - sub.priceIncrease.from).toFixed(2);
           sendLocalNotification(
             `${sub.name} price went up`,
             `Your subscription increased from ${fmtC(sub.priceIncrease.from)} to ${fmtC(sub.priceIncrease.to)} per ${sub.billingCycle}.`
@@ -757,6 +756,7 @@ export default function SubscriptionsScreen() {
               {[1, 2, 3, 4, 5].map((n) => (
                 <TouchableOpacity
                   key={n}
+                  testID={`review-star-${n}`}
                   onPress={handleStarTap}
                   hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 >

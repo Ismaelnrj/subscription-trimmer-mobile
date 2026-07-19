@@ -1,0 +1,26 @@
+appId: com.trimio.app
+---
+# Smoke test: the app boots past the splash screen to a real screen (login
+# or the tabs, depending on whether a session is already stored), then a
+# fresh login succeeds and lands on the subscriptions tab.
+- launchApp:
+    clearState: true
+- assertVisible:
+    text: "Sign In"
+    timeout: 15000
+- tapOn:
+    text: "Email"
+- inputText: "${MAESTRO_TEST_EMAIL}"
+- tapOn:
+    text: "Password"
+- inputText: "${MAESTRO_TEST_PASSWORD}"
+- tapOn:
+    text: "Sign In"
+- assertVisible:
+    text: "Subscriptions"
+    timeout: 15000
+- tapOn:
+    text: "Subscriptions"
+- assertVisible:
+    text: "My Subscriptions"
+    timeout: 5000

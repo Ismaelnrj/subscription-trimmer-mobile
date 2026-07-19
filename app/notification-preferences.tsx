@@ -1,7 +1,6 @@
 import { View, Text, ScrollView, Switch, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
-import { Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
