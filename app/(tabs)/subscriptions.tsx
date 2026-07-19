@@ -7,7 +7,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as FileSystem from "expo-file-system";
-import * as StoreReview from "expo-store-review";
 import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -379,10 +378,9 @@ export default function SubscriptionsScreen() {
   };
 
   const handleRateApp = async () => {
-    if (await StoreReview.hasAction()) {
-      await StoreReview.requestReview();
-      return;
-    }
+    // Android's native in-app review dialog silently no-ops once Google's
+    // per-app quota is hit, with no way to detect it — so we go straight to
+    // the Play Store listing instead, which reliably does something every tap.
     const market = "market://details?id=com.trimio.app";
     const web = "https://play.google.com/store/apps/details?id=com.trimio.app";
     try {
