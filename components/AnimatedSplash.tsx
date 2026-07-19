@@ -1,32 +1,21 @@
 import { useEffect, useRef } from "react";
-import { Image, StyleSheet, Text } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  runOnJS,
-} from "react-native-reanimated";
+import { Image, StyleSheet } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from "react-native-reanimated";
 
 const MIN_DISPLAY_MS = 1100;
-const SPLASH_BACKGROUND_COLOR = "#F9FAFB";
+const SPLASH_BACKGROUND_COLOR = "#FAFAFC";
 
 type Props = {
   ready: boolean;
   onFinish: () => void;
 };
 
+// Renders the exact same image as the native splash screen (app.json's
+// "splash.image") so there's no handoff moment where the design changes —
+// this component only owns the fade-to-app transition once loading is done.
 export function AnimatedSplash({ ready, onFinish }: Props) {
   const mountedAt = useRef(Date.now());
-
   const containerOpacity = useSharedValue(1);
-  const logoOpacity = useSharedValue(0);
-  const logoScale = useSharedValue(0.85);
-
-  useEffect(() => {
-    logoOpacity.value = withTiming(1, { duration: 380 });
-    logoScale.value = withSpring(1, { damping: 11, stiffness: 120, mass: 0.9 });
-  }, []);
 
   useEffect(() => {
     if (!ready) return;
@@ -41,17 +30,10 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
   }, [ready]);
 
   const containerStyle = useAnimatedStyle(() => ({ opacity: containerOpacity.value }));
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
 
   return (
     <Animated.View style={[styles.container, containerStyle]} pointerEvents="none">
-      <Animated.View style={logoStyle}>
-        <Image source={require("../assets/icon.png")} style={styles.logo} resizeMode="contain" />
-      </Animated.View>
-      <Animated.Text style={[styles.title, logoStyle]}>Trimio</Animated.Text>
+      <Image source={require("../assets/splash.png")} style={styles.image} resizeMode="contain" />
     </Animated.View>
   );
 }
@@ -64,17 +46,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 999,
   },
-  logo: {
-    width: 180,
-    height: 180,
-    borderRadius: 40,
-    overflow: "hidden",
-  },
-  title: {
-    marginTop: 12,
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#7746DD",
-    letterSpacing: 0.5,
+  image: {
+    width: "100%",
+    height: "100%",
   },
 });
