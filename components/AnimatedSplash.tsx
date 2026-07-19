@@ -3,7 +3,7 @@ import { Image, StyleSheet } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from "react-native-reanimated";
 
 const MIN_DISPLAY_MS = 1100;
-const SPLASH_BACKGROUND_COLOR = "#FBFBFD";
+const SPLASH_BACKGROUND_COLOR = "#FEFEFE";
 
 type Props = {
   ready: boolean;
