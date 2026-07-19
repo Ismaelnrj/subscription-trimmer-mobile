@@ -148,14 +148,14 @@ export default function SubscriptionsScreen() {
 
   useEffect(() => {
     if (from === "renewal_reminder") {
-      maybeShowReview(8000);
+      maybeShowReview(4000);
       return;
     }
     // General fallback: once someone is tracking a meaningful number of
     // subscriptions they've had real hands-on time with the app, so it's a
     // reasonable moment to ask even if they never came from the reminder email.
     if (subscriptions.length >= 3) {
-      maybeShowReview(8000);
+      maybeShowReview(4000);
     }
   }, [from, subscriptions.length]);
 
