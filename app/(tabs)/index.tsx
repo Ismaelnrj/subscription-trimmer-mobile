@@ -267,7 +267,7 @@ export default function DashboardScreen() {
             </View>
             {trialsSoon.map((sub: any) => {
               const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
-              const urgency = days <= 3 ? c.danger : days <= 7 ? c.warning : "#F59E0B";
+              const urgency = days <= 3 ? c.danger : c.warning;
               return (
                 <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>
                   <View style={{ flex: 1 }}>

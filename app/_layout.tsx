@@ -55,7 +55,7 @@ const errStyles = StyleSheet.create({
   container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24, backgroundColor: "#F9FAFB" },
   title: { fontSize: 20, fontWeight: "700", color: "#1F2937", marginBottom: 12 },
   message: { fontSize: 13, color: "#6B7280", textAlign: "center", marginBottom: 24 },
-  button: { backgroundColor: "#4F46E5", paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },
+  button: { backgroundColor: "#6C3EF4", paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },
   buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
 });
 

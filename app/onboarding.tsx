@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useColorScheme } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -9,9 +9,9 @@ import { useTheme, AppColors } from "../lib/theme";
 const { width } = Dimensions.get("window");
 
 const SLIDE_ICONS = [
-  { icon: "view-dashboard-outline", color: "#4F46E5", bg: "#EEF2FF", bgDark: "#1E1B4B" },
-  { icon: "bell-alert-outline", color: "#F59E0B", bg: "#FEF3C7", bgDark: "#1C1508" },
-  { icon: "lightbulb-on-outline", color: "#10B981", bg: "#ECFDF5", bgDark: "#052E16" },
+  { icon: "view-dashboard-outline", color: "#6C3EF4", bg: "#EDE9FE", bgDark: "#2E2350" },
+  { icon: "bell-alert-outline", color: "#F5A623", bg: "#FEF3E2", bgDark: "#3A2C14" },
+  { icon: "lightbulb-on-outline", color: "#2EC771", bg: "#E3F9EE", bgDark: "#0F2E1F" },
 ];
 
 const ESTIMATE_OPTIONS = [
@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
   const [current, setCurrent] = useState(0);
   const [estimate, setEstimate] = useState<number | null>(null);
   const c = useTheme();
-  const isDark = c.bg !== "#F9FAFB";
+  const isDark = useColorScheme() === "dark";
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#1E1B4B" : "#EEF2FF" }]}>
+          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#2E2350" : "#EDE9FE" }]}>
             <MaterialCommunityIcons name="help-circle-outline" size={64} color={c.primary} />
           </View>
           <Text style={styles.title}>{t("onboarding.estimateTitle")}</Text>

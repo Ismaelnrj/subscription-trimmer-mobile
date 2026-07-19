@@ -12,14 +12,14 @@ export interface PasswordScore {
 }
 
 export function getPasswordScore(password: string): PasswordScore {
-  if (!password) return { score: 0, label: "", color: "#E5E7EB", hasLength: false, hasUpper: false, hasNumber: false };
+  if (!password) return { score: 0, label: "", color: "#E7E3F5", hasLength: false, hasUpper: false, hasNumber: false };
   const hasLength = password.length >= 8;
   const hasUpper  = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
   const met = [hasLength, hasUpper, hasNumber].filter(Boolean).length;
-  if (met === 3) return { score: 3, label: "Strong",  color: "#10B981", hasLength, hasUpper, hasNumber };
-  if (met === 2) return { score: 2, label: "Fair",    color: "#F59E0B", hasLength, hasUpper, hasNumber };
-  return          { score: 1, label: "Weak",    color: "#EF4444", hasLength, hasUpper, hasNumber };
+  if (met === 3) return { score: 3, label: "Strong",  color: "#2EC771", hasLength, hasUpper, hasNumber };
+  if (met === 2) return { score: 2, label: "Fair",    color: "#F5A623", hasLength, hasUpper, hasNumber };
+  return          { score: 1, label: "Weak",    color: "#E74C3C", hasLength, hasUpper, hasNumber };
 }
 
 export function isPasswordValid(password: string): boolean {
@@ -61,9 +61,9 @@ function Req({ met, text }: { met: boolean; text: string }) {
       <MaterialCommunityIcons
         name={met ? "check-circle" : "circle-outline"}
         size={13}
-        color={met ? "#10B981" : c.textMuted}
+        color={met ? "#2EC771" : c.textMuted}
       />
-      <Text style={[styles.reqText, { color: met ? "#10B981" : c.textMuted }]}>{text}</Text>
+      <Text style={[styles.reqText, { color: met ? "#2EC771" : c.textMuted }]}>{text}</Text>
     </View>
   );
 }
