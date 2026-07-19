@@ -4,13 +4,15 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getCancellationGuide } from "../lib/cancellation-guides";
 import { useTheme, AppColors } from "../lib/theme";
+import { useLanguageStore } from "../lib/language-store";
 
 export default function CancelGuideScreen() {
   const { name } = useLocalSearchParams<{ name: string }>();
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
-  const guide = getCancellationGuide(name ?? "");
+  const { language } = useLanguageStore();
+  const guide = getCancellationGuide(name ?? "", language);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
