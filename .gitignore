@@ -12,3 +12,9 @@ ios/
 
 # Google Play service account key used by `eas submit` — never commit this
 google-play-service-account.json
+
+# Signing keystores and certificates — never commit these
+*.jks
+*.keystore
+*.pem
+*.p12
