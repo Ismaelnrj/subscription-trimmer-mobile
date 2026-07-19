@@ -372,6 +372,8 @@
     "viewSubscription": "View Subscription"
   },
   "cancelGuide": {
+    "heading": "How to cancel {{name}}",
+    "headingGeneric": "How to cancel",
     "openPage": "Open cancellation page",
     "footerNote": "Steps are based on current service UIs and may change. Always confirm cancellation via email."
   },

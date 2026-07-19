@@ -14,7 +14,9 @@ export default function CancelGuideScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>How to cancel{name ? ` ${name}` : ""}</Text>
+      <Text style={styles.heading}>
+        {name ? t("cancelGuide.heading", { name }) : t("cancelGuide.headingGeneric")}
+      </Text>
 
       {guide.note && (
         <View style={styles.noteBox}>
