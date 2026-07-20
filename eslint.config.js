@@ -28,6 +28,10 @@ module.exports = defineConfig([
       "react-hooks/purity": "warn",
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/refs": "warn",
+      // react-native-reanimated's SharedValue.value is a documented mutable
+      // escape hatch (like a ref), but this rule doesn't know about it and
+      // flags every `.value =` assignment as an illegal mutation.
+      "react-hooks/immutability": "warn",
     },
   },
 ]);

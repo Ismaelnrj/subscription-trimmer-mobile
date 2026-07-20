@@ -271,6 +271,14 @@ export default function SubscriptionsScreen() {
     setShowModal(true);
   };
 
+  useEffect(() => {
+    if (from !== "fab" || subscriptionsLoading) return;
+    openAdd();
+    // Clear the param once consumed so the next FAB tap (which sets the same
+    // "fab" value again) is seen as a fresh change and re-triggers this effect.
+    router.setParams({ from: undefined });
+  }, [from, subscriptionsLoading]);
+
   const openEdit = (sub: any) => {
     setEditingId(sub.id);
     setFormData({
