@@ -1,7 +1,9 @@
 .expo/
 .claude/
+.agents/
 node_modules/
 dist/
+skills-lock.json
 
 # Regenerated fresh by `npx expo prebuild --clean` on every Codemagic build.
 # A committed copy made EAS tooling detect this project as bare workflow for
