@@ -53,7 +53,15 @@
     "waysToSave_other": "{{count}} ways to save money",
     "seeRecommendations": "See recommendations",
     "youGuessed": "You guessed {{guess}}. You actually have {{actual}} recurring expense.",
-    "youGuessed_other": "You guessed {{guess}}. You actually have {{actual}} recurring expenses."
+    "youGuessed_other": "You guessed {{guess}}. You actually have {{actual}} recurring expenses.",
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "nextPayment": "Next Payment",
+    "noUpcomingPayments": "No upcoming payments",
+    "dueToday": "Due today",
+    "dueTomorrow": "Due tomorrow",
+    "dueInDays": "Due in {{count}} days"
   },
   "subscriptions": {
     "add": "Add",

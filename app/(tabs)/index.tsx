@@ -158,6 +158,22 @@ export default function DashboardScreen() {
     await SecureStore.setItemAsync(RECO_BANNER_DISMISSED_UNTIL_KEY, dismissedUntil);
   };
 
+  const greetingHour = new Date().getHours();
+  const greeting = greetingHour < 12 ? t("dashboard.goodMorning") : greetingHour < 18 ? t("dashboard.goodAfternoon") : t("dashboard.goodEvening");
+  const firstName = user?.name?.trim().split(/\s+/)[0];
+
+  const nextSub = (subscriptions as any[])
+    .filter((s) => s.nextBillingDate)
+    .sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime())[0];
+
+  const nextSubDueLabel = (() => {
+    if (!nextSub) return null;
+    const days = Math.ceil((new Date(nextSub.nextBillingDate).getTime() - Date.now()) / 86400000);
+    if (days <= 0) return t("dashboard.dueToday");
+    if (days === 1) return t("dashboard.dueTomorrow");
+    return t("dashboard.dueInDays", { count: days });
+  })();
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
@@ -181,6 +197,25 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
+        <Text style={styles.greetingText}>
+          {greeting}{firstName ? `, ${firstName}` : ""}
+        </Text>
+
+        {nextSub && (
+          <View style={styles.nextPaymentCard}>
+            <LogoImage name={nextSub.name} category={nextSub.category} size={40} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.nextPaymentLabel}>{t("dashboard.nextPayment")}</Text>
+              <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price)}</Text>
+            </View>
+            {nextSubDueLabel && (
+              <View style={styles.nextPaymentBadge}>
+                <Text style={styles.nextPaymentBadgeText}>{nextSubDueLabel}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {user && !user.isVerified && (
           <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
             <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
@@ -408,6 +443,15 @@ function makeStyles(c: AppColors) {
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
+    greetingText: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 16 },
+    nextPaymentCard: {
+      flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
+      padding: 14, marginBottom: 16, borderWidth: 1, borderColor: c.border,
+    },
+    nextPaymentLabel: { fontSize: 12, color: c.textSecondary },
+    nextPaymentName: { fontSize: 15, fontWeight: "600", color: c.text, marginTop: 2 },
+    nextPaymentBadge: { backgroundColor: c.primaryLight, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
+    nextPaymentBadgeText: { fontSize: 12, fontWeight: "600", color: c.primary },
     verifyBanner: {
       backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
       flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,

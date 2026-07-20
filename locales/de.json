@@ -53,7 +53,15 @@
     "waysToSave_other": "{{count}} Möglichkeiten zum Sparen",
     "seeRecommendations": "Empfehlungen ansehen",
     "youGuessed": "Du hast {{guess}} geschätzt. Du hast tatsächlich {{actual}} laufende Ausgabe.",
-    "youGuessed_other": "Du hast {{guess}} geschätzt. Du hast tatsächlich {{actual}} laufende Ausgaben."
+    "youGuessed_other": "Du hast {{guess}} geschätzt. Du hast tatsächlich {{actual}} laufende Ausgaben.",
+    "goodMorning": "Guten Morgen",
+    "goodAfternoon": "Guten Tag",
+    "goodEvening": "Guten Abend",
+    "nextPayment": "Nächste Zahlung",
+    "noUpcomingPayments": "Keine anstehenden Zahlungen",
+    "dueToday": "Heute fällig",
+    "dueTomorrow": "Morgen fällig",
+    "dueInDays": "In {{count}} Tagen fällig"
   },
   "subscriptions": {
     "add": "Hinzufügen",
