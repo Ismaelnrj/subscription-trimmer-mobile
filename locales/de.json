@@ -141,7 +141,13 @@
     "signOut": "Abmelden",
     "signOutTitle": "Abmelden",
     "signOutConfirm": "Bist du sicher, dass du dich abmelden möchtest?",
-    "language": "Sprache / Language"
+    "language": "Sprache / Language",
+    "calendarPreview": "Vorschau: Kalender"
+  },
+  "calendar": {
+    "title": "Kalender",
+    "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
+    "noRenewals": "Keine Verlängerungen an diesem Tag"
   },
   "review": {
     "title": "Gefällt dir Trimio?",

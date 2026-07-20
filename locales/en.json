@@ -141,7 +141,13 @@
     "signOut": "Sign Out",
     "signOutTitle": "Sign out",
     "signOutConfirm": "Are you sure you want to sign out?",
-    "language": "Language / Sprache"
+    "language": "Language / Sprache",
+    "calendarPreview": "Preview: Calendar"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "selectDay": "Select a day to see what's due",
+    "noRenewals": "No renewals on this day"
   },
   "review": {
     "title": "Enjoying Trimio?",

@@ -108,6 +108,13 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/calendar-preview")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="calendar-month-outline" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>{t("profile.calendarPreview")}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/notification-preferences")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="bell-outline" size={20} color={c.primary} />
