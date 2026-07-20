@@ -18,6 +18,7 @@ import { useTheme, AppColors } from "../../lib/theme";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
 import { ServiceTemplate, searchTemplates, formatTemplatePrice } from "../../lib/service-templates";
+import { SkeletonCard } from "../../components/SkeletonCard";
 import * as SecureStore from "expo-secure-store";
 
 const FREE_LIMIT = 5;
@@ -117,7 +118,7 @@ export default function SubscriptionsScreen() {
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
   }, [search]);
 
-  const { data: subscriptions = [], refetch } = useQuery({
+  const { data: subscriptions = [], refetch, isLoading: subscriptionsLoading } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => {
       const data = (await apiClient.get("/trpc/subscriptions.list")).data.result.data;
@@ -621,7 +622,13 @@ export default function SubscriptionsScreen() {
             </Text>
           )}
 
-          {filtered.length === 0 ? (
+          {subscriptionsLoading ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : filtered.length === 0 ? (
             total === 0 ? (
               <View style={styles.emptyState}>
                 <MaterialCommunityIcons name="receipt" size={52} color={c.border} style={{ marginBottom: 12 }} />
