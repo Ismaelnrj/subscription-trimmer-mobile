@@ -28,9 +28,9 @@ export const LIGHT = {
 } as const;
 
 export const DARK = {
-  bg: "#1B1B1F",
-  card: "#252530",
-  border: "#38384A",
+  bg: "#121522",
+  card: "#23253A",
+  border: "#33344A",
   text: "#F1F0F7",
   textSecondary: "#A8A6B8",
   textMuted: "#6B6B75",
@@ -43,15 +43,15 @@ export const DARK = {
   warningLight: "#3A2C14",
   warningBorder: "#5C4520",
   success: "#4ADB8B",
-  inputBg: "#252530",
+  inputBg: "#23253A",
   placeholder: "#6B6B75",
-  tabBar: "#1F1F26",
-  tabBarBorder: "#38384A",
+  tabBar: "#181A2A",
+  tabBarBorder: "#33344A",
   tabBarActive: "#8A63FF",
   tabBarInactive: "#6B6B75",
   overlay: "rgba(0,0,0,0.7)",
-  skeleton: "#38384A",
-  skeletonHighlight: "#45455A",
+  skeleton: "#33344A",
+  skeletonHighlight: "#3E4058",
 } as const;
 
 export type AppColors = Record<keyof typeof LIGHT, string>;

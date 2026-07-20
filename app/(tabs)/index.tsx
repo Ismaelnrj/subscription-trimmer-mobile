@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Animated, Easing, useColorScheme } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -33,6 +34,7 @@ export default function DashboardScreen() {
   const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
+  const isDark = useColorScheme() === "dark";
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
@@ -300,13 +302,28 @@ export default function DashboardScreen() {
           ))}
         </View>
 
-        <View style={styles.heroCard}>
-          <View style={styles.heroIcon}>
-            <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
+        {isDark ? (
+          <LinearGradient
+            colors={["#6C3EF4", "#6A47EA"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.heroCard, styles.heroCardGradientBorder]}
+          >
+            <View style={styles.heroIconOnGradient}>
+              <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
+            </View>
+            <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.heroCard}>
+            <View style={styles.heroIcon}>
+              <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
+            </View>
+            <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
           </View>
-          <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-          <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
-        </View>
+        )}
 
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
@@ -451,6 +468,13 @@ function makeStyles(c: AppColors) {
     },
     heroValue: { fontSize: 38, fontWeight: "800", color: c.text, marginBottom: 4 },
     heroLabel: { fontSize: 13, color: c.textSecondary },
+    heroCardGradientBorder: { borderWidth: 0 },
+    heroIconOnGradient: {
+      width: 44, height: 44, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.18)",
+      justifyContent: "center", alignItems: "center", marginBottom: 12,
+    },
+    heroValueOnGradient: { fontSize: 38, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
+    heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
     statsGrid: { flexDirection: "row", gap: 12, marginBottom: 24 },
     statCard: {
       flex: 1, backgroundColor: c.card, borderRadius: 12,
