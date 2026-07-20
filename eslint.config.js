@@ -5,7 +5,7 @@ const globals = require("globals");
 module.exports = defineConfig([
   ...expoConfig,
   {
-    ignores: ["dist/*", "android/*", "ios/*", "backend/*"],
+    ignores: ["dist/*", "android/*", "ios/*", "backend/*", ".claude/**", ".agents/**"],
   },
   {
     files: [

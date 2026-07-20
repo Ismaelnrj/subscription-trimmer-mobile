@@ -205,6 +205,14 @@ export function getPopularTemplates(): ServiceTemplate[] {
   return SERVICE_TEMPLATES.filter((t) => t.popular);
 }
 
+// Exact (not fuzzy) match on purpose — used to compare a tracked
+// subscription's price against this service's known current price, so a
+// loose match could misattribute a completely different plan's price.
+export function findTemplateByExactName(name: string): ServiceTemplate | undefined {
+  const n = name.trim().toLowerCase();
+  return SERVICE_TEMPLATES.find((t) => t.name.toLowerCase() === n);
+}
+
 export function searchTemplates(query: string): ServiceTemplate[] {
   if (!query.trim()) return getPopularTemplates();
   const q = query.toLowerCase().trim();

@@ -5,11 +5,12 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
-import { useFmt } from "../lib/currency-store";
+import { useFmt, useCurrencyStore } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
 import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
+import { findTemplateByExactName } from "../lib/service-templates";
 
 export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
@@ -35,12 +36,28 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
   return keywords.some(k => n.includes(k));
 }
 
+// rates are USD-based (rates[X] = units of X per 1 USD), matching how
+// currency-store.ts fetches them — converts an amount between any two
+// currency codes present in that table.
+function convertCurrency(amount: number, from: string, to: string, rates: Record<string, number>): number {
+  if (from === to) return amount;
+  const fromRate = rates[from] ?? 1;
+  const toRate = rates[to] ?? 1;
+  return amount * (toRate / fromRate);
+}
+
 // Configurable thresholds — these can be tuned without code changes if they
 // turn out to be too aggressive or too lax for most users.
 export const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing this much or more per month
 const TOTAL_SPEND_THRESHOLD = 200; // flag total monthly spend at or above this amount
+const MARKET_PRICE_INCREASE_THRESHOLD = 1.05; // known price must be >5% above what's tracked to flag it
 
-export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD): Tip[] {
+export function buildTips(
+  subs: Sub[],
+  fmtC: (n: number) => string,
+  singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD,
+  currencyContext?: { baseCurrencyCode: string; rates: Record<string, number> }
+): Tip[] {
   if (subs.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();
@@ -94,6 +111,31 @@ export function buildTips(subs: Sub[], fmtC: (n: number) => string, singleSubThr
       title: `${s.name} quietly raised its price`,
       detail: `It went from ${fmtC(s.priceIncrease.from)} to ${fmtC(s.priceIncrease.to)} per ${s.billingCycle}. That's an extra ${fmtC(annualExtra)} per year you may not have noticed.`,
       priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo`, savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
+  }
+
+  // Known market price is higher than what's tracked — this is the "before
+  // you pay" signal: it doesn't require you to have noticed a charge yet,
+  // just that the service's publicly known price (from our own service
+  // catalog) has since risen above what you're still tracking here.
+  if (currencyContext) {
+    const { baseCurrencyCode, rates } = currencyContext;
+    for (const s of subs) {
+      const template = findTemplateByExactName(s.name);
+      if (!template) continue;
+      const marketMonthlyInBase = convertCurrency(
+        toMonthly(template.defaultPrice, template.billingCycle),
+        template.currency,
+        baseCurrencyCode,
+        rates
+      );
+      const trackedMonthly = toMonthly(s.price, s.billingCycle);
+      if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
+        tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#DC2626",
+          title: `${s.name}'s price may have gone up`,
+          detail: `${s.name} typically costs ${fmtC(marketMonthlyInBase)}/mo now, but you're tracking ${fmtC(trackedMonthly)}/mo here. If you've been charged more, update the price so we can track it properly.`,
+          priority: "high" });
+      }
+    }
   }
 
   // Trial alerts
@@ -182,6 +224,7 @@ const PRIORITY_LABEL_KEY: Record<string, string> = { high: "insights.actionNeede
 export default function InsightsScreen() {
   const router = useRouter();
   const fmtC = useFmt();
+  const { baseCurrencyCode, rates } = useCurrencyStore();
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
@@ -210,7 +253,10 @@ export default function InsightsScreen() {
   const isRefetching = subsRefetching || summaryRefetching;
   const onRefresh = () => Promise.all([refetchSubs(), refetchSummary()]).catch(() => {});
   const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
-  const allTips = useMemo(() => buildTips(subscriptions, fmtC, singleSubThreshold), [subscriptions, fmtC, singleSubThreshold]);
+  const allTips = useMemo(
+    () => buildTips(subscriptions, fmtC, singleSubThreshold, { baseCurrencyCode, rates }),
+    [subscriptions, fmtC, singleSubThreshold, baseCurrencyCode, rates]
+  );
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
   const monthlyTotal: number = summary?.monthlyTotal ?? 0;

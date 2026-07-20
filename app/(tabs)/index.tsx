@@ -30,7 +30,7 @@ export default function DashboardScreen() {
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const [recoBannerDismissed, setRecoBannerDismissed] = useState(true);
   const [estimateBanner, setEstimateBanner] = useState<{ guess: number; actual: number } | null>(null);
-  const { currency } = useCurrencyStore();
+  const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -143,7 +143,9 @@ export default function DashboardScreen() {
   }, [subsLoading, subscriptions.length]);
 
   const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
-  const allRecoTips = subscriptions.length >= 2 ? buildTips(subscriptions as any, fmtC, singleSubThreshold) : [];
+  const allRecoTips = subscriptions.length >= 2
+    ? buildTips(subscriptions as any, fmtC, singleSubThreshold, { baseCurrencyCode, rates })
+    : [];
   const recoTips = isPremium ? allRecoTips : allRecoTips.slice(0, 2);
   const showRecoBanner = !recoBannerDismissed && recoTips.length > 0;
 
