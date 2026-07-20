@@ -4,11 +4,12 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import apiClient from "../lib/api";
 import { useFmt } from "../lib/currency-store";
 import { useTheme, AppColors } from "../lib/theme";
 import { MonthCalendarGrid } from "../components/MonthCalendarGrid";
+import { LogoImage } from "../components/LogoImage";
 import { getOccurrencesInMonth } from "../lib/recurrence";
 
 function dayKey(d: Date) {
@@ -79,9 +80,7 @@ export default function CalendarPreviewScreen() {
                     style={styles.subCard}
                     onPress={() => router.push("/(tabs)/subscriptions")}
                   >
-                    <View style={styles.subIconWrap}>
-                      <MaterialCommunityIcons name="calendar-check" size={18} color={c.primary} />
-                    </View>
+                    <LogoImage name={sub.name} category={sub.category} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.subName}>{sub.name}</Text>
                       <Text style={styles.subMeta}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
@@ -109,10 +108,6 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", alignItems: "center", gap: 12,
       backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 10,
       borderWidth: 1, borderColor: c.border,
-    },
-    subIconWrap: {
-      width: 36, height: 36, borderRadius: 18, backgroundColor: c.primaryLight,
-      alignItems: "center", justifyContent: "center",
     },
     subName: { fontSize: 14, fontWeight: "600", color: c.text },
     subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },

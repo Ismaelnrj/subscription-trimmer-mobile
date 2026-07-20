@@ -12,6 +12,25 @@ export const DEFAULT_CATEGORIES = [
   "other",
 ] as const;
 
+// Fallback icon/color shown when a subscription has no matching brand logo.
+export const CATEGORY_ICON: Record<string, { icon: string; color: string }> = {
+  entertainment: { icon: "music-note", color: "#8B5CF6" },
+  streaming: { icon: "television-play", color: "#E50914" },
+  software: { icon: "laptop", color: "#3B82F6" },
+  health: { icon: "heart-pulse", color: "#EF4444" },
+  fitness: { icon: "dumbbell", color: "#22C55E" },
+  food: { icon: "food", color: "#F59E0B" },
+  education: { icon: "school", color: "#0EA5E9" },
+  utilities: { icon: "lightning-bolt", color: "#6B7280" },
+  insurance: { icon: "shield-check", color: "#14B8A6" },
+  memberships: { icon: "card-account-details", color: "#F97316" },
+  other: { icon: "credit-card", color: "#9B99A8" },
+};
+
+export function getCategoryIcon(category: string) {
+  return CATEGORY_ICON[category] ?? CATEGORY_ICON.other;
+}
+
 // Maps each category to the service/brand keywords it should match.
 // Ordered most-specific first so "apple tv" beats "apple".
 const CATEGORY_KEYWORDS: Record<string, string[]> = {

@@ -7,18 +7,19 @@ export interface ServiceTemplate {
   category: string;
   region: "GLOBAL" | "DE" | "AT" | "CH" | "DACH" | "US";
   popular?: boolean;
+  domain?: string;
 }
 
 export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   // ─── STREAMING (Global / USD) ───────────────────────────────────────────────
-  { id: "netflix-standard", name: "Netflix Standard", defaultPrice: 15.49, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", popular: true },
+  { id: "netflix-standard", name: "Netflix Standard", defaultPrice: 15.49, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "netflix.com", popular: true },
   { id: "netflix-premium", name: "Netflix Premium", defaultPrice: 22.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
   { id: "netflix-basic", name: "Netflix Basic", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
-  { id: "disney-plus", name: "Disney+", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", popular: true },
+  { id: "disney-plus", name: "Disney+", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "disneyplus.com", popular: true },
   { id: "hulu-ads", name: "Hulu (With Ads)", defaultPrice: 7.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "hulu-no-ads", name: "Hulu (No Ads)", defaultPrice: 17.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "hbo-max", name: "HBO Max", defaultPrice: 15.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
-  { id: "amazon-prime", name: "Amazon Prime", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", popular: true },
+  { id: "amazon-prime", name: "Amazon Prime", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "amazon.com", popular: true },
   { id: "apple-tv-plus", name: "Apple TV+", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
   { id: "peacock-premium", name: "Peacock Premium", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "paramount-plus", name: "Paramount+", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
@@ -28,14 +29,14 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "shudder", name: "Shudder", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
 
   // ─── ENTERTAINMENT / MUSIC (Global / USD) ───────────────────────────────────
-  { id: "spotify", name: "Spotify Premium", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", popular: true },
+  { id: "spotify", name: "Spotify Premium", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "spotify.com", popular: true },
   { id: "apple-music", name: "Apple Music", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "youtube-premium", name: "YouTube Premium", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "amazon-music", name: "Amazon Music Unlimited", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "tidal", name: "Tidal", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "audible", name: "Audible", defaultPrice: 7.95, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "kindle-unlimited", name: "Kindle Unlimited", defaultPrice: 11.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
-  { id: "xbox-game-pass", name: "Xbox Game Pass Ultimate", defaultPrice: 19.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", popular: true },
+  { id: "xbox-game-pass", name: "Xbox Game Pass Ultimate", defaultPrice: 19.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "xbox.com", popular: true },
   { id: "ps-plus-essential", name: "PlayStation Plus Essential", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "ps-plus-extra", name: "PlayStation Plus Extra", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "ps-plus-premium", name: "PlayStation Plus Premium", defaultPrice: 17.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
@@ -47,10 +48,10 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "readwise", name: "Readwise", defaultPrice: 7.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
 
   // ─── SOFTWARE (Global / USD) ─────────────────────────────────────────────────
-  { id: "adobe-cc", name: "Adobe Creative Cloud", defaultPrice: 54.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", popular: true },
-  { id: "ms365-personal", name: "Microsoft 365 Personal", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", popular: true },
+  { id: "adobe-cc", name: "Adobe Creative Cloud", defaultPrice: 54.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "adobe.com", popular: true },
+  { id: "ms365-personal", name: "Microsoft 365 Personal", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "microsoft.com", popular: true },
   { id: "ms365-family", name: "Microsoft 365 Family", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
-  { id: "icloud-50gb", name: "iCloud+ 50GB", defaultPrice: 0.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", popular: true },
+  { id: "icloud-50gb", name: "iCloud+ 50GB", defaultPrice: 0.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "icloud.com", popular: true },
   { id: "icloud-200gb", name: "iCloud+ 200GB", defaultPrice: 2.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
   { id: "icloud-2tb", name: "iCloud+ 2TB", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
   { id: "google-one-100", name: "Google One 100GB", defaultPrice: 1.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
@@ -101,17 +102,17 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "costco", name: "Costco Gold Star", defaultPrice: 65.00, currency: "USD", billingCycle: "yearly", category: "memberships", region: "US" },
 
   // ─── STREAMING (DACH / EUR) ───────────────────────────────────────────────────
-  { id: "netflix-de-standard", name: "Netflix DE Standard", defaultPrice: 15.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", popular: true },
+  { id: "netflix-de-standard", name: "Netflix DE Standard", defaultPrice: 15.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "netflix.com", popular: true },
   { id: "netflix-de-premium", name: "Netflix DE Premium", defaultPrice: 22.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
   { id: "netflix-de-basis", name: "Netflix DE Basis m. Werbung", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "disney-plus-de", name: "Disney+ DE", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", popular: true },
+  { id: "disney-plus-de", name: "Disney+ DE", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "disneyplus.com", popular: true },
   { id: "apple-tv-plus-de", name: "Apple TV+ DE", defaultPrice: 9.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "amazon-prime-de", name: "Amazon Prime DE", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", popular: true },
+  { id: "amazon-prime-de", name: "Amazon Prime DE", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "amazon.com", popular: true },
   { id: "paramount-plus-de", name: "Paramount+ DE", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
   { id: "discovery-plus-de", name: "discovery+ DE", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "dazn-de", name: "DAZN DE", defaultPrice: 29.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", popular: true },
+  { id: "dazn-de", name: "DAZN DE", defaultPrice: 29.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", domain: "dazn.com", popular: true },
   { id: "dazn-de-unlimited", name: "DAZN DE Unlimited", defaultPrice: 44.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
-  { id: "rtl-plus-basic", name: "RTL+ Basic", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", popular: true },
+  { id: "rtl-plus-basic", name: "RTL+ Basic", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", domain: "rtlplus.de", popular: true },
   { id: "rtl-plus-premium", name: "RTL+ Premium", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "magenta-tv-s", name: "MagentaTV S", defaultPrice: 10.00, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "magenta-tv-m", name: "MagentaTV M", defaultPrice: 16.00, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
@@ -119,19 +120,19 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "joyn-plus", name: "Joyn+", defaultPrice: 6.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "sky-de-sport", name: "Sky DE Sport", defaultPrice: 25.00, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "sky-de-cinema", name: "Sky DE Cinema", defaultPrice: 25.00, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
-  { id: "wow-sport", name: "WOW Sport", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", popular: true },
+  { id: "wow-sport", name: "WOW Sport", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", domain: "wow.de", popular: true },
   { id: "wow-cinema", name: "WOW Cinema", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "wow-live-tv", name: "WOW Live-TV", defaultPrice: 16.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE" },
   { id: "crunchyroll-de", name: "Crunchyroll DE", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
 
   // ─── ENTERTAINMENT / MUSIC (DACH / EUR) ───────────────────────────────────────
-  { id: "spotify-de", name: "Spotify DE", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", popular: true },
+  { id: "spotify-de", name: "Spotify DE", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "spotify.com", popular: true },
   { id: "apple-music-de", name: "Apple Music DE", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "deezer-de-premium", name: "Deezer DE Premium", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "deezer-de-hifi", name: "Deezer DE HiFi", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "audible-de", name: "Audible DE", defaultPrice: 9.95, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "tidal-de", name: "Tidal DE", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
-  { id: "xbox-game-pass-de", name: "Xbox Game Pass Ultimate DE", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", popular: true },
+  { id: "xbox-game-pass-de", name: "Xbox Game Pass Ultimate DE", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "xbox.com", popular: true },
   { id: "ps-plus-essential-de", name: "PlayStation Plus Essential DE", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "ps-plus-extra-de", name: "PlayStation Plus Extra DE", defaultPrice: 13.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "ps-plus-premium-de", name: "PlayStation Plus Premium DE", defaultPrice: 16.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
@@ -148,9 +149,9 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   // ─── SOFTWARE (DACH / EUR) ────────────────────────────────────────────────────
   { id: "adobe-cc-de", name: "Adobe Creative Cloud DE", defaultPrice: 54.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
   { id: "adobe-photo-de", name: "Adobe Foto-Abo DE", defaultPrice: 12.19, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
-  { id: "ms365-personal-de", name: "Microsoft 365 Personal DE", defaultPrice: 7.00, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH", popular: true },
+  { id: "ms365-personal-de", name: "Microsoft 365 Personal DE", defaultPrice: 7.00, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH", domain: "microsoft.com", popular: true },
   { id: "ms365-family-de", name: "Microsoft 365 Family DE", defaultPrice: 10.00, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
-  { id: "icloud-50gb-de", name: "iCloud+ 50GB DE", defaultPrice: 0.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH", popular: true },
+  { id: "icloud-50gb-de", name: "iCloud+ 50GB DE", defaultPrice: 0.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH", domain: "icloud.com", popular: true },
   { id: "icloud-200gb-de", name: "iCloud+ 200GB DE", defaultPrice: 2.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
   { id: "icloud-2tb-de", name: "iCloud+ 2TB DE", defaultPrice: 9.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
   { id: "google-one-100-de", name: "Google One 100GB DE", defaultPrice: 1.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },

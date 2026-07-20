@@ -12,6 +12,7 @@ import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
+import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
@@ -382,7 +383,8 @@ export default function DashboardScreen() {
               : null;
             return (
               <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push("/(tabs)/subscriptions")}>
-                <View>
+                <LogoImage name={sub.name} category={sub.category} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.subName}>{sub.name}</Text>
                   <Text style={styles.subMeta}>
                     {viewMode === "yearly"
