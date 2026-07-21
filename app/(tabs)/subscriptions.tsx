@@ -12,13 +12,15 @@ import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
+import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
-import { ServiceTemplate, searchTemplates, formatTemplatePrice } from "../../lib/service-templates";
+import { ServiceTemplate, searchTemplates, formatTemplatePrice, getPopularTemplates } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
+import { LogoImage } from "../../components/LogoImage";
 import * as SecureStore from "expo-secure-store";
 
 const FREE_LIMIT = 5;
@@ -52,8 +54,9 @@ async function reviewEligible(): Promise<boolean> {
 
 export default function SubscriptionsScreen() {
   const router = useRouter();
-  const { from } = useLocalSearchParams<{ from?: string }>();
+  const { from, editId } = useLocalSearchParams<{ from?: string; editId?: string }>();
   const { user } = useAuthStore();
+  const { language } = useLanguageStore();
   const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
   const { currency, baseCurrencyCode, convert } = useCurrencyStore();
@@ -290,6 +293,14 @@ export default function SubscriptionsScreen() {
     setShowModal(true);
   };
 
+  useEffect(() => {
+    if (!editId || subscriptionsLoading) return;
+    const sub = subscriptions.find((s: any) => String(s.id) === editId);
+    if (sub) openEdit(sub);
+    // Clear the param once consumed, same reason as the FAB's "from" param.
+    router.setParams({ editId: undefined });
+  }, [editId, subscriptionsLoading, subscriptions]);
+
   const closeModal = () => {
     setShowModal(false); setEditingId(null); setFormData(emptyForm);
     setShowCustomInput(false); setCustomCatDraft("");
@@ -298,6 +309,18 @@ export default function SubscriptionsScreen() {
   };
 
   const filteredTemplates = useMemo(() => searchTemplates(templateSearch), [templateSearch]);
+  const quickPickTemplates = useMemo(() => {
+    const withLogos = getPopularTemplates().filter((tpl) => tpl.domain);
+    // There's no real region/geo detection in this app, only a display
+    // language — used here as the closest available proxy so German users
+    // land on the DACH-priced variant instead of always seeing the
+    // US/GLOBAL one first (the source list happens to declare those first).
+    const dachRegions = new Set(["DE", "AT", "CH", "DACH"]);
+    const regionMatch = language === "de"
+      ? withLogos.filter((tpl) => dachRegions.has(tpl.region))
+      : withLogos.filter((tpl) => !dachRegions.has(tpl.region));
+    return (regionMatch.length > 0 ? regionMatch : withLogos).slice(0, 8);
+  }, [language]);
 
   const applyTemplate = (tpl: ServiceTemplate) => {
     const guessed = guessCategory(tpl.name);
@@ -689,7 +712,11 @@ export default function SubscriptionsScreen() {
                   }}
                 >
                 <View style={[styles.card, sub.isActive === false && styles.cardPaused]}>
-                  <View style={styles.cardInfo}>
+                  <TouchableOpacity
+                    style={styles.cardInfo}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                  >
                     <Text style={styles.cardName}>{sub.name}</Text>
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
@@ -734,7 +761,7 @@ export default function SubscriptionsScreen() {
                       <MaterialCommunityIcons name="format-list-numbered" size={11} color={c.textMuted} />
                       <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
                     </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
                       style={styles.iconButton}
@@ -793,6 +820,17 @@ export default function SubscriptionsScreen() {
               <Text style={styles.modalTitle}>
                 {editingId ? t("subscriptions.editExpenseTitle") : t("subscriptions.addExpenseTitle")}
               </Text>
+
+              {!editingId && (
+                <View style={styles.quickPickRow}>
+                  {quickPickTemplates.map((tpl) => (
+                    <TouchableOpacity key={tpl.id} style={styles.quickPickItem} onPress={() => applyTemplate(tpl)}>
+                      <LogoImage name={tpl.name} category={tpl.category} size={44} />
+                      <Text style={styles.quickPickLabel} numberOfLines={1}>{tpl.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
 
               {!editingId && (
                 <TouchableOpacity
@@ -1239,6 +1277,12 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", gap: 10, marginBottom: 8,
     },
     reviewDismissText: { fontSize: 13, color: c.textMuted },
+    quickPickRow: {
+      flexDirection: "row", flexWrap: "wrap", gap: 12,
+      marginBottom: 14, justifyContent: "flex-start",
+    },
+    quickPickItem: { width: 60, alignItems: "center", gap: 4 },
+    quickPickLabel: { fontSize: 10, color: c.textSecondary, textAlign: "center" },
     templatePickerButton: {
       flexDirection: "row", alignItems: "center", gap: 8,
       backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,

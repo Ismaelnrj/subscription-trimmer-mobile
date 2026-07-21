@@ -186,7 +186,11 @@
     "budgetLeft": "{{amount}} left",
     "hiddenCategories_one": "{{count}} more category hidden",
     "hiddenCategories_other": "{{count}} more categories hidden",
-    "hiddenCategoriesDesc": "See your full spending breakdown by category and identify exactly where your money is going."
+    "hiddenCategoriesDesc": "See your full spending breakdown by category and identify exactly where your money is going.",
+    "totalSpending": "Total Spending",
+    "weeklySpending": "Weekly Spending",
+    "weeklySpendingDesc": "See exactly which weeks your subscriptions hit hardest, so nothing catches you off guard.",
+    "week": "Week {{number}}"
   },
   "onboarding": {
     "slide1Title": "Track every subscription",
@@ -510,5 +514,20 @@
   },
   "fab": {
     "addSubscription": "Add subscription"
+  },
+  "subscriptionDetails": {
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "upcomingRenewals": "Upcoming Renewals",
+    "noUpcoming": "No upcoming renewals found",
+    "reminders": "Reminders",
+    "remindersDesc": "Reminders are managed for all subscriptions in Notification Preferences.",
+    "manage": "Manage",
+    "dangerZone": "Danger Zone",
+    "deleteSubscription": "Delete Subscription",
+    "deleteConfirmTitle": "Delete {{name}}?",
+    "deleteConfirmMsg": "This can't be undone.",
+    "notFound": "Subscription not found",
+    "edit": "Edit"
   }
 }

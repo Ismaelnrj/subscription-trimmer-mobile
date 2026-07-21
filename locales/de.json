@@ -186,7 +186,11 @@
     "budgetLeft": "{{amount}} übrig",
     "hiddenCategories_one": "{{count}} weitere Kategorie ausgeblendet",
     "hiddenCategories_other": "{{count}} weitere Kategorien ausgeblendet",
-    "hiddenCategoriesDesc": "Sieh die vollständige Aufschlüsselung deiner Ausgaben nach Kategorie."
+    "hiddenCategoriesDesc": "Sieh die vollständige Aufschlüsselung deiner Ausgaben nach Kategorie.",
+    "totalSpending": "Gesamtausgaben",
+    "weeklySpending": "Wöchentliche Ausgaben",
+    "weeklySpendingDesc": "Sieh genau, in welchen Wochen deine Abos am stärksten zuschlagen, damit dich nichts überrascht.",
+    "week": "Woche {{number}}"
   },
   "onboarding": {
     "slide1Title": "Alle Abos im Blick",
@@ -510,5 +514,20 @@
   },
   "fab": {
     "addSubscription": "Abo hinzufügen"
+  },
+  "subscriptionDetails": {
+    "monthly": "Monatlich",
+    "yearly": "Jährlich",
+    "upcomingRenewals": "Anstehende Verlängerungen",
+    "noUpcoming": "Keine anstehenden Verlängerungen gefunden",
+    "reminders": "Erinnerungen",
+    "remindersDesc": "Erinnerungen werden für alle Abos zentral in den Benachrichtigungseinstellungen verwaltet.",
+    "manage": "Verwalten",
+    "dangerZone": "Gefahrenzone",
+    "deleteSubscription": "Abo löschen",
+    "deleteConfirmTitle": "{{name}} löschen?",
+    "deleteConfirmMsg": "Das kann nicht rückgängig gemacht werden.",
+    "notFound": "Abo nicht gefunden",
+    "edit": "Bearbeiten"
   }
 }
