@@ -52,6 +52,24 @@ jobs:
       - name: Apply Gradle compatibility fixes
         run: bash fix-gradle.sh
 
+      # fix-gradle.sh's JVM tuning (1.5GB heap / 512MB Metaspace) is
+      # deliberately tight to fit Codemagic's linux_x2 instance (4GB total
+      # RAM). GitHub-hosted ubuntu-latest runners have 16GB, so give this
+      # environment more headroom instead — the tight Codemagic budget was
+      # exactly what caused lintVitalAnalyzeRelease to hit a Metaspace
+      # OutOfMemoryError on react-native-reanimated once react-native-svg
+      # added another native module to the lint-vital work for this build.
+      - name: Raise JVM memory limits for this runner's larger RAM budget
+        run: |
+          sed -i \
+            -e '/^org\.gradle\.jvmargs/d' \
+            -e '/^kotlin\.daemon\.jvm\.options/d' \
+            android/gradle.properties
+          cat >> android/gradle.properties << 'EOF'
+          org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -XX:+UseG1GC
+          kotlin.daemon.jvm.options=-Xmx1536m -XX:MaxMetaspaceSize=512m
+          EOF
+
       - name: Decode keystore
         run: |
           if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
