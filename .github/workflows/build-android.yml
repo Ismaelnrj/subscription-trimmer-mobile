@@ -18,54 +18,41 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Verify project structure
-        run: |
-          echo "Current directory: $(pwd)"
-          echo "Contents:"
-          ls -la
-          
-          # Check if we're in the nested folder
-          if [ -f "package.json" ] && [ -d "android" ]; then
-            echo "✓ Already at project root"
-            echo "PROJECT_DIR=$(pwd)" >> $GITHUB_ENV
-          else
-            echo "In nested folder, moving up..."
-            cd ..
-            echo "✓ Moved to parent directory"
-            echo "PROJECT_DIR=$(pwd)" >> $GITHUB_ENV
-          fi
-          
-          echo ""
-          echo "Final project directory: $PROJECT_DIR"
-          [ -f "$PROJECT_DIR/package.json" ] && echo "✓ package.json found" || echo "✗ package.json NOT found"
-          [ -d "$PROJECT_DIR/android" ] && echo "✓ android directory found" || echo "✗ android directory NOT found"
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
+          node-version: '20'
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
           version: 8
-      
+
       - name: Setup Java (JDK 17)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-      
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-      
+
       - name: Install dependencies
-        working-directory: ${{ env.PROJECT_DIR }}
         run: pnpm install
-      
+
+      # The android/ directory is intentionally gitignored (see "Stop
+      # committing the generated android/ directory") - Codemagic already
+      # regenerates it fresh on every build via prebuild + a Gradle 8
+      # compatibility patch script, so this workflow does the same instead
+      # of assuming a committed copy exists.
+      - name: Prebuild native Android project
+        run: npx expo prebuild --platform android --clean
+
+      - name: Apply Gradle compatibility fixes
+        run: bash fix-gradle.sh
+
       - name: Decode keystore
-        working-directory: ${{ env.PROJECT_DIR }}
         run: |
           if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "::error::KEYSTORE_BASE64 repo secret is empty or unset. Without it, this build" \
@@ -83,7 +70,7 @@ jobs:
           ls -la android/app/release.keystore
 
       - name: Build Android App Bundle + APK
-        working-directory: ${{ env.PROJECT_DIR }}/android
+        working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew bundleRelease assembleRelease \
@@ -98,14 +85,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release.aab
-          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release.apk
-          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/release/app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
       - name: Create Release
@@ -132,7 +119,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/bundle/release/app-release.aab
+          asset_path: android/app/build/outputs/bundle/release/app-release.aab
           asset_name: app-release.aab
           asset_content_type: application/octet-stream
 
@@ -143,6 +130,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/release/app-release.apk
+          asset_path: android/app/build/outputs/apk/release/app-release.apk
           asset_name: app-release.apk
           asset_content_type: application/octet-stream
