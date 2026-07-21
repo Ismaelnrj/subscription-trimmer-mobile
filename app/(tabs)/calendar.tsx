@@ -13,7 +13,7 @@ import { LogoImage } from "../../components/LogoImage";
 import { getOccurrencesInMonth, getUpcomingOccurrences } from "../../lib/recurrence";
 import { getCategoryIcon } from "../../lib/categories";
 
-const TIMELINE_WINDOW_DAYS = 60;
+const TIMELINE_WINDOW_DAYS = 30;
 
 function dayKey(d: Date) {
   return format(d, "yyyy-MM-dd");

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity, useColorScheme } from "react-native";
+import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { DonutChart } from "../../components/DonutChart";
 import { WeeklyBarChart } from "../../components/WeeklyBarChart";
-import { useTheme, AppColors } from "../../lib/theme";
+import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { getCategoryIcon } from "../../lib/categories";
 import { getOccurrencesInMonth } from "../../lib/recurrence";
 
@@ -27,7 +27,7 @@ export default function AnalyticsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../lib/auth-store";
 import { useTheme, AppColors } from "../../lib/theme";
 import { useLanguageStore } from "../../lib/language-store";
+import { useThemeStore, ThemeMode } from "../../lib/theme-store";
 import { PREMIUM_PRICES } from "../../lib/pricing";
 
 export default function ProfileScreen() {
@@ -15,6 +16,13 @@ export default function ProfileScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguageStore();
+  const { mode, setMode } = useThemeStore();
+
+  const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
+    { value: "system", label: t("profile.themeSystem") },
+    { value: "light", label: t("profile.themeLight") },
+    { value: "dark", label: t("profile.themeDark") },
+  ];
 
   const getInitials = (name?: string | null) => {
     if (!name) return "U";
@@ -88,6 +96,23 @@ export default function ProfileScreen() {
         )}
 
         <Text style={styles.sectionTitle}>{t("profile.settings")}</Text>
+        <View style={[styles.menuItem, styles.themeItem]}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="theme-light-dark" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>{t("profile.appearance")}</Text>
+          </View>
+          <View style={styles.themeToggle}>
+            {THEME_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.themeChip, mode === opt.value && styles.langChipActive]}
+                onPress={() => setMode(opt.value)}
+              >
+                <Text style={[styles.langChipText, mode === opt.value && styles.langChipTextActive]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
         <View style={styles.menuItem}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="translate" size={20} color={c.primary} />
@@ -204,6 +229,12 @@ function makeStyles(c: AppColors) {
     langChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     langChipText: { fontSize: 12, fontWeight: "700", color: c.textSecondary },
     langChipTextActive: { color: "#FFFFFF" },
+    themeItem: { flexDirection: "column", alignItems: "stretch" },
+    themeToggle: { flexDirection: "row", gap: 6, marginTop: 12 },
+    themeChip: {
+      flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 16,
+      backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
+    },
     dangerButton: {
       backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16,
       marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Animated, Easing, useColorScheme } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ import { useCurrencyStore, useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
-import { useTheme, AppColors } from "../../lib/theme";
+import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
 import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
@@ -35,7 +35,7 @@ export default function DashboardScreen() {
   const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 

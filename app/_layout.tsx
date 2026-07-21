@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
+import { useThemeStore } from "../lib/theme-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { useTheme } from "../lib/theme";
@@ -66,6 +67,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const { isAuthenticated, isLoading, restoreToken } = useAuthStore();
   const { loadCurrency, fetchRates } = useCurrencyStore();
+  const { loadMode } = useThemeStore();
   const { loadLanguage } = useLanguageStore();
   const router = useRouter();
   const segments = useSegments();
@@ -80,6 +82,7 @@ export default function RootLayout() {
           restoreToken(),
           loadCurrency(),
           SecureStore.getItemAsync("onboarding_done"),
+          loadMode(),
         ]);
         await loadLanguage();
         fetchRates();

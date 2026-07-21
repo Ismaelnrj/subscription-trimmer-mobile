@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, useColorScheme } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, useIsDark, AppColors } from "../lib/theme";
 
 const { width } = Dimensions.get("window");
 
@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
   const [current, setCurrent] = useState(0);
   const [estimate, setEstimate] = useState<number | null>(null);
   const c = useTheme();
-  const isDark = useColorScheme() === "dark";
+  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 

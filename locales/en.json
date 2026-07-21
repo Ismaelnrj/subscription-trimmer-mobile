@@ -152,7 +152,11 @@
     "signOut": "Sign Out",
     "signOutTitle": "Sign out",
     "signOutConfirm": "Are you sure you want to sign out?",
-    "language": "Language / Sprache"
+    "language": "Language / Sprache",
+    "appearance": "Appearance",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "calendar": {
     "selectDay": "Select a day to see what's due",
