@@ -13,7 +13,6 @@ import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
 import { LogoImage } from "../../components/LogoImage";
-import { GlobalFab } from "../../components/GlobalFab";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
@@ -192,253 +191,254 @@ export default function DashboardScreen() {
   }
 
   return (
-    <>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
-      >
-        <View style={styles.scrollContent}>
-          <Text style={styles.greetingText}>
-            {greeting}{firstName ? `, ${firstName}` : ""}
-          </Text>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
+    >
+      <View style={styles.scrollContent}>
+        <Text style={styles.greetingText}>
+          {greeting}{firstName ? `, ${firstName}` : ""}
+        </Text>
 
-          {nextSub && (
-            <View style={styles.nextPaymentCard}>
-              <LogoImage name={nextSub.name} category={nextSub.category} size={40} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.nextPaymentLabel}>{t("dashboard.nextPayment")}</Text>
-                <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price)}</Text>
-              </View>
-              {nextSubDueLabel && (
-                <View style={styles.nextPaymentBadge}>
-                  <Text style={styles.nextPaymentBadgeText}>{nextSubDueLabel}</Text>
-                </View>
-              )}
+        {nextSub && (
+          <View style={styles.nextPaymentCard}>
+            <LogoImage name={nextSub.name} category={nextSub.category} size={40} />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.nextPaymentLabel}>{t("dashboard.nextPayment")}</Text>
+              <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price)}</Text>
             </View>
-          )}
-
-          {user && !user.isVerified && (
-            <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
-              <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
-              <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
-              <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
-            </TouchableOpacity>
-          )}
-
-          {estimateBanner && (
-            <View style={styles.estimateBanner}>
-              <MaterialCommunityIcons name="target" size={20} color={c.primary} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.estimateBannerText}>
-                  You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} recurring expense
-                  {estimateBanner.actual !== 1 ? "s" : ""}.
-                </Text>
+            {nextSubDueLabel && (
+              <View style={styles.nextPaymentBadge}>
+                <Text style={styles.nextPaymentBadgeText}>{nextSubDueLabel}</Text>
               </View>
-              <TouchableOpacity onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
-                <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {showRecoBanner && (
-            <View style={styles.recoBanner}>
-              <MaterialCommunityIcons name="lightbulb-on" size={20} color={c.success} />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.recoBannerTitle}>
-                  {t("dashboard.waysToSave", { count: recoTips.length })}
-                </Text>
-                <Text style={styles.recoBannerText} onPress={() => router.push("/insights")}>
-                  {t("dashboard.seeRecommendations")} →
-                </Text>
-              </View>
-              <TouchableOpacity onPress={dismissRecoBanner} style={{ padding: 4 }}>
-                <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {!isPremium && (
-            <PremiumGate
-              title="Budget Goal & Progress Bar"
-              description="Set a monthly spending limit and get a visual warning when you're getting close."
-            />
-          )}
-
-          {isPremium && budgetGoal != null && (
-            <View style={[styles.budgetCard, { borderLeftColor: budgetColor }]}>
-              <View style={styles.budgetRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
-                  <Text style={styles.budgetAmount}>
-                    {fmtC(monthlyTotal)}{" "}
-                    <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
-                  </Text>
-                </View>
-                <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
-                  <Text style={[styles.budgetPctText, { color: budgetColor }]}>{Math.round(budgetPct)}%</Text>
-                </View>
-              </View>
-
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
-              </View>
-
-              <View style={styles.budgetFooter}>
-                <View style={styles.budgetStatusRow}>
-                  <MaterialCommunityIcons name={budgetStatusIcon as any} size={13} color={budgetColor} />
-                  <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
-                </View>
-                <Text style={styles.budgetRemaining}>
-                  {budgetRaw >= 100
-                    ? t("dashboard.overLimit", { amount: fmtC(monthlyTotal - budgetGoal) })
-                    : t("dashboard.remaining", { amount: fmtC(budgetGoal - monthlyTotal) })}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {trialsSoon.length > 0 && (
-            <View style={styles.trialsSection}>
-              <View style={styles.trialsSectionHeader}>
-                <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />
-                <Text style={styles.trialsSectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
-              </View>
-              {trialsSoon.map((sub: any) => {
-                const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
-                const urgency = days <= 3 ? c.danger : c.warning;
-                return (
-                  <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.trialName}>{sub.name}</Text>
-                      <Text style={styles.trialCharge}>
-                        {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: sub.billingCycle })}
-                      </Text>
-                    </View>
-                    <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
-                      <Text style={[styles.trialBadgeText, { color: urgency }]}>
-                        {days === 0 ? t("dashboard.today") : t("dashboard.daysLeft", { count: days })}
-                      </Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          )}
-
-          <View style={styles.toggleRow}>
-            {(["monthly", "yearly"] as const).map((mode) => (
-              <TouchableOpacity
-                key={mode}
-                style={[styles.togglePill, viewMode === mode && styles.togglePillActive]}
-                onPress={() => setViewMode(mode)}
-              >
-                <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
-                  {mode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            )}
           </View>
+        )}
 
-          {isDark ? (
-            <LinearGradient
-              colors={["#6C3EF4", "#6A47EA"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.heroCard, styles.heroCardGradientBorder]}
-            >
-              <View style={styles.heroIconOnGradient}>
-                <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
-              </View>
-              <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-              <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
-            </LinearGradient>
-          ) : (
-            <View style={styles.heroCard}>
-              <View style={styles.heroIcon}>
-                <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
-              </View>
-              <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-              <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
-            </View>
-          )}
+        {user && !user.isVerified && (
+          <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
+            <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
+            <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
+            <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
+          </TouchableOpacity>
+        )}
 
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
-              </View>
-              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-              <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}</Text>
+        {estimateBanner && (
+          <View style={styles.estimateBanner}>
+            <MaterialCommunityIcons name="target" size={20} color={c.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.estimateBannerText}>
+                You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} recurring expense
+                {estimateBanner.actual !== 1 ? "s" : ""}.
+              </Text>
             </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
-              </View>
-              <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
-              <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
-              </View>
-              <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
-              <Text style={styles.statLabel}>{t("dashboard.active")}</Text>
-            </View>
-            <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
-              <View style={styles.statIcon}>
-                <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
-              </View>
-              <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]} numberOfLines={1}>{activeAlertCount}</Text>
-              <Text style={styles.statLabel}>{t("dashboard.alerts")}</Text>
+            <TouchableOpacity onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
+        )}
 
-          <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-            <Text style={styles.actionButtonText}>{t("dashboard.addExpense")}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButtonOutline}
-            onPress={() => router.push("/insights")}
-          >
-            <Text style={styles.actionButtonOutlineText}>{t("dashboard.viewRecommendations")}</Text>
-          </TouchableOpacity>
-
-          <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t("dashboard.recentExpenses")}</Text>
-          {recentSubs.length === 0 ? (
-            <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
-              <Text style={styles.emptyStateText}>{t("dashboard.emptyExpenses")}</Text>
+        {showRecoBanner && (
+          <View style={styles.recoBanner}>
+            <MaterialCommunityIcons name="lightbulb-on" size={20} color={c.success} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.recoBannerTitle}>
+                {t("dashboard.waysToSave", { count: recoTips.length })}
+              </Text>
+              <Text style={styles.recoBannerText} onPress={() => router.push("/insights")}>
+                {t("dashboard.seeRecommendations")} →
+              </Text>
             </View>
-          ) : (
-            recentSubs.map((sub: any) => {
-              const monthly = sub.billingCycle === "yearly"
-                ? sub.price / 12
-                : sub.billingCycle === "weekly"
-                ? (sub.price * 52) / 12
-                : null;
+            <TouchableOpacity onPress={dismissRecoBanner} style={{ padding: 4 }}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {!isPremium && (
+          <PremiumGate
+            title="Budget Goal & Progress Bar"
+            description="Set a monthly spending limit and get a visual warning when you're getting close."
+          />
+        )}
+
+        {isPremium && budgetGoal != null && (
+          <View style={[styles.budgetCard, { borderLeftColor: budgetColor }]}>
+            <View style={styles.budgetRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
+                <Text style={styles.budgetAmount}>
+                  {fmtC(monthlyTotal)}{" "}
+                  <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
+                </Text>
+              </View>
+              <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
+                <Text style={[styles.budgetPctText, { color: budgetColor }]}>{Math.round(budgetPct)}%</Text>
+              </View>
+            </View>
+
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
+            </View>
+
+            <View style={styles.budgetFooter}>
+              <View style={styles.budgetStatusRow}>
+                <MaterialCommunityIcons name={budgetStatusIcon as any} size={13} color={budgetColor} />
+                <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
+              </View>
+              <Text style={styles.budgetRemaining}>
+                {budgetRaw >= 100
+                  ? t("dashboard.overLimit", { amount: fmtC(monthlyTotal - budgetGoal) })
+                  : t("dashboard.remaining", { amount: fmtC(budgetGoal - monthlyTotal) })}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {trialsSoon.length > 0 && (
+          <View style={styles.trialsSection}>
+            <View style={styles.trialsSectionHeader}>
+              <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />
+              <Text style={styles.trialsSectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
+            </View>
+            {trialsSoon.map((sub: any) => {
+              const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
+              const urgency = days <= 3 ? c.danger : c.warning;
               return (
-                <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push("/(tabs)/subscriptions")}>
-                  <LogoImage name={sub.name} category={sub.category} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.subName}>{sub.name}</Text>
-                    <Text style={styles.subMeta}>
-                      {viewMode === "yearly"
-                        ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)}/yr`
-                        : `${fmtC(sub.price)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
-                      }
+                <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.trialName}>{sub.name}</Text>
+                    <Text style={styles.trialCharge}>
+                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: sub.billingCycle })}
                     </Text>
                   </View>
-                  <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
-                </TouchableOpacity>
+                  <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
+                    <Text style={[styles.trialBadgeText, { color: urgency }]}>
+                      {days === 0 ? t("dashboard.today") : t("dashboard.daysLeft", { count: days })}
+                    </Text>
+                  </View>
+                </View>
               );
-            })
-          )}
+            })}
+          </View>
+        )}
+
+        <View style={styles.toggleRow}>
+          {(["monthly", "yearly"] as const).map((mode) => (
+            <TouchableOpacity
+              key={mode}
+              style={[styles.togglePill, viewMode === mode && styles.togglePillActive]}
+              onPress={() => setViewMode(mode)}
+            >
+              <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
+                {mode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      </ScrollView>
-      <GlobalFab />
-    </>
+
+        {isDark ? (
+          <LinearGradient
+            colors={["#6C3EF4", "#6A47EA"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.heroCard, styles.heroCardGradientBorder]}
+          >
+            <View style={styles.heroIconOnGradient}>
+              <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
+            </View>
+            <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
+          </LinearGradient>
+        ) : (
+          <View style={styles.heroCard}>
+            <View style={styles.heroIcon}>
+              <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
+            </View>
+            <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
+          </View>
+        )}
+
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
+            </View>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
+            </View>
+            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
+            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.statIcon}>
+              <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
+            </View>
+            <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
+            <Text style={styles.statLabel}>{t("dashboard.active")}</Text>
+          </View>
+          <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
+            <View style={styles.statIcon}>
+              <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
+            </View>
+            <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]} numberOfLines={1}>{activeAlertCount}</Text>
+            <Text style={styles.statLabel}>{t("dashboard.alerts")}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
+        <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
+          <Text style={styles.actionButtonText}>{t("dashboard.addExpense")}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButtonOutline}
+          onPress={() => router.push("/insights")}
+        >
+          <Text style={styles.actionButtonOutlineText}>{t("dashboard.viewRecommendations")}</Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t("dashboard.recentExpenses")}</Text>
+        {recentSubs.length === 0 ? (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
+            <Text style={styles.emptyStateText}>{t("dashboard.emptyExpenses")}</Text>
+          </View>
+        ) : (
+          recentSubs.map((sub: any) => {
+            const monthly = sub.billingCycle === "yearly"
+              ? sub.price / 12
+              : sub.billingCycle === "weekly"
+              ? (sub.price * 52) / 12
+              : null;
+            return (
+              <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push("/(tabs)/subscriptions")}>
+                <LogoImage name={sub.name} category={sub.category} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.subName}>{sub.name}</Text>
+                  <Text style={styles.subMeta}>
+                    {viewMode === "yearly"
+                      ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)}/yr`
+                      : `${fmtC(sub.price)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
+                    }
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
+              </TouchableOpacity>
+            );
+          })
+        )}
+
+        <TouchableOpacity style={styles.viewAllLink} onPress={() => router.push("/(tabs)/subscriptions")}>
+          <Text style={styles.viewAllLinkText}>{t("dashboard.viewAllSubscriptions")} →</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -456,6 +456,8 @@ function makeStyles(c: AppColors) {
     nextPaymentName: { fontSize: 15, fontWeight: "600", color: c.text, marginTop: 2 },
     nextPaymentBadge: { backgroundColor: c.primaryLight, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
     nextPaymentBadgeText: { fontSize: 12, fontWeight: "600", color: c.primary },
+    viewAllLink: { alignItems: "center", paddingVertical: 14 },
+    viewAllLinkText: { fontSize: 13, fontWeight: "600", color: c.primary },
     verifyBanner: {
       backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
       flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,

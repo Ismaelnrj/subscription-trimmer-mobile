@@ -17,11 +17,13 @@
   "tabs": {
     "dashboard": "Dashboard",
     "subscriptions": "Subscriptions",
-    "analytics": "Analytics",
-    "profile": "Profile",
+    "calendar": "Calendar",
+    "stats": "Stats",
+    "settings": "Settings",
     "headerSubscriptions": "My Subscriptions",
-    "headerAnalytics": "Spending Analytics",
-    "headerProfile": "My Profile"
+    "headerAnalytics": "Stats",
+    "headerProfile": "Settings",
+    "headerCalendar": "Calendar"
   },
   "dashboard": {
     "monthly": "Monthly",
@@ -61,7 +63,8 @@
     "noUpcomingPayments": "No upcoming payments",
     "dueToday": "Due today",
     "dueTomorrow": "Due tomorrow",
-    "dueInDays": "Due in {{count}} days"
+    "dueInDays": "Due in {{count}} days",
+    "viewAllSubscriptions": "View all subscriptions"
   },
   "subscriptions": {
     "add": "Add",
@@ -149,11 +152,9 @@
     "signOut": "Sign Out",
     "signOutTitle": "Sign out",
     "signOutConfirm": "Are you sure you want to sign out?",
-    "language": "Language / Sprache",
-    "calendarPreview": "Preview: Calendar"
+    "language": "Language / Sprache"
   },
   "calendar": {
-    "title": "Calendar",
     "selectDay": "Select a day to see what's due",
     "noRenewals": "No renewals on this day"
   },
@@ -498,5 +499,8 @@
     "thankYouTitle": "Thank you!",
     "thankYouMsg": "Your support means the world and helps keep Trimio free and improving!",
     "errPurchase": "Could not complete the purchase. Please try again."
+  },
+  "fab": {
+    "addSubscription": "Add subscription"
   }
 }

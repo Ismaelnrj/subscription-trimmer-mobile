@@ -2,7 +2,8 @@ appId: com.trimio.app
 ---
 # Smoke test: the app boots past the splash screen to a real screen (login
 # or the tabs, depending on whether a session is already stored), then a
-# fresh login succeeds and lands on the subscriptions tab.
+# fresh login succeeds and lands on the Dashboard. Subscriptions no longer
+# has its own tab bar icon, so it's reached via the floating + button instead.
 - launchApp:
     clearState: true
 - assertVisible:
@@ -17,10 +18,10 @@ appId: com.trimio.app
 - tapOn:
     text: "Sign In"
 - assertVisible:
-    text: "Subscriptions"
+    text: "Trimio"
     timeout: 15000
 - tapOn:
-    text: "Subscriptions"
+    text: "Add subscription"
 - assertVisible:
     text: "My Subscriptions"
     timeout: 5000

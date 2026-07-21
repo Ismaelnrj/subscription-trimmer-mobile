@@ -3,12 +3,12 @@ appId: com.trimio.app
 # Covers the core loop: add a subscription, confirm it's listed, delete it,
 # and confirm the savings toast appears. Assumes 01_launch_and_login already
 # got the test account authenticated (Maestro keeps app state between flows
-# in the same run unless clearState is used).
+# in the same run unless clearState is used). Subscriptions no longer has its
+# own tab bar icon, so the floating + button navigates there and opens the
+# add form in one tap.
 - launchApp
 - tapOn:
-    text: "Subscriptions"
-- tapOn:
-    text: "Add"
+    text: "Add subscription"
 - tapOn:
     text: "Subscription name (e.g. Netflix)"
 - inputText: "Maestro Test Sub"
@@ -17,7 +17,7 @@ appId: com.trimio.app
 - inputText: "9.99"
 - hideKeyboard
 - tapOn:
-    text: "^Add$"
+    text: "Add Expense"
 - assertVisible: "Maestro Test Sub"
 
 # Swipe the card left to reveal the delete action, then confirm.

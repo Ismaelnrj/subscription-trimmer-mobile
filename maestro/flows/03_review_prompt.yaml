@@ -9,13 +9,25 @@ appId: com.trimio.app
 # Needs 3+ subscriptions to exist for the general fallback trigger to fire
 # (see subscriptions.length >= 3 in app/(tabs)/subscriptions.tsx). Run this
 # against a fresh test account, or one with fewer than 3 subs already, so
-# adding these three is actually what crosses the threshold.
+# adding these three is actually what crosses the threshold. Subscriptions
+# no longer has its own tab bar icon, so the first add goes through the
+# floating + button (which navigates there and opens the form in one tap);
+# the rest use the in-screen "Add" button since we're already there.
 - launchApp
 - tapOn:
-    text: "Subscriptions"
+    text: "Add subscription"
+- tapOn:
+    text: "Subscription name (e.g. Netflix)"
+- inputText: "Maestro Review Test"
+- tapOn:
+    text: "Price in.*"
+- inputText: "4.99"
+- hideKeyboard
+- tapOn:
+    text: "Add Expense"
 
 - repeat:
-    times: 3
+    times: 2
     commands:
       - tapOn:
           text: "Add"
@@ -27,7 +39,7 @@ appId: com.trimio.app
       - inputText: "4.99"
       - hideKeyboard
       - tapOn:
-          text: "^Add$"
+          text: "Add Expense"
 
 # The general fallback fires ~4s after mount once 3+ subs are loaded.
 - assertVisible:

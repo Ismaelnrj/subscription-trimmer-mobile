@@ -140,7 +140,6 @@ export default function RootLayout() {
           <Stack.Screen name="alerts" options={{ headerShown: true, title: "Alerts" }} />
           <Stack.Screen name="notifications" options={{ headerShown: true, title: "Notifications" }} />
           <Stack.Screen name="cancel-guide" options={{ headerShown: true, title: "How to Cancel" }} />
-          <Stack.Screen name="calendar-preview" options={{ headerShown: true, title: "Calendar" }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         {showAnimatedSplash ? (

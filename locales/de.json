@@ -17,11 +17,13 @@
   "tabs": {
     "dashboard": "Übersicht",
     "subscriptions": "Ausgaben",
-    "analytics": "Analyse",
-    "profile": "Profil",
+    "calendar": "Kalender",
+    "stats": "Statistik",
+    "settings": "Einstellungen",
     "headerSubscriptions": "Meine Ausgaben",
-    "headerAnalytics": "Ausgabenanalyse",
-    "headerProfile": "Mein Profil"
+    "headerAnalytics": "Statistik",
+    "headerProfile": "Einstellungen",
+    "headerCalendar": "Kalender"
   },
   "dashboard": {
     "monthly": "Monatlich",
@@ -61,7 +63,8 @@
     "noUpcomingPayments": "Keine anstehenden Zahlungen",
     "dueToday": "Heute fällig",
     "dueTomorrow": "Morgen fällig",
-    "dueInDays": "In {{count}} Tagen fällig"
+    "dueInDays": "In {{count}} Tagen fällig",
+    "viewAllSubscriptions": "Alle Ausgaben anzeigen"
   },
   "subscriptions": {
     "add": "Hinzufügen",
@@ -149,11 +152,9 @@
     "signOut": "Abmelden",
     "signOutTitle": "Abmelden",
     "signOutConfirm": "Bist du sicher, dass du dich abmelden möchtest?",
-    "language": "Sprache / Language",
-    "calendarPreview": "Vorschau: Kalender"
+    "language": "Sprache / Language"
   },
   "calendar": {
-    "title": "Kalender",
     "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
     "noRenewals": "Keine Verlängerungen an diesem Tag"
   },
@@ -498,5 +499,8 @@
     "thankYouTitle": "Danke!",
     "thankYouMsg": "Deine Unterstützung bedeutet mir alles und hilft dabei, Trimio kostenlos und besser zu machen!",
     "errPurchase": "Der Kauf konnte nicht abgeschlossen werden. Bitte erneut versuchen."
+  },
+  "fab": {
+    "addSubscription": "Abo hinzufügen"
   }
 }
