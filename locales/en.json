@@ -156,7 +156,15 @@
   },
   "calendar": {
     "selectDay": "Select a day to see what's due",
-    "noRenewals": "No renewals on this day"
+    "noRenewals": "No renewals on this day",
+    "timeline": "Timeline",
+    "calendarView": "Calendar",
+    "month": "Month",
+    "noUpcoming": "No upcoming payments",
+    "monthSummary": "{{month}} Summary",
+    "payments": "Payments",
+    "highest": "Highest",
+    "today": "Today"
   },
   "review": {
     "title": "Enjoying Trimio?",

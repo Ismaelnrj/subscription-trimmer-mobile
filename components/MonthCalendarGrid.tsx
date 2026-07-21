@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, cancelAnimation } from "react-native-reanimated";
 import {
   startOfMonth,
   endOfMonth,
@@ -17,7 +19,7 @@ import { AppColors } from "../lib/theme";
 
 interface Props {
   month: Date;
-  markedDates: Set<string>;
+  markedDates: Map<string, string[]>;
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   onChangeMonth: (month: Date) => void;
@@ -26,6 +28,25 @@ interface Props {
 
 function dayKey(d: Date) {
   return format(d, "yyyy-MM-dd");
+}
+
+// Today's circle pulses subtly (scale 1.00 -> 1.08 -> 1.00) to draw the eye
+// without being distracting.
+function TodayPulse({ children }: { children: React.ReactNode }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(withTiming(1.08, { duration: 900 }), withTiming(1, { duration: 900 })),
+      -1,
+      true
+    );
+    return () => cancelAnimation(scale);
+  }, [scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
 export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
@@ -56,8 +77,21 @@ export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDa
         {days.map((day) => {
           const inMonth = isSameMonth(day, month);
           const selected = selectedDate != null && isSameDay(day, selectedDate);
-          const marked = markedDates.has(dayKey(day));
+          const dotColors = markedDates.get(dayKey(day)) ?? [];
           const today = isToday(day);
+
+          const circle = (
+            <View style={[styles.dayCircle, selected && styles.dayCircleSelected, today && !selected && styles.dayCircleToday]}>
+              <Text style={[
+                styles.dayText,
+                !inMonth && styles.dayTextMuted,
+                selected && styles.dayTextSelected,
+              ]}>
+                {format(day, "d")}
+              </Text>
+            </View>
+          );
+
           return (
             <TouchableOpacity
               key={day.toISOString()}
@@ -65,16 +99,14 @@ export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDa
               onPress={() => onSelectDate(day)}
               disabled={!inMonth}
             >
-              <View style={[styles.dayCircle, selected && styles.dayCircleSelected, today && !selected && styles.dayCircleToday]}>
-                <Text style={[
-                  styles.dayText,
-                  !inMonth && styles.dayTextMuted,
-                  selected && styles.dayTextSelected,
-                ]}>
-                  {format(day, "d")}
-                </Text>
-              </View>
-              {marked && <View style={[styles.dot, selected && styles.dotSelected]} />}
+              {today && !selected ? <TodayPulse>{circle}</TodayPulse> : circle}
+              {dotColors.length > 0 && (
+                <View style={styles.dotRow}>
+                  {dotColors.slice(0, 3).map((color, i) => (
+                    <View key={i} style={[styles.dot, { backgroundColor: color }]} />
+                  ))}
+                </View>
+              )}
             </TouchableOpacity>
           );
         })}
@@ -99,7 +131,7 @@ function makeStyles(c: AppColors) {
     dayText: { fontSize: 13, color: c.text },
     dayTextMuted: { color: c.textMuted },
     dayTextSelected: { color: "#FFFFFF", fontWeight: "700" },
-    dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: c.primary, marginTop: 2 },
-    dotSelected: { backgroundColor: c.primary },
+    dotRow: { flexDirection: "row", gap: 3, marginTop: 2, height: 4 },
+    dot: { width: 4, height: 4, borderRadius: 2 },
   });
 }

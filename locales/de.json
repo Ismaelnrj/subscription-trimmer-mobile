@@ -156,7 +156,15 @@
   },
   "calendar": {
     "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
-    "noRenewals": "Keine Verlängerungen an diesem Tag"
+    "noRenewals": "Keine Verlängerungen an diesem Tag",
+    "timeline": "Zeitleiste",
+    "calendarView": "Kalender",
+    "month": "Monat",
+    "noUpcoming": "Keine anstehenden Zahlungen",
+    "monthSummary": "{{month}} Zusammenfassung",
+    "payments": "Zahlungen",
+    "highest": "Höchste",
+    "today": "Heute"
   },
   "review": {
     "title": "Gefällt dir Trimio?",
