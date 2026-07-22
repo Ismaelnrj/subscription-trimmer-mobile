@@ -16,8 +16,15 @@ type Props = {
 // rich design lives here instead, in a normal full-screen Image unconstrained
 // by that OS rule. This briefly follows the native icon-only splash rather
 // than replacing it. This component only owns the fade-to-app transition.
+//
+// This view mounts (and starts running) while still hidden behind the
+// native icon splash, since `ready` only flips true once auth/network
+// init resolves — often well past MIN_DISPLAY_MS on its own. The parent
+// calls SplashScreen.hideAsync() at that same `ready` transition, which is
+// the moment this illustration actually becomes visible, so MIN_DISPLAY_MS
+// must count from there, not from mount — otherwise a slow init makes this
+// screen flash by for a few milliseconds instead of holding as intended.
 export function AnimatedSplash({ ready, onFinish }: Props) {
-  const mountedAt = useRef(Date.now());
   const containerOpacity = useSharedValue(1);
   const finished = useRef(false);
 
@@ -29,8 +36,6 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
 
   useEffect(() => {
     if (!ready) return;
-    const elapsed = Date.now() - mountedAt.current;
-    const wait = Math.max(0, MIN_DISPLAY_MS - elapsed);
     let safety: ReturnType<typeof setTimeout> | null = null;
     const timer = setTimeout(() => {
       containerOpacity.value = withTiming(0, { duration: FADE_OUT_MS }, (didFinish) => {
@@ -41,7 +46,7 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
       // leave this overlay stuck on screen indefinitely at partial opacity.
       // This guarantees it always gets dismissed regardless.
       safety = setTimeout(finishOnce, FADE_OUT_MS + 250);
-    }, wait);
+    }, MIN_DISPLAY_MS);
     return () => {
       clearTimeout(timer);
       if (safety) clearTimeout(safety);
