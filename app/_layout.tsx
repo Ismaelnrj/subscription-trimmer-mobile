@@ -98,9 +98,19 @@ export default function RootLayout() {
     init();
   }, []);
 
+  // Hide the native (OS-level, icon-only) splash as soon as this tree has
+  // mounted, rather than waiting on auth/data restoration — that network
+  // call can take much longer than a splash screen should, especially on a
+  // cold backend start. AnimatedSplash (rendered below) takes over
+  // immediately underneath and owns its own "hold until ready" behavior, so
+  // the user sees the fully-branded illustration for the actual wait
+  // instead of the bare OS icon.
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
   useEffect(() => {
     if (isLoading || onboardingDone === null) return;
-    SplashScreen.hideAsync();
 
     const inAuthGroup = ["login", "register", "onboarding", "forgot-password"].includes(segments[0]);
 
