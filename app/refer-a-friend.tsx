@@ -3,11 +3,13 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import * as Sentry from "@sentry/react-native";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function ReferAFriendScreen() {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [hasRedeemed, setHasRedeemed] = useState(false);
   const [bonusPremiumUntil, setBonusPremiumUntil] = useState<string | null>(null);
@@ -18,14 +20,16 @@ export default function ReferAFriendScreen() {
   const { t } = useTranslation();
 
   const load = useCallback(async () => {
+    setLoadError(false);
     try {
       const { data } = await apiClient.get("/trpc/referrals.me");
       const result = data.result.data;
       setReferralCode(result.referralCode);
       setHasRedeemed(result.hasRedeemedReferral);
       setBonusPremiumUntil(result.bonusPremiumUntil);
-    } catch {
-      // ignore — leave the screen empty rather than block on a transient error
+    } catch (e) {
+      Sentry.captureException(e);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -77,6 +81,14 @@ export default function ReferAFriendScreen() {
         <View style={styles.body}>
           {loading ? (
             <ActivityIndicator color={c.primary} style={{ marginTop: 24 }} />
+          ) : loadError ? (
+            <View style={styles.errorState}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={28} color={c.danger} />
+              <Text style={styles.errorText}>{t("referFriend.loadError")}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); load(); }}>
+                <Text style={styles.retryButtonText}>{t("referFriend.retry")}</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <>
               {bonusActive && (
@@ -170,6 +182,13 @@ function makeStyles(c: AppColors) {
       alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.success, marginBottom: 20,
     },
     bonusText: { fontSize: 13, fontWeight: "600", color: c.success, flex: 1 },
+    errorState: { alignItems: "center", marginTop: 32, gap: 10, paddingHorizontal: 24 },
+    errorText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    retryButton: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
+      paddingHorizontal: 24, marginTop: 4,
+    },
+    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
     note: { textAlign: "center", fontSize: 12, color: c.textMuted, marginTop: 8, lineHeight: 18 },
   });
 }

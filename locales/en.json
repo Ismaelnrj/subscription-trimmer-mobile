@@ -498,7 +498,9 @@
     "codeAppliedTitle": "Code applied!",
     "codeAppliedMsg": "Verify your email (if you haven't already) to unlock your free month.",
     "errRedeemTitle": "Couldn't redeem code",
-    "errRedeemMsg": "Please check the code and try again."
+    "errRedeemMsg": "Please check the code and try again.",
+    "loadError": "Couldn't load your referral code. Check your connection and try again.",
+    "retry": "Retry"
   },
   "tipJar": {
     "title": "Support the Developer",

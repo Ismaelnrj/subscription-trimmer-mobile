@@ -498,7 +498,9 @@
     "codeAppliedTitle": "Code angewendet!",
     "codeAppliedMsg": "Bestätige deine E-Mail (falls noch nicht geschehen), um deinen kostenlosen Monat freizuschalten.",
     "errRedeemTitle": "Code konnte nicht eingelöst werden",
-    "errRedeemMsg": "Bitte Code prüfen und erneut versuchen."
+    "errRedeemMsg": "Bitte Code prüfen und erneut versuchen.",
+    "loadError": "Dein Empfehlungscode konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen"
   },
   "tipJar": {
     "title": "Entwickler unterstützen",
