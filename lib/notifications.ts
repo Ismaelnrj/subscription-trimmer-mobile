@@ -1,6 +1,7 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 // Set up notification handler
 Notifications.setNotificationHandler({
@@ -15,6 +16,18 @@ Notifications.setNotificationHandler({
 
 export async function registerForPushNotificationsAsync() {
   let token;
+
+  // Android 8+ won't show a heads-up banner (and on some OEM skins, won't
+  // show anything at all) for notifications posted without an explicit
+  // channel. It silently falls back to a low-importance default channel.
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Renewal reminders",
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: "default",
+      vibrationPattern: [0, 250, 250, 250],
+    });
+  }
 
   if (Device.isDevice) {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
