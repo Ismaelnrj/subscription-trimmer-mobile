@@ -1051,11 +1051,18 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
   try {
-    const { name, billingCycle = 'monthly', category = 'other', trialEndDate, force } = req.body;
+    const { name, billingCycle = 'monthly', category = 'other', trialEndDate, force, nextBillingDate: nextBillingDateInput } = req.body;
     const price = parseFloat(req.body.price);
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
+
+    let billingDate = nextBillingDate(billingCycle);
+    if (nextBillingDateInput) {
+      const parsed = new Date(nextBillingDateInput);
+      if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
+      billingDate = parsed.toISOString();
+    }
 
     const userResult = await pool.query('SELECT is_paid, email, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
@@ -1078,7 +1085,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
     const result = await pool.query(
       'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [req.userId, name, price, billingCycle, category, nextBillingDate(billingCycle), trialEndDate || null]
+      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null]
     );
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
@@ -1094,7 +1101,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
   try {
-    const { id, name, billingCycle, category, trialEndDate } = req.body;
+    const { id, name, billingCycle, category, trialEndDate, nextBillingDate: nextBillingDateInput } = req.body;
     const price = parseFloat(req.body.price);
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
@@ -1108,9 +1115,14 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
     const existing = check.rows[0];
-    const newBillingDate = billingCycle !== existing.billing_cycle
+    let newBillingDate = billingCycle !== existing.billing_cycle
       ? nextBillingDate(billingCycle)
       : existing.next_billing_date;
+    if (nextBillingDateInput) {
+      const parsed = new Date(nextBillingDateInput);
+      if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
+      newBillingDate = parsed.toISOString();
+    }
 
     const result = await pool.query(
       'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 AND user_id = $8 RETURNING *',

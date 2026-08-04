@@ -32,7 +32,7 @@ function toMonthly(price: number, cycle: string) {
   return price;
 }
 
-const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", trialEndDate: "", isFreeTrial: false };
+const emptyForm = { name: "", price: "", billingCycle: "monthly", category: "other", nextBillingDate: "", trialEndDate: "", isFreeTrial: false };
 
 // v2: bumped to invalidate stale "happy" flags set while the star tap
 // silently no-op'd (before it reliably opened the Play Store), which had
@@ -286,7 +286,9 @@ export default function SubscriptionsScreen() {
     setEditingId(sub.id);
     setFormData({
       name: sub.name, price: String(sub.price), billingCycle: sub.billingCycle,
-      category: sub.category, trialEndDate: sub.trialEndDate ? sub.trialEndDate.slice(0, 10) : "",
+      category: sub.category,
+      nextBillingDate: sub.nextBillingDate ? sub.nextBillingDate.slice(0, 10) : "",
+      trialEndDate: sub.trialEndDate ? sub.trialEndDate.slice(0, 10) : "",
       isFreeTrial: !!sub.trialEndDate,
     });
     setShowCustomInput(false); setCustomCatDraft("");
@@ -377,6 +379,15 @@ export default function SubscriptionsScreen() {
       }
     }
 
+    let nextBillingDate: string | null = null;
+    if (formData.nextBillingDate.trim()) {
+      nextBillingDate = normaliseDateInput(formData.nextBillingDate);
+      if (!nextBillingDate) {
+        Alert.alert("Invalid date", "Please enter the next billing date as DD/MM/YYYY or YYYY-MM-DD.");
+        return;
+      }
+    }
+
     const duplicate = subscriptions?.find(
       (s: any) => s.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && s.id !== editingId
     );
@@ -386,17 +397,17 @@ export default function SubscriptionsScreen() {
         `You already have "${duplicate.name}" in your list. Add it anyway?`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Add anyway", onPress: () => submitData(price, trialEndDate, true) },
+          { text: "Add anyway", onPress: () => submitData(price, trialEndDate, nextBillingDate, true) },
         ]
       );
       return;
     }
-    submitData(price, trialEndDate);
+    submitData(price, trialEndDate, nextBillingDate);
   };
 
-  const submitData = (price: number, trialEndDate: string | null, force = false) => {
+  const submitData = (price: number, trialEndDate: string | null, nextBillingDate: string | null, force = false) => {
     const data = {
-      name: formData.name.trim(), price,
+      name: formData.name.trim(), price, nextBillingDate: nextBillingDate || undefined,
       billingCycle: formData.billingCycle, category: formData.category,
       trialEndDate, force,
     };
@@ -1035,6 +1046,15 @@ export default function SubscriptionsScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+
+              <Text style={styles.label}>{t("subscriptions.nextBillingDate")}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder={t("subscriptions.datePlaceholder")}
+                placeholderTextColor={c.placeholder}
+                value={formData.nextBillingDate}
+                onChangeText={(t) => setFormData({ ...formData, nextBillingDate: t })}
+              />
 
               <Text style={styles.label}>
                 {formData.isFreeTrial ? t("subscriptions.trialEndsOn") : t("subscriptions.trialEndDate")}

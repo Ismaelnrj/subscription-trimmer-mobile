@@ -99,6 +99,7 @@
     "billingCycle": "Billing Cycle",
     "isFreeTrialLabel": "This is a free trial",
     "category": "Category",
+    "nextBillingDate": "Next Billing Date (optional)",
     "trialEndDate": "Trial End Date (optional)",
     "trialEndsOn": "Trial ends on",
     "howToCancel": "How to cancel",

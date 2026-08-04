@@ -99,6 +99,7 @@
     "billingCycle": "Abrechnungszeitraum",
     "isFreeTrialLabel": "Dies ist eine kostenlose Testphase",
     "category": "Kategorie",
+    "nextBillingDate": "Nächstes Abrechnungsdatum (optional)",
     "trialEndDate": "Testphasenende (optional)",
     "trialEndsOn": "Testphase endet am",
     "howToCancel": "Kündigen",
