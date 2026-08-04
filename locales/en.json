@@ -407,6 +407,8 @@
     "heading": "How to cancel {{name}}",
     "headingGeneric": "How to cancel",
     "openPage": "Open cancellation page",
+    "errOpenTitle": "Couldn't open the page",
+    "errOpenMessage": "Your device couldn't open this link: {{url}}. Try visiting it directly in your browser.",
     "footerNote": "Steps are based on current service UIs and may change. Always confirm cancellation via email."
   },
   "notifications": {

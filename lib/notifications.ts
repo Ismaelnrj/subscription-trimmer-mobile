@@ -51,8 +51,10 @@ export async function registerForPushNotificationsAsync() {
       ).data;
       console.log("Push token obtained");
     } catch (err) {
-      // Firebase not initialised (google-services.json missing) — local
-      // scheduled notifications still work, so swallow this silently.
+      // Getting a push token can fail for reasons outside our control (FCM
+      // registration, network, etc). All actual notifications in this app
+      // (renewal reminders, price alerts) are scheduled locally on-device
+      // and don't depend on this token, so it's safe to just log and move on.
       console.warn("[Notifications] Could not get push token:", err);
     }
   } else {

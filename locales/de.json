@@ -407,6 +407,8 @@
     "heading": "So kündigst du {{name}}",
     "headingGeneric": "So kündigst du",
     "openPage": "Kündigungsseite öffnen",
+    "errOpenTitle": "Seite konnte nicht geöffnet werden",
+    "errOpenMessage": "Dein Gerät konnte diesen Link nicht öffnen: {{url}}. Versuche, ihn direkt in deinem Browser zu öffnen.",
     "footerNote": "Die Schritte basieren auf den aktuellen Dienst-Oberflächen und können sich ändern. Kündigung immer per E-Mail bestätigen."
   },
   "notifications": {

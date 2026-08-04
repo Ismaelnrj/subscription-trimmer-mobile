@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -41,7 +41,11 @@ export default function CancelGuideScreen() {
       {!!guide.url && (
         <TouchableOpacity
           style={styles.linkButton}
-          onPress={() => Linking.openURL(guide.url).catch(() => {})}
+          onPress={() =>
+            Linking.openURL(guide.url).catch(() =>
+              Alert.alert(t("cancelGuide.errOpenTitle"), t("cancelGuide.errOpenMessage", { url: guide.url }))
+            )
+          }
         >
           <MaterialCommunityIcons name="open-in-new" size={18} color="#FFFFFF" />
           <Text style={styles.linkButtonText}>{t("cancelGuide.openPage")}</Text>
