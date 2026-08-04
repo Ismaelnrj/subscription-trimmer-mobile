@@ -1056,16 +1056,18 @@ export default function SubscriptionsScreen() {
                 onChangeText={(t) => setFormData({ ...formData, nextBillingDate: t })}
               />
 
-              <Text style={styles.label}>
-                {formData.isFreeTrial ? t("subscriptions.trialEndsOn") : t("subscriptions.trialEndDate")}
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder={t("subscriptions.datePlaceholder")}
-                placeholderTextColor={c.placeholder}
-                value={formData.trialEndDate}
-                onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
-              />
+              {formData.isFreeTrial && (
+                <>
+                  <Text style={styles.label}>{t("subscriptions.trialEndsOn")}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t("subscriptions.datePlaceholder")}
+                    placeholderTextColor={c.placeholder}
+                    value={formData.trialEndDate}
+                    onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
+                  />
+                </>
+              )}
 
               <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isPending}>
                 {isPending
