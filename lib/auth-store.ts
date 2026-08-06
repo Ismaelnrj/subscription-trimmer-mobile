@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
+import { identifyUser, resetAnalytics } from "./analytics";
 
 interface User {
   id: number;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   setUser: (user) => {
+    if (user) identifyUser(user.id);
     set({
       user,
       isAuthenticated: !!user,
@@ -45,6 +47,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       await apiClient.post("/auth/logout").catch(() => {});
       await SecureStore.deleteItemAsync("auth_token");
       await SecureStore.deleteItemAsync("refresh_token");
+      resetAnalytics();
       set({
         user: null,
         isAuthenticated: false,

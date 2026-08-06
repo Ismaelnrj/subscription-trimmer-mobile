@@ -9,6 +9,7 @@ import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { track } from "../lib/analytics";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function LoginScreen() {
       await SecureStore.setItemAsync("auth_token", token);
       await SecureStore.setItemAsync("refresh_token", refreshToken);
       setUser(user);
+      track("login_completed", { method: "email" });
       router.replace("/(tabs)");
     } catch (err: any) {
       Alert.alert(t("common.error"), err.response?.data?.error || t("login.errLoginFailed"));
@@ -49,6 +51,7 @@ export default function LoginScreen() {
       await SecureStore.setItemAsync("auth_token", token);
       await SecureStore.setItemAsync("refresh_token", refreshToken);
       setUser(user);
+      track("google_auth_completed", { screen: "login" });
       router.replace("/(tabs)");
     } catch (err: any) {
       Alert.alert(t("common.error"), err.response?.data?.error || t("login.errGoogleFailed"));

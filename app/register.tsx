@@ -10,6 +10,7 @@ import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordSt
 import { useTheme, AppColors } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { track } from "../lib/analytics";
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -32,6 +33,10 @@ export default function RegisterScreen() {
       await SecureStore.setItemAsync("auth_token", token);
       await SecureStore.setItemAsync("refresh_token", refreshToken);
       setUser(user);
+      // The backend doesn't tell us here whether this was a new account or
+      // an existing one signing in, so this can't be split into
+      // sign_up/login the way the email/password flows below are.
+      track("google_auth_completed", { screen: "register" });
       router.replace("/(tabs)");
     } catch (err: any) {
       Alert.alert(t("common.error"), err.response?.data?.error || t("register.errGoogleFailed"));
@@ -57,6 +62,7 @@ export default function RegisterScreen() {
       await SecureStore.setItemAsync("auth_token", token);
       await SecureStore.setItemAsync("refresh_token", refreshToken);
       setUser(user);
+      track("sign_up_completed", { method: "email" });
       router.replace("/(tabs)");
     } catch (err: any) {
       const msg = err.response?.data?.error || "Something went wrong.";

@@ -14,6 +14,7 @@ import {
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
 import { PREMIUM_PRICES } from "../lib/pricing";
+import { track } from "../lib/analytics";
 
 type PlanKey = "monthly" | "yearly" | "lifetime";
 
@@ -49,6 +50,10 @@ export default function UpgradeScreen() {
   ];
 
   useEffect(() => {
+    track("paywall_viewed");
+  }, []);
+
+  useEffect(() => {
     (async () => {
       const ready = await setupIAP(user?.openId);
       setIapReady(ready);
@@ -78,6 +83,7 @@ export default function UpgradeScreen() {
       const { active, synced } = await purchasePackage(pkg);
       if (active && synced) {
         setIsPremium(true);
+        track("upgrade_completed", { plan: selectedPlan });
         if (user) setUser({ ...user, isPaid: true });
         Alert.alert(t("upgrade.welcomeTitle"), t("upgrade.welcomeMsg"), [
           { text: t("upgrade.welcomeBtn"), onPress: () => router.back() },

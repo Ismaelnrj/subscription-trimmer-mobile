@@ -12,6 +12,7 @@ import { useCurrencyStore } from "../lib/currency-store";
 import { useThemeStore } from "../lib/theme-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
+import { initAnalytics } from "../lib/analytics";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 import { AnimatedSplash } from "../components/AnimatedSplash";
@@ -24,6 +25,8 @@ Sentry.init({
   dsn: "https://5b30942b14811df56225d1264a1841be@o4511377765367808.ingest.de.sentry.io/4511377795907664",
   debug: false,
 });
+
+initAnalytics();
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
   state = { hasError: false, error: "" };

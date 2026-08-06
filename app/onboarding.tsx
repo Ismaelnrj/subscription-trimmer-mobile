@@ -1,10 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
 import { useTheme, useIsDark, AppColors } from "../lib/theme";
+import { track } from "../lib/analytics";
 
 const { width } = Dimensions.get("window");
 
@@ -40,7 +41,12 @@ export default function OnboardingScreen() {
 
   const isEstimateStep = current === SLIDES.length;
 
+  useEffect(() => {
+    track("onboarding_started");
+  }, []);
+
   const finish = async () => {
+    track("onboarding_completed", { step_reached: current, estimate_provided: estimate !== null });
     if (estimate !== null) {
       await SecureStore.setItemAsync(USER_ESTIMATE_KEY, String(estimate));
     }

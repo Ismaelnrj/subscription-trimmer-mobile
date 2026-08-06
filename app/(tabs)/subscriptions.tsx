@@ -18,6 +18,7 @@ import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
+import { track } from "../../lib/analytics";
 import { ServiceTemplate, searchTemplates, formatTemplatePrice, getPopularTemplates } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
 import { LogoImage } from "../../components/LogoImage";
@@ -209,7 +210,17 @@ export default function SubscriptionsScreen() {
   const createMutation = useMutation({
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/subscriptions.create", data)).data.result.data,
-    onSuccess: () => { invalidate(); closeModal(); },
+    onSuccess: (data: any) => {
+      // Never send the subscription name or price -- just enough to see the
+      // activation funnel, not what someone is personally paying for.
+      track("subscription_added", {
+        billing_cycle: data?.billingCycle,
+        category: data?.category,
+        is_first_subscription: (subscriptions?.length ?? 0) === 0,
+      });
+      invalidate();
+      closeModal();
+    },
     onError: (err: any, variables: any) => {
       const code = err.response?.data?.error;
       if (code === "FREE_LIMIT_REACHED") {
