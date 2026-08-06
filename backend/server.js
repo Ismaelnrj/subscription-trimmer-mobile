@@ -400,12 +400,19 @@ async function initDB() {
       spending_alerts BOOLEAN DEFAULT TRUE,
       weekly_summary BOOLEAN DEFAULT TRUE,
       push_enabled BOOLEAN DEFAULT TRUE,
-      email_reminders BOOLEAN DEFAULT TRUE,
+      email_reminders BOOLEAN DEFAULT FALSE,
       renewal_alert_days INTEGER DEFAULT 3
     )
   `);
-  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS email_reminders BOOLEAN DEFAULT TRUE`);
+  await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS email_reminders BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE notification_preferences ADD COLUMN IF NOT EXISTS renewal_alert_days INTEGER DEFAULT 3`);
+  // The column above was originally added with DEFAULT TRUE, which silently
+  // opted every user into renewal emails at signup with no explicit
+  // consent -- inconsistent with this app's own "we ask, we don't assume"
+  // positioning. ADD COLUMN IF NOT EXISTS is a no-op once the column
+  // already exists in production, so the default has to be corrected
+  // explicitly for it to actually take effect there.
+  await pool.query(`ALTER TABLE notification_preferences ALTER COLUMN email_reminders SET DEFAULT FALSE`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS user_settings (
       user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
