@@ -111,29 +111,29 @@ export default function AnalyticsScreen() {
           >
             <Text style={styles.heroLabelOnGradient}>{t("analytics.totalSpending")}</Text>
             <Text style={styles.heroValueOnGradient}>{fmtC(monthly)}</Text>
+            {budgetGoal != null && (
+              <Text style={styles.heroBudgetOnGradient}>
+                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtC(budgetGoal - monthly) })}
+              </Text>
+            )}
           </LinearGradient>
         ) : (
           <View style={[styles.heroCard, styles.heroCardLight]}>
             <Text style={styles.heroLabel}>{t("analytics.totalSpending")}</Text>
             <Text style={styles.heroValue}>{fmtC(monthly)}</Text>
-          </View>
-        )}
-
-        <View style={styles.summaryRowCompact}>
-          <View style={styles.summaryCardCompact}>
-            <Text style={styles.summaryTitleCompact}>{t("analytics.monthlySpend")}</Text>
-            <Text style={styles.summaryValueCompact}>{fmtC(monthly)}</Text>
             {budgetGoal != null && (
-              <Text style={{ fontSize: 11, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 2 }}>
+              <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 6 }}>
                 {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtC(budgetGoal - monthly) })}
               </Text>
             )}
           </View>
+        )}
 
-          <View style={styles.summaryCardCompact}>
-            <Text style={styles.summaryTitleCompact}>{t("analytics.yearlyProjection")}</Text>
-            <Text style={styles.summaryValueCompact}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
-          </View>
+        {/* Hero already covers the monthly figure -- only the yearly
+            projection is genuinely new information here. */}
+        <View style={styles.yearlyCard}>
+          <Text style={styles.summaryTitleCompact}>{t("analytics.yearlyProjection")}</Text>
+          <Text style={styles.summaryValueCompact}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>{t("analytics.spendingByCategory")}</Text>
@@ -226,16 +226,16 @@ function makeStyles(c: AppColors) {
     heroValue: { fontSize: 34, fontWeight: "700", color: c.text },
     heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginBottom: 6 },
     heroValueOnGradient: { fontSize: 34, fontWeight: "700", color: "#FFFFFF" },
+    heroBudgetOnGradient: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 6 },
+    yearlyCard: {
+      backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12,
+      borderWidth: 1, borderColor: c.border,
+    },
     summaryCard: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
       borderWidth: 1, borderColor: c.border,
     },
     summaryRow: { flexDirection: "row", justifyContent: "space-between" },
-    summaryRowCompact: { flexDirection: "row", gap: 12, marginBottom: 12 },
-    summaryCardCompact: {
-      flex: 1, backgroundColor: c.card, borderRadius: 12, padding: 12,
-      borderWidth: 1, borderColor: c.border,
-    },
     summaryTitleCompact: {
       fontSize: 11, color: c.textSecondary, marginBottom: 4,
       textTransform: "uppercase", letterSpacing: 0.5,

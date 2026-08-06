@@ -361,34 +361,36 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="credit-card" size={18} color={c.primary} />
-            </View>
-            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}</Text>
+        {/* The hero card above already shows one of these two totals (whichever
+            the toggle has selected) -- only show the other one here instead of
+            repeating it in a smaller box right below. */}
+        <View style={styles.secondaryStatCard}>
+          <View style={styles.statIcon}>
+            <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
           </View>
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
-            </View>
-            <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}</Text>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.secondaryStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+              {fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}
+            </Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
           </View>
-          <View style={styles.statCard}>
-            <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="check-circle" size={18} color={c.primary} />
-            </View>
-            <Text style={styles.statValue} numberOfLines={1}>{summary?.activeSubscriptions ?? 0}</Text>
-            <Text style={styles.statLabel}>{t("dashboard.active")}</Text>
+        </View>
+
+        {/* Lighter-weight status row -- these are counts to glance at, not
+            money figures, so they don't need full elevated card treatment. */}
+        <View style={styles.statusRow}>
+          <View style={styles.statusPill}>
+            <MaterialCommunityIcons name="check-circle" size={14} color={c.primary} />
+            <Text style={styles.statusPillText}>{summary?.activeSubscriptions ?? 0} {t("dashboard.active")}</Text>
           </View>
-          <TouchableOpacity style={styles.statCard} onPress={() => router.push("/alerts")}>
-            <View style={styles.statIcon}>
-              <MaterialCommunityIcons name="alert-circle" size={18} color={activeAlertCount > 0 ? c.danger : c.primary} />
-            </View>
-            <Text style={[styles.statValue, activeAlertCount > 0 && { color: c.danger }]} numberOfLines={1}>{activeAlertCount}</Text>
-            <Text style={styles.statLabel}>{t("dashboard.alerts")}</Text>
+          <TouchableOpacity
+            style={[styles.statusPill, activeAlertCount > 0 && styles.statusPillAlert]}
+            onPress={() => router.push("/alerts")}
+          >
+            <MaterialCommunityIcons name="alert-circle" size={14} color={activeAlertCount > 0 ? c.danger : c.textSecondary} />
+            <Text style={[styles.statusPillText, activeAlertCount > 0 && { color: c.danger, fontWeight: "700" }]}>
+              {activeAlertCount} {t("dashboard.alerts")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -527,17 +529,22 @@ function makeStyles(c: AppColors) {
     },
     heroValueOnGradient: { fontSize: 38, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
     heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
-    statsGrid: { flexDirection: "row", gap: 12, marginBottom: 24 },
-    statCard: {
-      flex: 1, backgroundColor: c.card, borderRadius: 12,
-      padding: 14, borderWidth: 1, borderColor: c.border,
-      shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2,
+    secondaryStatCard: {
+      flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
+      padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border,
     },
+    secondaryStatValue: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 2 },
+    statusRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
+    statusPill: {
+      flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+      paddingVertical: 10, borderRadius: 10, backgroundColor: "transparent",
+    },
+    statusPillAlert: { backgroundColor: c.danger + "14" },
+    statusPillText: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
     statIcon: {
       width: 34, height: 34, borderRadius: 8, backgroundColor: c.primaryLight,
-      justifyContent: "center", alignItems: "center", marginBottom: 8,
+      justifyContent: "center", alignItems: "center",
     },
-    statValue: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 4 },
     statLabel: { fontSize: 11, color: c.textSecondary },
     sectionTitle: { fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12 },
     actionButton: {
