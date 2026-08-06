@@ -82,6 +82,7 @@ export default function SubscriptionsScreen() {
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
@@ -281,7 +282,7 @@ export default function SubscriptionsScreen() {
   const openAdd = () => {
     if (atLimit) { router.push("/upgrade"); return; }
     setEditingId(null); setFormData(emptyForm);
-    setShowCustomInput(false); setCustomCatDraft("");
+    setShowCustomInput(false); setCustomCatDraft(""); setShowAdvanced(false);
     setShowModal(true);
   };
 
@@ -302,7 +303,7 @@ export default function SubscriptionsScreen() {
       trialEndDate: sub.trialEndDate ? sub.trialEndDate.slice(0, 10) : "",
       isFreeTrial: !!sub.trialEndDate,
     });
-    setShowCustomInput(false); setCustomCatDraft("");
+    setShowCustomInput(false); setCustomCatDraft(""); setShowAdvanced(false);
     setShowModal(true);
   };
 
@@ -844,100 +845,100 @@ export default function SubscriptionsScreen() {
               </Text>
 
               {!editingId && (
-                <View style={styles.quickPickRow}>
-                  {quickPickTemplates.map((tpl) => (
-                    <TouchableOpacity key={tpl.id} style={styles.quickPickItem} onPress={() => applyTemplate(tpl)}>
-                      <LogoImage name={tpl.name} category={tpl.category} size={44} />
-                      <Text style={styles.quickPickLabel} numberOfLines={1}>{tpl.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                <View style={styles.quickAddSection}>
+                  <Text style={styles.quickAddSectionLabel}>{t("subscriptions.quickAdd")}</Text>
 
-              {!editingId && (
-                <TouchableOpacity
-                  style={styles.templatePickerButton}
-                  onPress={() => { setShowTemplatePicker(!showTemplatePicker); if (showTemplatePicker) setTemplateSearch(""); }}
-                >
-                  <MaterialCommunityIcons name="apps" size={16} color={c.primary} />
-                  <Text style={styles.templatePickerButtonText}>
-                    {showTemplatePicker ? t("subscriptions.hideServices") : t("subscriptions.browseServices")}
-                  </Text>
-                  <MaterialCommunityIcons name={showTemplatePicker ? "chevron-up" : "chevron-down"} size={16} color={c.primary} />
-                </TouchableOpacity>
-              )}
-
-              {!editingId && showTemplatePicker && (
-                <View style={styles.templatePickerBox}>
-                  <TextInput
-                    style={styles.templateSearchInput}
-                    placeholder={t("subscriptions.searchServices")}
-                    placeholderTextColor={c.placeholder}
-                    value={templateSearch}
-                    onChangeText={setTemplateSearch}
-                    clearButtonMode="while-editing"
-                  />
-                  {!templateSearch && (
-                    <Text style={styles.templateSectionLabel}>{t("subscriptions.popularServices")}</Text>
-                  )}
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll} contentContainerStyle={styles.templateScrollContent}>
-                    {filteredTemplates.map((tpl) => (
-                      <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
-                        <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
-                        <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
+                  <View style={styles.quickPickRow}>
+                    {quickPickTemplates.map((tpl) => (
+                      <TouchableOpacity key={tpl.id} style={styles.quickPickItem} onPress={() => applyTemplate(tpl)}>
+                        <LogoImage name={tpl.name} category={tpl.category} size={44} />
+                        <Text style={styles.quickPickLabel} numberOfLines={1}>{tpl.name}</Text>
                       </TouchableOpacity>
                     ))}
-                  </ScrollView>
-                </View>
-              )}
+                  </View>
 
-              {!editingId && (
-                <TouchableOpacity
-                  style={styles.emailFillButton}
-                  onPress={() => setShowEmailPaste(!showEmailPaste)}
-                >
-                  <MaterialCommunityIcons name="email-fast-outline" size={16} color={c.primary} />
-                  <Text style={styles.emailFillButtonText}>
-                    {showEmailPaste ? t("subscriptions.hideAutoFill") : t("subscriptions.autoFillEmail")}
-                  </Text>
-                  <MaterialCommunityIcons
-                    name={showEmailPaste ? "chevron-up" : "chevron-down"}
-                    size={16}
-                    color={c.primary}
-                  />
-                </TouchableOpacity>
-              )}
+                  <TouchableOpacity
+                    style={styles.templatePickerButton}
+                    onPress={() => { setShowTemplatePicker(!showTemplatePicker); if (showTemplatePicker) setTemplateSearch(""); }}
+                  >
+                    <MaterialCommunityIcons name="apps" size={16} color={c.primary} />
+                    <Text style={styles.templatePickerButtonText}>
+                      {showTemplatePicker ? t("subscriptions.hideServices") : t("subscriptions.browseServices")}
+                    </Text>
+                    <MaterialCommunityIcons name={showTemplatePicker ? "chevron-up" : "chevron-down"} size={16} color={c.primary} />
+                  </TouchableOpacity>
 
-              {showEmailPaste && (
-                <View style={styles.emailPasteBox}>
-                  <Text style={styles.emailPasteLabel}>{t("subscriptions.emailPasteLabel")}</Text>
-                  <TextInput
-                    style={styles.emailPasteInput}
-                    multiline
-                    numberOfLines={5}
-                    placeholder={t("subscriptions.emailPastePlaceholder")}
-                    placeholderTextColor={c.placeholder}
-                    value={emailText}
-                    onChangeText={(t) => {
-                      setEmailText(t);
-                      const parsed = parseSubscriptionEmail(t);
-                      setFormData((prev) => ({
-                        ...prev,
-                        name: parsed.name ?? "",
-                        price: parsed.price ?? "",
-                        billingCycle: parsed.billingCycle ?? prev.billingCycle,
-                      }));
-                    }}
-                    textAlignVertical="top"
-                  />
-                  {(formData.name || formData.price) && (
-                    <View style={styles.parsedPreview}>
-                      <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
-                      <Text style={styles.parsedPreviewText}>
-                        {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
-                        {formData.price ? ` · ${baseCurrencyCode} ${formData.price}` : ""}
-                        {formData.billingCycle ? ` · ${formData.billingCycle}` : ""}
-                      </Text>
+                  {showTemplatePicker && (
+                    <View style={styles.templatePickerBox}>
+                      <TextInput
+                        style={styles.templateSearchInput}
+                        placeholder={t("subscriptions.searchServices")}
+                        placeholderTextColor={c.placeholder}
+                        value={templateSearch}
+                        onChangeText={setTemplateSearch}
+                        clearButtonMode="while-editing"
+                      />
+                      {!templateSearch && (
+                        <Text style={styles.templateSectionLabel}>{t("subscriptions.popularServices")}</Text>
+                      )}
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll} contentContainerStyle={styles.templateScrollContent}>
+                        {filteredTemplates.map((tpl) => (
+                          <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
+                            <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
+                            <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+
+                  <TouchableOpacity
+                    style={[styles.emailFillButton, { marginBottom: 0 }]}
+                    onPress={() => setShowEmailPaste(!showEmailPaste)}
+                  >
+                    <MaterialCommunityIcons name="email-fast-outline" size={16} color={c.primary} />
+                    <Text style={styles.emailFillButtonText}>
+                      {showEmailPaste ? t("subscriptions.hideAutoFill") : t("subscriptions.autoFillEmail")}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name={showEmailPaste ? "chevron-up" : "chevron-down"}
+                      size={16}
+                      color={c.primary}
+                    />
+                  </TouchableOpacity>
+
+                  {showEmailPaste && (
+                    <View style={[styles.emailPasteBox, { marginBottom: 0, marginTop: 12 }]}>
+                      <Text style={styles.emailPasteLabel}>{t("subscriptions.emailPasteLabel")}</Text>
+                      <TextInput
+                        style={styles.emailPasteInput}
+                        multiline
+                        numberOfLines={5}
+                        placeholder={t("subscriptions.emailPastePlaceholder")}
+                        placeholderTextColor={c.placeholder}
+                        value={emailText}
+                        onChangeText={(t) => {
+                          setEmailText(t);
+                          const parsed = parseSubscriptionEmail(t);
+                          setFormData((prev) => ({
+                            ...prev,
+                            name: parsed.name ?? "",
+                            price: parsed.price ?? "",
+                            billingCycle: parsed.billingCycle ?? prev.billingCycle,
+                          }));
+                        }}
+                        textAlignVertical="top"
+                      />
+                      {(formData.name || formData.price) && (
+                        <View style={styles.parsedPreview}>
+                          <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
+                          <Text style={styles.parsedPreviewText}>
+                            {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
+                            {formData.price ? ` · ${baseCurrencyCode} ${formData.price}` : ""}
+                            {formData.billingCycle ? ` · ${formData.billingCycle}` : ""}
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   )}
                 </View>
@@ -1008,6 +1009,19 @@ export default function SubscriptionsScreen() {
                 </Text>
               </TouchableOpacity>
 
+              {formData.isFreeTrial && (
+                <>
+                  <Text style={styles.label}>{t("subscriptions.trialEndsOn")}</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={t("subscriptions.datePlaceholder")}
+                    placeholderTextColor={c.placeholder}
+                    value={formData.trialEndDate}
+                    onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
+                  />
+                </>
+              )}
+
               <Text style={styles.label}>
                 {t("subscriptions.category")}{isPremium && customCategories.length > 0 ? `  ✦ ${t("subscriptions.customCategory")}` : ""}
               </Text>
@@ -1058,26 +1072,28 @@ export default function SubscriptionsScreen() {
                 </View>
               )}
 
-              <Text style={styles.label}>{t("subscriptions.nextBillingDate")}</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={t("subscriptions.datePlaceholder")}
-                placeholderTextColor={c.placeholder}
-                value={formData.nextBillingDate}
-                onChangeText={(t) => setFormData({ ...formData, nextBillingDate: t })}
-              />
+              <TouchableOpacity
+                style={styles.moreOptionsButton}
+                onPress={() => setShowAdvanced(!showAdvanced)}
+              >
+                <MaterialCommunityIcons name="tune-variant" size={16} color={c.textSecondary} />
+                <Text style={styles.moreOptionsButtonText}>
+                  {showAdvanced ? t("subscriptions.hideMoreOptions") : t("subscriptions.moreOptions")}
+                </Text>
+                <MaterialCommunityIcons name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color={c.textSecondary} />
+              </TouchableOpacity>
 
-              {formData.isFreeTrial && (
-                <>
-                  <Text style={styles.label}>{t("subscriptions.trialEndsOn")}</Text>
+              {showAdvanced && (
+                <View style={styles.moreOptionsBox}>
+                  <Text style={styles.label}>{t("subscriptions.nextBillingDate")}</Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, { marginBottom: 0 }]}
                     placeholder={t("subscriptions.datePlaceholder")}
                     placeholderTextColor={c.placeholder}
-                    value={formData.trialEndDate}
-                    onChangeText={(t) => setFormData({ ...formData, trialEndDate: t })}
+                    value={formData.nextBillingDate}
+                    onChangeText={(t) => setFormData({ ...formData, nextBillingDate: t })}
                   />
-                </>
+                </View>
               )}
 
               <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isPending}>
@@ -1192,6 +1208,23 @@ function makeStyles(c: AppColors) {
       padding: 20, paddingBottom: 32,
     },
     modalTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 20 },
+    quickAddSection: {
+      backgroundColor: c.bg, borderRadius: 12, borderWidth: 1,
+      borderColor: c.border, padding: 14, marginBottom: 20,
+    },
+    quickAddSectionLabel: {
+      fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase",
+      letterSpacing: 0.5, marginBottom: 12,
+    },
+    moreOptionsButton: {
+      flexDirection: "row", alignItems: "center", gap: 8,
+      alignSelf: "flex-start", paddingVertical: 8, marginBottom: 4,
+    },
+    moreOptionsButtonText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
+    moreOptionsBox: {
+      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
+      borderColor: c.border, padding: 12, marginBottom: 12,
+    },
     input: {
       borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,
       paddingHorizontal: 12, marginBottom: 12, fontSize: 14, color: c.text,
