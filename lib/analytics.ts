@@ -5,7 +5,10 @@ import PostHog from "posthog-react-native";
 // read project data. Replace this placeholder with the key from your
 // PostHog project settings (Project Settings -> Project API Key).
 const POSTHOG_API_KEY = "REPLACE_WITH_POSTHOG_PROJECT_API_KEY";
-const POSTHOG_HOST = "https://us.i.posthog.com";
+// EU cloud region (the project was created on eu.posthog.com) -- PostHog's
+// US and EU regions are entirely separate ingest endpoints, so this has to
+// match where the project actually lives or events silently go nowhere.
+const POSTHOG_HOST = "https://eu.i.posthog.com";
 
 let client: PostHog | null = null;
 
