@@ -4,7 +4,7 @@ import PostHog from "posthog-react-native";
 // class of credential as a Sentry DSN) -- they can only write events, not
 // read project data. Replace this placeholder with the key from your
 // PostHog project settings (Project Settings -> Project API Key).
-const POSTHOG_API_KEY = "REPLACE_WITH_POSTHOG_PROJECT_API_KEY";
+const POSTHOG_API_KEY = "phc_wFoqNGYxoY64mxQ5TMrJbME5KP3xii7GvTkvp7hs4q6P";
 // EU cloud region (the project was created on eu.posthog.com) -- PostHog's
 // US and EU regions are entirely separate ingest endpoints, so this has to
 // match where the project actually lives or events silently go nowhere.
