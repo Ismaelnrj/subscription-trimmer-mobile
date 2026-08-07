@@ -623,7 +623,7 @@ export default function SubscriptionsScreen() {
               </View>
               {atLimit ? (
                 <TouchableOpacity onPress={() => router.push("/upgrade")}>
-                  <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600" }]}>
+                  <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" }]}>
                     {t("subscriptions.upgradeUnlimited")} →
                   </Text>
                 </TouchableOpacity>
@@ -1125,14 +1125,14 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", alignItems: "center",
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
-    savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", lineHeight: 18 },
+    savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     },
     addButtonLocked: { backgroundColor: c.textMuted },
-    addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     exportButton: {
       backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
       justifyContent: "center", alignItems: "center",
@@ -1143,8 +1143,8 @@ function makeStyles(c: AppColors) {
       borderWidth: 1, borderColor: c.border,
     },
     limitRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-    limitLabel: { fontSize: 12, color: c.textSecondary, fontWeight: "500" },
-    limitCount: { fontSize: 12, fontWeight: "700" },
+    limitLabel: { fontSize: 12, color: c.textSecondary, fontWeight: "500", fontFamily: "Montserrat-Medium" },
+    limitCount: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     limitTrack: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
     limitFill: { height: "100%", borderRadius: 3 },
     limitHint: { fontSize: 11, color: c.textSecondary, marginTop: 5 },
@@ -1159,7 +1159,7 @@ function makeStyles(c: AppColors) {
     },
     cardPaused: { opacity: 0.6 },
     cardInfo: { flex: 1 },
-    cardName: { fontSize: 14, fontWeight: "600", color: c.text, marginBottom: 3 },
+    cardName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 3 },
     cardPrice: { fontSize: 12, color: c.textSecondary, marginBottom: 2 },
     cardDate: { fontSize: 11, color: c.textMuted },
     cardMonthly: { fontSize: 11, color: c.primary, marginTop: 1 },
@@ -1167,25 +1167,25 @@ function makeStyles(c: AppColors) {
       alignSelf: "flex-start", backgroundColor: c.primaryLight, borderRadius: 4,
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
-    categoryBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600", textTransform: "capitalize" },
+    categoryBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textTransform: "capitalize" },
     customCategoryBadge: { backgroundColor: "#2D1B69" },
     customCategoryBadgeText: { color: "#A78BFA" },
     trialBadge: {
       alignSelf: "flex-start", backgroundColor: c.warningLight, borderRadius: 4,
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
-    trialBadgeText: { fontSize: 10, color: c.warning, fontWeight: "600" },
+    trialBadgeText: { fontSize: 10, color: c.warning, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     pausedBadge: {
       alignSelf: "flex-start", backgroundColor: c.border, borderRadius: 4,
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
-    pausedBadgeText: { fontSize: 10, color: c.textSecondary, fontWeight: "600" },
+    pausedBadgeText: { fontSize: 10, color: c.textSecondary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     priceIncreaseBadge: {
       alignSelf: "flex-start", backgroundColor: c.danger, borderRadius: 4,
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
       flexDirection: "row", alignItems: "center", gap: 3,
     },
-    priceIncreaseBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700" },
+    priceIncreaseBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700", fontFamily: "Montserrat-Bold" },
     actionButtons: { flexDirection: "row", gap: 8 },
     iconButton: {
       width: 36, height: 36, borderRadius: 6, backgroundColor: c.border,
@@ -1193,13 +1193,13 @@ function makeStyles(c: AppColors) {
     },
     emptyState: { alignItems: "center", paddingVertical: 48 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    emptyStateTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 8, textAlign: "center" },
+    emptyStateTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 8, textAlign: "center" },
     emptyStateSubtext: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, paddingHorizontal: 24, marginBottom: 20 },
     emptyStateButton: {
       backgroundColor: c.primary, borderRadius: 10,
       paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
     },
-    emptyStateButtonText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    emptyStateButtonText: { color: "#fff", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     emptyStateHint: { fontSize: 12, color: c.textMuted, textAlign: "center", paddingHorizontal: 32, lineHeight: 18 },
     countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
     modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
@@ -1207,20 +1207,20 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.card, borderTopLeftRadius: 16, borderTopRightRadius: 16,
       padding: 20, paddingBottom: 32,
     },
-    modalTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 20 },
+    modalTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 20 },
     quickAddSection: {
       backgroundColor: c.bg, borderRadius: 12, borderWidth: 1,
       borderColor: c.border, padding: 14, marginBottom: 20,
     },
     quickAddSectionLabel: {
-      fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase",
+      fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textMuted, textTransform: "uppercase",
       letterSpacing: 0.5, marginBottom: 12,
     },
     moreOptionsButton: {
       flexDirection: "row", alignItems: "center", gap: 8,
       alignSelf: "flex-start", paddingVertical: 8, marginBottom: 4,
     },
-    moreOptionsButtonText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
+    moreOptionsButtonText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
     moreOptionsBox: {
       backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
       borderColor: c.border, padding: 12, marginBottom: 12,
@@ -1230,7 +1230,7 @@ function makeStyles(c: AppColors) {
       paddingHorizontal: 12, marginBottom: 12, fontSize: 14, color: c.text,
       backgroundColor: c.inputBg,
     },
-    label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
+    label: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 6 },
     priceHint: { fontSize: 12, color: c.primary, marginTop: -8, marginBottom: 12, marginLeft: 2 },
     chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
     chip: {
@@ -1244,7 +1244,7 @@ function makeStyles(c: AppColors) {
     },
     chipCustomActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
     chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
-    chipText: { fontSize: 12, color: c.text, fontWeight: "500", textTransform: "capitalize" },
+    chipText: { fontSize: 12, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", textTransform: "capitalize" },
     chipTextActive: { color: "#FFFFFF" },
     customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
     customCatInput: {
@@ -1256,30 +1256,30 @@ function makeStyles(c: AppColors) {
       backgroundColor: "#7C3AED", borderRadius: 8, paddingVertical: 8,
       paddingHorizontal: 14, justifyContent: "center",
     },
-    customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+    customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     submitButton: {
       backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
       alignItems: "center", marginTop: 8,
     },
-    submitButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
+    submitButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     cancelButton: {
       backgroundColor: c.border, borderRadius: 8, paddingVertical: 12,
       alignItems: "center", marginTop: 8,
     },
-    cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
+    cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     emailHintBanner: {
       flexDirection: "row", alignItems: "center", gap: 10,
       backgroundColor: c.primaryLight, borderRadius: 10, padding: 12, marginBottom: 12,
       borderWidth: 1, borderColor: c.primary,
     },
-    emailHintTitle: { fontSize: 13, fontWeight: "700", color: c.primary },
+    emailHintTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary },
     emailHintSub: { fontSize: 11, color: c.primary, opacity: 0.8, marginTop: 1 },
     emailFillButton: {
       flexDirection: "row", alignItems: "center", gap: 8,
       backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
       borderWidth: 1, borderColor: c.primary,
     },
-    emailFillButtonText: { flex: 1, fontSize: 13, fontWeight: "600", color: c.primary },
+    emailFillButtonText: { flex: 1, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
     emailPasteBox: {
       backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
       borderColor: c.primary, padding: 12, marginBottom: 14,
@@ -1294,21 +1294,21 @@ function makeStyles(c: AppColors) {
       marginTop: 8, backgroundColor: c.success + "18",
       borderRadius: 6, padding: 8,
     },
-    parsedPreviewText: { fontSize: 12, color: c.success, flex: 1, fontWeight: "600" },
+    parsedPreviewText: { fontSize: 12, color: c.success, flex: 1, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     sortRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
     sortChip: {
       paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20,
       backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
     },
     sortChipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    sortChipText: { fontSize: 12, color: c.textSecondary, fontWeight: "500" },
-    sortChipTextActive: { color: "#FFFFFF", fontWeight: "700" },
+    sortChipText: { fontSize: 12, color: c.textSecondary, fontWeight: "500", fontFamily: "Montserrat-Medium" },
+    sortChipTextActive: { color: "#FFFFFF", fontWeight: "700", fontFamily: "Montserrat-Bold" },
     swipeDeleteWrapper: { justifyContent: "center", marginBottom: 12 },
     swipeDelete: {
       backgroundColor: c.danger, justifyContent: "center", alignItems: "center",
       width: 80, borderRadius: 12, height: "100%", gap: 2,
     },
-    swipeDeleteText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+    swipeDeleteText: { color: "#fff", fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     examplesButton: {
       borderWidth: 1, borderColor: c.border, borderRadius: 10,
       paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,
@@ -1318,7 +1318,7 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", alignItems: "center", gap: 4,
       marginTop: 8, alignSelf: "flex-start",
     },
-    cancelGuideLinkText: { fontSize: 11, color: c.textMuted, fontWeight: "500" },
+    cancelGuideLinkText: { fontSize: 11, color: c.textMuted, fontWeight: "500", fontFamily: "Montserrat-Medium" },
     reviewOverlay: {
       flex: 1, backgroundColor: c.overlay,
       justifyContent: "center", alignItems: "center", padding: 32,
@@ -1332,7 +1332,7 @@ function makeStyles(c: AppColors) {
     },
     reviewEmoji: { fontSize: 40, marginBottom: 12 },
     reviewTitle: {
-      fontSize: 20, fontWeight: "700", color: c.text,
+      fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text,
       textAlign: "center", marginBottom: 8,
     },
     reviewSubtitle: {
@@ -1354,7 +1354,7 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
       borderWidth: 1, borderColor: c.primary,
     },
-    templatePickerButtonText: { flex: 1, fontSize: 13, fontWeight: "600", color: c.primary },
+    templatePickerButtonText: { flex: 1, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
     templatePickerBox: {
       backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
       borderColor: c.primary, padding: 12, marginBottom: 14,
@@ -1365,7 +1365,7 @@ function makeStyles(c: AppColors) {
       color: c.text, backgroundColor: c.inputBg, marginBottom: 10,
     },
     templateSectionLabel: {
-      fontSize: 11, fontWeight: "700", color: c.textMuted, textTransform: "uppercase",
+      fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textMuted, textTransform: "uppercase",
       letterSpacing: 0.5, marginBottom: 8,
     },
     templateScroll: { flexGrow: 0 },
@@ -1374,7 +1374,7 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.card, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12,
       borderWidth: 1, borderColor: c.border, minWidth: 100, maxWidth: 150,
     },
-    templateChipName: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 2 },
-    templateChipPrice: { fontSize: 11, color: c.primary, fontWeight: "500" },
+    templateChipName: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 2 },
+    templateChipPrice: { fontSize: 11, color: c.primary, fontWeight: "500", fontFamily: "Montserrat-Medium" },
   });
 }

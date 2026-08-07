@@ -78,7 +78,7 @@ export default function AnalyticsScreen() {
         <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
         <Text style={styles.emptyStateText}>{t("analytics.couldntLoad")}</Text>
         <TouchableOpacity style={{ marginTop: 16 }} onPress={onRefresh}>
-          <Text style={{ color: c.primary, fontWeight: "600" }}>{t("common.tryAgain")}</Text>
+          <Text style={{ color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" }}>{t("common.tryAgain")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -223,9 +223,9 @@ function makeStyles(c: AppColors) {
     heroCard: { borderRadius: 20, padding: 24, marginBottom: 16 },
     heroCardLight: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     heroLabel: { fontSize: 13, color: c.textSecondary, marginBottom: 6 },
-    heroValue: { fontSize: 34, fontWeight: "700", color: c.text },
+    heroValue: { fontSize: 34, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginBottom: 6 },
-    heroValueOnGradient: { fontSize: 34, fontWeight: "700", color: "#FFFFFF" },
+    heroValueOnGradient: { fontSize: 34, fontWeight: "700", fontFamily: "Montserrat-Bold", color: "#FFFFFF" },
     heroBudgetOnGradient: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 6 },
     yearlyCard: {
       backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12,
@@ -240,9 +240,9 @@ function makeStyles(c: AppColors) {
       fontSize: 11, color: c.textSecondary, marginBottom: 4,
       textTransform: "uppercase", letterSpacing: 0.5,
     },
-    summaryValueCompact: { fontSize: 20, fontWeight: "700", color: c.text },
+    summaryValueCompact: { fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     sectionTitle: {
-      fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12, marginTop: 8,
+      fontSize: 16, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12, marginTop: 8,
     },
     donutCard: {
       backgroundColor: c.card, borderRadius: 14, padding: 16, marginBottom: 8,
@@ -252,7 +252,7 @@ function makeStyles(c: AppColors) {
     legendColumn: { flex: 1, gap: 12 },
     legendRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     legendDot: { width: 10, height: 10, borderRadius: 5 },
-    legendName: { fontSize: 13, fontWeight: "600", color: c.text, textTransform: "capitalize" },
+    legendName: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, textTransform: "capitalize" },
     legendAmount: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
     weeklyCard: {
       backgroundColor: c.card, borderRadius: 14, padding: 16, marginBottom: 8,
@@ -264,7 +264,7 @@ function makeStyles(c: AppColors) {
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
     statPair: { flex: 1 },
     statPairLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 },
-    statPairValue: { fontSize: 20, fontWeight: "700", color: c.text },
+    statPairValue: { fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     divider: { width: 1, backgroundColor: c.border, marginHorizontal: 12 },
   });
 }

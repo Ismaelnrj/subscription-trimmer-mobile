@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as SecureStore from "expo-secure-store";
 import * as Sentry from "@sentry/react-native";
+import { useFonts } from "expo-font";
 import { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -77,6 +78,13 @@ export default function RootLayout() {
   const c = useTheme();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
+  const [fontsLoaded] = useFonts({
+    "Montserrat-Regular": require("../assets/fonts/Montserrat-Regular.ttf"),
+    "Montserrat-Medium": require("../assets/fonts/Montserrat-Medium.ttf"),
+    "Montserrat-SemiBold": require("../assets/fonts/Montserrat-SemiBold.ttf"),
+    "Montserrat-Bold": require("../assets/fonts/Montserrat-Bold.ttf"),
+    "Montserrat-ExtraBold": require("../assets/fonts/Montserrat-ExtraBold.ttf"),
+  });
 
   useEffect(() => {
     const init = async () => {
@@ -161,7 +169,7 @@ export default function RootLayout() {
         </Stack>
         {showAnimatedSplash ? (
           <AnimatedSplash
-            ready={!isLoading && onboardingDone !== null}
+            ready={!isLoading && onboardingDone !== null && fontsLoaded}
             onFinish={() => setShowAnimatedSplash(false)}
           />
         ) : null}

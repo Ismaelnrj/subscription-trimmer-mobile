@@ -388,7 +388,7 @@ export default function DashboardScreen() {
             onPress={() => router.push("/alerts")}
           >
             <MaterialCommunityIcons name="alert-circle" size={14} color={activeAlertCount > 0 ? c.danger : c.textSecondary} />
-            <Text style={[styles.statusPillText, activeAlertCount > 0 && { color: c.danger, fontWeight: "700" }]}>
+            <Text style={[styles.statusPillText, activeAlertCount > 0 && { color: c.danger, fontWeight: "700", fontFamily: "Montserrat-Bold" }]}>
               {activeAlertCount} {t("dashboard.alerts")}
             </Text>
           </TouchableOpacity>
@@ -449,51 +449,51 @@ function makeStyles(c: AppColors) {
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    greetingText: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 16 },
+    greetingText: { fontSize: 22, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 16 },
     nextPaymentCard: {
       flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
       padding: 14, marginBottom: 16, borderWidth: 1, borderColor: c.border,
     },
     nextPaymentLabel: { fontSize: 12, color: c.textSecondary },
-    nextPaymentName: { fontSize: 15, fontWeight: "600", color: c.text, marginTop: 2 },
+    nextPaymentName: { fontSize: 15, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginTop: 2 },
     nextPaymentBadge: { backgroundColor: c.primaryLight, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
-    nextPaymentBadgeText: { fontSize: 12, fontWeight: "600", color: c.primary },
+    nextPaymentBadgeText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
     viewAllLink: { alignItems: "center", paddingVertical: 14 },
-    viewAllLinkText: { fontSize: 13, fontWeight: "600", color: c.primary },
+    viewAllLinkText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
     verifyBanner: {
       backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
       flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,
     },
     verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
-    verifyBannerLink: { fontSize: 13, fontWeight: "700", color: c.warning },
+    verifyBannerLink: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.warning },
 
     estimateBanner: {
       backgroundColor: c.primaryLight, borderRadius: 10, padding: 14, marginBottom: 16,
       flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.primary,
     },
-    estimateBannerText: { fontSize: 13, fontWeight: "600", color: c.text },
+    estimateBannerText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
     recoBanner: {
       backgroundColor: c.success + "1A", borderRadius: 10, padding: 14, marginBottom: 16,
       flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.success,
     },
-    recoBannerTitle: { fontSize: 13, fontWeight: "700", color: c.text },
-    recoBannerText: { fontSize: 12, fontWeight: "600", color: c.success, marginTop: 2 },
+    recoBannerTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
+    recoBannerText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.success, marginTop: 2 },
 
     budgetCard: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
       borderWidth: 1, borderColor: c.border, borderLeftWidth: 4,
     },
     budgetRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-    budgetLabel: { fontSize: 11, fontWeight: "600", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
-    budgetAmount: { fontSize: 18, fontWeight: "800", color: c.text },
-    budgetOf: { fontSize: 14, fontWeight: "400", color: c.textSecondary },
+    budgetLabel: { fontSize: 11, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
+    budgetAmount: { fontSize: 18, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: c.text },
+    budgetOf: { fontSize: 14, fontWeight: "400", fontFamily: "Montserrat-Regular", color: c.textSecondary },
     budgetPctBadge: { borderRadius: 10, paddingVertical: 6, paddingHorizontal: 12, marginLeft: 12 },
-    budgetPctText: { fontSize: 20, fontWeight: "800" },
+    budgetPctText: { fontSize: 20, fontWeight: "800", fontFamily: "Montserrat-ExtraBold" },
     progressTrack: { height: 10, backgroundColor: c.border, borderRadius: 5, overflow: "hidden", marginBottom: 10 },
     progressFill: { height: "100%", borderRadius: 5 },
     budgetFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     budgetStatusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-    budgetStatus: { fontSize: 12, fontWeight: "700" },
+    budgetStatus: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     budgetRemaining: { fontSize: 12, color: c.textSecondary },
 
     trialsSection: {
@@ -501,15 +501,15 @@ function makeStyles(c: AppColors) {
       borderWidth: 1, borderColor: c.border,
     },
     trialsSectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-    trialsSectionTitle: { fontSize: 13, fontWeight: "700", color: c.text },
+    trialsSectionTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     trialCard: {
       flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 12,
       backgroundColor: c.bg, borderRadius: 8, marginBottom: 6, borderLeftWidth: 3,
     },
-    trialName: { fontSize: 14, fontWeight: "600", color: c.text },
+    trialName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
     trialCharge: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
     trialBadge: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 8 },
-    trialBadgeText: { fontSize: 12, fontWeight: "800" },
+    trialBadgeText: { fontSize: 12, fontWeight: "800", fontFamily: "Montserrat-ExtraBold" },
 
     heroCard: {
       backgroundColor: c.card, borderRadius: 16, padding: 20, marginBottom: 12,
@@ -520,43 +520,43 @@ function makeStyles(c: AppColors) {
       width: 44, height: 44, borderRadius: 10, backgroundColor: c.primaryLight,
       justifyContent: "center", alignItems: "center", marginBottom: 12,
     },
-    heroValue: { fontSize: 38, fontWeight: "800", color: c.text, marginBottom: 4 },
+    heroValue: { fontSize: 38, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: c.text, marginBottom: 4 },
     heroLabel: { fontSize: 13, color: c.textSecondary },
     heroCardGradientBorder: { borderWidth: 0 },
     heroIconOnGradient: {
       width: 44, height: 44, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.18)",
       justifyContent: "center", alignItems: "center", marginBottom: 12,
     },
-    heroValueOnGradient: { fontSize: 38, fontWeight: "800", color: "#FFFFFF", marginBottom: 4 },
+    heroValueOnGradient: { fontSize: 38, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: "#FFFFFF", marginBottom: 4 },
     heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
     secondaryStatCard: {
       flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
       padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border,
     },
-    secondaryStatValue: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 2 },
+    secondaryStatValue: { fontSize: 22, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 2 },
     statusRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
     statusPill: {
       flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
       paddingVertical: 10, borderRadius: 10, backgroundColor: "transparent",
     },
     statusPillAlert: { backgroundColor: c.danger + "14" },
-    statusPillText: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
+    statusPillText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
     statIcon: {
       width: 34, height: 34, borderRadius: 8, backgroundColor: c.primaryLight,
       justifyContent: "center", alignItems: "center",
     },
     statLabel: { fontSize: 11, color: c.textSecondary },
-    sectionTitle: { fontSize: 16, fontWeight: "600", color: c.text, marginBottom: 12 },
+    sectionTitle: { fontSize: 16, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12 },
     actionButton: {
       backgroundColor: c.primary, borderRadius: 10, paddingVertical: 12,
       paddingHorizontal: 16, marginBottom: 12,
     },
-    actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", textAlign: "center" },
+    actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textAlign: "center" },
     actionButtonOutline: {
       backgroundColor: "transparent", borderRadius: 10, paddingVertical: 12,
       paddingHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: c.primary,
     },
-    actionButtonOutlineText: { color: c.primary, fontSize: 14, fontWeight: "600", textAlign: "center" },
+    actionButtonOutlineText: { color: c.primary, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textAlign: "center" },
     emptyState: {
       backgroundColor: c.card, borderRadius: 12, padding: 24, alignItems: "center",
       borderWidth: 1, borderColor: c.border,
@@ -566,9 +566,9 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.card, borderRadius: 10, padding: 14, marginBottom: 8,
       borderWidth: 1, borderColor: c.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     },
-    subName: { fontSize: 14, fontWeight: "600", color: c.text },
+    subName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
     subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    subPrice: { fontSize: 14, fontWeight: "700", color: c.primary },
+    subPrice: { fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary },
     toggleRow: {
       flexDirection: "row", gap: 4, marginBottom: 16,
       backgroundColor: c.card, borderRadius: 10, padding: 4,
@@ -576,7 +576,7 @@ function makeStyles(c: AppColors) {
     },
     togglePill: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8 },
     togglePillActive: { backgroundColor: c.primary },
-    toggleText: { fontSize: 13, fontWeight: "600", color: c.textSecondary },
+    toggleText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
     toggleTextActive: { color: "#FFFFFF" },
   });
 }

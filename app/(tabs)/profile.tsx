@@ -177,7 +177,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={{ backgroundColor: c.warningLight, borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8, borderWidth: 1, borderColor: c.warningBorder }}>
-            <Text style={{ fontSize: 10, fontWeight: "700", color: c.warning }}>SOON</Text>
+            <Text style={{ fontSize: 10, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.warning }}>SOON</Text>
           </View>
         </View>
 
@@ -202,11 +202,11 @@ function makeStyles(c: AppColors) {
       width: 64, height: 64, borderRadius: 32, backgroundColor: c.primary,
       justifyContent: "center", alignItems: "center", marginBottom: 12,
     },
-    avatarText: { color: "#FFFFFF", fontSize: 24, fontWeight: "700" },
-    profileName: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 4 },
+    avatarText: { color: "#FFFFFF", fontSize: 24, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    profileName: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 4 },
     profileEmail: { fontSize: 14, color: c.textSecondary },
     sectionTitle: {
-      fontSize: 14, fontWeight: "600", color: c.text, marginBottom: 12,
+      fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12,
       marginTop: 8, textTransform: "uppercase", letterSpacing: 0.5,
     },
     menuItem: {
@@ -220,14 +220,14 @@ function makeStyles(c: AppColors) {
       alignItems: "center", borderWidth: 1, borderColor: c.primary,
     },
     menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-    menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500" },
+    menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium" },
     langToggle: { flexDirection: "row", gap: 6 },
     langChip: {
       paddingVertical: 5, paddingHorizontal: 12, borderRadius: 16,
       backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
     },
     langChipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    langChipText: { fontSize: 12, fontWeight: "700", color: c.textSecondary },
+    langChipText: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textSecondary },
     langChipTextActive: { color: "#FFFFFF" },
     themeItem: { flexDirection: "column", alignItems: "stretch" },
     themeToggle: { flexDirection: "row", gap: 6, marginTop: 12 },
@@ -240,6 +240,6 @@ function makeStyles(c: AppColors) {
       marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
       borderWidth: 1, borderColor: c.dangerBorder,
     },
-    dangerButtonText: { color: c.danger, fontSize: 14, fontWeight: "600" },
+    dangerButtonText: { color: c.danger, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
   });
 }
