@@ -776,11 +776,11 @@ app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT referral_code, referred_by, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({
+    res.json(trpc({
       referralCode: user.referral_code,
       hasRedeemedReferral: user.referred_by != null,
       bonusPremiumUntil: user.bonus_premium_until,
-    });
+    }));
   } catch (err) {
     handleError(err, res);
   }
