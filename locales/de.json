@@ -64,7 +64,9 @@
     "dueToday": "Heute fällig",
     "dueTomorrow": "Morgen fällig",
     "dueInDays": "In {{count}} Tagen fällig",
-    "viewAllSubscriptions": "Alle Ausgaben anzeigen"
+    "viewAllSubscriptions": "Alle Ausgaben anzeigen",
+    "inviteBannerText": "Trimio funktioniert noch besser, wenn nicht nur du sparst.",
+    "inviteBannerCta": "Freund einladen"
   },
   "subscriptions": {
     "add": "Hinzufügen",
@@ -128,6 +130,8 @@
     "errDelete": "Abonnement konnte nicht gelöscht werden. Erneut versuchen.",
     "errUpdate": "Abonnement konnte nicht aktualisiert werden. Erneut versuchen.",
     "savedThisYear": "Du hast dieses Jahr {{amount}} gespart, indem du {{name}} gekündigt hast",
+    "inviteFriendPrompt": "Kennst du jemanden, der das sehen sollte?",
+    "inviteFriend": "Freund einladen",
     "trialEndsSoon_today": "Testphase endet heute",
     "trialEndsSoon_days": "Testphase endet in {{days}} Tagen",
     "countOf_one": "{{filtered}} von {{total}} Abonnement",

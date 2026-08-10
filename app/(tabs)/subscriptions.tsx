@@ -257,11 +257,12 @@ export default function SubscriptionsScreen() {
       const yearly = toMonthly(parseFloat(sub.price), sub.billingCycle) * 12;
       setSavingsCard({ name: sub.name, yearly });
       if (savingsTimer.current) clearTimeout(savingsTimer.current);
-      savingsTimer.current = setTimeout(() => setSavingsCard(null), 3000);
+      // Long enough to read the savings and tap the invite link before it goes away.
+      savingsTimer.current = setTimeout(() => setSavingsCard(null), 5000);
       // Cancelling a subscription is the clearest "this app just saved me
       // money" moment there is, ask for a review right after the savings
       // toast has had a chance to be seen.
-      maybeShowReview(3500);
+      maybeShowReview(5500);
     },
     onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
   });
@@ -572,6 +573,18 @@ export default function SubscriptionsScreen() {
             <Text style={styles.savingsCardText}>
               {t("subscriptions.savedThisYear", { amount: fmtC(savingsCard.yearly), name: savingsCard.name })}
             </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (savingsTimer.current) clearTimeout(savingsTimer.current);
+                setSavingsCard(null);
+                track("referral_invite_tapped", { source: "savings_toast" });
+                router.push("/refer-a-friend");
+              }}
+            >
+              <Text style={styles.savingsCardInvite}>
+                {t("subscriptions.inviteFriendPrompt")} {t("subscriptions.inviteFriend")} →
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -1126,6 +1139,7 @@ function makeStyles(c: AppColors) {
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
     savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
+    savingsCardInvite: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,

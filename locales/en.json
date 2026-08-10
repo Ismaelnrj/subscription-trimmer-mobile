@@ -64,7 +64,9 @@
     "dueToday": "Due today",
     "dueTomorrow": "Due tomorrow",
     "dueInDays": "Due in {{count}} days",
-    "viewAllSubscriptions": "View all subscriptions"
+    "viewAllSubscriptions": "View all subscriptions",
+    "inviteBannerText": "Trimio works better when you're not the only one trimming.",
+    "inviteBannerCta": "Invite a friend"
   },
   "subscriptions": {
     "add": "Add",
@@ -128,6 +130,8 @@
     "errDelete": "Could not delete subscription. Please try again.",
     "errUpdate": "Could not update subscription. Please try again.",
     "savedThisYear": "You just saved {{amount}} this year by cutting {{name}}",
+    "inviteFriendPrompt": "Know someone who needs to see this?",
+    "inviteFriend": "Invite a friend",
     "trialEndsSoon_today": "Trial ends today",
     "trialEndsSoon_days": "Trial ends in {{days}}d",
     "countOf_one": "{{filtered}} of {{total}} subscription",

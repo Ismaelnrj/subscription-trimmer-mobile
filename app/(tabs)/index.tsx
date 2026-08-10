@@ -16,9 +16,11 @@ import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
+import { track } from "../../lib/analytics";
 
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
 const ESTIMATE_BANNER_SHOWN_KEY = "estimate_banner_shown";
+const INVITE_BANNER_DISMISSED_UNTIL_KEY = "invite_banner_dismissed_until";
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
@@ -31,6 +33,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const [recoBannerDismissed, setRecoBannerDismissed] = useState(true);
+  const [inviteBannerDismissed, setInviteBannerDismissed] = useState(true);
   const [estimateBanner, setEstimateBanner] = useState<{ guess: number; actual: number } | null>(null);
   const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
@@ -133,6 +136,13 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
+    (async () => {
+      const dismissedUntil = await SecureStore.getItemAsync(INVITE_BANNER_DISMISSED_UNTIL_KEY);
+      setInviteBannerDismissed(!!dismissedUntil && new Date(dismissedUntil) > new Date());
+    })();
+  }, []);
+
+  useEffect(() => {
     if (subsLoading) return;
     (async () => {
       const [estimateStr, alreadyShown] = await Promise.all([
@@ -156,6 +166,21 @@ export default function DashboardScreen() {
     setRecoBannerDismissed(true);
     const dismissedUntil = new Date(Date.now() + 7 * 86400000).toISOString();
     await SecureStore.setItemAsync(RECO_BANNER_DISMISSED_UNTIL_KEY, dismissedUntil);
+  };
+
+  // Only once someone has real use of the app to point back to, not on a
+  // near-empty list where the invite would feel premature.
+  const showInviteBanner = !inviteBannerDismissed && subscriptions.length >= 2;
+
+  const dismissInviteBanner = async () => {
+    setInviteBannerDismissed(true);
+    const dismissedUntil = new Date(Date.now() + 14 * 86400000).toISOString();
+    await SecureStore.setItemAsync(INVITE_BANNER_DISMISSED_UNTIL_KEY, dismissedUntil);
+  };
+
+  const handleInviteBannerPress = () => {
+    track("referral_invite_tapped", { source: "dashboard_banner" });
+    router.push("/refer-a-friend");
   };
 
   const greetingHour = new Date().getHours();
@@ -394,6 +419,19 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
+        {showInviteBanner && (
+          <TouchableOpacity style={styles.inviteBanner} onPress={handleInviteBannerPress} activeOpacity={0.8}>
+            <MaterialCommunityIcons name="account-plus" size={20} color={c.primary} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.inviteBannerText}>{t("dashboard.inviteBannerText")}</Text>
+              <Text style={styles.inviteBannerCta}>{t("dashboard.inviteBannerCta")} →</Text>
+            </View>
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); dismissInviteBanner(); }} style={{ padding: 4 }}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+
         <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
           <Text style={styles.actionButtonText}>{t("dashboard.addExpense")}</Text>
@@ -478,6 +516,13 @@ function makeStyles(c: AppColors) {
     },
     recoBannerTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     recoBannerText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.success, marginTop: 2 },
+
+    inviteBanner: {
+      backgroundColor: c.primaryLight, borderRadius: 10, padding: 14, marginBottom: 24,
+      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.primary,
+    },
+    inviteBannerText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, lineHeight: 18 },
+    inviteBannerCta: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginTop: 3 },
 
     budgetCard: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
