@@ -139,6 +139,20 @@ app.use('/api/trpc', apiLimiter);
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  // Recycle idle clients well before Railway's Postgres (or a proxy in
+  // between) silently closes them -- otherwise the pool hands out a
+  // connection it thinks is fine but the far end has already dropped,
+  // which surfaces as ECONNRESET on the next query after a quiet period
+  // (e.g. the first request after overnight low traffic).
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
+
+// Without this, an error on a client sitting idle in the pool (as opposed
+// to one actively running a query) has no listener and crashes the whole
+// process instead of just failing the query that eventually hits it.
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle Postgres client:', err);
 });
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
