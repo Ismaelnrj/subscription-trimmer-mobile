@@ -85,3 +85,33 @@ apply to code comments or internal docs like this file.
 The app is fully localized into German already (`locales/de.json`), the
 Play Store *listing* itself may not be, that's a separate, free win, check
 Play Console.
+
+## Where things stand (marketing push)
+
+Update this section as things move, so a fresh session picks up where the
+last one left off without needing a recap typed out.
+
+- A 90 day growth plan exists as a published artifact (solo operator,
+  zero to modest budget, sequenced ASO, referral, content, then a small
+  paid track). Ask the owner for the link if it's needed again, or check
+  `Artifact` with `action: "list"`.
+- Done: store listing rewrite, screenshots, German locale note, referral
+  nudges (savings toast + dashboard banner), Codemagic build fix, backend
+  connection pool fix, privacy policy PostHog disclosure. All shipped, in
+  production, confirmed via an `eas update` the owner ran plus Railway
+  auto-deploys.
+- In progress: Phase 2 (posting cadence). The owner has an existing promo
+  video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
+  re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
+  Expense screens (now outdated), wrongly shows an Apple App Store badge
+  (there is no iOS build), and has a caption/UI overlap issue. Fresh
+  screenshots for it should come from the owner's own phone, not a
+  generated mock, the real device is authentic and already has the
+  current build via OTA.
+- Deliberately deferred, revisit later, not now: iOS (real inbound demand
+  exists from the owner's own circle, but wait for Android traction/signal
+  first), a primary-color rebrand (current violet reads as generic
+  AI-startup purple, valid critique, but not worth the rework mid-launch).
+- Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
+  boost an already-proven organic clip first, only start an always-on UAC
+  test after that, never split the budget across both from day one.
