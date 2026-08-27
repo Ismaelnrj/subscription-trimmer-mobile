@@ -115,3 +115,8 @@ last one left off without needing a recap typed out.
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
+- A landing page exists as a published artifact ("Trimio"), built around the
+  real app icon's torn receipt motif, not a generic SaaS template. Links to
+  the real Play Store listing and the real privacy policy route, no App
+  Store badge (there is no iOS build). Ask the owner for the link if it's
+  needed again, or check `Artifact` with `action: "list"`.
