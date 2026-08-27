@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -38,6 +39,13 @@ if (!process.env.GOOGLE_CLIENT_IDS) {
 }
 
 app.use(cors());
+
+// Marketing landing page, served at the domain root so ads and links have a
+// real destination. Static file, same-origin with the API, so its account
+// form can call /api/auth/register and /api/auth/login directly.
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'landing.html'));
+});
 
 // Plain server-rendered HTML so Play Console's "must link directly to the
 // policy text, no extra navigation" check passes — the in-app screen at
