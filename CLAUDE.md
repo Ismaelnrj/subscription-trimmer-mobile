@@ -115,8 +115,14 @@ last one left off without needing a recap typed out.
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
-- A landing page exists as a published artifact ("Trimio"), built around the
-  real app icon's torn receipt motif, not a generic SaaS template. Links to
-  the real Play Store listing and the real privacy policy route, no App
-  Store badge (there is no iOS build). Ask the owner for the link if it's
-  needed again, or check `Artifact` with `action: "list"`.
+- The landing page now lives in two places. The design draft is a published
+  artifact ("Trimio", founder story structure: dark night opening with the
+  charge notification, turns light when the product enters, interactive
+  add-a-subscription demo). The REAL page is `backend/landing.html`, served
+  at the Railway domain root by `backend/server.js`, same design plus a
+  working account form that POSTs same-origin to /api/auth/register and
+  /api/auth/login (an account made there is the same account the app signs
+  into). Point ads at the Railway root URL, or better, a custom domain once
+  one is attached in Railway settings. No App Store badge anywhere, there
+  is no iOS build. Keep the artifact and backend copies in sync when the
+  design changes.
