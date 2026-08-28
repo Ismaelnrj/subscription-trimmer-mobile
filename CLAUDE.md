@@ -126,3 +126,8 @@ last one left off without needing a recap typed out.
   one is attached in Railway settings. No App Store badge anywhere, there
   is no iOS build. Keep the artifact and backend copies in sync when the
   design changes.
+- The landing page shows a real, hardcoded user count ("17") in its honesty
+  block, a deliberate radical-honesty move the owner chose. It does not
+  update itself: when the user count meaningfully grows, update the number
+  in BOTH copies (backend/landing.html and the artifact) or the honesty
+  becomes a lie.
