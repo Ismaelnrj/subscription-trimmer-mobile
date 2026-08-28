@@ -368,6 +368,12 @@ footer a { text-decoration: underline; text-underline-offset: 3px; text-decorati
 .acct-error { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--flag); min-height: 1.2em; margin: 0; }
 .acct-done-title { font-weight: 500; font-size: 1.25rem; color: var(--ink); margin-top: 22px; }
 .acct-done-body { margin-top: 10px; color: var(--ink-soft); line-height: 1.7; }
+
+/* ---------- 3D backdrop layer ---------- */
+#bg3d { position: fixed; inset: 0; z-index: 0; display: block; pointer-events: none; }
+html.has3d body { background: transparent; }
+html.has3d .night { background: transparent; }
+section, footer { position: relative; z-index: 1; }
 </style>
 
 </head>
@@ -713,5 +719,195 @@ footer a { text-decoration: underline; text-underline-offset: 3px; text-decorati
 })();
 </script>
 
+<script src="/three.min.js"></script>
+<script>
+/* Trimio 3D backdrop: a night sky of forgotten subscription cards that
+   turns to day as the story does. Progressive enhancement only, the page
+   works identically without it. */
+(function () {
+  if (!window.THREE) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var probe = document.createElement('canvas');
+  var gl = null;
+  try { gl = probe.getContext('webgl') || probe.getContext('experimental-webgl'); } catch (e) {}
+  if (!gl) return;
+
+  var NIGHT = new THREE.Color(0x0E0D13);
+  var DAY = new THREE.Color(0xF4F3EF);
+  var UNIT = 6.5; /* world units per viewport height */
+
+  var renderer, scene, camera, cards = [], orbs = [], worldH = 40;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+  } catch (e) { return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+  renderer.domElement.id = 'bg3d';
+  document.body.appendChild(renderer.domElement);
+  document.documentElement.classList.add('has3d');
+
+  scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(NIGHT.clone(), 9, 30);
+  camera = new THREE.PerspectiveCamera(55, 1, 0.1, 80);
+  camera.position.set(0, 0, 14);
+
+  var SERVICES = [
+    ['Netflix', '15.49'], ['Spotify', '10.99'], ['Disney+', '9.99'],
+    ['iCloud+', '2.99'], ['YouTube Premium', '13.99'], ['Xbox Game Pass', '19.99'],
+    ['Audible', '7.95'], ['Crunchyroll', '7.99'], ['NordVPN', '4.99'],
+    ['Duolingo Plus', '6.99'], ['Dropbox', '11.99'], ['HBO Max', '15.99'],
+    ['Adobe CC', '24.99'], ['Headspace', '12.99'], ['Kindle Unlimited', '11.99'], ['Notion', '9.50']
+  ];
+
+  function cardTexture(name, price, dark) {
+    var c = document.createElement('canvas');
+    c.width = 512; c.height = 300;
+    var x = c.getContext('2d');
+    function rr(px, py, w, h, r) {
+      x.beginPath();
+      x.moveTo(px + r, py);
+      x.arcTo(px + w, py, px + w, py + h, r);
+      x.arcTo(px + w, py + h, px, py + h, r);
+      x.arcTo(px, py + h, px, py, r);
+      x.arcTo(px, py, px + w, py, r);
+      x.closePath();
+    }
+    x.clearRect(0, 0, 512, 300);
+    rr(8, 8, 496, 284, 34);
+    x.fillStyle = dark ? 'rgba(26,24,35,0.97)' : 'rgba(255,255,255,0.97)';
+    x.fill();
+    x.lineWidth = 3;
+    x.strokeStyle = dark ? '#2E2B3A' : '#E0DED6';
+    x.stroke();
+    x.fillStyle = dark ? '#A48BFF' : '#6C3EF4';
+    x.beginPath(); x.arc(58, 96, 14, 0, 7); x.fill();
+    x.fillStyle = dark ? '#EDEBF2' : '#1A1915';
+    x.font = '500 36px "IBM Plex Mono", monospace';
+    x.fillText(name, 96, 108, 380);
+    x.fillStyle = dark ? '#9C98AB' : '#8D8A7D';
+    x.font = '28px "IBM Plex Mono", monospace';
+    x.fillText('monthly', 96, 196);
+    x.fillStyle = dark ? '#A48BFF' : '#6C3EF4';
+    x.font = '600 40px "IBM Plex Mono", monospace';
+    var p = '€' + price;
+    x.fillText(p, 496 - 24 - x.measureText(p).width, 204);
+    var t = new THREE.CanvasTexture(c);
+    t.anisotropy = 4;
+    return t;
+  }
+
+  function buildWorld() {
+    cards.forEach(function (m) { scene.remove(m); m.material.map.dispose(); m.material.dispose(); });
+    orbs.forEach(function (m) { scene.remove(m); });
+    cards = []; orbs = [];
+    var vh = window.innerHeight;
+    var docH = Math.max(document.documentElement.scrollHeight - vh, 1);
+    worldH = (docH / vh) * UNIT;
+    var turnEl = document.getElementById('turn');
+    var turnWorldY = turnEl ? (turnEl.offsetTop / vh) * UNIT : worldH * 0.4;
+
+    var geo = new THREE.PlaneGeometry(2.6, 1.52);
+    for (var i = 0; i < SERVICES.length; i++) {
+      var y = -(i / (SERVICES.length - 1)) * worldH + (Math.random() - 0.5) * 2.2;
+      var dark = -y < turnWorldY;
+      var mat = new THREE.MeshBasicMaterial({
+        map: cardTexture(SERVICES[i][0], SERVICES[i][1], dark),
+        transparent: true,
+        opacity: 0.88,
+        side: THREE.DoubleSide
+      });
+      var m = new THREE.Mesh(geo, mat);
+      var side = i % 2 === 0 ? -1 : 1;
+      m.position.set(side * (4.9 + Math.random() * 3.7), y, -4.5 - Math.random() * 6);
+      m.rotation.set((Math.random() - 0.5) * 0.4, (Math.random() - 0.5) * 0.9, (Math.random() - 0.5) * 0.18);
+      m.userData = { bx: m.position.x, ry: m.rotation.y, seed: Math.random() * 9 };
+      scene.add(m);
+      cards.push(m);
+    }
+    var orbGeo = new THREE.SphereGeometry(1, 20, 20);
+    for (var j = 0; j < 22; j++) {
+      var s = 0.08 + Math.random() * 0.32;
+      var om = new THREE.Mesh(orbGeo, new THREE.MeshBasicMaterial({
+        color: j % 3 === 0 ? 0xA48BFF : 0x6C3EF4,
+        transparent: true,
+        opacity: 0.18 + Math.random() * 0.3
+      }));
+      om.scale.setScalar(s);
+      var oy = -Math.random() * worldH;
+      om.position.set((Math.random() - 0.5) * 16, oy, -3 - Math.random() * 9);
+      om.userData = { seed: Math.random() * 9, drift: 0.002 + Math.random() * 0.004 };
+      scene.add(om);
+      orbs.push(om);
+    }
+  }
+
+  var px = 0, py = 0, tx = 0, ty = 0;
+  if (window.matchMedia('(pointer: fine)').matches) {
+    window.addEventListener('pointermove', function (e) {
+      tx = (e.clientX / window.innerWidth - 0.5);
+      ty = (e.clientY / window.innerHeight - 0.5);
+    }, { passive: true });
+  }
+
+  var turnMix = 0;
+  function mixAt(scrollY) {
+    var turnEl = document.getElementById('turn');
+    if (!turnEl) return 1;
+    var vh = window.innerHeight;
+    var center = scrollY + vh * 0.55;
+    var a = turnEl.offsetTop - vh * 0.35, b = turnEl.offsetTop + vh * 0.45;
+    var t = (center - a) / (b - a);
+    return Math.max(0, Math.min(1, t));
+  }
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    buildWorld();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { buildWorld(); });
+  }
+
+  var bg = NIGHT.clone();
+  function frame(t) {
+    var sec = t * 0.001;
+    var vh = window.innerHeight;
+    var docH = Math.max(document.documentElement.scrollHeight - vh, 1);
+    var scrollY = window.scrollY || 0;
+    camera.position.y = -(scrollY / docH) * worldH;
+
+    px += (tx - px) * 0.06;
+    py += (ty - py) * 0.06;
+    camera.rotation.y = -px * 0.1;
+    camera.rotation.x = -py * 0.07;
+
+    var m = mixAt(scrollY);
+    turnMix += (m - turnMix) * 0.08;
+    bg.copy(NIGHT).lerp(DAY, turnMix);
+    renderer.setClearColor(bg);
+    scene.fog.color.copy(bg);
+
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i], u = c.userData;
+      c.position.x = u.bx + Math.sin(sec * 0.35 + u.seed) * 0.18;
+      c.rotation.y = u.ry + Math.sin(sec * 0.25 + u.seed) * 0.16;
+      c.rotation.z = Math.sin(sec * 0.3 + u.seed * 2) * 0.05;
+    }
+    for (var j = 0; j < orbs.length; j++) {
+      var o = orbs[j];
+      o.position.y += o.userData.drift;
+      o.position.x += Math.sin(sec * 0.5 + o.userData.seed) * 0.002;
+      if (o.position.y > 2) o.position.y = -worldH - 1;
+    }
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
 </body>
 </html>

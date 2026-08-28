@@ -47,6 +47,13 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'landing.html'));
 });
 
+// Self-hosted three.js for the landing page's 3D backdrop, no third-party
+// CDN in the page's dependency chain.
+app.get('/three.min.js', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=604800');
+  res.sendFile(path.join(__dirname, 'three.min.js'));
+});
+
 // Plain server-rendered HTML so Play Console's "must link directly to the
 // policy text, no extra navigation" check passes — the in-app screen at
 // app/privacy-policy.tsx is the source of truth; keep this in sync with it.
