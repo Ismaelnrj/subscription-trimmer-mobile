@@ -54,6 +54,22 @@ app.get('/three.min.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'three.min.js'));
 });
 
+// Landing page assets and search-engine plumbing for subtrimio.com.
+app.get('/og.png', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'og.png'));
+});
+app.get('/icon.png', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=604800');
+  res.sendFile(path.join(__dirname, 'icon.png'));
+});
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: https://subtrimio.com/sitemap.xml\n');
+});
+app.get('/sitemap.xml', (req, res) => {
+  res.type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n<url><loc>https://subtrimio.com/</loc></url>\n<url><loc>https://subtrimio.com/privacy-policy</loc></url>\n</urlset>\n');
+});
+
 // Plain server-rendered HTML so Play Console's "must link directly to the
 // policy text, no extra navigation" check passes — the in-app screen at
 // app/privacy-policy.tsx is the source of truth; keep this in sync with it.
