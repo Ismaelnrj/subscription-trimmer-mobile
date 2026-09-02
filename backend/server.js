@@ -38,7 +38,29 @@ if (!process.env.GOOGLE_CLIENT_IDS) {
   console.warn('WARNING: GOOGLE_CLIENT_IDS is not set. /api/auth/google will reject all requests until it is set to a comma-separated list of your Android/iOS/Web Google OAuth client IDs.');
 }
 
-app.use(cors());
+// CORS is a browser-only mechanism, so the important case here is the one
+// with NO Origin header: the React Native app, the cron-job.org pings, the
+// RevenueCat webhook, and curl all send none, and every one of them must
+// keep working. Those pass through untouched. Browsers get an allowlist:
+// the marketing site (which is same-origin anyway) and localhost, kept
+// because the Expo web build is served from a random localhost port during
+// development. Note that CORS is not the security boundary here, the Bearer
+// token is; a disallowed origin simply receives no CORS headers rather than
+// an error, which is what a browser expects.
+const ALLOWED_ORIGINS = [
+  'https://subtrimio.com',
+  'https://www.subtrimio.com',
+  'https://subscription-trimmer-mobile-production.up.railway.app',
+];
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    if (/^http:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    return callback(null, false);
+  },
+  credentials: false,
+}));
 
 // Marketing landing page, served at the domain root so ads and links have a
 // real destination. Static file, same-origin with the API, so its account
