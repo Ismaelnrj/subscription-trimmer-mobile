@@ -115,17 +115,31 @@ last one left off without needing a recap typed out.
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
-- The landing page now lives in two places. The design draft is a published
-  artifact ("Trimio", founder story structure: dark night opening with the
-  charge notification, turns light when the product enters, interactive
-  add-a-subscription demo). The REAL page is `backend/landing.html`, served
-  at the Railway domain root by `backend/server.js`, same design plus a
-  working account form that POSTs same-origin to /api/auth/register and
+- The landing page now lives in two places. The design copy is a published
+  artifact ("Trimio"). The REAL page is `backend/landing.html`, served at
+  the domain root by `backend/server.js`, same design plus a working
+  account form that POSTs same-origin to /api/auth/register and
   /api/auth/login (an account made there is the same account the app signs
-  into). Point ads at the Railway root URL, or better, a custom domain once
-  one is attached in Railway settings. No App Store badge anywhere, there
-  is no iOS build. Keep the artifact and backend copies in sync when the
-  design changes.
+  into). The artifact copy cannot reach that API, so its form links to the
+  live site instead: that is the only intentional difference between them.
+  Keep the two in sync when the design changes. No App Store badge
+  anywhere, there is no iOS build.
+- Landing page design, as of the 2026-09 rewrite ("warm editorial ledger",
+  ported from the owner's own Manus draft): vermilion `#e84d35` on ink
+  `#0d0b12`, Fraunces for display and Manrope for UI, hard offset shadows
+  with no blur, rotated plates, numbered sections. It replaced a violet
+  palette that read as generic AI purple. The page is deliberately a single
+  dark visual world, there is no light theme and no theme override.
+- The 3D backdrop is `backend/trimio3d.js`, served at `/trimio3d.js`, with
+  three.js self-hosted at `backend/three.min.js` (`/three.min.js`) because
+  no CDN is in the page's dependency chain. Cards start "forgotten" (grey,
+  unmarked) and turn "tracked" (vermilion trim tab, sage renewal date) once
+  the reader passes `#how-it-works`. Card placement is a fraction of the
+  frame's half width at each depth, so it stays off the type on any screen,
+  and everything below the first viewport dims to 30%. Both files are
+  progressive enhancement: no WebGL or no three.js and the page is
+  unchanged. In the artifact copy three.js comes from cdnjs and the scene
+  is inlined, since the artifact CSP blocks the Railway host.
 - LIVE DOMAIN: `subtrimio.com`, registered at Squarespace (migrated from
   Google Domains). `www.subtrimio.com` is a CNAME to the Railway service
   (`2d14ukaj.up.railway.app`) and serves the landing page; the bare
