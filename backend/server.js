@@ -234,8 +234,11 @@ async function sendVerificationEmail(email, code) {
   );
 }
 
+// crypto.randomInt, not Math.random: these codes gate email verification and
+// password resets, and Math.random's PRNG state is recoverable from enough
+// observed outputs, which is not a property you want on a reset code.
 function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 1000000));
 }
 
 // Brevo contact attribute sync (PLAN, SUB_COUNT) — best-effort marketing
@@ -623,6 +626,9 @@ app.post('/api/auth/register', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
     const pwError = validatePassword(password);
     if (pwError) return res.status(400).json({ error: pwError });
+    if (name != null && (typeof name !== 'string' || name.trim().length > 80)) {
+      return res.status(400).json({ error: 'Name must be under 80 characters' });
+    }
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
@@ -1106,6 +1112,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const { name, billingCycle = 'monthly', category = 'other', trialEndDate, force, nextBillingDate: nextBillingDateInput } = req.body;
     const price = parseFloat(req.body.price);
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
+    if (typeof name !== 'string' || name.trim().length > 120) return res.status(400).json({ error: 'Name must be under 120 characters' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
 
@@ -1564,10 +1571,12 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       );
       if (subsResult.rows.length === 0) continue;
 
+      // Subscription names are user-supplied, so they get escaped before
+      // going anywhere near email HTML.
       const rows = subsResult.rows.map(s =>
         `<tr>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${s.name}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">$${parseFloat(s.price).toFixed(2)}/${s.billing_cycle}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${escapeHtml(s.name || '')}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">$${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">${new Date(s.next_billing_date).toLocaleDateString()}</td>
         </tr>`
       ).join('');
@@ -1576,7 +1585,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
         user.email,
         `Trimio: ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing soon`,
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-          <h2 style="color:#4F46E5;margin-bottom:4px">Hi ${user.name || 'there'}!</h2>
+          <h2 style="color:#4F46E5;margin-bottom:4px">Hi ${escapeHtml(user.name || 'there')}!</h2>
           <p style="color:#374151;margin-bottom:20px">Here are your upcoming subscription renewals in the next 3 days:</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb">
             <thead>
@@ -1634,7 +1643,7 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
         user.email,
         `We're sorry to see you go, ${user.name || 'there'}`,
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-          <h2 style="color:#4F46E5;margin-bottom:8px">Your Trimio ${planLabel} plan is set to end</h2>
+          <h2 style="color:#4F46E5;margin-bottom:8px">Your Trimio ${escapeHtml(planLabel)} plan is set to end</h2>
           <p style="color:#374151">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
           <div style="text-align:center;margin-top:24px">
             <a href="trimio://upgrade" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
