@@ -95,11 +95,25 @@ last one left off without needing a recap typed out.
   zero to modest budget, sequenced ASO, referral, content, then a small
   paid track). Ask the owner for the link if it's needed again, or check
   `Artifact` with `action: "list"`.
-- Done: store listing rewrite, screenshots, German locale note, referral
-  nudges (savings toast + dashboard banner), Codemagic build fix, backend
+- Done: store listing rewrite, German locale note, referral nudges
+  (savings toast + dashboard banner), Codemagic build fix, backend
   connection pool fix, privacy policy PostHog disclosure. All shipped, in
   production, confirmed via an `eas update` the owner ran plus Railway
   auto-deploys.
+- REBRAND SHIPPED (2026-09): version 1.0.2, versionCode 38, built on
+  Codemagic and submitted to Play Console, awaiting review as of the last
+  session. That one build carries everything native and JS: the ink navy
+  palette across the app, the redrawn icon, splash and notification tint,
+  plus the error states for calendar, subscription details and
+  notification settings. No `eas update` was run for it and none is
+  needed. The landing page, tab icon and share card went out separately
+  via Railway and are already live on subtrimio.com.
+- THE ONE THING STILL VIOLET: the Play Store screenshots and feature
+  graphic. They are a Play Console upload and do NOT need a new build or
+  a new release, so they can be replaced at any time. Shoot them from the
+  owner's own phone once the 1.0.2 build installs, so they show the real
+  navy UI. Those same shots are also what the promo video re-cut needs,
+  so do both in one sitting.
 - In progress: Phase 2 (posting cadence). The owner has an existing promo
   video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
   re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
