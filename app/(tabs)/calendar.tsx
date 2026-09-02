@@ -31,7 +31,7 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => new Date());
 
-  const { data: subscriptions = [], isLoading } = useQuery({
+  const { data: subscriptions = [], isLoading, isError } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
@@ -106,6 +106,14 @@ export default function CalendarScreen() {
 
           {isLoading ? (
             <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 48 }} />
+          ) : isError ? (
+            /* Without this branch a failed fetch fell through to the empty
+               state, telling people they had no upcoming payments when the
+               request had simply failed. */
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
+              <Text style={styles.emptyStateText}>{t("calendar.couldntLoad")}</Text>
+            </View>
           ) : view === "timeline" ? (
             upcoming.length === 0 ? (
               <View style={styles.emptyState}>

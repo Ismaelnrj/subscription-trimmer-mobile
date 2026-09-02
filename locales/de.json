@@ -176,7 +176,8 @@
     "monthSummary": "{{month}} Zusammenfassung",
     "payments": "Zahlungen",
     "highest": "Höchste",
-    "today": "Heute"
+    "today": "Heute",
+    "couldntLoad": "Kalender konnte nicht geladen werden. Zum Aktualisieren nach unten ziehen."
   },
   "review": {
     "title": "Gefällt dir Trimio?",
@@ -384,7 +385,9 @@
     "nextEmails": "Nächste geplante E-Mails:",
     "day_one": "{{count}} Tag",
     "day_other": "{{count}} Tage",
-    "errSave": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen."
+    "errSave": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen.",
+    "couldntLoad": "Benachrichtigungseinstellungen konnten nicht geladen werden.",
+    "retry": "Erneut versuchen"
   },
   "insights": {
     "spendingSnapshot": "Ausgabenüberblick",
@@ -544,6 +547,8 @@
     "deleteConfirmTitle": "{{name}} löschen?",
     "deleteConfirmMsg": "Das kann nicht rückgängig gemacht werden.",
     "notFound": "Abo nicht gefunden",
-    "edit": "Bearbeiten"
+    "edit": "Bearbeiten",
+    "couldntLoad": "Diese Ausgabe konnte nicht geladen werden. Bitte Verbindung prüfen.",
+    "retry": "Erneut versuchen"
   }
 }

@@ -176,7 +176,8 @@
     "monthSummary": "{{month}} Summary",
     "payments": "Payments",
     "highest": "Highest",
-    "today": "Today"
+    "today": "Today",
+    "couldntLoad": "Couldn't load your calendar. Pull down to retry."
   },
   "review": {
     "title": "Enjoying Trimio?",
@@ -384,7 +385,9 @@
     "nextEmails": "Next scheduled emails:",
     "day_one": "{{count}} day",
     "day_other": "{{count}} days",
-    "errSave": "Failed to save preferences. Please try again."
+    "errSave": "Failed to save preferences. Please try again.",
+    "couldntLoad": "Couldn't load your notification settings.",
+    "retry": "Retry"
   },
   "insights": {
     "spendingSnapshot": "Spending snapshot",
@@ -544,6 +547,8 @@
     "deleteConfirmTitle": "Delete {{name}}?",
     "deleteConfirmMsg": "This can't be undone.",
     "notFound": "Subscription not found",
-    "edit": "Edit"
+    "edit": "Edit",
+    "couldntLoad": "Couldn't load this subscription. Check your connection.",
+    "retry": "Retry"
   }
 }

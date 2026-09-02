@@ -28,7 +28,7 @@ export default function SubscriptionDetailsScreen() {
   const fmtC = useFmt();
   const queryClient = useQueryClient();
 
-  const { data: subscriptions = [], isLoading } = useQuery({
+  const { data: subscriptions = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
@@ -64,6 +64,20 @@ export default function SubscriptionDetailsScreen() {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={c.primary} />
+      </View>
+    );
+  }
+
+  /* A failed request leaves subscriptions empty, which used to render as
+     "subscription not found". The subscription exists, the network didn't. */
+  if (isError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <MaterialCommunityIcons name="cloud-off-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <Text style={styles.emptyStateText}>{t("subscriptionDetails.couldntLoad")}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+          <Text style={styles.retryButtonText}>{t("subscriptionDetails.retry")}</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -184,7 +198,12 @@ function makeStyles(c: AppColors) {
     sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text, marginBottom: 10 },
     dangerTitle: { color: c.danger, marginTop: 20 },
     emptyState: { paddingVertical: 16 },
-    emptyStateText: { fontSize: 13, color: c.textSecondary },
+    emptyStateText: { fontSize: 13, color: c.textSecondary, textAlign: "center", paddingHorizontal: 32 },
+    retryButton: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
+      paddingHorizontal: 24, marginTop: 16,
+    },
+    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     renewalRow: {
       flexDirection: "row", alignItems: "center", gap: 10,
       backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 8,

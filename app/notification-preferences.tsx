@@ -22,7 +22,7 @@ export default function NotificationPreferencesScreen() {
     enabled: isPremium,
   });
 
-  const { data: prefs, isLoading } = useQuery({
+  const { data: prefs, isLoading, isError, refetch } = useQuery({
     queryKey: ["notifications", "preferences"],
     queryFn: async () => (await apiClient.get("/trpc/notifications.getPreferences")).data.result.data,
   });
@@ -38,6 +38,23 @@ export default function NotificationPreferencesScreen() {
     if (!prefs) return;
     updateMutation.mutate({ ...prefs, [key]: value });
   };
+
+  /* prefs stays undefined when the request fails, so the old
+     "isLoading || !prefs" check spun forever with no way out. */
+  if (isError || (!isLoading && !prefs)) {
+    return (
+      <>
+        <Stack.Screen options={{ title: t("profile.notifications") }} />
+        <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 32 }]}>
+          <MaterialCommunityIcons name="cloud-off-outline" size={44} color={c.border} style={{ marginBottom: 12 }} />
+          <Text style={{ color: c.textSecondary, textAlign: "center" }}>{t("notifPrefs.couldntLoad")}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+            <Text style={styles.retryButtonText}>{t("notifPrefs.retry")}</Text>
+          </TouchableOpacity>
+        </View>
+      </>
+    );
+  }
 
   if (isLoading || !prefs) {
     return (
@@ -205,6 +222,11 @@ export default function NotificationPreferencesScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
+    retryButton: {
+      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
+      paddingHorizontal: 24, marginTop: 16,
+    },
+    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     scrollContent: { padding: 16, paddingBottom: 32 },
     card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginBottom: 16 },
     row: {
