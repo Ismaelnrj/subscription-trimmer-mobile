@@ -179,14 +179,14 @@ section { position: relative; z-index: 1; }
 .charge-slip {
   grid-column: 2; align-self: start; position: relative; margin-left: 10%;
   max-width: 370px; padding: 17px 19px 20px;
-  background: var(--card); border: 1px solid var(--rule-soft);
+  background: var(--type); color: var(--ground); border: 1px solid var(--type);
   box-shadow: 14px 16px 0 rgba(196,84,74,.85);
   transform: rotate(-2.2deg);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.slip-topline { display: flex; justify-content: space-between; color: #908b84; font-size: .5rem; text-transform: uppercase; letter-spacing: .1em; }
+.slip-topline { display: flex; justify-content: space-between; color: #93a3ad; font-size: .5rem; text-transform: uppercase; letter-spacing: .1em; }
 .charge-slip p { margin: 20px 0 0; font-size: .7rem; line-height: 1.55; }
-.charge-slip b { color: var(--coral); }
+.charge-slip b { color: #d96b62; }
 .slip-pulse {
   position: absolute; width: 11px; height: 11px; top: -6px; right: 20px;
   border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 8px rgba(196,84,74,.14);
@@ -366,6 +366,31 @@ section { position: relative; z-index: 1; }
 .site-footer p { margin: 0; color: #a8b4bc; }
 .site-footer > div { display: flex; justify-content: flex-end; gap: 20px; color: #a8b4bc; }
 .site-footer a:hover { color: var(--signal); }
+
+/* ---------- ink navy fields ---------- */
+/* Two full-bleed navy sections carry the palette's 25% as ground rather
+   than as type. They also give Soft Mint the one place it can be type at
+   all: on navy it reads at 7.0:1, against 1.9:1 on warm white. The cards
+   inside them stay paper, so the ledger and the form still read as
+   objects laid on the page. */
+.demo-section, .account-section { background: var(--type); color: var(--ground); }
+.demo-header h2, .account-copy h2 { color: var(--ground); }
+.demo-header em, .account-copy em { color: var(--signal); }
+.demo-section .eyebrow, .account-section .eyebrow,
+.demo-header > p, .account-copy > p:not(.eyebrow) { color: #b9c5c9; }
+.demo-section::after { border-color: rgba(247,246,241,.16); }
+.demo-section .service-choice { border-color: rgba(247,246,241,.28); color: var(--ground); }
+.demo-section .service-choice:hover,
+.demo-section .service-choice.is-selected {
+  background: var(--signal); color: var(--type); box-shadow: inset 4px 0 0 var(--ground);
+}
+.demo-section .service-choice:disabled {
+  opacity: .4; background: transparent; color: var(--ground); box-shadow: none;
+}
+.account-section .play-store-link { color: var(--ground); border-bottom-color: var(--signal); }
+/* The cards are paper laid on the navy, so they restate ink explicitly
+   rather than inheriting the field's warm white. */
+.demo-section .ledger-card, .account-section .account-card { color: var(--type); }
 
 /* ---------- 3D backdrop ---------- */
 #bg3d { position: fixed; inset: 0; z-index: 0; display: block; pointer-events: none; }
