@@ -124,12 +124,40 @@ last one left off without needing a recap typed out.
   live site instead: that is the only intentional difference between them.
   Keep the two in sync when the design changes. No App Store badge
   anywhere, there is no iOS build.
-- Landing page design, as of the 2026-09 rewrite ("warm editorial ledger",
-  ported from the owner's own Manus draft): vermilion `#e84d35` on ink
-  `#0d0b12`, Fraunces for display and Manrope for UI, hard offset shadows
-  with no blur, rotated plates, numbered sections. It replaced a violet
-  palette that read as generic AI purple. The page is deliberately a single
-  dark visual world, there is no light theme and no theme override.
+- BRAND PALETTE (2026-09, replaced the violet everywhere): Ink Navy
+  `#142B3A`, Warm White `#F7F6F1`, Soft Mint `#55C6A3`, with Slate
+  `#52616B`, Warm Amber `#E6A34A` and Muted Coral `#D96B62` supporting.
+  Intended weighting is roughly 60% warm white, 25% navy, 10% mint, 5%
+  the rest. The restraint is the point, mint marks things, it never
+  carries them.
+- The one rule that keeps that palette legible, measured not guessed:
+  Soft Mint carries white text at only 2.1:1 and reads as text on warm
+  white at 1.9:1, under even the 3:1 large-text floor. So mint is NEVER a
+  fill behind white text and NEVER running text. It is for fills, rules,
+  offset shadows, dots, trim tabs, and pills where navy sits on mint
+  (7.0:1). Type that must read as mint uses the deepened `#1F7A62`
+  (4.8:1 on warm white). Same idea for the other two: amber and coral
+  need `#96631B` and `#C4544A` when they carry text on a light ground.
+- In `lib/theme.ts`, `primary` is used both as a fill behind white text
+  and as text on a surface, so it has to work in both directions. Light
+  theme primary is Ink Navy. Dark theme primary is `#2F8E71`, the mint
+  that balances both ways (4.0:1 under white, 3.9:1 on the card) the way
+  the old violet did. The bright mint lives in the separate `accent`
+  token. Do not set dark `primary` to `#55C6A3`: 36 call sites put white
+  on a primary fill, and they would all drop to 2.1:1.
+- Landing page design, as of the 2026-09 rewrite: warm white ground, ink
+  navy Fraunces display with Manrope for UI, hard offset shadows with no
+  blur (mint on the ledger, privacy and account plates, coral on the bank
+  charge slip), rotated plates, numbered sections. It went violet, then
+  vermilion, then landed here. The page is deliberately a single light
+  visual world, there is no dark theme and no theme override. Its CSS
+  tokens are role named (`--ground`, `--card`, `--type`, `--signal`,
+  `--signal-text`), so a future repaint means changing values, not names.
+- STILL VIOLET, deliberately: the app icon, adaptive icon, splash and the
+  `#7746DD` values in `app.json`. Those are baked into a native build, not
+  shipped over the air, so they change together with a redrawn icon and a
+  new Play Console upload. Until then the icon is the one violet thing
+  left.
 - The 3D backdrop is `backend/trimio3d.js`, served at `/trimio3d.js`, with
   three.js self-hosted at `backend/three.min.js` (`/three.min.js`) because
   no CDN is in the page's dependency chain. Cards start "forgotten" (grey,
