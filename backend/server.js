@@ -76,6 +76,13 @@ app.get('/three.min.js', (req, res) => {
   res.sendFile(path.join(__dirname, 'three.min.js'));
 });
 
+// The landing page's WebGL scene. Kept out of the HTML so it can be cached
+// separately and skipped entirely by clients without WebGL.
+app.get('/trimio3d.js', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.sendFile(path.join(__dirname, 'trimio3d.js'));
+});
+
 // Landing page assets and search-engine plumbing for subtrimio.com.
 app.get('/og.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
