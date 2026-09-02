@@ -91,7 +91,8 @@ def build(size, transparent, receipt_frac, out):
     img.resize((size, size), Image.LANCZOS).save(out)
     print("wrote", out, size)
 
-D = "/home/user/subscription-trimmer-mobile/assets/"
-build(1024, False, 0.455, D + "icon.png")
-build(1024, True,  0.335, D + "adaptive-icon.png")   # 66% adaptive safe zone
-build(192,  False, 0.455, D + "favicon.png")
+if __name__ == "__main__":
+    D = "assets/"
+    build(1024, False, 0.455, D + "icon.png")
+    build(1024, True,  0.335, D + "adaptive-icon.png")   # 66% adaptive safe zone
+    build(192,  False, 0.455, D + "favicon.png")
