@@ -110,8 +110,8 @@ last one left off without needing a recap typed out.
   current build via OTA.
 - Deliberately deferred, revisit later, not now: iOS (real inbound demand
   exists from the owner's own circle, but wait for Android traction/signal
-  first), a primary-color rebrand (current violet reads as generic
-  AI-startup purple, valid critique, but not worth the rework mid-launch).
+  first). The primary-colour rebrand was deferred for a while and then
+  done, see BRAND PALETTE below.
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
