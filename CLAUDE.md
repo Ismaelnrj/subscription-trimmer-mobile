@@ -145,10 +145,16 @@ last one left off without needing a recap typed out.
   the old violet did. The bright mint lives in the separate `accent`
   token. Do not set dark `primary` to `#55C6A3`: 36 call sites put white
   on a primary fill, and they would all drop to 2.1:1.
-- Landing page design, as of the 2026-09 rewrite: warm white ground, ink
-  navy Fraunces display with Manrope for UI, hard offset shadows with no
-  blur (mint on the ledger, privacy and account plates, coral on the bank
-  charge slip), rotated plates, numbered sections. It went violet, then
+- Landing page design, as of the 2026-09 rewrite: alternating full-bleed
+  fields, warm white for hero, problem, how it works, privacy and the 17
+  block, ink navy for the demo, the account section and the footer. The
+  navy fields are what make the 25% real and are the only place pure Soft
+  Mint can be type. Ink navy Fraunces display with Manrope for UI, hard
+  offset shadows with no blur (mint on the ledger, privacy and account
+  plates, coral on the bank charge slip, which is deliberately the one
+  dark object on the bright half), rotated plates, numbered sections.
+  Cards sitting on a navy field must set `color` explicitly or they
+  inherit warm white and go invisible on their own paper. It went violet, then
   vermilion, then landed here. The page is deliberately a single light
   visual world, there is no dark theme and no theme override. Its CSS
   tokens are role named (`--ground`, `--card`, `--type`, `--signal`,
