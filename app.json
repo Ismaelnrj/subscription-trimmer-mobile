@@ -3,7 +3,7 @@
     "name": "Trimio",
     "slug": "subtrimmer",
     "scheme": "trimio",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "runtimeVersion": "1.0.1",
     "updates": {
       "url": "https://u.expo.dev/18a3e059-0c9c-49df-b485-21240d7e283a",
@@ -15,12 +15,12 @@
     },
 
     "icon": "./assets/icon.png",
-    "primaryColor": "#7746DD",
+    "primaryColor": "#142B3A",
 
     "splash": {
       "image": "./assets/adaptive-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#7746DD"
+      "backgroundColor": "#142B3A"
     },
 
     "assetBundlePatterns": [
@@ -29,12 +29,12 @@
 
     "android": {
       "package": "com.trimio.app",
-      "versionCode": 37,
+      "versionCode": 38,
       "edgeToEdgeEnabled": false,
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#7746DD"
+        "backgroundColor": "#142B3A"
       },
       "permissions": [
         "INTERNET",
@@ -76,7 +76,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#7746DD"
+          "color": "#2F8E71"
         }
       ],
       "./plugins/withGradleFixes.js",
