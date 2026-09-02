@@ -67,7 +67,7 @@ def receipt(img, cx, cy, w, h, shadow=True):
             ccx = x0 + pad + cr
             d.line([(ccx - cr * .42, cy_r + cr * .02), (ccx - cr * .10, cy_r + cr * .36),
                     (ccx + cr * .46, cy_r - cr * .38)],
-                   fill=PAPER, width=int(cr * .30), joint="curve")
+                   fill=NAVY, width=int(cr * .30), joint="curve")
         bx = x0 + pad + cr * 2 + w * .085
         bh = w * .052
         rounded(d, [bx, cy_r - bh * 1.45, bx + w * (.40 - i * .045), cy_r - bh * .35], bh / 2, BAR)
