@@ -1062,7 +1062,7 @@ export default function SubscriptionsScreen() {
                     style={[styles.chip, styles.chipAdd]}
                     onPress={() => setShowCustomInput(true)}
                   >
-                    <Text style={[styles.chipText, { color: "#7C3AED" }]}>+ {t("subscriptions.customCategory")}</Text>
+                    <Text style={[styles.chipText, { color: "#142B3A" }]}>+ {t("subscriptions.customCategory")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1256,7 +1256,7 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", alignItems: "center", gap: 6,
       alignSelf: "flex-start", marginBottom: 12,
     },
-    chipCustomActive: { backgroundColor: "#7C3AED", borderColor: "#7C3AED" },
+    chipCustomActive: { backgroundColor: "#142B3A", borderColor: "#142B3A" },
     chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
     chipText: { fontSize: 12, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", textTransform: "capitalize" },
     chipTextActive: { color: "#FFFFFF" },
@@ -1267,7 +1267,7 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.primaryLight,
     },
     customCatConfirm: {
-      backgroundColor: "#7C3AED", borderRadius: 8, paddingVertical: 8,
+      backgroundColor: "#142B3A", borderRadius: 8, paddingVertical: 8,
       paddingHorizontal: 14, justifyContent: "center",
     },
     customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },

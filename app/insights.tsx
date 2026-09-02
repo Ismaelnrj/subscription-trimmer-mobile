@@ -69,12 +69,12 @@ export function buildTips(
   for (const [cat, list] of Object.entries(byCategory)) {
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-      tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#DC2626",
+      tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
         title: `${list.length} "${cat}" subscriptions`,
         detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmtC(catTotal)}/mo. Could you cut one?`,
         priority: "high", savingsHint: `Could save up to ${fmtC(catTotal * 0.5)}/mo`, savingsValue: catTotal * 0.5 });
     } else if (list.length === 2) {
-      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#D97706",
+      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#96631B",
         title: `2 "${cat}" subscriptions`,
         detail: `${list[0].name} and ${list[1].name} are both in the same category. Do you actively use both?`,
         priority: "medium" });
@@ -86,7 +86,7 @@ export function buildTips(
   if (streamingSubs.length >= 3) {
     const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
-    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#DC2626",
+    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
       title: `${streamingSubs.length} streaming services — that's a lot`,
       detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmtC(streamTotal)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
       priority: "high", savingsHint: `Save ~${fmtC(toMonthly(cheapest.price, cheapest.billingCycle))}/mo by pausing one`, savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
@@ -96,7 +96,7 @@ export function buildTips(
   const fitnessSubs = subs.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
   if (fitnessSubs.length >= 2) {
     const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#7C3AED",
+    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
       title: `${fitnessSubs.length} health & fitness subscriptions`,
       detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmtC(fitTotal)}/mo in this category.`,
       priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo`, savingsValue: fitTotal * 0.5 });
@@ -107,7 +107,7 @@ export function buildTips(
     if (!s.priceIncrease) continue;
     const diff = s.priceIncrease.to - s.priceIncrease.from;
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
-    tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#DC2626",
+    tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
       title: `${s.name} quietly raised its price`,
       detail: `It went from ${fmtC(s.priceIncrease.from)} to ${fmtC(s.priceIncrease.to)} per ${s.billingCycle}. That's an extra ${fmtC(annualExtra)} per year you may not have noticed.`,
       priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo`, savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
@@ -130,7 +130,7 @@ export function buildTips(
       );
       const trackedMonthly = toMonthly(s.price, s.billingCycle);
       if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
-        tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#DC2626",
+        tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#C4544A",
           title: `${s.name}'s price may have gone up`,
           detail: `${s.name} typically costs ${fmtC(marketMonthlyInBase)}/mo now, but you're tracking ${fmtC(trackedMonthly)}/mo here. If you've been charged more, update the price so we can track it properly.`,
           priority: "high" });
@@ -143,7 +143,7 @@ export function buildTips(
     if (!s.trialEndDate) continue;
     const days = Math.ceil((new Date(s.trialEndDate).getTime() - now.getTime()) / 86400000);
     if (days >= 0 && days <= 7) {
-      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#DC2626",
+      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#C4544A",
         title: `${s.name} trial ends ${days === 0 ? "today" : `in ${days} day${days !== 1 ? "s" : ""}`}`,
         detail: `You'll be charged ${fmtC(s.price)} automatically. If you don't want to continue, cancel before the trial ends.`,
         priority: "high" });
@@ -152,7 +152,7 @@ export function buildTips(
 
   // High total spend
   if (totalMonthly >= TOTAL_SPEND_THRESHOLD) {
-    tips.push({ id: "high-spend", icon: "trending-up", color: "#DC2626",
+    tips.push({ id: "high-spend", icon: "trending-up", color: "#C4544A",
       title: `${fmtC(totalMonthly)}/mo is above average`,
       detail: `The average person spends $50–80/month on subscriptions. You're at ${fmtC(totalMonthly)} (${fmtC(totalMonthly * 12)}/yr). A quick audit could free up cash.`,
       priority: "high" });
@@ -161,7 +161,7 @@ export function buildTips(
   // Individual expensive subs
   for (const s of subs) {
     if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
-      tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#7C3AED",
+      tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
         title: `${s.name} costs ${fmtC(toMonthly(s.price, s.billingCycle))}/mo`,
         detail: `That's ${fmtC(toMonthly(s.price, s.billingCycle) * 12)}/year. Check if a lower tier or family-sharing plan is available.`,
         priority: "medium" });
@@ -172,7 +172,7 @@ export function buildTips(
   const monthlySubs = subs.filter(s => s.billingCycle === "monthly" && s.price >= 5);
   if (monthlySubs.length > 0) {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
-    tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#059669",
+    tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#1F7A62",
       title: "Switch to yearly and save",
       detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmtC(annualSaving)}/year.`,
       priority: "medium", savingsHint: `~${fmtC(annualSaving)}/yr`, savingsValue: annualSaving / 12 });
@@ -181,7 +181,7 @@ export function buildTips(
   // No yearly plans at all — nudge harder
   const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
   if (yearlyCount === 0 && subs.length >= 4) {
-    tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#2563EB",
+    tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#142B3A",
       title: "No annual plans — you're paying more",
       detail: `You have ${subs.length} monthly subscriptions. Switching even half of them to yearly billing typically saves 15–20%. Check each service's pricing page for annual options.`,
       priority: "medium" });
@@ -194,14 +194,14 @@ export function buildTips(
   });
   if (thisWeek.length >= 2) {
     const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);
-    tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#2563EB",
+    tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#142B3A",
       title: `${thisWeek.length} renewals this week`,
       detail: `${thisWeek.map(s => s.name).join(", ")} — totalling ${fmtC(weekTotal)} — renew in the next 7 days.`,
       priority: "low" });
   }
 
   if (tips.length === 0) {
-    tips.push({ id: "all-good", icon: "check-decagram", color: "#059669",
+    tips.push({ id: "all-good", icon: "check-decagram", color: "#1F7A62",
       title: "Everything looks good!",
       detail: `You have ${subs.length} subscription${subs.length !== 1 ? "s" : ""} totalling ${fmtC(totalMonthly)}/mo. No issues detected right now.`,
       priority: "low" });

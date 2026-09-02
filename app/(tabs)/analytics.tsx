@@ -104,7 +104,7 @@ export default function AnalyticsScreen() {
       <View style={styles.scrollContent}>
         {isDark ? (
           <LinearGradient
-            colors={["#6C3EF4", "#6A47EA"]}
+            colors={["#245F52", "#2F8E71"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}

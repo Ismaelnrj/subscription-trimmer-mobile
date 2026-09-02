@@ -2,8 +2,8 @@
  *
  * A depth field of subscription cards drifting behind the page. As the
  * reader scrolls past "how it works", the cards flip from forgotten
- * (grey, unmarked, no date) to tracked (vermilion trim tab, price, and a
- * sage "seen coming" line). That is the whole product argument, told with
+ * (grey, unmarked, no date) to tracked (mint trim tab, price, and a
+ * "seen coming" line). That is the whole product argument, told with
  * geometry instead of another paragraph.
  *
  * Progressive enhancement only: no WebGL, no three.js, or reduced-motion
@@ -18,16 +18,18 @@
   try { gl = probe.getContext('webgl') || probe.getContext('experimental-webgl'); } catch (e) { return; }
   if (!gl) return;
 
-  /* Palette, kept in lockstep with the custom properties in landing.html. */
-  var INK = 0x0d0b12;
-  var INK_2 = 0x15121c;
-  var SURFACE = '#1b1722';
-  var PAPER = '#f0eef6';
-  var PAPER_MUTE = '#a9a5b6';
-  var PAPER_FAINT = '#8e899b';
-  var VERMILION = '#e84d35';
-  var SAGE = '#8fa668';
-  var RULE_SOFT = 'rgba(240,238,246,0.15)';
+  /* Palette, kept in lockstep with the custom properties in landing.html.
+     Mint marks the cards, it never letters them: as type on white it sits
+     at 1.6:1, so every word on a card is ink navy or slate. */
+  var GROUND = 0xf7f6f1;
+  var GROUND_2 = 0xefede5;
+  var CARD = '#ffffff';
+  var TYPE = '#142b3a';
+  var TYPE_3 = '#52616b';
+  var TYPE_4 = '#7e8890';
+  var MINT = '#55c6a3';
+  var MINT_TEXT = '#1f7a62';
+  var RULE_SOFT = 'rgba(20,43,58,0.16)';
 
   var UNIT = 6.5;            /* world units per viewport height */
   var TURN_SELECTOR = '#how-it-works';
@@ -41,11 +43,11 @@
   document.body.appendChild(renderer.domElement);
   document.documentElement.classList.add('has3d');
 
-  var inkColor = new THREE.Color(INK);
-  var ink2Color = new THREE.Color(INK_2);
+  var groundColor = new THREE.Color(GROUND);
+  var ground2Color = new THREE.Color(GROUND_2);
 
   var scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(inkColor.clone(), 9, 30);
+  scene.fog = new THREE.Fog(groundColor.clone(), 9, 30);
   var camera = new THREE.PerspectiveCamera(55, 1, 0.1, 80);
   camera.position.set(0, 0, 14);
 
@@ -85,32 +87,32 @@
     x.clearRect(0, 0, 512, 320);
 
     /* Hard offset shadow, no blur: the print device the whole page uses. */
-    x.fillStyle = tracked ? 'rgba(232,77,53,0.9)' : 'rgba(240,238,246,0.06)';
+    x.fillStyle = tracked ? 'rgba(85,198,163,0.95)' : 'rgba(20,43,58,0.16)';
     x.fillRect(34, 36, 462, 268);
 
-    x.fillStyle = SURFACE;
+    x.fillStyle = CARD;
     x.fillRect(16, 16, 462, 268);
     x.lineWidth = 2;
-    x.strokeStyle = RULE_SOFT;
+    x.strokeStyle = 'rgba(20,43,58,0.24)';
     x.strokeRect(16, 16, 462, 268);
 
     if (tracked) {
-      x.fillStyle = VERMILION;
+      x.fillStyle = MINT;
       trimTab(x, 46, 52, 30, 21);
     } else {
-      x.fillStyle = 'rgba(240,238,246,0.16)';
+      x.fillStyle = 'rgba(20,43,58,0.16)';
       x.fillRect(46, 58, 30, 9);
     }
 
-    x.fillStyle = tracked ? PAPER : PAPER_MUTE;
+    x.fillStyle = tracked ? TYPE : TYPE_3;
     x.font = '600 31px Manrope, system-ui, sans-serif';
     x.fillText(name, 92, 74, 356);
 
-    x.fillStyle = PAPER_FAINT;
+    x.fillStyle = TYPE_4;
     x.font = '700 15px Manrope, system-ui, sans-serif';
     x.fillText('MONTHLY', 47, 148);
 
-    x.fillStyle = tracked ? VERMILION : PAPER_FAINT;
+    x.fillStyle = tracked ? TYPE : TYPE_4;
     x.font = '600 66px Fraunces, Georgia, serif';
     x.fillText('€' + price, 45, 218);
 
@@ -123,10 +125,10 @@
 
     x.font = '700 15px Manrope, system-ui, sans-serif';
     if (tracked) {
-      x.fillStyle = SAGE;
+      x.fillStyle = MINT_TEXT;
       x.fillText('SEEN COMING · ' + date.toUpperCase(), 45, 268);
     } else {
-      x.fillStyle = 'rgba(240,238,246,0.22)';
+      x.fillStyle = 'rgba(20,43,58,0.28)';
       x.fillText('NO WARNING', 45, 268);
     }
 
@@ -172,7 +174,7 @@
       var mat = new THREE.MeshBasicMaterial({
         map: cardTexture(SERVICES[i][0], SERVICES[i][1], SERVICES[i][2], tracked),
         transparent: true,
-        opacity: (tracked ? 0.9 : 0.7) * (narrow ? 0.62 : 1),
+        opacity: (tracked ? 0.95 : 0.85) * (narrow ? 0.62 : 1),
         side: THREE.DoubleSide,
         depthWrite: false
       });
@@ -196,15 +198,15 @@
       cards.push(m);
     }
 
-    /* Dust: sparse, mostly paper coloured, a few vermilion so the accent
-       reads as light in the room rather than a second brand colour. */
+    /* Grain: sparse, mostly ink with a few mint, faint enough on paper to
+       read as texture rather than a second layer of content. */
     var moteGeo = new THREE.SphereGeometry(1, 12, 12);
-    for (var j = 0; j < 26; j++) {
+    for (var j = 0; j < 14; j++) {
       var s = 0.045 + Math.random() * 0.13;
       var mm = new THREE.Mesh(moteGeo, new THREE.MeshBasicMaterial({
-        color: j % 5 === 0 ? 0xe84d35 : 0xf0eef6,
+        color: j % 5 === 0 ? 0x55c6a3 : 0x142b3a,
         transparent: true,
-        opacity: 0.1 + Math.random() * 0.22,
+        opacity: 0.03 + Math.random() * 0.07,
         depthWrite: false
       }));
       mm.scale.setScalar(s);
@@ -257,7 +259,7 @@
 
   var warm = 0;
   var veil = 1;
-  var bg = inkColor.clone();
+  var bg = groundColor.clone();
   function frame(t) {
     var sec = t * 0.001;
     var vh = window.innerHeight;
@@ -272,7 +274,7 @@
 
     var target = warmthAt(scrollY);
     warm += (target - warm) * 0.08;
-    bg.copy(inkColor).lerp(ink2Color, warm);
+    bg.copy(groundColor).lerp(ground2Color, warm);
     renderer.setClearColor(bg);
     scene.fog.color.copy(bg);
 
