@@ -126,6 +126,16 @@ last one left off without needing a recap typed out.
   one is attached in Railway settings. No App Store badge anywhere, there
   is no iOS build. Keep the artifact and backend copies in sync when the
   design changes.
+- LIVE DOMAIN: `subtrimio.com`, registered at Squarespace (migrated from
+  Google Domains). `www.subtrimio.com` is a CNAME to the Railway service
+  (`2d14ukaj.up.railway.app`) and serves the landing page; the bare
+  `subtrimio.com` 301-forwards to www via Squarespace forwarding. Use
+  `https://www.subtrimio.com` as the canonical URL in ads and bios.
+  DNS also carries Google Workspace email (MX to smtp.google.com) and
+  Brevo sending auth (two `brevo*._domainkey` CNAMEs, DMARC, and a single
+  SPF record `v=spf1 include:_spf.google.com include:spf.brevo.com ~all`).
+  Never create a second `v=spf1` record, edit the existing one, two SPF
+  records invalidate SPF entirely and would break transactional email.
 - The landing page shows a real, hardcoded user count ("17") in its honesty
   block, a deliberate radical-honesty move the owner chose. It does not
   update itself: when the user count meaningfully grows, update the number
