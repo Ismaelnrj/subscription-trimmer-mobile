@@ -140,6 +140,59 @@ s = s.replace("""      await request(API.signup, { method: 'POST', body: JSON.st
       if (pwProblem) throw new Error(pwProblem);
       await request(API.signup, { method: 'POST', body: JSON.stringify(body) });""")
 
+# 8. reveal control on both password fields. Typing a password that has to
+#    carry a capital and a digit, blind, on a phone, is where signups die.
+PW_CSS = """.pw-wrap { position: relative; display: block; }
+.pw-wrap input { padding-right: 48px; }
+.pw-toggle {
+  position: absolute; top: 50%; right: 7px; transform: translateY(-50%);
+  display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border: 0; border-radius: 10px; background: transparent; color: #7B888F; cursor: pointer;
+  transition: color .15s ease, background .15s ease;
+}
+.pw-toggle:hover { color: var(--navy); background: rgba(20,43,58,.06); }
+.pw-toggle:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.pw-toggle svg { width: 19px; height: 19px; }
+.pw-toggle svg[hidden] { display: none; }
+.password-note {"""
+s = s.replace(".password-note {", PW_CSS, 1)
+
+EYE = '<svg class="pw-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+EYE_OFF = '<svg class="pw-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 5.1A9.9 9.9 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.6 4.4"/><path d="M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>'
+
+for fid in ("signupPassword", "loginPassword"):
+    start = s.index('<input id="' + fid + '"')
+    end = s.index("/>", start) + 2
+    s = (s[:start]
+         + '<span class="pw-wrap">' + s[start:end]
+         + '<button class="pw-toggle" type="button" data-pw-toggle="' + fid + '" '
+           'aria-pressed="false" aria-label="Show password" title="Show password">'
+         + EYE + EYE_OFF + '</button></span>'
+         + s[end:])
+
+s = s.replace("  function setMode(mode) {",
+"""  document.querySelectorAll('[data-pw-toggle]').forEach((btn) => {
+    const input = document.getElementById(btn.dataset.pwToggle);
+    if (!input) return;
+    btn.addEventListener('click', () => {
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', reveal ? 'true' : 'false');
+      const label = reveal ? 'Hide password' : 'Show password';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      // `hidden` is an HTMLElement property; assigning it on an SVG element
+      // sets a plain JS property and changes nothing, so set the attribute.
+      btn.querySelector('.pw-on').toggleAttribute('hidden', reveal);
+      btn.querySelector('.pw-off').toggleAttribute('hidden', !reveal);
+      input.focus();
+      const end = input.value.length;
+      try { input.setSelectionRange(end, end); } catch (_) {}
+    });
+  });
+
+  function setMode(mode) {""", 1)
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
