@@ -106,30 +106,22 @@ last one left off without needing a recap typed out.
   subscription details and notification settings, and the RECEIPT icon,
   which is the mark live on phones right now. No `eas update` was run for
   it and none is needed.
-- STOP BEFORE THE NEXT NATIVE BUILD. master is at 1.0.3 / versionCode 39
-  and carries a chevron mark the owner has REJECTED: the notch cuts 46%
-  of the way across and the outer arc sweeps 237 degrees, so the white
-  shape reads as an inverted Pac-Man rather than the D on the brand
-  sheet. Do NOT build or submit 1.0.3 until a corrected mark lands.
-  Everything else in 1.0.3 (splash composition, palette, tooling) is
-  fine, only the outline is wrong.
-- Waiting on the owner: a corrected logo and splash, ideally as SVG, or
-  else a large flat PNG of the mark alone with no shadow and no tile.
-  The numbers to fix are the notch depth and the gap between the
-  triangle's point and the notch. They are six constants at the top of
-  `tools/make-icons.py` plus two copies of the SVG path in
-  `backend/landing.html`; every other file imports `draw_mark`, so
-  nothing else needs touching.
-- MARK (2026-09, replaced the receipt): a chevron pointing right, inner
-  edge a V, outer edge a circular arc, with a mint triangle nesting into
-  the V. Two forward-pointing forms, one behind the other. Geometry lives
-  in `tools/make-icons.py` in units of the chevron's height, and
-  `tools/make-splash.py` and `tools/make-og.py` import it, so the app
-  icon, launch screen, share card and site header all come from one set
-  of numbers. Corners are rounded by blurring the mask and thresholding
-  at half, which rounds the concave notch by the same radius as the tips.
-  Regenerate from the repo root with `python3 tools/make-icons.py &&
-  python3 tools/make-splash.py && python3 tools/make-og.py`.
+- MARK CORRECTED (2026-09): the rejected chevron is gone. The approved
+  artwork is now the source: `tools/trace-mark.py` lifts both silhouettes
+  out of the reference PNG, walks the outlines and writes
+  `tools/mark.json`, which every generator draws from. Do NOT re-derive
+  the outline from measurements, that is exactly what produced the
+  inverted Pac-Man. The chevron keeps its 45 traced points; the triangle
+  is reduced to its three corners because tracing a small shape out of
+  soft artwork left the edges lumpy.
+- master is at 1.0.3 / versionCode 39 and is now good to build. 1.0.2 /
+  38 is live in the Play Store carrying the old RECEIPT icon, so the next
+  native build is what puts the chevron on phones.
+- MARK: a chevron pointing right, inner edge a V, outer edge a circular
+  arc, with a mint triangle nesting into the V. Regenerate everything
+  from the repo root with `python3 tools/trace-mark.py && python3
+  tools/make-icons.py && python3 tools/make-splash.py && python3
+  tools/make-og.py && python3 tools/make-svg.py`.
 - The mint triangle sits on the page ground, not on the chevron, so on
   light grounds it takes `#1F7A62` and on navy it takes `#55C6A3`. At
   21px a 1.9:1 triangle is a ghost, which is why the site header uses the
@@ -166,15 +158,29 @@ last one left off without needing a recap typed out.
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
-- The landing page now lives in two places. The design copy is a published
-  artifact ("Trimio"). The REAL page is `backend/landing.html`, served at
-  the domain root by `backend/server.js`, same design plus a working
-  account form that POSTs same-origin to /api/auth/register and
-  /api/auth/login (an account made there is the same account the app signs
-  into). The artifact copy cannot reach that API, so its form links to the
-  live site instead: that is the only intentional difference between them.
-  Keep the two in sync when the design changes. No App Store badge
-  anywhere, there is no iOS build.
+- LANDING PAGE (2026-09, replaced the editorial one): built from a
+  design handoff by `tools/build-landing.py`, which is the only thing
+  that should edit `backend/landing.html`. Re-run it, do not hand edit
+  the output. It applies four things the handoff could not know: signup
+  goes to `/api/auth/register` not `/api/auth/signup`, this backend
+  returns `{ error }` where the handoff assumed `{ message }`, there is
+  no web app behind `/account` so login lands on the success panel
+  instead, and the handoff's logo was a 1.5MB PNG inlined five times
+  (7.6MB) now served once as `/mark.svg` at 786 bytes.
+- GOOGLE SIGN IN is deliberately absent from the site. `POST
+  /api/auth/google` exists for the mobile token exchange, not a browser
+  redirect flow. Enabling the web button needs a Google OAuth client id
+  and secret plus a registered redirect URI, then a `GET
+  /api/auth/google?intent=` route. Until then the button stays removed
+  rather than dead.
+- The 3D backdrop, the ledger demo and the editorial layout are gone with
+  the old page. `backend/three.min.js` and `backend/trimio3d.js` were
+  deleted with their routes, 601KB of WebGL the new page does not use.
+  They are recoverable from git history if ever wanted.
+- The design copy is a published artifact ("Trimio"), rebuilt by the
+  scratchpad `mkartifact.py`. It inlines the mark as a data URI and makes
+  the form a preview that points at the live site, since the artifact
+  cannot reach the API. Keep it in sync when the page changes.
 - BRAND PALETTE (2026-09, replaced the violet everywhere): Ink Navy
   `#142B3A`, Warm White `#F7F6F1`, Soft Mint `#55C6A3`, with Slate
   `#52616B`, Warm Amber `#E6A34A` and Muted Coral `#D96B62` supporting.
