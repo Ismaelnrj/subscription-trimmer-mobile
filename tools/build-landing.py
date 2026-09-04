@@ -249,6 +249,30 @@ s = s.replace(".password-note {",
 s = re.sub(r'(<div class="hero-copy)[^"]*(")', r'\1\2', s)
 s = re.sub(r'(<div class="hero-visual)[^"]*(")', r'\1\2', s)
 
+# 14. Google sign in lives in the app, not here. Strip the rules its button
+#     left behind.
+s = re.sub(r'\.auth-google \{[^}]*\}\n', '', s)
+s = re.sub(r'\.auth-google:hover[^}]*\}\n', '', s)
+s = re.sub(r'\.google-dot \{[^}]*\}\n', '', s)
+
+# 15. an account created with Google in the app has no password, so signing
+#     in here returns "Invalid email or password", which is true but
+#     misleading. The backend must keep that generic wording or it would
+#     reveal which addresses exist, so the hint goes on the page instead.
+s = s.replace("""    } catch (error) {
+      loginMessage.className = 'auth-message error';
+      loginMessage.textContent = error.message;""",
+"""    } catch (error) {
+      loginMessage.className = 'auth-message error';
+      loginMessage.textContent = error.message;
+      const hint = document.createElement('div');
+      hint.className = 'auth-hint';
+      hint.textContent = 'If you created your account with Google, open Trimio on Android and sign in there instead.';
+      loginMessage.appendChild(hint);""")
+s = s.replace(".password-note {",
+              ".auth-hint { margin-top: 7px; color: var(--slate); font-size: 12px; "
+              "font-weight: 500; line-height: 1.5; }\n.password-note {", 1)
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")

@@ -375,21 +375,6 @@ img { display: block; max-width: 100%; }
 .auth-tab { border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; padding: 12px 8px; background: transparent; color: var(--slate); font-weight: 800; cursor: pointer; transition: color .18s ease, border-color .18s ease; }
 .auth-tab:hover { color: var(--navy); }
 .auth-tab.is-active { color: var(--navy); border-bottom-color: var(--mint); }
-.auth-google {
-  width: 100%;
-  min-height: 50px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: white;
-  color: var(--navy);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-weight: 800;
-  cursor: pointer;
-}
-.google-dot { width: 20px; height: 20px; border-radius: 50%; background: conic-gradient(#4285F4 0 25%, #34A853 0 50%, #FBBC05 0 75%, #EA4335 0); }
 .auth-form { display: grid; gap: 15px; }
 .field { display: grid; gap: 7px; }
 .field label { font-size: 13px; font-weight: 800; }
@@ -429,6 +414,7 @@ img { display: block; max-width: 100%; }
 .pw-toggle svg[hidden] { display: none; }
 .check-row a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; }
 .footer div a { display: inline-block; padding: 14px 2px; }
+.auth-hint { margin-top: 7px; color: var(--slate); font-size: 12px; font-weight: 500; line-height: 1.5; }
 .password-note { font-size: 11px; color: #7B888F; margin-top: 2px; }
 .auth-success { text-align: center; padding: 28px 8px 12px; }
 .success-mark { width: 66px; height: 66px; margin: 0 auto 18px; border-radius: 50%; background: var(--mint-soft); color: #2E8E74; display: grid; place-items: center; font-size: 30px; font-weight: 900; }
@@ -950,6 +936,10 @@ demoButtons.forEach((button) => {
     } catch (error) {
       loginMessage.className = 'auth-message error';
       loginMessage.textContent = error.message;
+      const hint = document.createElement('div');
+      hint.className = 'auth-hint';
+      hint.textContent = 'If you created your account with Google, open Trimio on Android and sign in there instead.';
+      loginMessage.appendChild(hint);
     } finally {
       submit.disabled = false;
       submit.textContent = 'Sign in';

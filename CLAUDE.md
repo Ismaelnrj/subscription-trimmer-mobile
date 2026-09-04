@@ -178,12 +178,15 @@ last one left off without needing a recap typed out.
   no web app behind `/account` so login lands on the success panel
   instead, and the handoff's logo was a 1.5MB PNG inlined five times
   (7.6MB) now served once as `/mark.svg` at 786 bytes.
-- GOOGLE SIGN IN is deliberately absent from the site. `POST
-  /api/auth/google` exists for the mobile token exchange, not a browser
-  redirect flow. Enabling the web button needs a Google OAuth client id
-  and secret plus a registered redirect URI, then a `GET
-  /api/auth/google?intent=` route. Until then the button stays removed
-  rather than dead.
+- GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
+  gap waiting to be filled. `POST /api/auth/google` serves the mobile
+  token exchange; there is no browser redirect flow and none is wanted.
+  Do not add a Continue with Google button to the site.
+- Because of that, an account created with Google in the app has no
+  password, so signing in on the site returns "Invalid email or
+  password". That wording must stay generic on the backend or it would
+  reveal which addresses exist, so the site adds a hint under the error
+  pointing the person to the app. Do not "fix" this in server.js.
 - The 3D backdrop, the ledger demo and the editorial layout are gone with
   the old page. `backend/three.min.js` and `backend/trimio3d.js` were
   deleted with their routes, 601KB of WebGL the new page does not use.
