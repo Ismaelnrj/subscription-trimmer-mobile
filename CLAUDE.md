@@ -108,6 +108,27 @@ last one left off without needing a recap typed out.
   notification settings. No `eas update` was run for it and none is
   needed. The landing page, tab icon and share card went out separately
   via Railway and are already live on subtrimio.com.
+- MARK (2026-09, replaced the receipt): a chevron pointing right, inner
+  edge a V, outer edge a circular arc, with a mint triangle nesting into
+  the V. Two forward-pointing forms, one behind the other. Geometry lives
+  in `tools/make-icons.py` in units of the chevron's height, and
+  `tools/make-splash.py` and `tools/make-og.py` import it, so the app
+  icon, launch screen, share card and site header all come from one set
+  of numbers. Corners are rounded by blurring the mask and thresholding
+  at half, which rounds the concave notch by the same radius as the tips.
+  Regenerate from the repo root with `python3 tools/make-icons.py &&
+  python3 tools/make-splash.py && python3 tools/make-og.py`.
+- The mint triangle sits on the page ground, not on the chevron, so on
+  light grounds it takes `#1F7A62` and on navy it takes `#55C6A3`. At
+  21px a 1.9:1 triangle is a ghost, which is why the site header uses the
+  deepened mint and the navy footer the bright one.
+- SPLASH: Android 12+ only allows an icon on a solid colour for the OS
+  splash, so the illustrated launch screen is NOT the OS splash. It is
+  `assets/splash.png`, drawn by `components/AnimatedSplash.tsx` once the
+  app mounts, with `resizeMode="cover"` so the wave reaches the bottom
+  edge. The OS splash is `assets/splash-icon.png` (the navy mark) on warm
+  white, matching the screen that follows it so there is no colour flash.
+  Do not try to move the rings, wordmark or wave into the OS splash.
 - THE ONE THING STILL VIOLET: the Play Store screenshots and feature
   graphic. They are a Play Console upload and do NOT need a new build or
   a new release, so they can be replaced at any time. Shoot them from the
