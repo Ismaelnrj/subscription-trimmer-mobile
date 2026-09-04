@@ -32,12 +32,13 @@ def og():
     img = img.crop((0, 0, W * S, H * S))
     d = ImageDraw.Draw(img)
 
-    icons.receipt(img, W * S * 0.815, H * S * 0.50, W * S * 0.20, W * S * 0.20 * 1.42)
+    icons.draw_mark(img, W * S * 0.815, H * S * 0.50, H * S * 0.46, PAPER, MINT)
     d = ImageDraw.Draw(img)
 
     x = 78 * S
-    icons.trim_tab(d, x, 62 * S, 26 * S, 18 * S, MINT)
-    d.text((x + 38 * S, 57 * S), "trimio", font=font("ExtraBold", 25), fill=PAPER)
+    icons.draw_mark(img, x + 14 * S, 71 * S, 34 * S, PAPER, MINT)
+    d = ImageDraw.Draw(img)
+    d.text((x + 38 * S, 55 * S), "Trimio", font=font("Medium", 27), fill=PAPER)
 
     d.text((x, 168 * S), "Know before", font=font("ExtraBold", 74), fill=PAPER)
     d.text((x, 258 * S), "you pay.",     font=font("ExtraBold", 74), fill=PAPER)

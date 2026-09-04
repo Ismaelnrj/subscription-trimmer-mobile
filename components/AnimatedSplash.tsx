@@ -4,7 +4,10 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, runOnJS } from 
 
 const MIN_DISPLAY_MS = 1100;
 const FADE_OUT_MS = 320;
-const SPLASH_BACKGROUND_COLOR = "#FEFEFE";
+// Warm White, the brand ground. Matches splash.backgroundColor in app.json
+// so the OS splash and this screen are the same colour and the handover
+// between them is invisible.
+const SPLASH_BACKGROUND_COLOR = "#F7F6F1";
 
 type Props = {
   ready: boolean;
@@ -57,7 +60,10 @@ export function AnimatedSplash({ ready, onFinish }: Props) {
 
   return (
     <Animated.View style={[styles.container, containerStyle]} pointerEvents="none">
-      <Image source={require("../assets/splash.png")} style={styles.image} resizeMode="contain" />
+      {/* cover, not contain: the illustration runs to the bottom edge, so
+          letterboxing would leave the wave floating in a band of ground.
+          Content sits well inside the middle, so cropping is safe. */}
+      <Image source={require("../assets/splash.png")} style={styles.image} resizeMode="cover" />
     </Animated.View>
   );
 }
