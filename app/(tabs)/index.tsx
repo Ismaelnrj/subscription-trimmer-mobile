@@ -157,7 +157,7 @@ export default function DashboardScreen() {
 
   const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
   const allRecoTips = subscriptions.length >= 2
-    ? buildTips(subscriptions as any, fmtC, singleSubThreshold, { baseCurrencyCode, rates })
+    ? buildTips(subscriptions as any, fmtC, t, singleSubThreshold, { baseCurrencyCode, rates })
     : [];
   const recoTips = isPremium ? allRecoTips : allRecoTips.slice(0, 2);
   const showRecoBanner = !recoBannerDismissed && recoTips.length > 0;

@@ -247,11 +247,31 @@ last one left off without needing a recap typed out.
   SPF record `v=spf1 include:_spf.google.com include:spf.brevo.com ~all`).
   Never create a second `v=spf1` record, edit the existing one, two SPF
   records invalidate SPF entirely and would break transactional email.
-- PRE BUILD CHECKS: run `npx tsc --noEmit`, `python3
+- PRE BUILD CHECKS: run `python3 tools/typecheck.py`, `python3
   tools/check-legal-sync.py`, and the locale parity check before any
   native build. check-legal-sync.py fails if either legal document drifts
   between its app copy and its served copy, and enforces the no dash rule
   on both.
+- NEVER trust a bare `npx tsc --noEmit`, and never report it as clean.
+  This project pins TypeScript 5.3.3, but a cloud/sandbox session has no
+  `node_modules` (installs are blocked), so npx falls through to the
+  global compiler on PATH, currently TS 6.0.2. That version rejects this
+  tsconfig outright (TS5107 on `moduleResolution=node10`, TS5101 on
+  `baseUrl`) and exits before typechecking a single file, and piping it
+  through `tail` hides the exit code too. It reads as a clean run and is
+  not one. `tools/typecheck.py` is the guarded version: it insists on the
+  pinned compiler in node_modules and treats a TS5xxx config error as a
+  failed run, not an empty one. In a sandbox it exits 2 and says so, which
+  is the correct answer there. Real typechecking only happens on the
+  owner's machine.
+- That silent pass shipped a crash on 2026-09-04. `buildTips` in
+  `app/insights.tsx` gained a `t` parameter in third position, the second
+  call site in `app/(tabs)/index.tsx` kept passing the threshold number
+  into that slot, and every user hit `TypeError: 50 is not a function` on
+  the dashboard. The cause underneath was scoping a grep to one file
+  (`grep -n "buildTips(" app/insights.tsx`) when changing an exported
+  signature. When any exported symbol changes shape, grep the WHOLE repo
+  for it, tests included: `grep -rn "<name>" --include=*.ts --include=*.tsx .`
 - The app's light theme uses the SAME values as the landing page for
   ground, card, rule, ink, slate and mint (`#F7F6F1`, `#FCFBF8`,
   `#DCDEDB`, `#142B3A`, `#52616B`, `#55C6A3`). Cards are warm paper, not
