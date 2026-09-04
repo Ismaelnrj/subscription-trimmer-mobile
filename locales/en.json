@@ -550,5 +550,13 @@
     "edit": "Edit",
     "couldntLoad": "Couldn't load this subscription. Check your connection.",
     "retry": "Retry"
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "strong": "Strong",
+    "reqLength": "At least 8 characters",
+    "reqUpper": "One uppercase letter",
+    "reqNumber": "One number"
   }
 }

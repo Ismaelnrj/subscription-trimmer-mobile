@@ -1072,7 +1072,7 @@ export default function SubscriptionsScreen() {
                   <TextInput
                     style={styles.customCatInput}
                     placeholder="e.g. hobbies, work tools..."
-                    placeholderTextColor="#A78BFA"
+                    placeholderTextColor={c.placeholder}
                     autoFocus
                     value={customCatDraft}
                     onChangeText={setCustomCatDraft}
@@ -1182,8 +1182,8 @@ function makeStyles(c: AppColors) {
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
     },
     categoryBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textTransform: "capitalize" },
-    customCategoryBadge: { backgroundColor: "#2D1B69" },
-    customCategoryBadgeText: { color: "#A78BFA" },
+    customCategoryBadge: { backgroundColor: c.accentLight },
+    customCategoryBadgeText: { color: c.success },
     trialBadge: {
       alignSelf: "flex-start", backgroundColor: c.warningLight, borderRadius: 4,
       paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,

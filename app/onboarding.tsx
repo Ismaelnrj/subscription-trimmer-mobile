@@ -74,8 +74,8 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
 
         <View style={styles.content}>
-          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#2E2350" : "#EDE9FE" }]}>
-            <MaterialCommunityIcons name="help-circle-outline" size={64} color={c.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#1B3040" : "#E7EBEE" }]}>
+            <MaterialCommunityIcons name="help-circle-outline" size={64} color={isDark ? "#F2F1EC" : c.primary} />
           </View>
           <Text style={styles.title}>{t("onboarding.estimateTitle")}</Text>
           <Text style={styles.desc}>{t("onboarding.estimateDesc")}</Text>

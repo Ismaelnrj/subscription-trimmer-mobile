@@ -22,7 +22,7 @@ export default function CancelGuideScreen() {
 
       {guide.note && (
         <View style={styles.noteBox}>
-          <MaterialCommunityIcons name="information-outline" size={16} color="#A78BFA" style={{ marginTop: 1 }} />
+          <MaterialCommunityIcons name="information-outline" size={16} color={c.primary} style={{ marginTop: 1 }} />
           <Text style={styles.noteText}>{guide.note}</Text>
         </View>
       )}
@@ -66,10 +66,10 @@ function makeStyles(c: AppColors) {
     content: { padding: 20, paddingBottom: 48 },
     heading: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 20 },
     noteBox: {
-      flexDirection: "row", gap: 8, backgroundColor: "#2D1B69",
+      flexDirection: "row", gap: 8, backgroundColor: c.primaryLight,
       borderRadius: 12, padding: 14, marginBottom: 24, alignItems: "flex-start",
     },
-    noteText: { flex: 1, fontSize: 13, color: "#A78BFA", lineHeight: 20 },
+    noteText: { flex: 1, fontSize: 13, color: c.text, lineHeight: 20 },
     stepsContainer: { gap: 16, marginBottom: 32 },
     stepRow: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
     stepNumber: {

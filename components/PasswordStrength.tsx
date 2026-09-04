@@ -1,25 +1,31 @@
 import { View, Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTheme } from "../lib/theme";
+import { useTranslation } from "react-i18next";
+import { useTheme, AppColors } from "../lib/theme";
 
 export interface PasswordScore {
   score: 0 | 1 | 2 | 3;
-  label: string;
-  color: string;
   hasLength: boolean;
   hasUpper: boolean;
   hasNumber: boolean;
 }
 
+// Kept free of colour and copy so it stays usable as a pure validity check.
+// The meter maps the score to a themed colour and a translated label.
 export function getPasswordScore(password: string): PasswordScore {
-  if (!password) return { score: 0, label: "", color: "#E7E3F5", hasLength: false, hasUpper: false, hasNumber: false };
   const hasLength = password.length >= 8;
   const hasUpper  = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
+  if (!password) return { score: 0, hasLength: false, hasUpper: false, hasNumber: false };
   const met = [hasLength, hasUpper, hasNumber].filter(Boolean).length;
-  if (met === 3) return { score: 3, label: "Strong",  color: "#2EC771", hasLength, hasUpper, hasNumber };
-  if (met === 2) return { score: 2, label: "Fair",    color: "#F5A623", hasLength, hasUpper, hasNumber };
-  return          { score: 1, label: "Weak",    color: "#E74C3C", hasLength, hasUpper, hasNumber };
+  return { score: (met === 3 ? 3 : met === 2 ? 2 : 1) as 1 | 2 | 3, hasLength, hasUpper, hasNumber };
+}
+
+function scoreColor(score: number, c: AppColors): string {
+  if (score >= 3) return c.success;
+  if (score === 2) return c.warning;
+  if (score === 1) return c.danger;
+  return c.border;
 }
 
 export function isPasswordValid(password: string): boolean {
@@ -32,7 +38,12 @@ type Props = { password: string };
 export function PasswordStrengthMeter({ password }: Props) {
   const s = getPasswordScore(password);
   const c = useTheme();
+  const { t } = useTranslation();
   if (!password) return null;
+  const color = scoreColor(s.score, c);
+  const label = s.score >= 3 ? t("passwordStrength.strong")
+              : s.score === 2 ? t("passwordStrength.fair")
+              : t("passwordStrength.weak");
 
   return (
     <View style={styles.container}>
@@ -40,15 +51,15 @@ export function PasswordStrengthMeter({ password }: Props) {
         {[1, 2, 3].map((level) => (
           <View
             key={level}
-            style={[styles.bar, { backgroundColor: s.score >= level ? s.color : c.border }]}
+            style={[styles.bar, { backgroundColor: s.score >= level ? color : c.border }]}
           />
         ))}
-        <Text style={[styles.label, { color: s.color }]}>{s.label}</Text>
+        <Text style={[styles.label, { color }]}>{label}</Text>
       </View>
       <View style={styles.reqs}>
-        <Req met={s.hasLength} text="At least 8 characters" />
-        <Req met={s.hasUpper}  text="One uppercase letter" />
-        <Req met={s.hasNumber} text="One number" />
+        <Req met={s.hasLength} text={t("passwordStrength.reqLength")} />
+        <Req met={s.hasUpper}  text={t("passwordStrength.reqUpper")} />
+        <Req met={s.hasNumber} text={t("passwordStrength.reqNumber")} />
       </View>
     </View>
   );
@@ -61,9 +72,9 @@ function Req({ met, text }: { met: boolean; text: string }) {
       <MaterialCommunityIcons
         name={met ? "check-circle" : "circle-outline"}
         size={13}
-        color={met ? "#2EC771" : c.textMuted}
+        color={met ? c.success : c.textMuted}
       />
-      <Text style={[styles.reqText, { color: met ? "#2EC771" : c.textMuted }]}>{text}</Text>
+      <Text style={[styles.reqText, { color: met ? c.success : c.textMuted }]}>{text}</Text>
     </View>
   );
 }

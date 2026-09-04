@@ -550,5 +550,13 @@
     "edit": "Bearbeiten",
     "couldntLoad": "Diese Ausgabe konnte nicht geladen werden. Bitte Verbindung prüfen.",
     "retry": "Erneut versuchen"
+  },
+  "passwordStrength": {
+    "weak": "Schwach",
+    "fair": "Mittel",
+    "strong": "Stark",
+    "reqLength": "Mindestens 8 Zeichen",
+    "reqUpper": "Ein Großbuchstabe",
+    "reqNumber": "Eine Zahl"
   }
 }
