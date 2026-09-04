@@ -1628,10 +1628,14 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
+    // currency_symbol comes along for the ride rather than being fetched per
+    // user inside the loop. LEFT JOIN because a user who never opened settings
+    // has no row there.
     const usersResult = await pool.query(`
-      SELECT u.id, u.email, u.name
+      SELECT u.id, u.email, u.name, us.currency_symbol
       FROM users u
       JOIN notification_preferences np ON np.user_id = u.id
+      LEFT JOIN user_settings us ON us.user_id = u.id
       WHERE np.email_reminders = TRUE AND u.is_verified = TRUE
         AND (u.is_paid = TRUE OR u.bonus_premium_until > NOW())
     `);
@@ -1650,12 +1654,18 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       );
       if (subsResult.rows.length === 0) continue;
 
+      // This used to hardcode a dollar sign, so a user tracking in euros got a
+      // reminder listing their subscriptions in dollars. The digest and the
+      // in-app alerts already read the setting; this template did not.
+      const sym = user.currency_symbol || '$';
+
       // Subscription names are user-supplied, so they get escaped before
-      // going anywhere near email HTML.
+      // going anywhere near email HTML. So is the currency symbol: it is
+      // written straight from the client with no validation.
       const rows = subsResult.rows.map(s =>
         `<tr>
           <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(s.name || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">$${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(sym)}${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
           <td style="padding:8px;border-bottom:1px solid #DCDEDB">${new Date(s.next_billing_date).toLocaleDateString()}</td>
         </tr>`
       ).join('');
