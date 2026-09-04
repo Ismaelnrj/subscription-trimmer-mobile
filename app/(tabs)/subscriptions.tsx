@@ -85,12 +85,30 @@ export default function SubscriptionsScreen() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (savingsTimer.current) clearTimeout(savingsTimer.current); }, []);
+  const reviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reviewDeadline = useRef(0);
+  useEffect(() => () => {
+    if (savingsTimer.current) clearTimeout(savingsTimer.current);
+    if (reviewTimer.current) clearTimeout(reviewTimer.current);
+  }, []);
 
+  // Only ever one pending request, and the latest deadline wins.
+  //
+  // Deleting a subscription asks for the prompt at 5.5s so the savings toast
+  // (which clears at 5s) is read first, but the delete also changes the list
+  // length, which re-runs the effect below and asks again at 4s. Racing them
+  // meant the shorter one won and the prompt covered the toast it was
+  // deliberately scheduled to follow.
   const maybeShowReview = async (delayMs: number) => {
     if (!(await reviewEligible())) return;
-    await new Promise((r) => setTimeout(r, delayMs));
-    if (await reviewEligible()) setShowReviewPrompt(true);
+    const deadline = Date.now() + delayMs;
+    if (reviewTimer.current && deadline <= reviewDeadline.current) return;
+    if (reviewTimer.current) clearTimeout(reviewTimer.current);
+    reviewDeadline.current = deadline;
+    reviewTimer.current = setTimeout(async () => {
+      reviewTimer.current = null;
+      if (await reviewEligible()) setShowReviewPrompt(true);
+    }, delayMs);
   };
 
   const handleStarTap = async () => {

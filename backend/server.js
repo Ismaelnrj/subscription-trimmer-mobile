@@ -291,11 +291,11 @@ async function sendVerificationEmail(email, code) {
   await sendEmail(
     email,
     'Verify your Trimio account',
-    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-      <h2 style="color:#4F46E5;margin-bottom:8px">Verify your Trimio email</h2>
-      <p style="color:#374151">Enter this code in the app to activate your account:</p>
-      <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
-      <p style="color:#9CA3AF;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
+    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+      <h2 style="color:#142B3A;margin-bottom:8px">Verify your Trimio email</h2>
+      <p style="color:#52616B">Enter this code in the app to activate your account:</p>
+      <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#142B3A;text-align:center;padding:24px 0">${code}</div>
+      <p style="color:#52616B;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
     </div>`
   );
 }
@@ -954,11 +954,11 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     await sendEmail(
       email,
       'Reset your Trimio password',
-      `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-        <h2 style="color:#4F46E5;margin-bottom:8px">Reset your password</h2>
-        <p style="color:#374151">Enter this code in the app to reset your password:</p>
-        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#1F2937;text-align:center;padding:24px 0">${code}</div>
-        <p style="color:#9CA3AF;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
+      `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+        <h2 style="color:#142B3A;margin-bottom:8px">Reset your password</h2>
+        <p style="color:#52616B">Enter this code in the app to reset your password:</p>
+        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#142B3A;text-align:center;padding:24px 0">${code}</div>
+        <p style="color:#52616B;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
       </div>`
     );
     res.json({ success: true });
@@ -1654,32 +1654,32 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       // going anywhere near email HTML.
       const rows = subsResult.rows.map(s =>
         `<tr>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${escapeHtml(s.name || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">$${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">${new Date(s.next_billing_date).toLocaleDateString()}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(s.name || '')}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">$${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${new Date(s.next_billing_date).toLocaleDateString()}</td>
         </tr>`
       ).join('');
 
       await sendEmail(
         user.email,
         `Trimio: ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing soon`,
-        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-          <h2 style="color:#4F46E5;margin-bottom:4px">Hi ${escapeHtml(user.name || 'there')}!</h2>
-          <p style="color:#374151;margin-bottom:20px">Here are your upcoming subscription renewals in the next 3 days:</p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e7eb">
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+          <h2 style="color:#142B3A;margin-bottom:4px">Hi ${escapeHtml(user.name || 'there')}!</h2>
+          <p style="color:#52616B;margin-bottom:20px">Here are your upcoming subscription renewals in the next 3 days:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#FCFBF8;border-radius:8px;overflow:hidden;border:1px solid #DCDEDB">
             <thead>
-              <tr style="background:#f3f4f6">
-                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Service</th>
-                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Price</th>
-                <th style="padding:10px;text-align:left;font-size:12px;color:#6b7280">Renewal Date</th>
+              <tr style="background:#E9E6DE">
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Service</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Price</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Renewal Date</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
           <div style="text-align:center;margin-top:24px">
-            <a href="trimio://subscriptions?from=renewal_reminder" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
+            <a href="trimio://subscriptions?from=renewal_reminder" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
           </div>
-          <p style="color:#9ca3af;font-size:12px;margin-top:20px">
+          <p style="color:#52616B;font-size:12px;margin-top:20px">
             You're receiving this because you enabled email reminders in Trimio.
             Tap the button above (or open the app) to manage your notification preferences.
           </p>
@@ -1721,13 +1721,13 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
       await sendEmail(
         user.email,
         `We're sorry to see you go, ${user.name || 'there'}`,
-        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#f9fafb;border-radius:12px">
-          <h2 style="color:#4F46E5;margin-bottom:8px">Your Trimio ${escapeHtml(planLabel)} plan is set to end</h2>
-          <p style="color:#374151">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+          <h2 style="color:#142B3A;margin-bottom:8px">Your Trimio ${escapeHtml(planLabel)} plan is set to end</h2>
+          <p style="color:#52616B">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
           <div style="text-align:center;margin-top:24px">
-            <a href="trimio://upgrade" style="display:inline-block;background:#4F46E5;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
+            <a href="trimio://upgrade" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
           </div>
-          <p style="color:#9CA3AF;font-size:12px;margin-top:20px">This is an automatic reminder — no action needed if you meant to cancel.</p>
+          <p style="color:#52616B;font-size:12px;margin-top:20px">This is an automatic reminder. No action needed if you meant to cancel.</p>
         </div>`
       ).catch(e => console.error(`Win-back email failed for user ${user.id}:`, e));
       await pool.query('UPDATE users SET win_back_sent_at = NOW() WHERE id = $1', [user.id]);
