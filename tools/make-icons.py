@@ -20,69 +20,111 @@ NAVY_LO   = (13, 30, 41)
 PAPER     = (247, 246, 241)
 MINT      = (85, 198, 163)
 
-# --- mark geometry -----------------------------------------------------
-# Traced out of the approved artwork by tools/trace-mark.py rather than
-# fitted by hand: an earlier pass re-derived the outline from measurements
-# and drifted into reading as an inverted Pac-Man. mark.json holds both
-# outlines in units where the chevron is 100 tall.
-_MARK = json.loads((pathlib.Path(__file__).parent / "mark.json").read_text())
-CHEVRON = [tuple(p) for p in _MARK["chevron"]]
-TRIANGLE = [tuple(p) for p in _MARK["triangle"]]
-MARK_W, MARK_H = _MARK["meta"]["width"], _MARK["meta"]["height"]
-ROUND_R = 3.2          # the design rounds every corner; the chevron
-                       # arrives already rounded, the triangle does not
+# --- the mark ----------------------------------------------------------
+# Two soft alpha masks lifted straight out of the approved artwork by
+# tools/trace-mark.py. Nothing here redraws the shape: it is scaled and
+# tinted, so the curves, the notch and the triangle's rounded corners are
+# the artwork's own. Do not replace this with a redrawn outline.
+_DIR = pathlib.Path(__file__).parent
+_META = json.loads((_DIR / "mark.json").read_text())
+_CHEVRON = Image.open(_DIR / "mark-chevron.png").convert("L")
+_TRIANGLE = Image.open(_DIR / "mark-triangle.png").convert("L")
+MARK_W, MARK_H = _META["mark_w"], _META["mark_h"]
+MARK_OVER_TILE = _META["mark_h_over_tile"]
+OFFSET_X = _META["offset_x_over_tile"]   # the artwork sits right of centre
+OFFSET_Y = _META["offset_y_over_tile"]   # and a little high
 
 
-def _rounded(mask, r_px):
-    """Knock the stair-stepping off the traced outline."""
-    if r_px <= 0:
-        return mask
-    return mask.filter(ImageFilter.GaussianBlur(r_px * 0.62)).point(
-        lambda v: 255 if v >= 128 else 0)
+def draw_mark(img, cx, cy, height, chevron_fill, tri_fill, shadow=False):
+    """Places the mark centred on (cx, cy) at the given overall height.
+
+    `shadow` reproduces the soft drop the artwork carries under both
+    shapes. It belongs on the icon tile only: the launch screen and the
+    website set the mark flat on their own ground."""
+    w = max(1, round(MARK_W * height / MARK_H))
+    h = max(1, round(height))
+    ox, oy = round(cx - w / 2), round(cy - h / 2)
+    if shadow:
+        off = max(1, round(h * 0.018))
+        blur = max(1, h * 0.022)
+        for mask in (_CHEVRON, _TRIANGLE):
+            sh = Image.new("RGBA", img.size, (0, 0, 0, 0))
+            layer = Image.new("RGBA", (w, h), (0, 8, 16, 255))
+            layer.putalpha(mask.resize((w, h), Image.LANCZOS))
+            sh.alpha_composite(layer, (ox + off, oy + off))
+            sh = sh.filter(ImageFilter.GaussianBlur(blur))
+            sh.putalpha(sh.getchannel("A").point(lambda v: int(v * 0.55)))
+            img.alpha_composite(sh)
+    for mask, fill in ((_CHEVRON, chevron_fill), (_TRIANGLE, tri_fill)):
+        m = mask.resize((w, h), Image.LANCZOS)
+        if isinstance(fill, tuple) and len(fill) == 2:      # (top, bottom) ramp
+            layer = vertical((w, h), *fill).convert("RGBA")
+        else:
+            layer = Image.new("RGBA", (w, h), fill + (255,))
+        layer.putalpha(m)
+        img.alpha_composite(layer, (ox, oy))
 
 
-def _poly_mask(size, pts, s, ox, oy):
-    m = Image.new("L", size, 0)
-    ImageDraw.Draw(m).polygon([(ox + x * s, oy + y * s) for x, y in pts], fill=255)
-    return _rounded(m, ROUND_R * s)
-
-
-def draw_mark(img, cx, cy, height, chevron_fill, tri_fill):
-    """Places the mark centred on (cx, cy) at the given chevron height."""
-    s = height / MARK_H
-    ox, oy = cx - MARK_W * s / 2, cy - MARK_H * s / 2
-    for pts, fill in ((CHEVRON, chevron_fill), (TRIANGLE, tri_fill)):
-        layer = Image.new("RGBA", img.size, fill + (255,))
-        layer.putalpha(_poly_mask(img.size, pts, s, ox, oy))
-        img.alpha_composite(layer)
+# Sampled off the approved artwork rather than invented. The field is a
+# diagonal that lifts toward the top right, and it is far deeper than the
+# UI's Ink Navy: an icon carries more contrast than a screen does.
+TILE_TL, TILE_TR = (5, 30, 47), (15, 42, 61)
+TILE_BL, TILE_BR = (0, 16, 30), (1, 21, 36)
+# The triangle is not flat either: it runs bright at the top to deep at
+# the foot. The chevron is effectively flat warm white.
+TRI_TOP, TRI_BOT = (79, 238, 195), (36, 210, 164)
 
 
 def ground(size):
-    """Navy, warmed slightly toward the top so the mark is not on a flat field."""
-    img = Image.new("RGBA", (size, size), NAVY)
+    """The artwork's field, bilinear between its four sampled corners."""
+    img = Image.new("RGBA", (size, size))
     d = ImageDraw.Draw(img)
     for y in range(size):
-        t = y / size
-        d.line([(0, y), (size, y)],
-               fill=tuple(round(NAVY_HI[i] + (NAVY_LO[i] - NAVY_HI[i]) * t)
-                          for i in range(3)) + (255,))
+        v = y / max(size - 1, 1)
+        left = [TILE_TL[i] + (TILE_BL[i] - TILE_TL[i]) * v for i in range(3)]
+        right = [TILE_TR[i] + (TILE_BR[i] - TILE_TR[i]) * v for i in range(3)]
+        for seg in range(0, size, 4):
+            u = seg / max(size - 1, 1)
+            d.rectangle([seg, y, seg + 3, y],
+                        fill=tuple(round(left[i] + (right[i] - left[i]) * u)
+                                   for i in range(3)) + (255,))
     return img
 
 
-def build(size, out, frac, transparent=False, chevron=PAPER, tri=MINT, S=4):
+def vertical(size_wh, top, bottom):
+    """A vertical ramp, used to give the triangle the artwork's shading."""
+    w, h = size_wh
+    img = Image.new("RGB", (w, h))
+    d = ImageDraw.Draw(img)
+    for y in range(h):
+        v = y / max(h - 1, 1)
+        d.line([(0, y), (w, y)],
+               fill=tuple(round(top[i] + (bottom[i] - top[i]) * v) for i in range(3)))
+    return img
+
+
+def build(size, out, frac, transparent=False, chevron=PAPER, tri=MINT, S=4,
+          shadow=False, offset=False):
+    """`offset` reproduces the artwork's own placement inside the tile. The
+       adaptive icon stays centred instead, because Android masks it to a
+       centred circle and an offset mark would crop unevenly."""
     big = size * S
     img = (Image.new("RGBA", (big, big), (0, 0, 0, 0)) if transparent
            else ground(big))
-    draw_mark(img, big / 2, big / 2, big * frac, chevron, tri)
+    dx = big * OFFSET_X if offset else 0
+    dy = big * OFFSET_Y if offset else 0
+    draw_mark(img, big / 2 + dx, big / 2 + dy, big * frac, chevron, tri, shadow=shadow)
     img.resize((size, size), Image.LANCZOS).save(out)
     print("wrote", out, size)
 
 
 if __name__ == "__main__":
     D = "assets/"
-    build(1024, D + "icon.png", 0.58)
+    build(1024, D + "icon.png", MARK_OVER_TILE, tri=(TRI_TOP, TRI_BOT),
+          shadow=True, offset=True)
     build(1024, D + "adaptive-icon.png", 0.42, transparent=True)   # adaptive safe zone
-    build(192,  D + "favicon.png", 0.58)
+    build(192,  D + "favicon.png", MARK_OVER_TILE, tri=(TRI_TOP, TRI_BOT),
+          shadow=True, offset=True)
     # Android tints a single-colour silhouette, so both parts are opaque white
     # and the gap between them carries the shape.
     build(192,  D + "notification-icon.png", 0.62, transparent=True,

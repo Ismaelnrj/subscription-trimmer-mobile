@@ -106,14 +106,25 @@ last one left off without needing a recap typed out.
   subscription details and notification settings, and the RECEIPT icon,
   which is the mark live on phones right now. No `eas update` was run for
   it and none is needed.
-- MARK CORRECTED (2026-09): the rejected chevron is gone. The approved
-  artwork is now the source: `tools/trace-mark.py` lifts both silhouettes
-  out of the reference PNG, walks the outlines and writes
-  `tools/mark.json`, which every generator draws from. Do NOT re-derive
-  the outline from measurements, that is exactly what produced the
-  inverted Pac-Man. The chevron keeps its 45 traced points; the triangle
-  is reduced to its three corners because tracing a small shape out of
-  soft artwork left the edges lumpy.
+- MARK, and how it is reproduced: `tools/trace-mark.py` lifts the two
+  shapes out of the approved artwork as soft alpha masks
+  (`tools/mark-chevron.png`, `tools/mark-triangle.png`) and records their
+  proportions in `tools/mark.json`. Every generator scales and tints
+  those masks. NOTHING redraws the outline: two earlier attempts did,
+  from measurements and then from a simplified polygon, and both drifted
+  into an inverted Pac-Man. The generated icon now matches the artwork to
+  3.9/255 mean per channel across its interior.
+- Three details of the artwork that are easy to miss and were each worth
+  a visible error: the mark is NOT centred in the tile, it sits +2.20%
+  right and -1.29% high (fixing that alone took the difference from 24.1
+  to 3.9); the field is a diagonal far deeper than the UI's Ink Navy,
+  running #051E2F top left to #00101E bottom left; and the triangle
+  carries a vertical ramp, #4FEEC3 down to #24D2A4. The chevron is flat
+  warm white.
+- Shapes are separated during extraction by GREENNESS, not colour
+  distance. A half covered white edge over navy is a mid grey which sits
+  nearer mint than paper, so distance leaks the whole chevron outline
+  into the triangle mask.
 - master is at 1.0.3 / versionCode 39 and is now good to build. 1.0.2 /
   38 is live in the Play Store carrying the old RECEIPT icon, so the next
   native build is what puts the chevron on phones.
