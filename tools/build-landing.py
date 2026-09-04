@@ -193,6 +193,60 @@ s = s.replace("  function setMode(mode) {",
 
   function setMode(mode) {""", 1)
 
+# 9. the reveal animation must not be load bearing. Everything below the
+#    hero starts at opacity 0 and only appears when an observer fires, so
+#    without JS, without IntersectionObserver, or for a reader who asked
+#    for less motion, the page was blank past the fold.
+s = s.replace(
+    ".reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }",
+    ".reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }\n"
+    "@media (prefers-reduced-motion: reduce) {\n"
+    "  .reveal { opacity: 1; transform: none; transition: none; }\n"
+    "}")
+s = s.replace("</style>",
+    "</style>\n"
+    "<noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>", 1)
+s = s.replace("""const revealItems = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {""",
+"""const revealItems = document.querySelectorAll('.reveal');
+const prefersLessMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (prefersLessMotion || !('IntersectionObserver' in window)) {
+  revealItems.forEach((item) => item.classList.add('visible'));
+}
+const revealObserver = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {""")
+s = s.replace("""}, { threshold: 0.12 });
+revealItems.forEach((item) => revealObserver.observe(item));""",
+"""}, { threshold: 0.12 }) : null;
+if (revealObserver && !prefersLessMotion) {
+  revealItems.forEach((item) => revealObserver.observe(item));
+}""")
+
+# 10. the footer pointed at /privacy, which this server does not serve. It
+#     serves /privacy-policy. Relative so it works on any host.
+s = s.replace('href="https://www.subtrimio.com/privacy"', 'href="/privacy-policy"')
+
+# 11. the consent asked people to agree to a Terms document that does not
+#     exist, and to a policy they could not open. Link the policy that is
+#     real, drop the reference to the one that is not.
+s = s.replace("<span>I agree to the Terms and Privacy Policy.</span>",
+              '<span>I agree to the <a href="/privacy-policy" target="_blank" '
+              'rel="noopener">Privacy Policy</a>.</span>')
+s = s.replace(".password-note {",
+              ".check-row a { color: var(--navy); text-decoration: underline; "
+              "text-underline-offset: 2px; }\n.password-note {", 1)
+
+# 12. footer links were 15px tall, under any reasonable touch target
+s = s.replace(".footer div a", ".footer div a")
+s = s.replace(".password-note {",
+              ".footer div a { display: inline-block; padding: 14px 2px; }\n.password-note {", 1)
+
+# 13. the hero must be whole at rest. Its phone mockup carried .reveal and
+#     sits just past the fold on a phone, so first paint showed the copy
+#     above 570px of blank space until the reader happened to scroll. The
+#     first screen is not the place for a scroll triggered entrance.
+s = re.sub(r'(<div class="hero-copy)[^"]*(")', r'\1\2', s)
+s = re.sub(r'(<div class="hero-visual)[^"]*(")', r'\1\2', s)
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
