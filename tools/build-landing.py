@@ -98,6 +98,48 @@ s = re.sub(r'\.auth-divider \{[^}]*\}\n', '', s)
 s = re.sub(r'\.auth-divider::before[^}]*\}\n', '', s)
 s = s.replace('.auth-brand img { width: 34px; height: 34px; border-radius: 10px; }\n', '')
 
+# 6. flat tabs with an underline, instead of the grey segmented pill
+s = s.replace(
+    ".auth-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; "
+    "background: #ECEBE6; border-radius: 999px; margin-bottom: 22px; }",
+    ".auth-tabs { display: grid; grid-template-columns: 1fr 1fr; "
+    "border-bottom: 1px solid var(--line); margin-bottom: 22px; }")
+s = s.replace(
+    ".auth-tab { border: 0; border-radius: 999px; padding: 11px 14px; "
+    "background: transparent; color: var(--slate); font-weight: 800; cursor: pointer; }",
+    ".auth-tab { border: 0; border-bottom: 3px solid transparent; margin-bottom: -1px; "
+    "padding: 12px 8px; background: transparent; color: var(--slate); font-weight: 800; "
+    "cursor: pointer; transition: color .18s ease, border-color .18s ease; }\n"
+    ".auth-tab:hover { color: var(--navy); }")
+s = s.replace(
+    ".auth-tab.is-active { background: white; color: var(--navy); "
+    "box-shadow: 0 5px 14px rgba(20,43,58,.08); }",
+    ".auth-tab.is-active { color: var(--navy); border-bottom-color: var(--mint); }")
+
+# 7. the password rule the backend actually enforces. The handoff asked for
+#    8 characters; validatePassword also wants an uppercase and a digit, so
+#    "password" passed here and then bounced off the server.
+s = s.replace("<div class=\"password-note\">Use at least 8 characters.</div>",
+              "<div class=\"password-note\">At least 8 characters, with one uppercase "
+              "letter and one number.</div>")
+s = s.replace('placeholder="At least 8 characters"',
+              'placeholder="At least 8 characters, one capital, one number"')
+s = s.replace("""  function setMode(mode) {""",
+"""  // mirrors validatePassword in backend/server.js, so the rule is enforced
+  // before a round trip rather than coming back as a server error
+  function passwordProblem(pw) {
+    if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
+    if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter.';
+    if (!/[0-9]/.test(pw)) return 'Password must contain at least one number.';
+    return null;
+  }
+
+  function setMode(mode) {""")
+s = s.replace("""      await request(API.signup, { method: 'POST', body: JSON.stringify(body) });""",
+"""      const pwProblem = passwordProblem(body.password);
+      if (pwProblem) throw new Error(pwProblem);
+      await request(API.signup, { method: 'POST', body: JSON.stringify(body) });""")
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
