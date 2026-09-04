@@ -52,9 +52,13 @@ export const DEFAULT_SINGLE_SUB_THRESHOLD = 50; // flag a subscription costing t
 const TOTAL_SPEND_THRESHOLD = 200; // flag total monthly spend at or above this amount
 const MARKET_PRICE_INCREASE_THRESHOLD = 1.05; // known price must be >5% above what's tracked to flag it
 
+// `t` is threaded through rather than called at the call sites so every tip
+// is translated at the point it is built. These strings used to be hardcoded
+// English, which a German user met on a screen that is otherwise translated.
 export function buildTips(
   subs: Sub[],
   fmtC: (n: number) => string,
+  t: (key: string, opts?: Record<string, unknown>) => string,
   singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD,
   currencyContext?: { baseCurrencyCode: string; rates: Record<string, number> }
 ): Tip[] {
@@ -70,13 +74,13 @@ export function buildTips(
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
-        title: `${list.length} "${cat}" subscriptions`,
-        detail: `You have ${list.map(s => s.name).join(", ")} — all in the same category, costing ${fmtC(catTotal)}/mo. Could you cut one?`,
-        priority: "high", savingsHint: `Could save up to ${fmtC(catTotal * 0.5)}/mo`, savingsValue: catTotal * 0.5 });
+        title: t("insights.catManyTitle", { count: list.length, category: cat }),
+        detail: t("insights.catManyDetail", { names: list.map(s => s.name).join(", "), total: fmtC(catTotal) }),
+        priority: "high", savingsHint: t("insights.catManyHint", { amount: fmtC(catTotal * 0.5) }), savingsValue: catTotal * 0.5 });
     } else if (list.length === 2) {
       tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#96631B",
-        title: `2 "${cat}" subscriptions`,
-        detail: `${list[0].name} and ${list[1].name} are both in the same category. Do you actively use both?`,
+        title: t("insights.catTwoTitle", { category: cat }),
+        detail: t("insights.catTwoDetail", { first: list[0].name, second: list[1].name }),
         priority: "medium" });
     }
   }
@@ -87,9 +91,9 @@ export function buildTips(
     const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
-      title: `${streamingSubs.length} streaming services — that's a lot`,
-      detail: `${streamingSubs.map(s => s.name).join(", ")} together cost ${fmtC(streamTotal)}/mo. Most households use 1–2. Rotating them (pause one, watch the other) could save you money.`,
-      priority: "high", savingsHint: `Save ~${fmtC(toMonthly(cheapest.price, cheapest.billingCycle))}/mo by pausing one`, savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
+      title: t("insights.streamingTitle", { count: streamingSubs.length }),
+      detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
+      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle)) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
   }
 
   // Fitness overlap (2+ fitness services)
@@ -97,9 +101,9 @@ export function buildTips(
   if (fitnessSubs.length >= 2) {
     const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
-      title: `${fitnessSubs.length} health & fitness subscriptions`,
-      detail: `${fitnessSubs.map(s => s.name).join(" and ")} overlap in purpose. Are you actively using both? You're spending ${fmtC(fitTotal)}/mo in this category.`,
-      priority: "medium", savingsHint: `Could trim ${fmtC(fitTotal * 0.5)}/mo`, savingsValue: fitTotal * 0.5 });
+      title: t("insights.fitnessTitle", { count: fitnessSubs.length }),
+      detail: t("insights.fitnessDetail", { names: fitnessSubs.map(s => s.name).join(" & "), total: fmtC(fitTotal) }),
+      priority: "medium", savingsHint: t("insights.fitnessHint", { amount: fmtC(fitTotal * 0.5) }), savingsValue: fitTotal * 0.5 });
   }
 
   // Price increase alerts
@@ -108,9 +112,9 @@ export function buildTips(
     const diff = s.priceIncrease.to - s.priceIncrease.from;
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
     tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
-      title: `${s.name} quietly raised its price`,
-      detail: `It went from ${fmtC(s.priceIncrease.from)} to ${fmtC(s.priceIncrease.to)} per ${s.billingCycle}. That's an extra ${fmtC(annualExtra)} per year you may not have noticed.`,
-      priority: "high", savingsHint: `Cancel to save ${fmtC(toMonthly(s.priceIncrease.to, s.billingCycle))}/mo`, savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
+      title: t("insights.priceUpTitle", { name: s.name }),
+      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from), to: fmtC(s.priceIncrease.to), cycle: s.billingCycle, extra: fmtC(annualExtra) }),
+      priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle)) }), savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
   }
 
   // Known market price is higher than what's tracked — this is the "before
@@ -131,8 +135,8 @@ export function buildTips(
       const trackedMonthly = toMonthly(s.price, s.billingCycle);
       if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
         tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#C4544A",
-          title: `${s.name}'s price may have gone up`,
-          detail: `${s.name} typically costs ${fmtC(marketMonthlyInBase)}/mo now, but you're tracking ${fmtC(trackedMonthly)}/mo here. If you've been charged more, update the price so we can track it properly.`,
+          title: t("insights.marketPriceTitle", { name: s.name }),
+          detail: t("insights.marketPriceDetail", { name: s.name, market: fmtC(marketMonthlyInBase), tracked: fmtC(trackedMonthly) }),
           priority: "high" });
       }
     }
@@ -144,8 +148,9 @@ export function buildTips(
     const days = Math.ceil((new Date(s.trialEndDate).getTime() - now.getTime()) / 86400000);
     if (days >= 0 && days <= 7) {
       tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#C4544A",
-        title: `${s.name} trial ends ${days === 0 ? "today" : `in ${days} day${days !== 1 ? "s" : ""}`}`,
-        detail: `You'll be charged ${fmtC(s.price)} automatically. If you don't want to continue, cancel before the trial ends.`,
+        title: days === 0 ? t("insights.trialTitleToday", { name: s.name })
+                         : t("insights.trialTitleDays", { name: s.name, count: days }),
+        detail: t("insights.trialDetail", { amount: fmtC(s.price) }),
         priority: "high" });
     }
   }
@@ -153,8 +158,8 @@ export function buildTips(
   // High total spend
   if (totalMonthly >= TOTAL_SPEND_THRESHOLD) {
     tips.push({ id: "high-spend", icon: "trending-up", color: "#C4544A",
-      title: `${fmtC(totalMonthly)}/mo is above average`,
-      detail: `The average person spends $50–80/month on subscriptions. You're at ${fmtC(totalMonthly)} (${fmtC(totalMonthly * 12)}/yr). A quick audit could free up cash.`,
+      title: t("insights.highSpendTitle", { total: fmtC(totalMonthly) }),
+      detail: t("insights.highSpendDetail", { total: fmtC(totalMonthly), yearly: fmtC(totalMonthly * 12) }),
       priority: "high" });
   }
 
@@ -162,8 +167,8 @@ export function buildTips(
   for (const s of subs) {
     if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
-        title: `${s.name} costs ${fmtC(toMonthly(s.price, s.billingCycle))}/mo`,
-        detail: `That's ${fmtC(toMonthly(s.price, s.billingCycle) * 12)}/year. Check if a lower tier or family-sharing plan is available.`,
+        title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle)) }),
+        detail: t("insights.expensiveDetail", { yearly: fmtC(toMonthly(s.price, s.billingCycle) * 12) }),
         priority: "medium" });
     }
   }
@@ -173,17 +178,17 @@ export function buildTips(
   if (monthlySubs.length > 0) {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
     tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#1F7A62",
-      title: "Switch to yearly and save",
-      detail: `Most services offer 15–20% off for annual billing. Switching your ${monthlySubs.length} monthly plan${monthlySubs.length > 1 ? "s" : ""} (${monthlySubs.map(s => s.name).join(", ")}) could save roughly ${fmtC(annualSaving)}/year.`,
-      priority: "medium", savingsHint: `~${fmtC(annualSaving)}/yr`, savingsValue: annualSaving / 12 });
+      title: t("insights.yearlySwitchTitle"),
+      detail: t("insights.yearlySwitchDetail", { count: monthlySubs.length, names: monthlySubs.map(s => s.name).join(", "), amount: fmtC(annualSaving) }),
+      priority: "medium", savingsHint: t("insights.yearlySwitchHint", { amount: fmtC(annualSaving) }), savingsValue: annualSaving / 12 });
   }
 
   // No yearly plans at all — nudge harder
   const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
   if (yearlyCount === 0 && subs.length >= 4) {
     tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#142B3A",
-      title: "No annual plans — you're paying more",
-      detail: `You have ${subs.length} monthly subscriptions. Switching even half of them to yearly billing typically saves 15–20%. Check each service's pricing page for annual options.`,
+      title: t("insights.noYearlyTitle"),
+      detail: t("insights.noYearlyDetail", { count: subs.length }),
       priority: "medium" });
   }
 
@@ -195,15 +200,15 @@ export function buildTips(
   if (thisWeek.length >= 2) {
     const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);
     tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#142B3A",
-      title: `${thisWeek.length} renewals this week`,
-      detail: `${thisWeek.map(s => s.name).join(", ")} — totalling ${fmtC(weekTotal)} — renew in the next 7 days.`,
+      title: t("insights.renewalsWeekTitle", { count: thisWeek.length }),
+      detail: t("insights.renewalsWeekDetail", { names: thisWeek.map(s => s.name).join(", "), total: fmtC(weekTotal) }),
       priority: "low" });
   }
 
   if (tips.length === 0) {
     tips.push({ id: "all-good", icon: "check-decagram", color: "#1F7A62",
-      title: "Everything looks good!",
-      detail: `You have ${subs.length} subscription${subs.length !== 1 ? "s" : ""} totalling ${fmtC(totalMonthly)}/mo. No issues detected right now.`,
+      title: t("insights.allGoodTitle"),
+      detail: t("insights.allGoodDetail", { count: subs.length, total: fmtC(totalMonthly) }),
       priority: "low" });
   }
 
@@ -254,8 +259,10 @@ export default function InsightsScreen() {
   const onRefresh = () => Promise.all([refetchSubs(), refetchSummary()]).catch(() => {});
   const singleSubThreshold = isPremium ? (settings?.alertThreshold ?? DEFAULT_SINGLE_SUB_THRESHOLD) : DEFAULT_SINGLE_SUB_THRESHOLD;
   const allTips = useMemo(
-    () => buildTips(subscriptions, fmtC, singleSubThreshold, { baseCurrencyCode, rates }),
-    [subscriptions, fmtC, singleSubThreshold, baseCurrencyCode, rates]
+    () => buildTips(subscriptions, fmtC, t, singleSubThreshold, { baseCurrencyCode, rates }),
+    // `t` belongs here: without it, switching language leaves the tips
+    // rendered in the previous one until something else invalidates the memo.
+    [subscriptions, fmtC, t, singleSubThreshold, baseCurrencyCode, rates]
   );
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
@@ -269,7 +276,7 @@ export default function InsightsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Recommendations", headerShown: true }} />
+      <Stack.Screen options={{ title: t("insights.screenTitle"), headerShown: true }} />
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}

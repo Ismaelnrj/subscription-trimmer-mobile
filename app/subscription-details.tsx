@@ -46,7 +46,7 @@ export default function SubscriptionDetailsScreen() {
       queryClient.invalidateQueries({ queryKey: ["analytics", "summary"] });
       router.back();
     },
-    onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
+    onError: () => Alert.alert(t("common.error"), t("subscriptions.errDeleteSub")),
   });
 
   const confirmDelete = () => {

@@ -247,6 +247,16 @@ last one left off without needing a recap typed out.
   SPF record `v=spf1 include:_spf.google.com include:spf.brevo.com ~all`).
   Never create a second `v=spf1` record, edit the existing one, two SPF
   records invalidate SPF entirely and would break transactional email.
+- PRE BUILD CHECKS: run `npx tsc --noEmit`, `python3
+  tools/check-legal-sync.py`, and the locale parity check before any
+  native build. check-legal-sync.py fails if either legal document drifts
+  between its app copy and its served copy, and enforces the no dash rule
+  on both.
+- The app's light theme uses the SAME values as the landing page for
+  ground, card, rule, ink, slate and mint (`#F7F6F1`, `#FCFBF8`,
+  `#DCDEDB`, `#142B3A`, `#52616B`, `#55C6A3`). Cards are warm paper, not
+  pure white: pure white reads cold against the warm ground. Keep them in
+  step if either side changes.
 - LEGAL PAGES: `/privacy-policy` and `/terms`, both server rendered from
   section arrays in `backend/server.js` through one shared `legalPage()`
   helper. The privacy policy is also mirrored in the app at

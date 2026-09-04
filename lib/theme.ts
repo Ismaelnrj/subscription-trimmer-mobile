@@ -2,7 +2,9 @@ import { useColorScheme } from "react-native";
 import { useThemeStore } from "./theme-store";
 
 /* Trimio brand palette: Ink Navy, Warm White, Soft Mint, with Slate, Warm
-   Amber and Muted Coral in supporting roles. The intended weighting is
+   Amber and Muted Coral in supporting roles. The light theme's ground,
+   card, rule, ink, slate and mint are the same values the landing page
+   uses, so the app and the site read as one product. The intended weighting is
    roughly 60% warm white, 25% ink navy, 10% mint, 5% everything else, so
    mint is an accent and never a workhorse.
  *
@@ -19,15 +21,15 @@ import { useThemeStore } from "./theme-store";
  *     The bright mint lives in `accent`, where nothing sits on top of it. */
 export const LIGHT = {
   bg: "#F7F6F1",
-  card: "#FFFFFF",
-  border: "#E4E1D8",
+  card: "#FCFBF8",
+  border: "#DCDEDB",
   text: "#142B3A",
   textSecondary: "#52616B",
   textMuted: "#8B949C",
   primary: "#142B3A",
   primaryLight: "#E7EBEE",
   accent: "#55C6A3",
-  accentLight: "#E2F1EB",
+  accentLight: "#DDF4EC",
   danger: "#C4544A",
   dangerLight: "#FBEEEC",
   dangerBorder: "#F0CFCA",
@@ -37,8 +39,8 @@ export const LIGHT = {
   success: "#1F7A62",
   inputBg: "#FFFFFF",
   placeholder: "#8B949C",
-  tabBar: "#FFFFFF",
-  tabBarBorder: "#E4E1D8",
+  tabBar: "#FCFBF8",
+  tabBarBorder: "#DCDEDB",
   tabBarActive: "#142B3A",
   tabBarInactive: "#8B949C",
   overlay: "rgba(20,43,58,0.55)",

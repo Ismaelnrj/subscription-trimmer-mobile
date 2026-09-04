@@ -237,7 +237,7 @@ export default function SubscriptionsScreen() {
           ]
         );
       } else {
-        Alert.alert("Error", code || "Could not add subscription.");
+        Alert.alert(t("common.error"), code || t("subscriptions.errAddSub"));
       }
     },
   });
@@ -246,7 +246,7 @@ export default function SubscriptionsScreen() {
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/subscriptions.update", data)).data.result.data,
     onSuccess: () => { invalidate(); closeModal(); },
-    onError: () => Alert.alert("Error", "Could not save changes. Please try again."),
+    onError: () => Alert.alert(t("common.error"), t("subscriptions.errSaveChanges")),
   });
 
   const deleteMutation = useMutation({
@@ -264,14 +264,14 @@ export default function SubscriptionsScreen() {
       // toast has had a chance to be seen.
       maybeShowReview(5500);
     },
-    onError: () => Alert.alert("Error", "Could not delete subscription. Please try again."),
+    onError: () => Alert.alert(t("common.error"), t("subscriptions.errDeleteSub")),
   });
 
   const setActiveMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) =>
       (await apiClient.post("/trpc/subscriptions.setActive", { id, isActive })).data.result.data,
     onSuccess: invalidate,
-    onError: () => Alert.alert("Error", "Could not update subscription. Please try again."),
+    onError: () => Alert.alert(t("common.error"), t("subscriptions.errUpdateSub")),
   });
 
   const onRefresh = async () => {
@@ -367,27 +367,27 @@ export default function SubscriptionsScreen() {
   const handleSubmit = () => {
     const price = parseFloat(formData.price);
     if (!formData.name.trim() || !formData.price) {
-      Alert.alert("Error", "Please enter a name and price.");
+      Alert.alert(t("common.error"), t("subscriptions.errNamePrice"));
       return;
     }
     if (isNaN(price) || price <= 0) {
-      Alert.alert("Error", "Please enter a valid price greater than 0.");
+      Alert.alert(t("common.error"), t("subscriptions.errPricePositive"));
       return;
     }
     if (price > 99999) {
-      Alert.alert("Error", "Price seems too high. Please check and try again.");
+      Alert.alert(t("common.error"), t("subscriptions.errPriceTooHigh"));
       return;
     }
 
     let trialEndDate: string | null = null;
     if (formData.isFreeTrial && !formData.trialEndDate.trim()) {
-      Alert.alert("Trial end date required", "Please enter when the free trial ends.");
+      Alert.alert(t("subscriptions.errTrialDateTitle"), t("subscriptions.errTrialDateBody"));
       return;
     }
     if (formData.isFreeTrial && formData.trialEndDate.trim()) {
       trialEndDate = normaliseDateInput(formData.trialEndDate);
       if (!trialEndDate) {
-        Alert.alert("Invalid date", "Please enter the trial end date as DD/MM/YYYY or YYYY-MM-DD.");
+        Alert.alert(t("subscriptions.errInvalidDateTitle"), t("subscriptions.errTrialFormat"));
         return;
       }
     }
@@ -396,7 +396,7 @@ export default function SubscriptionsScreen() {
     if (formData.nextBillingDate.trim()) {
       nextBillingDate = normaliseDateInput(formData.nextBillingDate);
       if (!nextBillingDate) {
-        Alert.alert("Invalid date", "Please enter the next billing date as DD/MM/YYYY or YYYY-MM-DD.");
+        Alert.alert(t("subscriptions.errInvalidDateTitle"), t("subscriptions.errBillingFormat"));
         return;
       }
     }
@@ -462,7 +462,7 @@ export default function SubscriptionsScreen() {
       }
       invalidate();
     } catch {
-      Alert.alert("Error", "Could not load examples. Please try again.");
+      Alert.alert(t("common.error"), t("subscriptions.errLoadExamples"));
     } finally {
       setLoadingExamples(false);
     }
@@ -472,7 +472,7 @@ export default function SubscriptionsScreen() {
     if (!isPremium) { router.push("/upgrade"); return; }
     const subsWithDates = subscriptions.filter((s: any) => s.nextBillingDate);
     if (subsWithDates.length === 0) {
-      Alert.alert("No billing dates", "None of your subscriptions have billing dates yet.");
+      Alert.alert(t("subscriptions.noBillingDatesTitle"), t("subscriptions.noBillingDatesBody"));
       return;
     }
 
@@ -516,7 +516,7 @@ export default function SubscriptionsScreen() {
 
   const exportReport = async () => {
     if (!isPremium) { router.push("/upgrade"); return; }
-    if (subscriptions.length === 0) { Alert.alert("No data", "Add some subscriptions first."); return; }
+    if (subscriptions.length === 0) { Alert.alert(t("subscriptions.noDataTitle"), t("subscriptions.noDataBody")); return; }
 
     const monthlyTotal = subscriptions.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
     const csvEscape = (v: string) => {
