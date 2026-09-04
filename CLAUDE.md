@@ -244,6 +244,13 @@ last one left off without needing a recap typed out.
   SPF record `v=spf1 include:_spf.google.com include:spf.brevo.com ~all`).
   Never create a second `v=spf1` record, edit the existing one, two SPF
   records invalidate SPF entirely and would break transactional email.
+- LEGAL PAGES: `/privacy-policy` and `/terms`, both server rendered from
+  section arrays in `backend/server.js` through one shared `legalPage()`
+  helper. The privacy policy is also mirrored in the app at
+  `app/privacy-policy.tsx`; keep the two in sync. The terms were written
+  2026-09 and have NOT been reviewed by a lawyer, which the owner knows.
+  Section 10 is the load bearing one for this product: reminders are best
+  effort, and a missed reminder is not a liability.
 - THE 17 USERS HONESTY BLOCK IS GONE. The owner had deliberately chosen
   that radical-honesty line, and the 2026-09 design handoff dropped it.
   Nothing on the page states a user count now. Restoring it is the

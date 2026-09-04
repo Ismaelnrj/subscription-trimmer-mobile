@@ -223,14 +223,16 @@ if (revealObserver && !prefersLessMotion) {
 
 # 10. the footer pointed at /privacy, which this server does not serve. It
 #     serves /privacy-policy. Relative so it works on any host.
-s = s.replace('href="https://www.subtrimio.com/privacy"', 'href="/privacy-policy"')
+s = s.replace('<a href="https://www.subtrimio.com/privacy">Privacy</a>',
+              '<a href="/terms">Terms</a><a href="/privacy-policy">Privacy</a>')
 
 # 11. the consent asked people to agree to a Terms document that does not
 #     exist, and to a policy they could not open. Link the policy that is
 #     real, drop the reference to the one that is not.
 s = s.replace("<span>I agree to the Terms and Privacy Policy.</span>",
-              '<span>I agree to the <a href="/privacy-policy" target="_blank" '
-              'rel="noopener">Privacy Policy</a>.</span>')
+              '<span>I agree to the <a href="/terms" target="_blank" rel="noopener">Terms</a>'
+              ' and the <a href="/privacy-policy" target="_blank" rel="noopener">'
+              'Privacy Policy</a>.</span>')
 s = s.replace(".password-note {",
               ".check-row a { color: var(--navy); text-decoration: underline; "
               "text-underline-offset: 2px; }\n.password-note {", 1)
