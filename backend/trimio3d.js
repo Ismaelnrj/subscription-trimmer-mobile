@@ -2,7 +2,7 @@
  *
  * A depth field of subscription cards drifting behind the page. As the
  * reader scrolls past "how it works", the cards flip from forgotten
- * (grey, unmarked, no date) to tracked (mint trim tab, price, and a
+ * (grey, unmarked, no date) to tracked (mint chevron, price, and a
  * "seen coming" line). That is the whole product argument, told with
  * geometry instead of another paragraph.
  *
@@ -66,15 +66,12 @@
     ['Kindle Unlimited', '11.99', '9 Mar'], ['Notion', '9.50', '21 Mar']
   ];
 
-  /* The trim tab from the page's .signal-dot, drawn as a path so the
-     cards carry the same mark as the header and the eyebrows. */
-  function trimTab(x, px, py, w, h) {
+  /* The chevron from the logo, so a tracked card carries the same mark as
+     the header and the eyebrows. */
+  function chevron(x, px, py, w, h) {
     x.beginPath();
     x.moveTo(px, py);
-    x.lineTo(px + w, py);
-    x.lineTo(px + w, py + h * 0.62);
-    x.lineTo(px + w * 0.67, py + h * 0.62);
-    x.lineTo(px + w * 0.67, py + h);
+    x.lineTo(px + w, py + h / 2);
     x.lineTo(px, py + h);
     x.closePath();
     x.fill();
@@ -98,7 +95,7 @@
 
     if (tracked) {
       x.fillStyle = MINT;
-      trimTab(x, 46, 52, 30, 21);
+      chevron(x, 48, 50, 24, 28);
     } else {
       x.fillStyle = 'rgba(20,43,58,0.16)';
       x.fillRect(46, 58, 30, 9);
@@ -228,8 +225,8 @@
   }
 
   /* 0 before the reader reaches "how it works", 1 once past it. Used to
-     warm the background a shade, nothing louder than that: the page is
-     dark end to end by design. */
+     warm the ground a shade, nothing louder: the page is one light world
+     by design. */
   function warmthAt(scrollY) {
     var el = document.querySelector(TURN_SELECTOR);
     if (!el) return 1;
