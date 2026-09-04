@@ -100,14 +100,26 @@ last one left off without needing a recap typed out.
   connection pool fix, privacy policy PostHog disclosure. All shipped, in
   production, confirmed via an `eas update` the owner ran plus Railway
   auto-deploys.
-- REBRAND SHIPPED (2026-09): version 1.0.2, versionCode 38, built on
-  Codemagic and submitted to Play Console, awaiting review as of the last
-  session. That one build carries everything native and JS: the ink navy
-  palette across the app, the redrawn icon, splash and notification tint,
-  plus the error states for calendar, subscription details and
-  notification settings. No `eas update` was run for it and none is
-  needed. The landing page, tab icon and share card went out separately
-  via Railway and are already live on subtrimio.com.
+- REBRAND LIVE (2026-09): version 1.0.2, versionCode 38, approved by
+  Google and published. It carries the ink navy palette across the app,
+  the splash and notification tint, the error states for calendar,
+  subscription details and notification settings, and the RECEIPT icon,
+  which is the mark live on phones right now. No `eas update` was run for
+  it and none is needed.
+- STOP BEFORE THE NEXT NATIVE BUILD. master is at 1.0.3 / versionCode 39
+  and carries a chevron mark the owner has REJECTED: the notch cuts 46%
+  of the way across and the outer arc sweeps 237 degrees, so the white
+  shape reads as an inverted Pac-Man rather than the D on the brand
+  sheet. Do NOT build or submit 1.0.3 until a corrected mark lands.
+  Everything else in 1.0.3 (splash composition, palette, tooling) is
+  fine, only the outline is wrong.
+- Waiting on the owner: a corrected logo and splash, ideally as SVG, or
+  else a large flat PNG of the mark alone with no shadow and no tile.
+  The numbers to fix are the notch depth and the gap between the
+  triangle's point and the notch. They are six constants at the top of
+  `tools/make-icons.py` plus two copies of the SVG path in
+  `backend/landing.html`; every other file imports `draw_mark`, so
+  nothing else needs touching.
 - MARK (2026-09, replaced the receipt): a chevron pointing right, inner
   edge a V, outer edge a circular arc, with a mint triangle nesting into
   the V. Two forward-pointing forms, one behind the other. Geometry lives
@@ -135,6 +147,10 @@ last one left off without needing a recap typed out.
   owner's own phone once the 1.0.2 build installs, so they show the real
   navy UI. Those same shots are also what the promo video re-cut needs,
   so do both in one sitting.
+- MARK MISMATCH, currently live: the Play Store app shows the receipt
+  icon (1.0.2) while subtrimio.com shows the rejected chevron, because
+  the site auto-deploys from master. Resolve it when the corrected mark
+  lands, or revert the site's mark sooner if it matters before then.
 - In progress: Phase 2 (posting cadence). The owner has an existing promo
   video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
   re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
