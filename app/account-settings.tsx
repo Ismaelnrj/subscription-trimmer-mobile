@@ -13,6 +13,7 @@ import { PremiumGate } from "../components/PremiumGate";
 import { isPasswordValid } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
+import { sanitiseAmountInput } from "../lib/utils";
 import { signInWithGoogle } from "../lib/google-auth";
 
 export default function AccountSettingsScreen() {
@@ -186,7 +187,7 @@ export default function AccountSettingsScreen() {
               <TextInput
                 style={styles.input}
                 value={budgetInput}
-                onChangeText={(v) => { setBudgetDirty(true); setBudgetInput(v); }}
+                onChangeText={(v) => { setBudgetDirty(true); setBudgetInput(sanitiseAmountInput(v)); }}
                 placeholder={t("accountSettings.limitPlaceholder")}
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
@@ -225,7 +226,7 @@ export default function AccountSettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.prefixInput]}
                   value={alertThresholdInput}
-                  onChangeText={(v) => { setThresholdDirty(true); setAlertThresholdInput(v); }}
+                  onChangeText={(v) => { setThresholdDirty(true); setAlertThresholdInput(sanitiseAmountInput(v)); }}
                   placeholder={t("accountSettings.thresholdPlaceholder")}
                   placeholderTextColor={c.placeholder}
                   keyboardType="decimal-pad"

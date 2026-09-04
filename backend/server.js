@@ -604,6 +604,15 @@ function toMonthly(price, billingCycle) {
   return price;
 }
 
+// The price column is NUMERIC with no scale, so it will happily keep a figure
+// like 6.944 that every screen then renders as 6.94. Rounding on the way in
+// keeps the stored amount and the shown amount the same number. Clients
+// sanitise the field too, but they are not the only writer and older builds
+// are still out there, so this is where it has to hold.
+function roundToCents(amount) {
+  return Math.round(amount * 100) / 100;
+}
+
 function hasBonusPremium(u) {
   return !!u.bonus_premium_until && new Date(u.bonus_premium_until) > new Date();
 }
@@ -1176,7 +1185,7 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
 app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
   try {
     const { name, billingCycle = 'monthly', category = 'other', trialEndDate, force, nextBillingDate: nextBillingDateInput } = req.body;
-    const price = parseFloat(req.body.price);
+    const price = roundToCents(parseFloat(req.body.price));
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (typeof name !== 'string' || name.trim().length > 120) return res.status(400).json({ error: 'Name must be under 120 characters' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
@@ -1227,7 +1236,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
   try {
     const { id, name, billingCycle, category, trialEndDate, nextBillingDate: nextBillingDateInput } = req.body;
-    const price = parseFloat(req.body.price);
+    const price = roundToCents(parseFloat(req.body.price));
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
@@ -1254,8 +1263,12 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id, req.userId]
     );
 
-    const oldPrice = parseFloat(existing.price);
-    if (price !== oldPrice) {
+    // Rows written before prices were rounded can hold sub-cent figures, so an
+    // exact compare would treat 6.944 -> 6.94 as a change and send a push
+    // reading "increased by $0.00, went from $6.94 to $6.94". Anything under a
+    // cent is not a price change to a person, so it is not one here either.
+    const oldPrice = roundToCents(parseFloat(existing.price));
+    if (Math.abs(price - oldPrice) >= 0.01) {
       await pool.query(
         'INSERT INTO price_history (subscription_id, user_id, old_price, new_price) VALUES ($1, $2, $3, $4)',
         [id, req.userId, oldPrice, price]

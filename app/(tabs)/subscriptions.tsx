@@ -13,7 +13,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
-import { normaliseDateInput } from "../../lib/utils";
+import { normaliseDateInput, sanitiseAmountInput } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
@@ -936,7 +936,7 @@ export default function SubscriptionsScreen() {
                           setFormData((prev) => ({
                             ...prev,
                             name: parsed.name ?? "",
-                            price: parsed.price ?? "",
+                            price: sanitiseAmountInput(parsed.price ?? ""),
                             billingCycle: parsed.billingCycle ?? prev.billingCycle,
                           }));
                         }}
@@ -977,7 +977,7 @@ export default function SubscriptionsScreen() {
                 placeholderTextColor={c.placeholder}
                 keyboardType="decimal-pad"
                 value={formData.price}
-                onChangeText={(t) => setFormData({ ...formData, price: t })}
+                onChangeText={(t) => setFormData({ ...formData, price: sanitiseAmountInput(t) })}
               />
               {(() => {
                 const raw = parseFloat(formData.price);
