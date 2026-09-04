@@ -125,9 +125,17 @@ last one left off without needing a recap typed out.
   distance. A half covered white edge over navy is a mid grey which sits
   nearer mint than paper, so distance leaks the whole chevron outline
   into the triangle mask.
-- master is at 1.0.3 / versionCode 39 and is now good to build. 1.0.2 /
-  38 is live in the Play Store carrying the old RECEIPT icon, so the next
-  native build is what puts the chevron on phones.
+- master is at 1.0.3 / versionCode 40. versionCode 39 was built and
+  carried the chevron, so the mark has already reached phones; 40 exists
+  because a versionCode can only ever be uploaded to Play once, and 39
+  shipped with the buildTips crash.
+- NOTHING NATIVE has changed since 39 was built: no app.json, no assets,
+  no android/, no dependency. Everything after it is JS or backend. So
+  every fix in 40 could equally ship over the air to a 39 install, and
+  the only thing a new build buys is a first launch that works without
+  waiting for the update to download. Check this before assuming a build
+  is required: `git diff --name-only <build commit>..HEAD` filtered to
+  android/, assets/, app.json, package.json, eas.json.
 - MARK: a chevron pointing right, inner edge a V, outer edge a circular
   arc, with a mint triangle nesting into the V. Regenerate everything
   from the repo root with `python3 tools/trace-mark.py && python3
