@@ -139,10 +139,10 @@ last one left off without needing a recap typed out.
   owner's own phone once the 1.0.2 build installs, so they show the real
   navy UI. Those same shots are also what the promo video re-cut needs,
   so do both in one sitting.
-- MARK MISMATCH, currently live: the Play Store app shows the receipt
-  icon (1.0.2) while subtrimio.com shows the rejected chevron, because
-  the site auto-deploys from master. Resolve it when the corrected mark
-  lands, or revert the site's mark sooner if it matters before then.
+- MARK MISMATCH, currently live and expected: the Play Store app shows
+  the receipt icon (1.0.2) while subtrimio.com shows the corrected
+  chevron, because the site auto-deploys from master and the icon needs a
+  native build. It resolves itself when 1.0.3 ships.
 - In progress: Phase 2 (posting cadence). The owner has an existing promo
   video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
   re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
