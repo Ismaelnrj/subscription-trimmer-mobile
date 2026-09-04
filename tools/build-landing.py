@@ -92,6 +92,12 @@ s = s.replace("""  document.querySelectorAll('[data-google-auth]').forEach((butt
 """, "")
 s = s.replace("    google: '/api/auth/google',\n", "")
 
+# the divider's rules are left with nothing to style once the Google
+# button goes, so drop them rather than ship dead CSS
+s = re.sub(r'\.auth-divider \{[^}]*\}\n', '', s)
+s = re.sub(r'\.auth-divider::before[^}]*\}\n', '', s)
+s = s.replace('.auth-brand img { width: 34px; height: 34px; border-radius: 10px; }\n', '')
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
