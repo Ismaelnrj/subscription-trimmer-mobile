@@ -69,18 +69,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'landing.html'));
 });
 
-// Self-hosted three.js for the landing page's 3D backdrop, no third-party
-// CDN in the page's dependency chain.
-app.get('/three.min.js', (req, res) => {
+// The logo as vector. The design handoff inlined a 1.5MB PNG of this five
+// times; one cached file is a kilobyte and stays sharp at any size.
+app.get('/mark.svg', (req, res) => {
   res.set('Cache-Control', 'public, max-age=604800');
-  res.sendFile(path.join(__dirname, 'three.min.js'));
-});
-
-// The landing page's WebGL scene. Kept out of the HTML so it can be cached
-// separately and skipped entirely by clients without WebGL.
-app.get('/trimio3d.js', (req, res) => {
-  res.set('Cache-Control', 'public, max-age=3600');
-  res.sendFile(path.join(__dirname, 'trimio3d.js'));
+  res.type('image/svg+xml').sendFile(path.join(__dirname, 'mark.svg'));
 });
 
 // Landing page assets and search-engine plumbing for subtrimio.com.
