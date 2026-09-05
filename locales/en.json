@@ -550,6 +550,7 @@
     "footerNote": "Trimio@subtrimio.com is our official support address - yes, the domain is \"subtrimio.com\" even though the app is called Trimio."
   },
   "referFriend": {
+    "screenTitle": "Refer a Friend",
     "title": "Give a month, get a month",
     "desc": "Share your code with a friend. When they sign up and verify their email, you both get 1 month of Premium free.",
     "bonusActive": "Bonus Premium active until {{date}}",
@@ -559,7 +560,7 @@
     "codePlaceholder": "Enter code",
     "apply": "Apply",
     "alreadyRedeemed": "You've already redeemed a referral code on this account.",
-    "shareMessage": "I've been using Trimio to track and cut my subscriptions. Use my code {{code}} when you sign up and we both get 1 month of Premium free!",
+    "shareMessage": "I've been using Trimio to track and cut my subscriptions. Use my code {{code}} when you sign up and we both get 1 month of Premium free! https://play.google.com/store/apps/details?id=com.trimio.app",
     "codeAppliedTitle": "Code applied!",
     "codeAppliedMsg": "Verify your email (if you haven't already) to unlock your free month.",
     "errRedeemTitle": "Couldn't redeem code",

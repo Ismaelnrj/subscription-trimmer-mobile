@@ -550,6 +550,7 @@
     "footerNote": "Trimio@subtrimio.com ist unsere offizielle Support-Adresse. Ja, die Domain ist 'subtrimio.com', obwohl die App Trimio heißt."
   },
   "referFriend": {
+    "screenTitle": "Freunde einladen",
     "title": "Verschenke einen Monat, erhalte einen Monat",
     "desc": "Teile deinen Code mit einem Freund. Wenn er sich anmeldet und seine E-Mail bestätigt, erhalten ihr beide 1 Monat Premium kostenlos.",
     "bonusActive": "Bonus-Premium aktiv bis {{date}}",
@@ -559,7 +560,7 @@
     "codePlaceholder": "Code eingeben",
     "apply": "Anwenden",
     "alreadyRedeemed": "Du hast bereits einen Empfehlungscode für dieses Konto eingelöst.",
-    "shareMessage": "Ich nutze Trimio, um meine Abonnements zu verfolgen und zu reduzieren. Verwende meinen Code {{code}} bei der Anmeldung und wir erhalten beide 1 Monat Premium kostenlos!",
+    "shareMessage": "Ich nutze Trimio, um meine Abonnements zu verfolgen und zu reduzieren. Verwende meinen Code {{code}} bei der Anmeldung und wir erhalten beide 1 Monat Premium kostenlos! https://play.google.com/store/apps/details?id=com.trimio.app",
     "codeAppliedTitle": "Code angewendet!",
     "codeAppliedMsg": "Bestätige deine E-Mail (falls noch nicht geschehen), um deinen kostenlosen Monat freizuschalten.",
     "errRedeemTitle": "Code konnte nicht eingelöst werden",

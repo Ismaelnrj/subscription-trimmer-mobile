@@ -651,12 +651,31 @@ async function assignReferralCode(userId) {
 }
 
 // Grants the referrer 1 free month of Premium, stacking onto any remaining bonus time.
-async function rewardReferrer(referrerId) {
+// Both sides, which is what the app has always promised and never delivered.
+// "Give a month, get a month" is the screen's own title, the description says
+// "you both get 1 month of Premium free", and the share message a friend
+// receives says "we both get 1 month". Only the referrer was ever credited,
+// so the person being recruited, the new user, got nothing.
+//
+// The flag is claimed first and the WHERE clause is the lock: only the call
+// that actually flips referral_rewarded goes on to grant anything, so a double
+// tap or a retried request cannot hand out two free months. If the process
+// dies between the two statements the reward is lost rather than doubled,
+// which is the safer direction for this to fail in.
+async function rewardReferral(referrerId, referredId) {
+  const claimed = await pool.query(
+    'UPDATE users SET referral_rewarded = TRUE WHERE id = $1 AND referral_rewarded = FALSE RETURNING id',
+    [referredId]
+  );
+  if (claimed.rowCount === 0) return false;
+  // GREATEST keeps this stacking: a second referral extends an unexpired
+  // bonus rather than restarting it, and an expired one starts fresh today.
   await pool.query(
     `UPDATE users SET bonus_premium_until = GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days'
-     WHERE id = $1`,
-    [referrerId]
+     WHERE id = ANY($1::int[])`,
+    [[referrerId, referredId]]
   );
+  return true;
 }
 
 function formatSub(s) {
@@ -885,10 +904,9 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
 
-    if (user.referred_by && !user.referral_rewarded) {
-      await rewardReferrer(user.referred_by);
-      await pool.query('UPDATE users SET referral_rewarded = TRUE WHERE id = $1', [req.userId]);
-    }
+    // The usual path: someone redeems a code before verifying, so the reward
+    // waits here until the address is real.
+    if (user.referred_by) await rewardReferral(user.referred_by, req.userId);
 
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(updated.rows[0]) });
@@ -929,12 +947,10 @@ app.post('/api/trpc/referrals.redeem', authMiddleware, async (req, res) => {
 
     await pool.query('UPDATE users SET referred_by = $1 WHERE id = $2', [referrer.id, me.id]);
 
-    if (me.is_verified && !me.referral_rewarded) {
-      await rewardReferrer(referrer.id);
-      await pool.query('UPDATE users SET referral_rewarded = TRUE WHERE id = $1', [me.id]);
-    }
+    // Already verified, so there is nothing left to wait for.
+    if (me.is_verified) await rewardReferral(referrer.id, me.id);
 
-    res.json({ success: true });
+    res.json(trpc({ success: true }));
   } catch (err) {
     handleError(err, res);
   }

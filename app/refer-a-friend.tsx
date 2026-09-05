@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as Sentry from "@sentry/react-native";
 import apiClient from "../lib/api";
+import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function ReferAFriendScreen() {
@@ -18,6 +19,7 @@ export default function ReferAFriendScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const setUser = useAuthStore((s) => s.setUser);
 
   const load = useCallback(async () => {
     setLoadError(false);
@@ -56,6 +58,16 @@ export default function ReferAFriendScreen() {
     setRedeeming(true);
     try {
       await apiClient.post("/trpc/referrals.redeem", { code });
+      // The bonus month lands on the server, but isPaid is only re-read from
+      // /auth/me at launch, so without this the person is told the code
+      // worked and then finds Premium still locked until they restart.
+      try {
+        const me = await apiClient.get("/auth/me");
+        setUser(me.data);
+      } catch {
+        // The redeem itself succeeded, so a failed refresh is not worth an
+        // error here. The next launch picks it up.
+      }
       Alert.alert(t("referFriend.codeAppliedTitle"), t("referFriend.codeAppliedMsg"));
       setRedeemCode("");
       load();
@@ -70,7 +82,7 @@ export default function ReferAFriendScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Refer a Friend", headerShown: true }} />
+      <Stack.Screen options={{ title: t("referFriend.screenTitle"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🎁</Text>
