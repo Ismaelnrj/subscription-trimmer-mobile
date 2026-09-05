@@ -37,9 +37,24 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   baseCurrencyCode: "USD",
   rates: FALLBACK_RATES,
 
+  /* Picking a currency sets the one prices are entered in as well as the one
+     they are shown in.
+
+     setBaseCurrency existed but was never called from anywhere, so
+     baseCurrencyCode stayed "USD" for every user forever. Two things followed
+     from that. The add form asked for "Price in USD" no matter where you live,
+     and useFmt then converted whatever you typed from dollars into your
+     display currency, so an Austrian entering 12.04 for a 12.04 euro
+     subscription saw it come back as about 10.35. The only way to be right was
+     to convert every price into dollars in your head first, which nobody does.
+
+     Tying the two together means what you type is what you see. Conversion
+     still exists and still matters, it just applies where it was always meant
+     to: a subscription billed in a currency other than the one you picked. */
   setCurrency: (currency) => {
     SecureStore.setItemAsync("selected_currency", JSON.stringify(currency)).catch(() => {});
-    set({ currency });
+    SecureStore.setItemAsync("base_currency_code", currency.code).catch(() => {});
+    set({ currency, baseCurrencyCode: currency.code });
   },
 
   setBaseCurrency: (code) => {
@@ -53,8 +68,13 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
         SecureStore.getItemAsync("selected_currency"),
         SecureStore.getItemAsync("base_currency_code"),
       ]);
-      if (stored) set({ currency: JSON.parse(stored) });
-      if (base) set({ baseCurrencyCode: base });
+      const currency = stored ? JSON.parse(stored) : null;
+      if (currency) set({ currency });
+      // A stored base wins, so anyone who really did enter prices in dollars
+      // keeps that reading. Otherwise the base follows the chosen currency
+      // rather than falling back to USD, which is what left every existing
+      // user entering dollars without being told.
+      set({ baseCurrencyCode: base || currency?.code || "USD" });
     } catch {}
   },
 

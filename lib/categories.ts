@@ -12,19 +12,47 @@ export const DEFAULT_CATEGORIES = [
   "other",
 ] as const;
 
-// Fallback icon/color shown when a subscription has no matching brand logo.
+/* Fallback icon and colour shown when a subscription has no matching brand
+   logo. These drive four surfaces at once: the quick add icons, the
+   subscription card icons, the Stats donut with its legend, and the calendar
+   day dots.
+
+   This used to be the pre-rebrand set (#8B5CF6 violet, #E50914 Netflix red,
+   #3B82F6 blue and the rest of a highlighter scale). It survived the move to
+   Ink Navy untouched, which made the Stats donut the single most off-brand
+   thing left in the app.
+
+   The first six are a validated categorical palette rather than chosen by eye.
+   Checked against the warm white ground (#F7F6F1) on the adjacent pairlist,
+   which is the right one for a donut: slices touch only their neighbours, the
+   same geometry as a stacked bar, and the chart ships a legend with labels and
+   values so identity is never carried by colour alone. All five gates pass:
+   lightness band, chroma floor, colourblind separation (worst adjacent deutan
+   ΔE 8.7, tritan 10.2), normal vision separation (worst 18.5, floor 15) and
+   3:1 contrast against the ground.
+
+   Six is the ceiling here, not a preference. Under an all-pairs check no
+   ordering of six clears the floors, which is a property of the colour space
+   rather than of these particular hues. The donut therefore wants a cap of
+   about three visible categories with the remainder folded into Other; until
+   that lands, the legend is what keeps it readable.
+
+   The last five are deliberately quieter, drawn from the brand neutrals and
+   the coral and amber that already exist in the palette. They mark categories
+   that are rare enough to sit behind an icon and a label rather than needing
+   to be told apart at a glance in a chart. */
 export const CATEGORY_ICON: Record<string, { icon: string; color: string }> = {
-  entertainment: { icon: "music-note", color: "#8B5CF6" },
-  streaming: { icon: "television-play", color: "#E50914" },
-  software: { icon: "laptop", color: "#3B82F6" },
-  health: { icon: "heart-pulse", color: "#EF4444" },
-  fitness: { icon: "dumbbell", color: "#22C55E" },
-  food: { icon: "food", color: "#F59E0B" },
-  education: { icon: "school", color: "#0EA5E9" },
-  utilities: { icon: "lightning-bolt", color: "#6B7280" },
-  insurance: { icon: "shield-check", color: "#14B8A6" },
-  memberships: { icon: "card-account-details", color: "#F97316" },
-  other: { icon: "credit-card", color: "#9B99A8" },
+  software: { icon: "laptop", color: "#3B6FBC" },
+  streaming: { icon: "television-play", color: "#C24C3C" },
+  education: { icon: "school", color: "#0F918B" },
+  food: { icon: "food", color: "#B07A12" },
+  entertainment: { icon: "music-note", color: "#A8456B" },
+  fitness: { icon: "dumbbell", color: "#4E8C36" },
+  health: { icon: "heart-pulse", color: "#C4544A" },
+  insurance: { icon: "shield-check", color: "#3E7A6E" },
+  memberships: { icon: "card-account-details", color: "#A8632E" },
+  utilities: { icon: "lightning-bolt", color: "#52616B" },
+  other: { icon: "credit-card", color: "#8B949C" },
 };
 
 export function getCategoryIcon(category: string) {
