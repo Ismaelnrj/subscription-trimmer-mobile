@@ -129,6 +129,11 @@ last one left off without needing a recap typed out.
   on top of it (2026-09-05). 39 carried the chevron and the buildTips
   crash; 40 is the same build with the crash fixed. A versionCode can
   only ever be uploaded to Play once, which is why 39 was not reused.
+- EVERYTHING through commit 0163d23 is published: the whole 2026-09-05
+  run of app fixes went out over the air, and the backend changes went
+  with the Railway auto-deploys. There is no unpublished app work. The
+  next thing that needs a native build is the next native change, and
+  nothing pending is one.
 - GOOGLE POLICY, both satisfied, verified by 40 being accepted after the
   31 Aug 2026 enforcement date: Play Billing Library >= 8.0.0 (comes from
   `react-native-purchases ^10.4.4`, which pulls 8.3.0, see RevenueCat's
