@@ -148,6 +148,21 @@ export default function CalendarScreen() {
                 c={c}
               />
 
+              {/* Sits with the calendar it controls rather than floating over
+                  the day list. As an absolutely positioned button it covered
+                  part of a subscription row, so a tap in that corner hit
+                  nothing, and it competed with the add button for the same
+                  strip of screen. */}
+              <View style={styles.calendarActions}>
+                <TouchableOpacity
+                  style={[styles.todayButton, { backgroundColor: c.primaryLight }]}
+                  onPress={goToToday}
+                >
+                  <MaterialCommunityIcons name="calendar-today" size={15} color={c.primary} />
+                  <Text style={styles.todayButtonText}>{t("calendar.today")}</Text>
+                </TouchableOpacity>
+              </View>
+
               <Text style={styles.sectionTitle}>
                 {selectedDate ? format(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
               </Text>
@@ -206,11 +221,6 @@ export default function CalendarScreen() {
         </View>
       </ScrollView>
 
-      {view === "calendar" && (
-        <TouchableOpacity style={[styles.todayButton, { backgroundColor: c.primary }]} onPress={goToToday}>
-          <Text style={styles.todayButtonText}>{t("calendar.today")}</Text>
-        </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -249,11 +259,14 @@ function makeStyles(c: AppColors) {
     monthSummaryStatLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
     monthSummaryStatValue: { fontSize: 16, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
     monthSummaryStatSub: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
+    calendarActions: { flexDirection: "row", marginTop: 12 },
+    // In the flow now, so it needs no shadow to lift it off the content and
+    // no white on navy: it is a quiet secondary action beside the calendar,
+    // not a second floating button competing with the add button.
     todayButton: {
-      position: "absolute", left: 20, bottom: 24,
-      paddingVertical: 10, paddingHorizontal: 18, borderRadius: 20,
-      shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4,
+      flexDirection: "row", alignItems: "center", gap: 6,
+      paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20,
     },
-    todayButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    todayButtonText: { color: c.primary, fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold" },
   });
 }

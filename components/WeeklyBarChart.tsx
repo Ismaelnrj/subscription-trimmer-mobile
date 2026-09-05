@@ -56,7 +56,14 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     row: { flexDirection: "row", height: 140, alignItems: "flex-end", justifyContent: "space-between" },
     column: { flex: 1, alignItems: "center", height: "100%", justifyContent: "flex-end" },
-    track: { width: "55%", height: "85%", justifyContent: "flex-end" },
+    /* The track is tinted so a week with no renewals still has a visible
+       slot. Without it those weeks were simply absent, and a chart with two
+       of four bars missing reads as broken data rather than as two quiet
+       weeks, which is what it actually is. */
+    track: {
+      width: "55%", height: "85%", justifyContent: "flex-end",
+      backgroundColor: c.skeleton, borderRadius: 4,
+    },
     label: { fontSize: 11, color: c.textSecondary, marginTop: 6 },
   });
 }
