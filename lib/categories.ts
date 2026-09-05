@@ -22,36 +22,36 @@ export const DEFAULT_CATEGORIES = [
    Ink Navy untouched, which made the Stats donut the single most off-brand
    thing left in the app.
 
-   The first six are a validated categorical palette rather than chosen by eye.
-   Checked against the warm white ground (#F7F6F1) on the adjacent pairlist,
-   which is the right one for a donut: slices touch only their neighbours, the
-   same geometry as a stacked bar, and the chart ships a legend with labels and
-   values so identity is never carried by colour alone. All five gates pass:
-   lightness band, chroma floor, colourblind separation (worst adjacent deutan
-   ΔE 8.7, tritan 10.2), normal vision separation (worst 18.5, floor 15) and
-   3:1 contrast against the ground.
+   All ten real categories are a validated categorical palette rather than
+   colours chosen by eye. Checked against the warm white ground (#F7F6F1) on
+   the adjacent pairlist, which is the right one for a donut: slices touch only
+   their neighbours, the same geometry as a stacked bar, and the chart carries
+   a legend with names and amounts so identity is never colour alone. All five
+   gates pass across the ten: lightness band, chroma floor, colourblind
+   separation (worst adjacent deutan ΔE 8.8, tritan 10.8), normal vision
+   separation (worst 19.0 against a floor of 15) and 3:1 contrast.
 
-   Six is the ceiling here, not a preference. Under an all-pairs check no
-   ordering of six clears the floors, which is a property of the colour space
-   rather than of these particular hues. The donut therefore wants a cap of
-   about three visible categories with the remainder folded into Other; until
-   that lands, the legend is what keeps it readable.
+   The declaration order is load bearing, because it is the order the checks
+   ran against. Two pairs fail when adjacent and are kept apart here: red with
+   olive-green, and orange with green, both of which collapse under deuter- and
+   protanopia however far apart they look to full colour vision. Reordering
+   this map without re-running the validator can silently reintroduce them.
 
-   The last five are deliberately quieter, drawn from the brand neutrals and
-   the coral and amber that already exist in the palette. They mark categories
-   that are rare enough to sit behind an icon and a label rather than needing
-   to be told apart at a glance in a chart. */
+   `other` is deliberately the one neutral. It is the catch-all rather than a
+   category in its own right, and the donut already uses a grey for the slice
+   that folds the tail together, so giving it a hue would imply a specificity
+   it does not have. */
 export const CATEGORY_ICON: Record<string, { icon: string; color: string }> = {
   software: { icon: "laptop", color: "#3B6FBC" },
   streaming: { icon: "television-play", color: "#C24C3C" },
   education: { icon: "school", color: "#0F918B" },
   food: { icon: "food", color: "#B07A12" },
-  entertainment: { icon: "music-note", color: "#A8456B" },
+  entertainment: { icon: "music-note", color: "#8E4F94" },
   fitness: { icon: "dumbbell", color: "#4E8C36" },
-  health: { icon: "heart-pulse", color: "#C4544A" },
-  insurance: { icon: "shield-check", color: "#3E7A6E" },
-  memberships: { icon: "card-account-details", color: "#A8632E" },
-  utilities: { icon: "lightning-bolt", color: "#52616B" },
+  health: { icon: "heart-pulse", color: "#C0407E" },
+  insurance: { icon: "shield-check", color: "#5A5FB5" },
+  memberships: { icon: "card-account-details", color: "#C06A28" },
+  utilities: { icon: "lightning-bolt", color: "#0E80B0" },
   other: { icon: "credit-card", color: "#8B949C" },
 };
 

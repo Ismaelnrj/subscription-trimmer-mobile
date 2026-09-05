@@ -88,18 +88,20 @@ export default function AnalyticsScreen() {
   const budgetGoal = settings?.budgetGoal;
   const monthly = summary?.monthlyTotal ?? 0;
 
-  /* Three named slices, then Other.
+  /* Six named slices, then Other.
    *
-   * The chart used to render every category a person had, up to eleven. A
-   * categorical palette cannot carry that: past a handful of slots no set of
-   * colours clears the colourblind and normal vision separation floors, and
-   * because the slices are ordered by amount any two of them can end up
-   * touching. Three is the number that survives that check with room to
-   * spare, and it is also the number a reader can actually hold: the point of
-   * this chart is "where does most of it go", which the top three answer and
-   * a ring of eleven slivers does not. The exact figures are one screen away
-   * on the subscription list. */
-  const DONUT_SLICES = 3;
+   * Six rather than all eleven because that is where the colours stop being
+   * tellable apart: the category palette validates as ten distinct hues on
+   * the adjacent pairlist, but slices here are ordered by amount, so any two
+   * categories can end up touching and the guarantee only holds for a subset
+   * on screen at once. Six also covers essentially every real list, since the
+   * app ships eleven categories and nobody spreads their subscriptions across
+   * all of them; the tail that gets folded is normally one or two rows worth
+   * a couple of euros.
+   *
+   * It is not three. Three was tighter than the colours require and hid
+   * categories people genuinely have. */
+  const DONUT_SLICES = 6;
   const sortedCategories = [...(summary?.categoryBreakdown ?? [])].sort((a: any, b: any) => b.amount - a.amount);
   const shownCount = isPremium ? DONUT_SLICES : 1;
   const visibleCategories = sortedCategories.slice(0, shownCount);
