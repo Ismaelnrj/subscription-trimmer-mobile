@@ -8,6 +8,7 @@ import { format, differenceInCalendarDays, addMonths, subMonths } from "date-fns
 import apiClient from "../../lib/api";
 import { useFmt } from "../../lib/currency-store";
 import { useTheme, AppColors } from "../../lib/theme";
+import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
 import { LogoImage } from "../../components/LogoImage";
 import { getOccurrencesInMonth, getUpcomingOccurrences } from "../../lib/recurrence";
@@ -217,7 +218,7 @@ export default function CalendarScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
+    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
     segmentRow: {
       flexDirection: "row", gap: 4, marginBottom: 16,
       backgroundColor: c.card, borderRadius: 10, padding: 4,

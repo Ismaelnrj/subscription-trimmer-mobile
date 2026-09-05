@@ -11,6 +11,7 @@ import { PremiumGate } from "../../components/PremiumGate";
 import { DonutChart } from "../../components/DonutChart";
 import { WeeklyBarChart } from "../../components/WeeklyBarChart";
 import { useTheme, useIsDark, AppColors } from "../../lib/theme";
+import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { getCategoryIcon } from "../../lib/categories";
 import { getOccurrencesInMonth } from "../../lib/recurrence";
 
@@ -219,7 +220,7 @@ export default function AnalyticsScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
+    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
     heroCard: { borderRadius: 20, padding: 24, marginBottom: 16 },
     heroCardLight: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     heroLabel: { fontSize: 13, color: c.textSecondary, marginBottom: 6 },

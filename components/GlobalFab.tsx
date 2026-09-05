@@ -10,6 +10,14 @@ import { useTheme } from "../lib/theme";
 // gap 2 + label ~14 + its own paddingBottom), plus a bit of breathing room.
 const TAB_BAR_CONTENT_HEIGHT = 48;
 const FAB_GAP_ABOVE_BAR = 12;
+const FAB_SIZE = 58;
+
+// The button floats over the scroll view, so every screen that renders it has
+// to reserve this much room at the end of its content. Without it the last row
+// sits underneath the button: the dashboard's "0 Alerts" pill was completely
+// covered, on a screen with only 32px of bottom padding. Exported rather than
+// repeated so the tabs cannot drift away from the button's real geometry.
+export const FAB_SCROLL_CLEARANCE = FAB_SIZE + FAB_GAP_ABOVE_BAR + 24;
 
 export function GlobalFab() {
   const router = useRouter();
@@ -59,7 +67,7 @@ export function GlobalFab() {
 const styles = StyleSheet.create({
   wrap: { position: "absolute", right: 20 },
   button: {
-    width: 58, height: 58, borderRadius: 20, alignItems: "center", justifyContent: "center",
+    width: FAB_SIZE, height: FAB_SIZE, borderRadius: 20, alignItems: "center", justifyContent: "center",
     shadowColor: "#000", shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
   },
 });

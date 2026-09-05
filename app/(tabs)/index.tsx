@@ -11,6 +11,7 @@ import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, useIsDark, AppColors } from "../../lib/theme";
+import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
 import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
@@ -485,7 +486,7 @@ export default function DashboardScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
+    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
     greetingText: { fontSize: 22, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 16 },
     nextPaymentCard: {
