@@ -88,9 +88,22 @@ export default function AnalyticsScreen() {
   const budgetGoal = settings?.budgetGoal;
   const monthly = summary?.monthlyTotal ?? 0;
 
+  /* Three named slices, then Other.
+   *
+   * The chart used to render every category a person had, up to eleven. A
+   * categorical palette cannot carry that: past a handful of slots no set of
+   * colours clears the colourblind and normal vision separation floors, and
+   * because the slices are ordered by amount any two of them can end up
+   * touching. Three is the number that survives that check with room to
+   * spare, and it is also the number a reader can actually hold: the point of
+   * this chart is "where does most of it go", which the top three answer and
+   * a ring of eleven slivers does not. The exact figures are one screen away
+   * on the subscription list. */
+  const DONUT_SLICES = 3;
   const sortedCategories = [...(summary?.categoryBreakdown ?? [])].sort((a: any, b: any) => b.amount - a.amount);
-  const visibleCategories = isPremium ? sortedCategories : sortedCategories.slice(0, 1);
-  const hiddenTotal = isPremium ? 0 : sortedCategories.slice(1).reduce((sum: number, cat: any) => sum + cat.amount, 0);
+  const shownCount = isPremium ? DONUT_SLICES : 1;
+  const visibleCategories = sortedCategories.slice(0, shownCount);
+  const hiddenTotal = sortedCategories.slice(shownCount).reduce((sum: number, cat: any) => sum + cat.amount, 0);
   const donutSegments = [
     ...visibleCategories.map((cat: any) => ({ value: cat.amount, color: getCategoryIcon(cat.category).color })),
     ...(hiddenTotal > 0 ? [{ value: hiddenTotal, color: c.border }] : []),
@@ -158,6 +171,19 @@ export default function AnalyticsScreen() {
                     </View>
                   </View>
                 ))}
+                {/* The donut already draws this slice; without the row it is
+                    an unexplained grey wedge. */}
+                {hiddenTotal > 0 && (
+                  <View style={styles.legendRow}>
+                    <View style={[styles.legendDot, { backgroundColor: c.border }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.legendName} numberOfLines={1}>
+                        {t("analytics.otherCategories", { count: sortedCategories.length - shownCount })}
+                      </Text>
+                      <Text style={styles.legendAmount}>{fmtC(hiddenTotal)}/mo</Text>
+                    </View>
+                  </View>
+                )}
               </View>
             </View>
           </View>

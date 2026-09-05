@@ -341,19 +341,20 @@ export default function SubscriptionsScreen() {
     setShowTemplatePicker(false); setTemplateSearch("");
   };
 
-  const filteredTemplates = useMemo(() => searchTemplates(templateSearch), [templateSearch]);
-  const quickPickTemplates = useMemo(() => {
-    const withLogos = getPopularTemplates().filter((tpl) => tpl.domain);
-    // There's no real region/geo detection in this app, only a display
-    // language — used here as the closest available proxy so German users
-    // land on the DACH-priced variant instead of always seeing the
-    // US/GLOBAL one first (the source list happens to declare those first).
-    const dachRegions = new Set(["DE", "AT", "CH", "DACH"]);
-    const regionMatch = language === "de"
-      ? withLogos.filter((tpl) => dachRegions.has(tpl.region))
-      : withLogos.filter((tpl) => !dachRegions.has(tpl.region));
-    return (regionMatch.length > 0 ? regionMatch : withLogos).slice(0, 8);
-  }, [language]);
+  // There is no real geo detection in this app, only a display language, used
+  // here as the closest available proxy for which price applies. The picking
+  // itself now lives in dedupeForRegion, so both the quick row and the search
+  // list show one row per service rather than the same service twice under two
+  // names.
+  const preferDach = language === "de";
+  const filteredTemplates = useMemo(
+    () => searchTemplates(templateSearch, preferDach),
+    [templateSearch, preferDach]
+  );
+  const quickPickTemplates = useMemo(
+    () => getPopularTemplates(preferDach).filter((tpl) => tpl.domain).slice(0, 8),
+    [preferDach]
+  );
 
   const applyTemplate = (tpl: ServiceTemplate) => {
     const guessed = guessCategory(tpl.name);

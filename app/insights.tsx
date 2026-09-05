@@ -124,7 +124,7 @@ export function buildTips(
   if (currencyContext) {
     const { baseCurrencyCode, rates } = currencyContext;
     for (const s of subs) {
-      const template = findTemplateByExactName(s.name);
+      const template = findTemplateByExactName(s.name, baseCurrencyCode);
       if (!template) continue;
       const marketMonthlyInBase = convertCurrency(
         toMonthly(template.defaultPrice, template.billingCycle),

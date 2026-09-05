@@ -219,7 +219,9 @@
     "totalSpending": "Gesamtausgaben",
     "weeklySpending": "Wöchentliche Ausgaben",
     "weeklySpendingDesc": "Sieh genau, in welchen Wochen deine Abos am stärksten zuschlagen, damit dich nichts überrascht.",
-    "week": "Woche {{number}}"
+    "week": "Woche {{number}}",
+    "otherCategories_one": "{{count}} weitere Kategorie",
+    "otherCategories_other": "{{count}} weitere Kategorien"
   },
   "onboarding": {
     "slide1Title": "Alle Abos im Blick",

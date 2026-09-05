@@ -219,7 +219,9 @@
     "totalSpending": "Total Spending",
     "weeklySpending": "Weekly Spending",
     "weeklySpendingDesc": "See exactly which weeks your subscriptions hit hardest, so nothing catches you off guard.",
-    "week": "Week {{number}}"
+    "week": "Week {{number}}",
+    "otherCategories_one": "{{count}} other category",
+    "otherCategories_other": "{{count}} other categories"
   },
   "onboarding": {
     "slide1Title": "Track every subscription",
