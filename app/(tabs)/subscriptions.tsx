@@ -341,12 +341,19 @@ export default function SubscriptionsScreen() {
     setShowTemplatePicker(false); setTemplateSearch("");
   };
 
-  // There is no real geo detection in this app, only a display language, used
-  // here as the closest available proxy for which price applies. The picking
-  // itself now lives in dedupeForRegion, so both the quick row and the search
-  // list show one row per service rather than the same service twice under two
-  // names.
-  const preferDach = language === "de";
+  /* Which regional price applies, decided by the currency first.
+
+     This keyed off the display language alone, which is wrong: plenty of
+     people in Austria and Germany run their phone in English while paying in
+     euros, and they were served the US catalogue. Because base and display
+     currency are now the same, nothing converted it either, so a dollar figure
+     was simply relabelled. Disney+ came out at 13.99 euros against a real
+     Austrian price of 8.99.
+
+     The currency is an explicit statement about money, which is what is
+     actually being chosen here, so it decides. Language stays as a fallback
+     for anyone still on the USD default. */
+  const preferDach = currency.code === "EUR" || currency.code === "CHF" || language === "de";
   const filteredTemplates = useMemo(
     () => searchTemplates(templateSearch, preferDach),
     [templateSearch, preferDach]

@@ -69,8 +69,45 @@ export function buildTips(
   const byCategory: Record<string, Sub[]> = {};
   for (const s of subs) { byCategory[s.category] = byCategory[s.category] || []; byCategory[s.category].push(s); }
 
+  /* The streaming and fitness rules are specialisations of the generic
+     "several in one category" rule, so for anyone with 3 or more streaming
+     subscriptions both fired and the screen showed the same finding twice,
+     listing the same services under two headings. They run first now and
+     claim their categories, so the generic rule only speaks for categories
+     nothing more specific covers.
+
+     The specific ones win because they say something the generic one cannot:
+     which service to pause and what that saves, rather than half the category
+     total as a vague ceiling. */
+  const coveredCategories = new Set<string>();
+
+  // Streaming overlap (3+ streaming services)
+  const streamingSubs = subs.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
+  if (streamingSubs.length >= 3) {
+    const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
+    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
+      title: t("insights.streamingTitle", { count: streamingSubs.length }),
+      detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
+      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle)) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
+    coveredCategories.add("streaming");
+  }
+
+  // Fitness overlap (2+ fitness services)
+  const fitnessSubs = subs.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
+  if (fitnessSubs.length >= 2) {
+    const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
+      title: t("insights.fitnessTitle", { count: fitnessSubs.length }),
+      detail: t("insights.fitnessDetail", { names: fitnessSubs.map(s => s.name).join(" & "), total: fmtC(fitTotal) }),
+      priority: "medium", savingsHint: t("insights.fitnessHint", { amount: fmtC(fitTotal * 0.5) }), savingsValue: fitTotal * 0.5 });
+    coveredCategories.add("fitness");
+    coveredCategories.add("health");
+  }
+
   // Duplicate category detection
   for (const [cat, list] of Object.entries(byCategory)) {
+    if (coveredCategories.has(cat)) continue;
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
@@ -85,26 +122,7 @@ export function buildTips(
     }
   }
 
-  // Streaming overlap (3+ streaming services)
-  const streamingSubs = subs.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
-  if (streamingSubs.length >= 3) {
-    const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
-    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
-      title: t("insights.streamingTitle", { count: streamingSubs.length }),
-      detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
-      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle)) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
-  }
 
-  // Fitness overlap (2+ fitness services)
-  const fitnessSubs = subs.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
-  if (fitnessSubs.length >= 2) {
-    const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
-      title: t("insights.fitnessTitle", { count: fitnessSubs.length }),
-      detail: t("insights.fitnessDetail", { names: fitnessSubs.map(s => s.name).join(" & "), total: fmtC(fitTotal) }),
-      priority: "medium", savingsHint: t("insights.fitnessHint", { amount: fmtC(fitTotal * 0.5) }), savingsValue: fitTotal * 0.5 });
-  }
 
   // Price increase alerts
   for (const s of subs) {
