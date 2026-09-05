@@ -125,17 +125,48 @@ last one left off without needing a recap typed out.
   distance. A half covered white edge over navy is a mid grey which sits
   nearer mint than paper, so distance leaks the whole chevron outline
   into the triangle mask.
-- master is at 1.0.3 / versionCode 40. versionCode 39 was built and
-  carried the chevron, so the mark has already reached phones; 40 exists
-  because a versionCode can only ever be uploaded to Play once, and 39
-  shipped with the buildTips crash.
+- 1.0.3 / versionCode 40 IS LIVE in the Play Store, with an `eas update`
+  on top of it (2026-09-05). 39 carried the chevron and the buildTips
+  crash; 40 is the same build with the crash fixed. A versionCode can
+  only ever be uploaded to Play once, which is why 39 was not reused.
+- GOOGLE POLICY, both satisfied, verified by 40 being accepted after the
+  31 Aug 2026 enforcement date: Play Billing Library >= 8.0.0 (comes from
+  `react-native-purchases ^10.4.4`, which pulls 8.3.0, see RevenueCat's
+  VERSIONS.md) and target API 36 (set by `fix-gradle.sh`, which
+  codemagic.yaml runs; there is no expo-build-properties plugin, so the
+  shell script is the only thing doing it). Since 40 targets 36, the
+  `"edgeToEdgeEnabled": false` in app.json is inert, Android 16 ignores
+  the opt out. Worth checking screens for clipping under the system bars.
 - NOTHING NATIVE has changed since 39 was built: no app.json, no assets,
-  no android/, no dependency. Everything after it is JS or backend. So
-  every fix in 40 could equally ship over the air to a 39 install, and
-  the only thing a new build buys is a first launch that works without
-  waiting for the update to download. Check this before assuming a build
-  is required: `git diff --name-only <build commit>..HEAD` filtered to
-  android/, assets/, app.json, package.json, eas.json.
+  no android/, no dependency. Everything after it is JS or backend, so it
+  ships over the air. Check this before assuming a build is required:
+  `git diff --name-only <build commit>..HEAD` filtered to android/,
+  assets/, app.json, package.json, eas.json.
+- REFERRALS, fixed 2026-09-05, previously half broken. Only the referrer
+  was ever credited, while the screen title, the description, the share
+  message and the redeem confirmation all promised both sides a month.
+  `rewardReferral(referrerId, referredId)` now credits both in one
+  statement, claiming `referral_rewarded` first so a retry cannot pay
+  twice. Codes were also only assigned at registration with no backfill,
+  so every account predating the feature saw a dash and a disabled share
+  button; `referrals.me` now assigns on first read. Confirmed working
+  against production. There is a rolling cap on the standing balance,
+  12 months, `REFERRAL_MAX_BONUS_MONTHS` in Railway overrides it.
+- Decided against a discount for the referred user instead of a free
+  month (2026-09-05): Play Billing will not let the backend set a per
+  user price, so it would need promo codes or a second SKU, and at
+  $2.99/month a discount is worth less than the month it replaces. The
+  free month also costs nothing real and doubles as the trial. Revisit
+  with evidence once referrals actually have usage.
+- LANDING PAGE ANALYTICS: PostHog, same EU project as the app, added as
+  transform 16 in tools/build-landing.py. Autocapture and session replay
+  off, `persistence: 'memory'` so there is no cookie and no consent
+  banner, Do Not Track honoured, nothing typed is ever sent. Events are
+  `$pageview`, `landing_signup_completed`, `landing_play_store_click`.
+  Privacy policy section 15 covers the site as well as the app.
+- `store-listing-de.md` is the German Play Store listing, ready to paste,
+  not yet uploaded. Terminology matches locales/de.json (Testphase, not
+  Probeabo) and every character count in it was measured.
 - MARK: a chevron pointing right, inner edge a V, outer edge a circular
   arc, with a mint triangle nesting into the V. Regenerate everything
   from the repo root with `python3 tools/trace-mark.py && python3
@@ -152,16 +183,14 @@ last one left off without needing a recap typed out.
   edge. The OS splash is `assets/splash-icon.png` (the navy mark) on warm
   white, matching the screen that follows it so there is no colour flash.
   Do not try to move the rings, wordmark or wave into the OS splash.
-- THE ONE THING STILL VIOLET: the Play Store screenshots and feature
-  graphic. They are a Play Console upload and do NOT need a new build or
-  a new release, so they can be replaced at any time. Shoot them from the
-  owner's own phone once the 1.0.2 build installs, so they show the real
-  navy UI. Those same shots are also what the promo video re-cut needs,
-  so do both in one sitting.
-- MARK MISMATCH, currently live and expected: the Play Store app shows
-  the receipt icon (1.0.2) while subtrimio.com shows the corrected
-  chevron, because the site auto-deploys from master and the icon needs a
-  native build. It resolves itself when 1.0.3 ships.
+- THE ONE THING STILL VIOLET, and now the only blocker in Phase 1 of the
+  growth plan: the Play Store screenshots and feature graphic. They are a
+  Play Console upload and do NOT need a build or a release, so they can
+  be replaced at any time. 40 is installed, so the phone now shows the
+  real navy UI and they can finally be shot. Those same shots are what
+  the promo video re-cut needs, so do both in one sitting.
+- The mark mismatch is RESOLVED: 1.0.3 is live, so the Play Store app and
+  subtrimio.com both show the chevron.
 - In progress: Phase 2 (posting cadence). The owner has an existing promo
   video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
   re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
