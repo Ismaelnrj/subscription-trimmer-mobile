@@ -641,8 +641,19 @@ async function assignReferralCode(userId) {
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generateReferralCode();
     try {
-      await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [code, userId]);
-      return code;
+      // IS NULL makes this safe to call from a read path. Two concurrent loads
+      // of the Refer a Friend screen would otherwise both write, and the
+      // response from the losing one would hand back a code that is no longer
+      // in the table. Here the loser writes nothing and returns the code that
+      // actually landed. It also means this can never overwrite a code
+      // somebody has already shared.
+      const claimed = await pool.query(
+        'UPDATE users SET referral_code = $1 WHERE id = $2 AND referral_code IS NULL RETURNING referral_code',
+        [code, userId]
+      );
+      if (claimed.rowCount > 0) return claimed.rows[0].referral_code;
+      const existing = await pool.query('SELECT referral_code FROM users WHERE id = $1', [userId]);
+      return existing.rows[0]?.referral_code ?? null;
     } catch (err) {
       if (err.code !== '23505') throw err; // unique_violation on referral_code — retry with a new code
     }
@@ -920,8 +931,14 @@ app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT referral_code, referred_by, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
+    // Codes are handed out at registration, and nothing ever backfilled the
+    // accounts that existed before the referral feature shipped. Those users
+    // open this screen, see a dash where their code should be, and the share
+    // button stays disabled, so they can never refer anyone. Assigning on
+    // first read fixes every one of them the moment they look.
+    const referralCode = user.referral_code || await assignReferralCode(req.userId);
     res.json(trpc({
-      referralCode: user.referral_code,
+      referralCode,
       hasRedeemedReferral: user.referred_by != null,
       bonusPremiumUntil: user.bonus_premium_until,
     }));
