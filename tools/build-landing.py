@@ -273,6 +273,84 @@ s = s.replace(".password-note {",
               ".auth-hint { margin-top: 7px; color: var(--slate); font-size: 12px; "
               "font-weight: 500; line-height: 1.5; }\n.password-note {", 1)
 
+# 16. the page had no analytics at all, so the moment content starts pointing
+#     at subtrimio.com the funnel goes dark at its own front door: installs
+#     could be counted in Play Console and in app events in PostHog, with
+#     nothing in between saying whether this page converts.
+#
+#     It is deliberately the smallest thing that answers that question, and
+#     it is built to match what the app already promises rather than to
+#     collect what a marketing page usually would:
+#       - autocapture off and session recording off, the same two switches
+#         lib/analytics.ts turns off for the same reason
+#       - persistence in memory, so no cookie and nothing in localStorage.
+#         That costs returning visitor identity, a visitor on Tuesday and the
+#         same visitor on Friday are two people here, but it keeps the page
+#         free of a consent banner, and the question being asked is answered
+#         inside one session anyway: did this visit reach a signup
+#       - Do Not Track honoured before the script is even fetched
+#       - no email, no name, no form contents ever sent
+#     If richer attribution is wanted later that is a cookie, and a cookie
+#     is a consent banner, and that is a product decision rather than a
+#     build step.
+analytics = '''  <script>
+  (function () {
+    var KEY = 'phc_wFoqNGYxoY64mxQ5TMrJbME5KP3xii7GvTkvp7hs4q6P';
+    // Same EU project as the app. PostHog's EU and US regions are separate
+    // ingest endpoints, so this host has to match where the project lives
+    // or events are accepted by nothing and fail silently.
+    var HOST = 'https://eu.i.posthog.com';
+    // Every call site goes through this, so the page behaves identically
+    // whether or not the library ever loads.
+    window.trimioTrack = function () {};
+    try {
+      if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
+    } catch (e) { return; }
+    var s = document.createElement('script');
+    s.src = 'https://eu-assets.i.posthog.com/static/array.js';
+    s.async = true;
+    s.onload = function () {
+      if (!window.posthog || !window.posthog.init) return;
+      window.posthog.init(KEY, {
+        api_host: HOST,
+        autocapture: false,
+        disable_session_recording: true,
+        capture_pageview: true,
+        persistence: 'memory',
+        respect_dnt: true
+      });
+      window.trimioTrack = function (event, props) {
+        try { window.posthog.capture(event, props); } catch (e) {}
+      };
+    };
+    // Analytics is never allowed to be the reason the page misbehaves.
+    s.onerror = function () {};
+    document.head.appendChild(s);
+  })();
+  </script>
+'''
+assert s.count("</head>") == 1
+s = s.replace("</head>", analytics + "</head>", 1)
+
+# the two things worth knowing about this page: did a visit become an
+# account, and did a visit leave for the Play Store instead. Neither event
+# carries anything the visitor typed.
+s = s.replace("""        '. Install Trimio, sign in with this email, and enter the code there.';""",
+"""        '. Install Trimio, sign in with this email, and enter the code there.';
+      window.trimioTrack('landing_signup_completed');""")
+
+s = s.replace("""  signupForm.addEventListener('submit', async (event) => {""",
+"""  // Delegated, so it covers all four store links and any added later. The
+  // section id says which one was tapped without naming anything personal.
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest && event.target.closest('a[href*="play.google.com"]');
+    if (!link) return;
+    var section = link.closest('section');
+    window.trimioTrack('landing_play_store_click', { section: (section && section.id) || 'unknown' });
+  });
+
+  signupForm.addEventListener('submit', async (event) => {""")
+
 out = pathlib.Path("backend/landing.html")
 out.write_text(s, encoding="utf-8")
 print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
@@ -282,3 +360,13 @@ for probe in ("data:image/png", "/api/auth/signup", '<button class="auth-google"
 assert s.count("/mark.svg") >= 5
 print("checks passed: no embedded PNG, no signup route, no Google button or handler,")
 print("no /account redirect, mark referenced as a shared file")
+
+for probe in ("eu-assets.i.posthog.com/static/array.js",
+              "landing_signup_completed",
+              "landing_play_store_click",
+              "persistence: 'memory'",
+              "respect_dnt: true",
+              "autocapture: false"):
+    assert probe in s, f"analytics not wired: {probe}"
+assert "disable_session_recording: true" in s
+print("checks passed: analytics present, cookieless, autocapture and replay off")

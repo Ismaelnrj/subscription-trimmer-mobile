@@ -430,6 +430,41 @@ img { display: block; max-width: 100%; }
 
 </style>
 <noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
+  <script>
+  (function () {
+    var KEY = 'phc_wFoqNGYxoY64mxQ5TMrJbME5KP3xii7GvTkvp7hs4q6P';
+    // Same EU project as the app. PostHog's EU and US regions are separate
+    // ingest endpoints, so this host has to match where the project lives
+    // or events are accepted by nothing and fail silently.
+    var HOST = 'https://eu.i.posthog.com';
+    // Every call site goes through this, so the page behaves identically
+    // whether or not the library ever loads.
+    window.trimioTrack = function () {};
+    try {
+      if (navigator.doNotTrack === '1' || window.doNotTrack === '1') return;
+    } catch (e) { return; }
+    var s = document.createElement('script');
+    s.src = 'https://eu-assets.i.posthog.com/static/array.js';
+    s.async = true;
+    s.onload = function () {
+      if (!window.posthog || !window.posthog.init) return;
+      window.posthog.init(KEY, {
+        api_host: HOST,
+        autocapture: false,
+        disable_session_recording: true,
+        capture_pageview: true,
+        persistence: 'memory',
+        respect_dnt: true
+      });
+      window.trimioTrack = function (event, props) {
+        try { window.posthog.capture(event, props); } catch (e) {}
+      };
+    };
+    // Analytics is never allowed to be the reason the page misbehaves.
+    s.onerror = function () {};
+    document.head.appendChild(s);
+  })();
+  </script>
 </head>
 <body>
   <div class="page-shell">
@@ -882,6 +917,15 @@ demoButtons.forEach((button) => {
     return data;
   }
 
+  // Delegated, so it covers all four store links and any added later. The
+  // section id says which one was tapped without naming anything personal.
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest && event.target.closest('a[href*="play.google.com"]');
+    if (!link) return;
+    var section = link.closest('section');
+    window.trimioTrack('landing_play_store_click', { section: (section && section.id) || 'unknown' });
+  });
+
   signupForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     signupMessage.className = 'auth-message';
@@ -903,6 +947,7 @@ demoButtons.forEach((button) => {
       successTitle.textContent = 'Your account is ready';
       successBody.textContent = 'A verification code is on its way to ' + body.email +
         '. Install Trimio, sign in with this email, and enter the code there.';
+      window.trimioTrack('landing_signup_completed');
       authView.hidden = true;
       authSuccess.hidden = false;
     } catch (error) {
