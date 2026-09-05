@@ -14,6 +14,10 @@ export default function ReferAFriendScreen() {
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [hasRedeemed, setHasRedeemed] = useState(false);
   const [bonusPremiumUntil, setBonusPremiumUntil] = useState<string | null>(null);
+  // Defaulted rather than left null so the header reads correctly on the very
+  // first paint, before referrals.me has answered with the real figure.
+  const [bonusCapMonths, setBonusCapMonths] = useState(12);
+  const [atBonusCap, setAtBonusCap] = useState(false);
   const [redeemCode, setRedeemCode] = useState("");
   const [redeeming, setRedeeming] = useState(false);
   const c = useTheme();
@@ -29,6 +33,8 @@ export default function ReferAFriendScreen() {
       setReferralCode(result.referralCode);
       setHasRedeemed(result.hasRedeemedReferral);
       setBonusPremiumUntil(result.bonusPremiumUntil);
+      if (result.bonusCapMonths) setBonusCapMonths(result.bonusCapMonths);
+      setAtBonusCap(!!result.atBonusCap);
     } catch (e) {
       Sentry.captureException(e);
       setLoadError(true);
@@ -87,7 +93,7 @@ export default function ReferAFriendScreen() {
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🎁</Text>
           <Text style={styles.headerTitle}>{t("referFriend.title")}</Text>
-          <Text style={styles.headerDesc}>{t("referFriend.desc")}</Text>
+          <Text style={styles.headerDesc}>{t("referFriend.desc", { months: bonusCapMonths })}</Text>
         </View>
 
         <View style={styles.body}>
@@ -110,6 +116,12 @@ export default function ReferAFriendScreen() {
                     {t("referFriend.bonusActive", { date: new Date(bonusPremiumUntil!).toLocaleDateString() })}
                   </Text>
                 </View>
+              )}
+
+              {atBonusCap && (
+                <Text style={styles.note}>
+                  {t("referFriend.atCap", { months: bonusCapMonths })}
+                </Text>
               )}
 
               <Text style={styles.sectionLabel}>{t("referFriend.yourCode")}</Text>

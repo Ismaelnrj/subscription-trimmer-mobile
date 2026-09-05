@@ -552,8 +552,9 @@
   "referFriend": {
     "screenTitle": "Refer a Friend",
     "title": "Give a month, get a month",
-    "desc": "Share your code with a friend. When they sign up and verify their email, you both get 1 month of Premium free.",
+    "desc": "Share your code with a friend. When they sign up and verify their email, you both get 1 month of Premium free, up to {{months}} months in total.",
     "bonusActive": "Bonus Premium active until {{date}}",
+    "atCap": "You have the maximum of {{months}} months of bonus Premium. Once some of it is used, referring another friend adds to it again.",
     "yourCode": "Your referral code",
     "share": "Share",
     "haveCode": "Have a friend's code?",

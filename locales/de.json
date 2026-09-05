@@ -552,8 +552,9 @@
   "referFriend": {
     "screenTitle": "Freunde einladen",
     "title": "Verschenke einen Monat, erhalte einen Monat",
-    "desc": "Teile deinen Code mit einem Freund. Wenn er sich anmeldet und seine E-Mail bestätigt, erhalten ihr beide 1 Monat Premium kostenlos.",
+    "desc": "Teile deinen Code mit einem Freund. Wenn er sich anmeldet und seine E-Mail bestätigt, erhalten ihr beide 1 Monat Premium kostenlos, bis zu insgesamt {{months}} Monate.",
     "bonusActive": "Bonus-Premium aktiv bis {{date}}",
+    "atCap": "Du hast das Maximum von {{months}} Monaten Bonus-Premium. Sobald ein Teil davon verbraucht ist, bringt dir eine weitere Empfehlung wieder etwas dazu.",
     "yourCode": "Dein Empfehlungscode",
     "share": "Teilen",
     "haveCode": "Hast du den Code eines Freundes?",

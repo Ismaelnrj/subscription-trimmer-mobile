@@ -662,6 +662,14 @@ async function assignReferralCode(userId) {
 }
 
 // Grants the referrer 1 free month of Premium, stacking onto any remaining bonus time.
+// How much bonus Premium one account can hold at once. This caps the total
+// standing balance rather than counting referrals for life, so it is a rolling
+// limit: as the bonus is spent, room to earn more opens up again. Someone with
+// a large audience cannot turn the referral programme into a decade of free
+// Premium, and someone who refers a friend a year is never shut out.
+// Set REFERRAL_MAX_BONUS_MONTHS in Railway to change it without a deploy.
+const REFERRAL_MAX_BONUS_MONTHS = parseInt(process.env.REFERRAL_MAX_BONUS_MONTHS, 10) || 12;
+
 // Both sides, which is what the app has always promised and never delivered.
 // "Give a month, get a month" is the screen's own title, the description says
 // "you both get 1 month of Premium free", and the share message a friend
@@ -681,10 +689,18 @@ async function rewardReferral(referrerId, referredId) {
   if (claimed.rowCount === 0) return false;
   // GREATEST keeps this stacking: a second referral extends an unexpired
   // bonus rather than restarting it, and an expired one starts fresh today.
+  // LEAST is the cap. Someone already at the ceiling keeps what they have
+  // rather than losing any of it, and the friend they referred is credited
+  // either way, since the cap is the referrer's balance and not the friend's
+  // reward. It applies to both ids because a redeemer sitting at the cap
+  // should not be able to exceed it either.
   await pool.query(
-    `UPDATE users SET bonus_premium_until = GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days'
+    `UPDATE users SET bonus_premium_until = LEAST(
+       GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days',
+       NOW() + make_interval(months => $2)
+     )
      WHERE id = ANY($1::int[])`,
-    [[referrerId, referredId]]
+    [[referrerId, referredId], REFERRAL_MAX_BONUS_MONTHS]
   );
   return true;
 }
@@ -928,7 +944,15 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
   try {
-    const result = await pool.query('SELECT referral_code, referred_by, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
+    // at_bonus_cap is computed in SQL so it uses the same calendar month
+    // arithmetic the cap itself does, rather than a 30 day approximation of
+    // it in JS that would disagree near the boundary.
+    const result = await pool.query(
+      `SELECT referral_code, referred_by, bonus_premium_until,
+              bonus_premium_until >= NOW() + make_interval(months => $2) - INTERVAL '1 day' AS at_bonus_cap
+       FROM users WHERE id = $1`,
+      [req.userId, REFERRAL_MAX_BONUS_MONTHS]
+    );
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     // Codes are handed out at registration, and nothing ever backfilled the
@@ -941,6 +965,8 @@ app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
       referralCode,
       hasRedeemedReferral: user.referred_by != null,
       bonusPremiumUntil: user.bonus_premium_until,
+      bonusCapMonths: REFERRAL_MAX_BONUS_MONTHS,
+      atBonusCap: user.at_bonus_cap === true,
     }));
   } catch (err) {
     handleError(err, res);
