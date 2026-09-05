@@ -8,6 +8,12 @@ export interface ServiceTemplate {
   region: "GLOBAL" | "DE" | "AT" | "CH" | "DACH" | "US";
   popular?: boolean;
   domain?: string;
+  /* The date this row's price was last checked against the provider.
+     Absent means never checked since the catalogue was written, which is
+     the case for most of it. The market price insight only speaks for rows
+     carrying a recent date, so a stale default cannot tell somebody they
+     are overpaying on the strength of a figure nobody has looked at. */
+  verified?: string;
 }
 
 export const SERVICE_TEMPLATES: ServiceTemplate[] = [
@@ -36,7 +42,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "tidal", name: "Tidal", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "audible", name: "Audible", defaultPrice: 7.95, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "kindle-unlimited", name: "Kindle Unlimited", defaultPrice: 11.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
-  { id: "xbox-game-pass", name: "Xbox Game Pass Ultimate", defaultPrice: 19.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "xbox.com", popular: true },
+  { id: "xbox-game-pass", name: "Xbox Game Pass Ultimate", defaultPrice: 22.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "xbox.com", popular: true, verified: "2026-09-05"},
   { id: "ps-plus-essential", name: "PlayStation Plus Essential", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "ps-plus-extra", name: "PlayStation Plus Extra", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "ps-plus-premium", name: "PlayStation Plus Premium", defaultPrice: 17.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
@@ -102,12 +108,12 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "costco", name: "Costco Gold Star", defaultPrice: 65.00, currency: "USD", billingCycle: "yearly", category: "memberships", region: "US" },
 
   // ─── STREAMING (DACH / EUR) ───────────────────────────────────────────────────
-  { id: "netflix-de-standard", name: "Netflix Standard", defaultPrice: 15.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "netflix.com", popular: true },
+  { id: "netflix-de-standard", name: "Netflix Standard", defaultPrice: 15.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "netflix.com", popular: true, verified: "2026-09-05"},
   { id: "netflix-de-premium", name: "Netflix Premium", defaultPrice: 22.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "netflix-de-basis", name: "Netflix Basis m. Werbung", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "disney-plus-de", name: "Disney+", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "disneyplus.com", popular: true },
+  { id: "netflix-de-basis", name: "Netflix Basis m. Werbung", defaultPrice: 6.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", verified: "2026-09-05"},
+  { id: "disney-plus-de", name: "Disney+", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "disneyplus.com", popular: true, verified: "2026-09-05"},
   { id: "apple-tv-plus-de", name: "Apple TV+", defaultPrice: 9.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
-  { id: "amazon-prime-de", name: "Amazon Prime", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "amazon.com", popular: true },
+  { id: "amazon-prime-de", name: "Amazon Prime", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH", domain: "amazon.com", popular: true, verified: "2026-09-05"},
   { id: "paramount-plus-de", name: "Paramount+", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
   { id: "discovery-plus-de", name: "discovery+", defaultPrice: 4.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
   { id: "dazn-de", name: "DAZN", defaultPrice: 29.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DE", domain: "dazn.com", popular: true },
@@ -126,7 +132,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "crunchyroll-de", name: "Crunchyroll", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "streaming", region: "DACH" },
 
   // ─── ENTERTAINMENT / MUSIC (DACH / EUR) ───────────────────────────────────────
-  { id: "spotify-de", name: "Spotify Premium", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "spotify.com", popular: true },
+  { id: "spotify-de", name: "Spotify Premium", defaultPrice: 12.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "spotify.com", popular: true, verified: "2026-09-05"},
   { id: "apple-music-de", name: "Apple Music", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "deezer-de-premium", name: "Deezer Premium", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "deezer-de-hifi", name: "Deezer HiFi", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
@@ -246,6 +252,21 @@ export function getPopularTemplates(preferDach = false): ServiceTemplate[] {
 // Exact (not fuzzy) match on purpose — used to compare a tracked
 // subscription's price against this service's known current price, so a
 // loose match could misattribute a completely different plan's price.
+/* How recently a price must have been checked for the app to make a claim
+   about it. Six months is long enough that the handful of verified rows stay
+   useful between passes, and short enough that a figure nobody has revisited
+   in a year stops being presented as the market rate. */
+const PRICE_FRESHNESS_MONTHS = 6;
+
+export function isPriceFresh(t: ServiceTemplate, now: Date = new Date()): boolean {
+  if (!t.verified) return false;
+  const checked = new Date(t.verified);
+  if (isNaN(checked.getTime())) return false;
+  const cutoff = new Date(now);
+  cutoff.setMonth(cutoff.getMonth() - PRICE_FRESHNESS_MONTHS);
+  return checked >= cutoff;
+}
+
 export function findTemplateByExactName(name: string, preferCurrency?: string): ServiceTemplate | undefined {
   const n = name.trim().toLowerCase();
   const matches = SERVICE_TEMPLATES.filter((t) => t.name.toLowerCase() === n);

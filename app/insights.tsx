@@ -10,7 +10,7 @@ import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
 import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
-import { findTemplateByExactName } from "../lib/service-templates";
+import { findTemplateByExactName, isPriceFresh } from "../lib/service-templates";
 
 export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
@@ -144,6 +144,13 @@ export function buildTips(
     for (const s of subs) {
       const template = findTemplateByExactName(s.name, baseCurrencyCode);
       if (!template) continue;
+      /* Only speak for a price somebody has actually checked recently.
+         The catalogue is a few hundred hardcoded figures and services
+         reprice constantly, which is the very thing this app exists to warn
+         people about, so an unchecked default telling somebody they are
+         overpaying is worse than saying nothing. A row with no date, or one
+         older than the window, is treated as unknown rather than as true. */
+      if (!isPriceFresh(template)) continue;
       const marketMonthlyInBase = convertCurrency(
         toMonthly(template.defaultPrice, template.billingCycle),
         template.currency,

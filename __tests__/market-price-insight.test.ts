@@ -17,16 +17,29 @@ function makeSub(overrides: Partial<Sub>): Sub {
   };
 }
 
+/* These lean on real rows in lib/service-templates.ts, so they are sensitive
+   to that catalogue in two ways worth knowing about.
+
+   The name has to exist. An earlier change stripped region tokens from every
+   template name, which renamed "Drei AT S" to "Drei S" and quietly orphaned
+   the fixture this suite used for its currency conversion case, so the test
+   was asserting against a template that no longer existed.
+
+   The row also has to carry a recent `verified` date, because the insight now
+   stays quiet for prices nobody has checked. Only a handful of rows have one,
+   and these tests deliberately use those: a fixture on an unverified row would
+   pass or fail for the wrong reason. */
 describe("buildTips market price alert", () => {
   it("flags a subscription tracked well below the known market price", () => {
-    const subs = [makeSub({ price: 10 })]; // Netflix Standard template is $15.49/mo
-    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "USD", rates: { USD: 1 } });
+    // Netflix Standard is 15.99 EUR in the DACH catalogue, verified.
+    const subs = [makeSub({ price: 10 })];
+    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "EUR", rates: { USD: 1, EUR: 1 } });
     expect(tips.some((t) => t.id === "market-price-1")).toBe(true);
   });
 
-  it("does not flag when the tracked price already matches or exceeds the market price", () => {
-    const subs = [makeSub({ price: 15.49 })];
-    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "USD", rates: { USD: 1 } });
+  it("does not flag when the tracked price already matches the market price", () => {
+    const subs = [makeSub({ price: 15.99 })];
+    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "EUR", rates: { USD: 1, EUR: 1 } });
     expect(tips.some((t) => t.id === "market-price-1")).toBe(false);
   });
 
@@ -37,17 +50,27 @@ describe("buildTips market price alert", () => {
   });
 
   it("does not flag subscriptions that don't exactly match a known service name", () => {
-    const subs = [makeSub({ name: "Netflix", price: 5 })]; // template is "Netflix Standard", not "Netflix"
-    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "USD", rates: { USD: 1 } });
+    // The catalogue has "Netflix Standard", not "Netflix".
+    const subs = [makeSub({ name: "Netflix", price: 5 })];
+    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "EUR", rates: { USD: 1, EUR: 1 } });
     expect(tips.some((t) => t.id === "market-price-1")).toBe(false);
   });
 
-  it("converts currencies correctly when the tracked base currency differs from the template's", () => {
-    // Drei AT S template is tagged EUR 22.90/mo. User tracks in USD at a rate
-    // where EUR is cheaper than USD (rates are USD-based: units per 1 USD).
-    const subs = [makeSub({ name: "Drei AT S", price: 10, category: "utilities" })];
-    const rates = { USD: 1, EUR: 0.5 }; // 1 USD = 0.5 EUR, i.e. EUR is the stronger currency
-    // 22.90 EUR -> USD: 22.90 * (rates.USD / rates.EUR) = 22.90 * (1/0.5) = 45.80 USD
+  it("stays quiet for a service whose price has never been verified", () => {
+    // Apple TV+ is in the catalogue but carries no verified date, so the app
+    // has no business telling anyone what it costs.
+    const subs = [makeSub({ name: "Apple TV+", price: 1 })];
+    const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "USD", rates: { USD: 1, EUR: 1 } });
+    expect(tips.some((t) => t.id === "market-price-1")).toBe(false);
+  });
+
+  it("converts currencies when the tracked base differs from the template's", () => {
+    /* "Netflix Basis m. Werbung" exists only in EUR and is verified, so it is
+       selected even with a USD base and the conversion actually runs.
+       Rates are USD based (units per 1 USD), so EUR 0.5 means one euro is two
+       dollars: 6.99 EUR becomes 13.98 USD against 10 tracked. */
+    const subs = [makeSub({ name: "Netflix Basis m. Werbung", price: 10 })];
+    const rates = { USD: 1, EUR: 0.5 };
     const tips = buildTips(subs, fmtC, tr, 50, { baseCurrencyCode: "USD", rates });
     expect(tips.some((t) => t.id === "market-price-1")).toBe(true);
   });

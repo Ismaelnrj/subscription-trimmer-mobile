@@ -191,6 +191,24 @@ last one left off without needing a recap typed out.
   proxy this app has, there is no geo detection. `findTemplateByExactName`
   takes a currency so the market price insight compares against the right
   regional row, otherwise a euro subscriber gets told they overpay.
+- TEMPLATE PRICES go stale, and the app is not allowed to pretend
+  otherwise. `verified` on a ServiceTemplate is the date somebody actually
+  checked that row against the provider; absent means never checked since
+  the catalogue was written in July 2026, which is true of most of the 127
+  rows. `isPriceFresh` gates the market price insight on that date being
+  within 6 months, so the "you may be overpaying" alert only speaks from a
+  figure somebody stands behind. Verified 2026-09-05: Netflix Standard DACH
+  15.99 and Amazon Prime DACH 8.99 (both already right), Disney+ DACH
+  8.99 -> 10.99, Spotify Premium DACH 10.99 -> 12.99, Netflix Basis m.
+  Werbung 4.99 -> 6.99, Xbox Game Pass Ultimate US 19.99 -> 22.99. US rows
+  and the DACH sport services (DAZN, WOW, RTL+) were NOT verified: the
+  sources were mostly promotional pricing and could not be pinned down.
+- The market price tests lean on real catalogue rows, so renaming a
+  template can orphan a fixture silently. That already happened once:
+  stripping region tokens renamed "Drei AT S" to "Drei S" and the test kept
+  asserting against a name that no longer existed. Fixtures now use rows
+  that carry a verified date, and there is a test asserting an unverified
+  row stays quiet.
 - CURRENCY: picking a currency sets both what prices are entered in and
   what they are shown in. `setBaseCurrency` existed but was called from
   nowhere, so `baseCurrencyCode` was stuck at USD for everyone, the add
