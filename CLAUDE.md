@@ -167,6 +167,44 @@ last one left off without needing a recap typed out.
 - `store-listing-de.md` is the German Play Store listing, ready to paste,
   not yet uploaded. Terminology matches locales/de.json (Testphase, not
   Probeabo) and every character count in it was measured.
+- CATEGORY COLOURS (`lib/categories.ts`) drive four surfaces at once: the
+  quick add icons, the subscription card icons, the Stats donut with its
+  legend, and the calendar day dots. The rebrand missed them entirely
+  until 2026-09-05, so violet and Netflix red were still shipping. The
+  ten real categories are now a validated categorical palette, checked
+  with the dataviz skill's `validate_palette.js` against the warm white
+  ground on the ADJACENT pairlist, which is the one a donut needs since
+  slices touch only their neighbours. THE DECLARATION ORDER IS PART OF
+  THAT RESULT: red with olive-green, and orange with green, both fail
+  when adjacent, so reordering the map without re-running the validator
+  silently reintroduces them. `other` is the one deliberate neutral.
+- The Stats donut caps at 6 named slices plus a labelled Other row
+  (`DONUT_SLICES` in `app/(tabs)/analytics.tsx`). Not 3: that was tried
+  first, was tighter than the colours require, and hid real categories.
+  Eleven is not an option, the colours stop being tellable apart.
+- SERVICE TEMPLATES: the region lives in the row, never in the name. 33
+  services used to be listed twice, "Amazon Prime" beside "Amazon Prime
+  DE", and 59 names carried a DE/AT/CH token. Names are clean now and
+  therefore collide on purpose: `dedupeForRegion` picks the row matching
+  the user's region, so the list shows one row per service at the right
+  local price (162 rows down to 127). The language is the only region
+  proxy this app has, there is no geo detection. `findTemplateByExactName`
+  takes a currency so the market price insight compares against the right
+  regional row, otherwise a euro subscriber gets told they overpay.
+- CURRENCY: picking a currency sets both what prices are entered in and
+  what they are shown in. `setBaseCurrency` existed but was called from
+  nowhere, so `baseCurrencyCode` was stuck at USD for everyone, the add
+  form said "Price in USD" wherever you lived, and useFmt then converted
+  what you typed out of dollars. Anything added from a template before
+  2026-09-05 was stored at its US price and now reads as that number in
+  the local currency, so old rows may look high.
+- The floating add button overlaps the scroll area, so screens that
+  render it must reserve `FAB_SCROLL_CLEARANCE`, exported from
+  `components/GlobalFab.tsx`. Subscriptions is exempt, GlobalFab returns
+  null there.
+- `assets/play-store-icon.png` is the 512 square listing icon, a
+  SEPARATE asset from the launcher icon. Play Console requires exactly
+  512 and rejects an alpha channel.
 - MARK: a chevron pointing right, inner edge a V, outer edge a circular
   arc, with a mint triangle nesting into the V. Regenerate everything
   from the repo root with `python3 tools/trace-mark.py && python3
