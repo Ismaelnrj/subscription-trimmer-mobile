@@ -62,7 +62,7 @@ Abos und Testphasen im Blick. Ohne Bankzugang. Wissen, bevor abgebucht wird.
 ```
 Nie wieder von einem Abo erst dann erfahren, wenn die Abbuchung schon auf dem Konto steht.
 
-Trimio ist ein Abo Tracker und Rechnungsmanager, der dir jede wiederkehrende Zahlung zeigt, bevor sie passiert, nicht danach. Füge ein Abo in Sekunden hinzu, indem du die Bestätigungsmail einfügst, oder wähle eines aus über 160 fertigen Vorlagen für Dienste wie Netflix, Spotify, iCloud und viele mehr.
+Trimio ist ein Abo Tracker und Rechnungsmanager, der dir jede wiederkehrende Zahlung zeigt, bevor sie passiert, nicht danach. Füge ein Abo in Sekunden hinzu, indem du die Bestätigungsmail einfügst, oder wähle eines aus über 120 fertigen Vorlagen für Dienste wie Netflix, Spotify, iCloud und viele mehr.
 
 Das macht Trimio für dich:
 • Behält kostenlose Testphasen im Blick, damit du keine mehr zu spät kündigst.
