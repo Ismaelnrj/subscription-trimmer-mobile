@@ -344,7 +344,7 @@
     "premiumThresholdDesc": "Wähle dein eigenes Limit für die Warnung bei teuren Abonnements.",
     "alertWhen": "Warnung, wenn ein Abonnement übersteigt",
     "thresholdPlaceholder": "z.B. 50",
-    "thresholdHint": "Abonnements, die mehr als diesen Betrag pro Monat kosten, werden in den Empfehlungen markiert.",
+    "thresholdHint": "Abonnements, die mehr als diesen Betrag pro Monat kosten, werden in den Empfehlungen markiert. Standard: {{symbol}}50/Monat.",
     "saveThreshold": "Schwelle speichern",
     "displayName": "Anzeigename",
     "namePlaceholder": "Dein Name",
