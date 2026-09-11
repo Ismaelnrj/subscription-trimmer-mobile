@@ -4,7 +4,7 @@ The companion to `promo-video-shotlist.md`, which is the 9:16 social cut.
 This one is the calm feature tour: YouTube, the Play Store listing video, and
 an embed on subtrimio.com.
 
-Format: 1920x1080, 30fps, 16 to 20 seconds. Built from the structure of
+Format: 1920x1080, 30fps, about 21 seconds. Built from the structure of
 `TrimioPromoProfessionalRebuildCleanOutro.mp4`, which got the shape right.
 
 ## The two cuts are different genres, on purpose
@@ -70,23 +70,35 @@ The mint rule under "Get Trimio on Google Play" measured 2.08:1 and is
 |---|---|---|---|
 | 0.0 to 2.5 | Brand card, mark and wordmark | **Know before you pay** | Subscriptions should never surprise you. |
 | 2.5 to 6.0 | Dashboard | See what is coming | Upcoming renewals and monthly spending at a glance |
-| 6.0 to 9.5 | Recommendations | Find savings opportunities | Review smart recommendations and spot potential savings |
-| 9.5 to 13.0 | Calendar | Plan before the charge arrives | See upcoming renewals by day |
-| 13.0 to 15.5 | Stats, donut and categories | See where it actually goes | Spending by category, at a glance |
-| 15.5 to 18.0 | Outro, mark on warm white | **Trimio** / Know before you pay | Private by design. Get Trimio on Google Play |
+| 6.0 to 9.5 | **Add Expense, pasting a confirmation email** | **Add one in seconds** | Paste the confirmation email, Trimio fills in the rest |
+| 9.5 to 13.0 | Recommendations | Find savings opportunities | Review smart recommendations and spot potential savings |
+| 13.0 to 16.5 | Calendar | Plan before the charge arrives | See upcoming renewals by day |
+| 16.5 to 19.0 | Stats, donut and categories | See where it actually goes | Spending by category, at a glance |
+| 19.0 to 21.5 | Outro, mark on warm white | **Trimio** / Know before you pay | Private by design. Get Trimio on Google Play |
 
-### One optional addition
+About 21.5 seconds. Comfortable for a listing video, and well under the 30
+seconds Play recommends.
 
-Nothing in the current cut shows **pasting a confirmation email to add a
-subscription**, and it is the one thing no competitor demo can show. On the
-social cut it is the centrepiece. Here it would slot between Dashboard and
-Recommendations as a 3 second beat:
+### How to shoot the paste beat, because it is the hardest one
 
-> **Add one in seconds** / Paste the confirmation email, Trimio fills in the rest
+It is the only beat that shows what Trimio *does for you* rather than what it
+displays, and it is the one thing no competitor demo can show. It is also the
+easiest to shoot badly, because the interesting part lasts under a second.
 
-That takes the runtime to about 21 seconds, which is still comfortable for a
-listing video. Worth it: the rest of the tour shows what the app *displays*,
-and this is the only beat that shows what it *does for you*.
+1. Subscriptions tab, tap **+ Add Expense**.
+2. Open **Auto-fill from purchase email**. The label reads "Paste your
+   purchase / confirmation email below. We'll fill in the details for you."
+3. Paste a real confirmation email. Use one you actually have: a Netflix or
+   Spotify receipt reads as genuine in a way invented text does not.
+4. **Hold on the filled form for a full second.** Name, price, billing cycle
+   and category populated. That still frame is the proof, and cutting away
+   too early is what makes this beat fail.
+
+Do not film yourself typing the fields by hand. Manual entry is the thing
+this beat exists to replace, and showing it undercuts the whole point.
+
+If the 3.5 seconds feels tight in the edit, take the time from Stats rather
+than from here. Stats is the first beat to cut in any shorter version.
 
 ---
 
