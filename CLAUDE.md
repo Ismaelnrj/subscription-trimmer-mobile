@@ -15,6 +15,31 @@ resets between sessions and can lose detail even within one long session
   must be handed to the owner to run themselves, not executed from here, see
   "Network limits" below for why.
 
+## Branching, and who else works on this
+
+- THE DEFAULT BRANCH IS `master`, not `main`. `git fetch origin main` fails
+  quietly and, worse, a comparison against the non-existent `origin/main`
+  resolves to an empty ref and lists the ENTIRE history as "not merged",
+  which reads like catastrophic divergence and is an artefact. Compare
+  against `origin/master`.
+- THE OWNER WANTS EVERYTHING ON `master` (stated 2026-09-11: "everything
+  should be always on master"). Cloud sessions are handed a
+  `claude/<something>` working branch as a guardrail so a sandbox cannot
+  write to master unreviewed, so work lands there first. When it is done,
+  ASK, then fast-forward master onto it and push. `git merge --ff-only` is
+  the right verb while the branch is a strict descendant, it keeps history
+  linear and fails loudly if it is not actually a fast-forward. Never push
+  to master without asking first.
+- CHATGPT ALSO WORKS ON TRIMIO. The owner has given it access to read and
+  review this codebase, so it is a second assistant on the same repo, not a
+  bystander. Practical consequences: changes may arrive that this session
+  did not make, so re-read a file before editing it rather than trusting a
+  stale copy in context; `git log` and `git status` are the source of truth
+  about what is actually in the repo; and if something looks unfamiliar or
+  contradicts a note here, the likely explanation is work from the other
+  assistant or the owner, not a mistake, so check the history before
+  "correcting" it. Keep this file accurate for whoever reads it next.
+
 ## Stack
 
 - Expo SDK ~53, React Native 0.79.6, React 19, Expo Router.
@@ -45,6 +70,37 @@ actually matches how this app checks for updates, use it, not `--branch`.
 `BUILD_GUIDE.md`'s example (`eas update --platform android`, no channel
 flag) is imprecise, don't copy it as-is.
 
+### runtimeVersion is FROZEN at 1.0.1, and that is load bearing
+
+`app.json` carries `"runtimeVersion": "1.0.1"` as a hardcoded string, not a
+policy. It is deliberately NOT the same as `version` (1.0.3), and it must not
+be "tidied up" to match.
+
+EAS Update matches an update to a build by **runtimeVersion**, never by
+`version`. Build 40 has 1.0.1 baked into it, so it asks the server for
+updates tagged 1.0.1, and a publish carries the same 1.0.1. They match, so
+the update lands. Set runtimeVersion to 1.0.3 and every existing build would
+still ask for 1.0.1, find nothing, and silently stop receiving OTA updates
+forever. Seeing "Runtime version: 1.0.1" in the app is the mechanism working.
+
+THE RULE THIS IMPLIES: runtimeVersion exists to stop a JS bundle reaching a
+native build that lacks the native code that JS needs. Frozen, that guard is
+off and every build gets every update. That is safe only while nothing native
+changes. **When a native change does happen (a new native dependency, an
+app.json native config change, a new permission), bump runtimeVersion in the
+same commit as that change.** Skip it and an old build pulls JS that calls
+native code it does not have, and crashes on launch, for everyone.
+
+### Verifying an OTA actually landed
+
+Help & Support has a Build Info panel (`app/help-support.tsx`) that answers
+this without guessing. `Embedded launch (no OTA applied)` should read
+`false`, `Update ID` should be a UUID rather than `none`, and
+`Update published` should match the publish timestamp. If it says embedded
+with no update ID, the app is running the bundle baked into the build: the
+update downloads in the background and applies on the NEXT launch, so force
+close and reopen before concluding anything is broken.
+
 ## Network limits in cloud/sandbox sessions
 
 Outbound access to `api.expo.dev` is blocked by this environment's network
@@ -52,6 +108,17 @@ policy (confirmed via repeated 403 "policy denial" entries in the agent
 proxy status). This is independent of whether an Expo token is valid, so if
 `eas` commands fail here with auth-looking errors, the fix is not a new
 token, it's running the command on the owner's own machine instead.
+
+It is NOT only `api.expo.dev`. The Railway backend
+(`subscription-trimmer-mobile-production.up.railway.app`), `www.subtrimio.com`
+and the bare `subtrimio.com` are all refused the same way, confirmed
+2026-09-10 by `curl` returning HTTP 000 on every path and the proxy log
+showing `403 to CONNECT (policy denial)` for all three hosts. So a sandbox
+session CANNOT check whether the backend or the site is up. Getting nothing
+back here says nothing about their health: do not report them as down. Read
+the proxy's own verdict with
+`curl -sS "$HTTPS_PROXY/__agentproxy/status"` before drawing any conclusion,
+and hand live checks to the owner (Railway dashboard, or just load the site).
 
 ## Native build notes
 
@@ -169,9 +236,26 @@ last one left off without needing a recap typed out.
   banner, Do Not Track honoured, nothing typed is ever sent. Events are
   `$pageview`, `landing_signup_completed`, `landing_play_store_click`.
   Privacy policy section 15 covers the site as well as the app.
-- `store-listing-de.md` is the German Play Store listing, ready to paste,
-  not yet uploaded. Terminology matches locales/de.json (Testphase, not
-  Probeabo) and every character count in it was measured.
+- `store-listing-de.md` is the German Play Store listing, and it IS NOW
+  UPLOADED (2026-09-10), under Grow > Store presence > Main store listing >
+  Manage translations > German (Deutschland). Title "Trimio: Abo Tracker &
+  Kosten" (28/30) and the short description (76/80) went in verbatim;
+  Play Console's own counter confirmed both. Terminology matches
+  locales/de.json (Testphase, not Probeabo) and every character count was
+  measured.
+- The full description that went up is NOT the one in the file's own code
+  block, it is the merged version: the file's structure and privacy section
+  plus the ASO the first draft had dropped, namely named services (Netflix,
+  Spotify, Disney+, iCloud), the paste-a-confirmation-email feature leading
+  the second paragraph instead of "manuell hinzufügen", "Abonnement" as well
+  as "Abo" since German search uses both, and a Premium paragraph naming the
+  actual features rather than saying "zusätzliche Funktionen". 2566
+  characters against a 4000 limit.
+- TEMPLATE COUNT IN MARKETING COPY: the listing used to claim "über 160
+  Vorlagen". That number predates `dedupeForRegion` and was an overclaim,
+  since the catalogue holds 127 unique service names and a user browses at
+  most one row per name. It now says "über 120". If the catalogue changes,
+  re-count with a unique-name count, not a row count.
 - CATEGORY COLOURS (`lib/categories.ts`) drive four surfaces at once: the
   quick add icons, the subscription card icons, the Stats donut with its
   legend, and the calendar day dots. The rebrand missed them entirely
@@ -244,12 +328,12 @@ last one left off without needing a recap typed out.
   edge. The OS splash is `assets/splash-icon.png` (the navy mark) on warm
   white, matching the screen that follows it so there is no colour flash.
   Do not try to move the rings, wordmark or wave into the OS splash.
-- THE ONE THING STILL VIOLET, and now the only blocker in Phase 1 of the
-  growth plan: the Play Store screenshots and feature graphic. They are a
-  Play Console upload and do NOT need a build or a release, so they can
-  be replaced at any time. 40 is installed, so the phone now shows the
-  real navy UI and they can finally be shot. Those same shots are what
-  the promo video re-cut needs, so do both in one sitting.
+- PLAY STORE ASSETS: the owner confirmed (2026-09-09) that the new
+  screenshots and the corrected listing icon are uploaded to Play Console.
+  They are a Console upload and never needed a build or a release. The
+  feature graphic was not separately confirmed, so check its state in
+  Console rather than assuming either way. The promo video re-cut still
+  wants those same shots.
 - The mark mismatch is RESOLVED: 1.0.3 is live, so the Play Store app and
   subtrimio.com both show the chevron.
 - In progress: Phase 2 (posting cadence). The owner has an existing promo
@@ -260,6 +344,51 @@ last one left off without needing a recap typed out.
   screenshots for it should come from the owner's own phone, not a
   generated mock, the real device is authentic and already has the
   current build via OTA.
+- VIDEO CAPTION CONSTRAINTS, the reasons the old cut needs redoing and the
+  traps in redoing it: no Apple App Store badge (Android only, the Play link
+  is `play.google.com/store/apps/details?id=com.trimio.app`); TikTok and
+  Reels both cover roughly the bottom 20% and right 15% of a vertical frame
+  with their own UI, which is what caused the caption overlap, so keep
+  captions in the middle band; and Soft Mint must never sit behind white
+  caption text (2.1:1), use Ink Navy behind white, or `#1F7A62` for text
+  that has to read as mint. Taglines matching the live store copy are
+  "Know before you're charged" and "Wissen, bevor abgebucht wird".
+- A SoLoader NATIVE CRASH IS ON RECORD AND WAS DELIBERATELY NOT FIXED
+  (2026-09-08, Sentry). `SoLoaderDSONotFoundError: couldn't find DSO to
+  load: libc++_shared.so` at `MainApplication.onCreate`, one user, fatal,
+  every launch. The diagnosis: SoSource 0 reported the app's native library
+  directory as `/lib/x86_64` while SoSource 1 searched `/lib/arm64-v8a`
+  inside the split APKs. The device was `HRY-LX1T`, an Honor 10 Lite, which
+  is Kirin 710 and therefore ARM64 with no x86_64 anywhere in it, installed
+  from Play (`installerStore = com.android.vending`, `isSideLoaded = false`)
+  on versionCode 39. So the APK search path was right and the INSTALL was
+  corrupted: Android linked the app to an architecture the phone does not
+  have. Nothing in this repo causes it, confirmed by grepping the whole
+  build chain (plugins, app.json, codemagic.yaml, fix-gradle.sh) for
+  `abiFilters`, `extractNativeLibs`, `useLegacyPackaging`, `enableSplit` and
+  `reactNativeArchitectures` and finding no overrides at all. It cannot be
+  fixed over the air either, since SoLoader runs before any JS.
+  WHAT WOULD CHANGE THE DECISION: the same crash on versionCode 40, more
+  than a handful of users, or a SECOND manufacturer appearing. Any of those
+  and the mitigation is `useLegacyPackaging true` in the next native build,
+  which makes the installer extract the .so files to the lib directory
+  instead of reading them from inside the APK. Not worth a build for one
+  corrupted install on a superseded versionCode.
+- That crash was only ever visible because of Fix 9 in `fix-gradle.sh`,
+  which adds native Sentry auto-init through AndroidManifest meta-data so
+  crashes BEFORE the JS bundle loads still report. Do not remove it.
+- LOCALE PARITY NEEDS TWO CHECKS, NOT ONE. Matching key counts are not
+  enough. On 2026-09-10 both files were at 562 keys with nothing missing in
+  either direction, and `accountSettings.thresholdHint` was still broken:
+  the call site passes `{ symbol: currency.symbol }`, English spent it on a
+  closing "Default: {{symbol}}50/mo.", and the German had dropped that
+  sentence, so German readers were told which subscriptions get flagged but
+  never what the threshold defaults to. i18next ignores an unused
+  interpolation value silently, so nothing crashed. ALWAYS compare the
+  `{{...}}` tokens of each key across the pair as well as the key names.
+  A scan of every `t("...")` in app/, components/ and lib/ found 520
+  distinct keys with zero missing and zero template-literal keys, so that
+  scan is complete rather than partial.
 - Deliberately deferred, revisit later, not now: iOS (real inbound demand
   exists from the owner's own circle, but wait for Android traction/signal
   first). The primary-colour rebrand was deferred for a while and then
@@ -320,11 +449,13 @@ last one left off without needing a recap typed out.
   footer. The phone mockup in the hero is deliberately NOT a .reveal: it
   sits past the fold on a phone, so animating it in left 570px of blank
   space at first paint.
-- STILL VIOLET, deliberately: the app icon, adaptive icon, splash and the
-  `#7746DD` values in `app.json`. Those are baked into a native build, not
-  shipped over the air, so they change together with a redrawn icon and a
-  new Play Console upload. Until then the icon is the one violet thing
-  left.
+- NOTHING IS VIOLET ANY MORE. This entry used to say the app icon, adaptive
+  icon, splash and `#7746DD` in `app.json` were still violet and waiting on a
+  native build. That is stale: 1.0.3 / build 40 shipped the redrawn icon, and
+  a grep of `app.json` on 2026-09-11 finds no `#7746DD` at all. Its colours
+  are `primaryColor #142B3A`, backgrounds `#F7F6F1` and `#142B3A`, and the
+  notification tint `#2F8E71`, all palette values. Do not go hunting for
+  violet that is not there, and do not schedule a build to remove it.
 - The 3D backdrop is `backend/trimio3d.js`, served at `/trimio3d.js`, with
   three.js self-hosted at `backend/three.min.js` (`/three.min.js`) because
   no CDN is in the page's dependency chain. Cards start "forgotten" (grey,
