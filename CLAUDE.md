@@ -196,11 +196,19 @@ last one left off without needing a recap typed out.
   on top of it (2026-09-05). 39 carried the chevron and the buildTips
   crash; 40 is the same build with the crash fixed. A versionCode can
   only ever be uploaded to Play once, which is why 39 was not reused.
-- EVERYTHING through commit 0163d23 is published: the whole 2026-09-05
-  run of app fixes went out over the air, and the backend changes went
-  with the Railway auto-deploys. There is no unpublished app work. The
-  next thing that needs a native build is the next native change, and
+- EVERYTHING is published, through commit cc285cd. The 2026-09-05 run went
+  out first (through 0163d23), and a second `eas update` followed on
+  2026-09-11 at 07:12:03Z carrying the German `thresholdHint` fix. Backend
+  changes ride the Railway auto-deploys. There is no unpublished app work.
+  The next thing that needs a native build is the next native change, and
   nothing pending is one.
+- THAT 2026-09-11 UPDATE IS CONFIRMED APPLIED ON A REAL DEVICE, read off the
+  Build Info panel rather than assumed from a successful publish: `Embedded
+  launch (no OTA applied): false`, `Update ID:
+  01a08f4f-21db-7bac-b8a0-9693b34abcc5`, `Update published:
+  2026-09-11T07:12:03.035Z`, against `Native build: 40` and `Runtime
+  version: 1.0.1`. That is also the runtimeVersion mechanism proven end to
+  end: a build carrying 1.0.1 asked for updates tagged 1.0.1, and got one.
 - GOOGLE POLICY, both satisfied, verified by 40 being accepted after the
   31 Aug 2026 enforcement date: Play Billing Library >= 8.0.0 (comes from
   `react-native-purchases ^10.4.4`, which pulls 8.3.0, see RevenueCat's
