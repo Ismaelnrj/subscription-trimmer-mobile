@@ -515,6 +515,22 @@ last one left off without needing a recap typed out.
   failed run, not an empty one. In a sandbox it exits 2 and says so, which
   is the correct answer there. Real typechecking only happens on the
   owner's machine.
+- THAT GUARD WAS ITSELF BROKEN FOR ITS WHOLE LIFE, fixed 2026-09-12 in
+  bec97dc5. It executed `node_modules/typescript/bin/tsc` directly, which is a
+  Node script relying on a shebang. Unix honours that, Windows does not, so on
+  the owner's machine it raised "[WinError 193] %1 is not a valid Win32
+  application" before tsc ever started. It now invokes the compiler through
+  `node`, which is portable. The script was written to stop a silent pass from
+  shipping a crash, verified in a sandbox where it correctly refuses to run,
+  and never once exercised on the only machine where it can work. Nobody found
+  out until `preflight.py` ran it there. The lesson generalises: when a tool
+  exists to catch a failure, check that the tool itself runs where it has to.
+- THE PROJECT TYPECHECKS CLEAN, verified 2026-09-12 on the owner's machine
+  against the pinned compiler: "Typecheck clean (typescript 5.3.3, pinned
+  5.3.3)". That is the first genuine typecheck this codebase has ever had.
+  Every earlier "clean" was either the global TS 6.0.2 dying on the config
+  before reading a file, or the guard refusing to run. The buildTips class of
+  error is therefore now known absent rather than merely unexamined.
 - That silent pass shipped a crash on 2026-09-04. `buildTips` in
   `app/insights.tsx` gained a `t` parameter in third position, the second
   call site in `app/(tabs)/index.tsx` kept passing the threshold number
