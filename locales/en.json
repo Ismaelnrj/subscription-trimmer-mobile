@@ -626,5 +626,21 @@
     "reqLength": "At least 8 characters",
     "reqUpper": "One uppercase letter",
     "reqNumber": "One number"
+  },
+  "screenTitles": {
+    "notificationPreferences": "Notification Preferences",
+    "accountSettings": "Account Settings",
+    "helpSupport": "Help & Support",
+    "upgrade": "Upgrade to Premium",
+    "tipJar": "Tip Jar",
+    "referAFriend": "Refer a Friend",
+    "verifyEmail": "Verify Email",
+    "insights": "Recommendations",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "alerts": "Alerts",
+    "notifications": "Notifications",
+    "cancelGuide": "How to Cancel",
+    "subscriptionDetails": "Subscription Details"
   }
 }

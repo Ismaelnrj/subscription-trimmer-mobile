@@ -626,5 +626,21 @@
     "reqLength": "Mindestens 8 Zeichen",
     "reqUpper": "Ein Großbuchstabe",
     "reqNumber": "Eine Zahl"
+  },
+  "screenTitles": {
+    "notificationPreferences": "Benachrichtigungseinstellungen",
+    "accountSettings": "Kontoeinstellungen",
+    "helpSupport": "Hilfe & Support",
+    "upgrade": "Upgrade auf Premium",
+    "tipJar": "Trinkgeld",
+    "referAFriend": "Freunde einladen",
+    "verifyEmail": "E-Mail bestätigen",
+    "insights": "Empfehlungen",
+    "termsOfService": "Nutzungsbedingungen",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "alerts": "Hinweise",
+    "notifications": "Benachrichtigungen",
+    "cancelGuide": "Kündigen",
+    "subscriptionDetails": "Abo-Details"
   }
 }

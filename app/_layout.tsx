@@ -16,6 +16,7 @@ import { retryPendingPremiumSync } from "../lib/iap";
 import { initAnalytics } from "../lib/analytics";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
+import { useTranslation } from "react-i18next";
 import { AnimatedSplash } from "../components/AnimatedSplash";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
 import "../lib/i18n";
@@ -75,6 +76,9 @@ export default function RootLayout() {
   const { loadLanguage } = useLanguageStore();
   const router = useRouter();
   const segments = useSegments();
+  // Subscribes to language changes, so headers repaint on the toggle
+  // rather than waiting for a remount.
+  const { t } = useTranslation();
   const c = useTheme();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
@@ -151,20 +155,20 @@ export default function RootLayout() {
           <Stack.Screen name="register" />
           <Stack.Screen name="forgot-password" />
           <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="notification-preferences" options={{ headerShown: true, title: "Notification Preferences" }} />
-          <Stack.Screen name="account-settings" options={{ headerShown: true, title: "Account Settings" }} />
-          <Stack.Screen name="help-support" options={{ headerShown: true, title: "Help & Support" }} />
-          <Stack.Screen name="upgrade" options={{ headerShown: true, title: "Upgrade to Premium" }} />
-          <Stack.Screen name="tip-jar" options={{ headerShown: true, title: "Tip Jar" }} />
-          <Stack.Screen name="refer-a-friend" options={{ headerShown: true, title: "Refer a Friend" }} />
-          <Stack.Screen name="verify-email" options={{ headerShown: true, title: "Verify Email" }} />
-          <Stack.Screen name="insights" options={{ headerShown: true, title: "Recommendations" }} />
-          <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: "Terms of Service" }} />
-          <Stack.Screen name="privacy-policy" options={{ headerShown: true, title: "Privacy Policy" }} />
-          <Stack.Screen name="alerts" options={{ headerShown: true, title: "Alerts" }} />
-          <Stack.Screen name="notifications" options={{ headerShown: true, title: "Notifications" }} />
-          <Stack.Screen name="cancel-guide" options={{ headerShown: true, title: "How to Cancel" }} />
-          <Stack.Screen name="subscription-details" options={{ headerShown: true, title: "Subscription Details" }} />
+          <Stack.Screen name="notification-preferences" options={{ headerShown: true, title: t("screenTitles.notificationPreferences") }} />
+          <Stack.Screen name="account-settings" options={{ headerShown: true, title: t("screenTitles.accountSettings") }} />
+          <Stack.Screen name="help-support" options={{ headerShown: true, title: t("screenTitles.helpSupport") }} />
+          <Stack.Screen name="upgrade" options={{ headerShown: true, title: t("screenTitles.upgrade") }} />
+          <Stack.Screen name="tip-jar" options={{ headerShown: true, title: t("screenTitles.tipJar") }} />
+          <Stack.Screen name="refer-a-friend" options={{ headerShown: true, title: t("screenTitles.referAFriend") }} />
+          <Stack.Screen name="verify-email" options={{ headerShown: true, title: t("screenTitles.verifyEmail") }} />
+          <Stack.Screen name="insights" options={{ headerShown: true, title: t("screenTitles.insights") }} />
+          <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: t("screenTitles.termsOfService") }} />
+          <Stack.Screen name="privacy-policy" options={{ headerShown: true, title: t("screenTitles.privacyPolicy") }} />
+          <Stack.Screen name="alerts" options={{ headerShown: true, title: t("screenTitles.alerts") }} />
+          <Stack.Screen name="notifications" options={{ headerShown: true, title: t("screenTitles.notifications") }} />
+          <Stack.Screen name="cancel-guide" options={{ headerShown: true, title: t("screenTitles.cancelGuide") }} />
+          <Stack.Screen name="subscription-details" options={{ headerShown: true, title: t("screenTitles.subscriptionDetails") }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         {showAnimatedSplash ? (
