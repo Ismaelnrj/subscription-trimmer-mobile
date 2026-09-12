@@ -1,43 +1,75 @@
-"""Turns the design handoff into the page the server actually serves.
+"""Turns the design handoff into the pages the server actually serves.
 
 The handoff is frontend complete and backend neutral. This applies the
 four things it cannot know: the real endpoint names, this backend's error
 shape, the fact that there is no web app to redirect into, and that its
 logo is a 1.5MB PNG embedded five times.
-"""
-import re, pathlib
 
-SRC = "/root/.claude/uploads/572e8a57-90e7-50e4-9543-30207f74f2cf/0064f5a7-trimiopremiumauthready.html"
+It emits two pages from one source: backend/landing.html (English, served at
+/) and backend/landing-de.html (German, served at /de), paired with hreflang
+and a switch in the nav. Two URLs rather than a client side toggle, because a
+toggle leaves Google with one page and half the content invisible to it.
+"""
+import json, re, pathlib
+
+# The handoff originally arrived as a session upload, which does not survive
+# the container. tools/landing-source.html is a committed copy with the five
+# inlined PNGs already stripped, so this stays runnable. The upload path is
+# still honoured when present, so a fresh handoff can be dropped in.
+UPLOAD = "/root/.claude/uploads/572e8a57-90e7-50e4-9543-30207f74f2cf/0064f5a7-trimiopremiumauthready.html"
+COMMITTED = "tools/landing-source.html"
+
+if pathlib.Path(UPLOAD).exists():
+    SRC = UPLOAD
+elif pathlib.Path(COMMITTED).exists():
+    SRC = COMMITTED
+else:
+    raise SystemExit(
+        f"No handoff found. Expected {COMMITTED} in the repo, or a fresh "
+        f"upload at {UPLOAD}.")
+print(f"source: {SRC}")
 s = pathlib.Path(SRC).read_text(encoding="utf-8")
 before = len(s)
+
+CANON = "https://www.subtrimio.com"   # www is what the CNAME actually serves;
+                                      # the bare domain 301s to it, so pointing
+                                      # canonicals at the bare host published a
+                                      # redirect as the preferred URL
 
 # 1. one cached vector instead of the same PNG inlined five times
 s, n = re.subn(r'data:image/png;base64,[A-Za-z0-9+/=]+', '/mark.svg', s)
 print(f"replaced {n} embedded PNGs with /mark.svg")
 
 # 2. search and share plumbing the handoff has no way to know about
-head = '''  <link rel="canonical" href="https://subtrimio.com/" />
+# __CANON_PATH__ and the og/schema strings are swapped per language further
+# down, so this block is written once and specialised twice.
+head = f'''  <link rel="canonical" href="{CANON}__CANON_PATH__" />
+  <link rel="alternate" hreflang="en" href="{CANON}/" />
+  <link rel="alternate" hreflang="de" href="{CANON}/de" />
+  <link rel="alternate" hreflang="x-default" href="{CANON}/" />
   <link rel="icon" type="image/svg+xml" href="/mark.svg" />
   <link rel="apple-touch-icon" href="/icon.png?v=3" />
-  <meta property="og:title" content="Trimio: know before you pay" />
-  <meta property="og:description" content="Trimio keeps every renewal visible and gives you time to decide, without ever asking for your bank login." />
+  <meta property="og:title" content="__OG_TITLE__" />
+  <meta property="og:description" content="__OG_DESC__" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://subtrimio.com/" />
-  <meta property="og:image" content="https://subtrimio.com/og.png?v=3" />
+  <meta property="og:locale" content="__OG_LOCALE__" />
+  <meta property="og:url" content="{CANON}__CANON_PATH__" />
+  <meta property="og:image" content="{CANON}/og.png?v=3" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Trimio: know before you pay" />
-  <meta name="twitter:description" content="The subscription reminder that arrives before the charge, not after." />
-  <meta name="twitter:image" content="https://subtrimio.com/og.png?v=3" />
+  <meta name="twitter:title" content="__OG_TITLE__" />
+  <meta name="twitter:description" content="__TW_DESC__" />
+  <meta name="twitter:image" content="{CANON}/og.png?v=3" />
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Trimio",
+  {{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Trimio",
    "operatingSystem":"Android","applicationCategory":"FinanceApplication",
-   "url":"https://subtrimio.com/",
-   "description":"Trimio tells you what a subscription is about to charge before it does, without ever asking for your bank login.",
-   "offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},
-   "author":{"@type":"Person","name":"Ismael Naranjo"},
-   "installUrl":"https://play.google.com/store/apps/details?id=com.trimio.app"}
+   "url":"{CANON}__CANON_PATH__",
+   "inLanguage":"__LANG__",
+   "description":"__SCHEMA_DESC__",
+   "offers":{{"@type":"Offer","price":"0","priceCurrency":"EUR"}},
+   "author":{{"@type":"Person","name":"Ismael Naranjo"}},
+   "installUrl":"https://play.google.com/store/apps/details?id=com.trimio.app"}}
   </script>
 '''
 s = s.replace("  <title>Trimio | Know before you pay</title>\n",
@@ -351,9 +383,108 @@ s = s.replace("""  signupForm.addEventListener('submit', async (event) => {""",
 
   signupForm.addEventListener('submit', async (event) => {""")
 
+# 12. language switch, and the two pages it moves between.
+#
+# It is a pair of links, not a JS toggle that swaps text in place. A toggle
+# would leave one URL carrying both languages, which means Google indexes one
+# of them and the German copy is effectively invisible, which defeats the
+# reason for translating at all. Two URLs, paired by hreflang, each indexable.
+LANG_CSS = """.lang-switch { display: inline-flex; align-items: center; gap: 2px; margin-left: 14px;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+.lang-switch a { display: block; padding: 4px 10px; border-radius: 999px; font-size: 13px;
+  font-weight: 800; color: var(--slate); text-decoration: none; line-height: 1.4;
+  transition: color .15s ease, background .15s ease; }
+.lang-switch a:hover { color: var(--navy); }
+.lang-switch a[aria-current="true"] { background: var(--navy); color: #fff; }
+@media (max-width: 720px) { .lang-switch { margin-left: 8px; } }
+.nav-cta {"""
+assert s.count(".nav-cta {") >= 1
+s = s.replace(".nav-cta {", LANG_CSS, 1)
+
+SWITCH = ('<div class="lang-switch">'
+          '<a href="/" hreflang="en" aria-current="__EN_CUR__" lang="en">EN</a>'
+          '<a href="/de" hreflang="de" aria-current="__DE_CUR__" lang="de">DE</a>'
+          '</div>\n        ')
+s = s.replace('<button class="button button-dark nav-cta"', SWITCH +
+              '<button class="button button-dark nav-cta"', 1)
+
+# ---------------------------------------------------------------- two pages
+
+EN_META = {
+    "__CANON_PATH__": "/",
+    "__LANG__": "en",
+    "__OG_LOCALE__": "en_US",
+    "__OG_TITLE__": "Trimio: know before you pay",
+    "__OG_DESC__": "Trimio keeps every renewal visible and gives you time to decide, without ever asking for your bank login.",
+    "__TW_DESC__": "The subscription reminder that arrives before the charge, not after.",
+    "__SCHEMA_DESC__": "Trimio tells you what a subscription is about to charge before it does, without ever asking for your bank login.",
+    "__EN_CUR__": "true",
+    "__DE_CUR__": "false",
+}
+DE_META = {
+    "__CANON_PATH__": "/de",
+    "__LANG__": "de",
+    "__OG_LOCALE__": "de_DE",
+    "__OG_TITLE__": "Trimio: wissen, bevor abgebucht wird",
+    "__OG_DESC__": "Trimio hält jede Verlängerung sichtbar und lässt dir Zeit zu entscheiden, ohne je nach deinem Bankzugang zu fragen.",
+    "__TW_DESC__": "Die Abo-Erinnerung, die vor der Abbuchung kommt, nicht danach.",
+    "__SCHEMA_DESC__": "Trimio sagt dir, was ein Abo gleich abbuchen wird, bevor es passiert, ohne je nach deinem Bankzugang zu fragen.",
+    "__EN_CUR__": "false",
+    "__DE_CUR__": "true",
+}
+
+
+def fill(page, meta):
+    for k, v in meta.items():
+        page = page.replace(k, v)
+    assert "__" not in re.sub(r'__\w+__', lambda m: '' if m.group(0) in meta else m.group(0), page) or True
+    leftover = set(re.findall(r'__[A-Z_]+__', page))
+    assert not leftover, f"unfilled placeholders: {leftover}"
+    return page
+
+
+def germanise(page, table):
+    """Longest first, so a short entry cannot eat a substring of a long one.
+
+    "Cancel" is a substring of nothing here, but "Create account" and "Create
+    your account" overlap, and replacing the short one first would leave
+    "Konto erstellen your account". Sorting by length removes that whole class
+    of bug rather than requiring every entry to be checked by hand.
+    """
+    hits = 0
+    for en in sorted(table, key=len, reverse=True):
+        if en.startswith("_"):
+            continue
+        if en in page:
+            page = page.replace(en, table[en])
+            hits += 1
+    return page, hits
+
+
+en_page = fill(s, EN_META)
 out = pathlib.Path("backend/landing.html")
-out.write_text(s, encoding="utf-8")
-print(f"wrote {out}: {before:,} -> {len(s):,} bytes ({100 - len(s) * 100 // before}% smaller)")
+out.write_text(en_page, encoding="utf-8")
+# Only the raw upload is meaningfully larger than the output; the committed
+# source already has the PNGs stripped, so reporting a reduction against it
+# prints a negative percentage and reads as a bug.
+delta = (f" ({100 - len(en_page) * 100 // before}% smaller)"
+         if len(en_page) < before else "")
+print(f"wrote {out}: {before:,} -> {len(en_page):,} bytes{delta}")
+
+table = json.loads(pathlib.Path("tools/landing-de.json").read_text(encoding="utf-8"))
+de_page = fill(s, DE_META)
+de_page, hits = germanise(de_page, table)
+de_page = de_page.replace('<html lang="en"', '<html lang="de"', 1)
+de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
+                          "<title>Trimio | Wissen, bevor abgebucht wird</title>", 1)
+# German writes a decimal comma. The mockup prices are the only numbers on the
+# page, and 17.99 reads as a thousands separator to a German eye.
+de_page = re.sub(r'€(\d+)\.(\d\d)\b', r'€\1,\2', de_page)
+de_out = pathlib.Path("backend/landing-de.html")
+de_out.write_text(de_page, encoding="utf-8")
+print(f"wrote {de_out}: {len(de_page):,} bytes, {hits} strings translated")
+
+s = en_page  # the assertions below check the page that is actually served at /
 for probe in ("data:image/png", "/api/auth/signup", '<button class="auth-google"',
               "data-google-auth", "|| '/account'"):
     assert probe not in s, f"leftover: {probe}"
