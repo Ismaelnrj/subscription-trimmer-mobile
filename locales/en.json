@@ -12,7 +12,10 @@
     "next": "Next",
     "getStarted": "Get Started",
     "or": "or",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "cycleMonthly": "month",
+    "cycleYearly": "year",
+    "cycleWeekly": "week"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -156,7 +159,8 @@
     "noBillingDatesTitle": "No billing dates",
     "noBillingDatesBody": "None of your subscriptions have billing dates yet.",
     "noDataTitle": "No data",
-    "noDataBody": "Add some subscriptions first."
+    "noDataBody": "Add some subscriptions first.",
+    "couldntLoad": "Couldn't load your subscriptions."
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -193,7 +197,13 @@
     "payments": "Payments",
     "highest": "Highest",
     "today": "Today",
-    "couldntLoad": "Couldn't load your calendar. Pull down to retry."
+    "couldntLoad": "Couldn't load your calendar. Pull down to retry.",
+    "a11yPrevMonth": "Previous month",
+    "a11yNextMonth": "Next month",
+    "a11yDay": "{{date}}",
+    "a11yDaySelected": "{{date}}, selected",
+    "a11yDayRenewals_one": "{{date}}, {{count}} renewal",
+    "a11yDayRenewals_other": "{{date}}, {{count}} renewals"
   },
   "review": {
     "title": "Enjoying Trimio?",
@@ -481,7 +491,9 @@
     "markAllRead": "Mark all as read",
     "markRead": "Mark as read",
     "couldntLoad": "Couldn't load notifications. Pull down to retry.",
-    "noNotifications": "No notifications yet"
+    "noNotifications": "No notifications yet",
+    "priceUpTitle": "{{name}} went up in price",
+    "priceUpBody": "It went from {{from}} to {{to}} per {{cycle}}."
   },
   "verifyEmail": {
     "checkInbox": "Check your inbox",

@@ -12,7 +12,10 @@
     "next": "Weiter",
     "getStarted": "Loslegen",
     "or": "oder",
-    "upgrade": "Upgrade"
+    "upgrade": "Upgrade",
+    "cycleMonthly": "Monat",
+    "cycleYearly": "Jahr",
+    "cycleWeekly": "Woche"
   },
   "tabs": {
     "dashboard": "Übersicht",
@@ -156,7 +159,8 @@
     "noBillingDatesTitle": "Keine Abrechnungsdaten",
     "noBillingDatesBody": "Noch keines deiner Abos hat ein Abrechnungsdatum.",
     "noDataTitle": "Keine Daten",
-    "noDataBody": "Füge zuerst einige Abos hinzu."
+    "noDataBody": "Füge zuerst einige Abos hinzu.",
+    "couldntLoad": "Deine Abos konnten nicht geladen werden."
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -193,7 +197,13 @@
     "payments": "Zahlungen",
     "highest": "Höchste",
     "today": "Heute",
-    "couldntLoad": "Kalender konnte nicht geladen werden. Zum Aktualisieren nach unten ziehen."
+    "couldntLoad": "Kalender konnte nicht geladen werden. Zum Aktualisieren nach unten ziehen.",
+    "a11yPrevMonth": "Vorheriger Monat",
+    "a11yNextMonth": "Nächster Monat",
+    "a11yDay": "{{date}}",
+    "a11yDaySelected": "{{date}}, ausgewählt",
+    "a11yDayRenewals_one": "{{date}}, {{count}} Verlängerung",
+    "a11yDayRenewals_other": "{{date}}, {{count}} Verlängerungen"
   },
   "review": {
     "title": "Gefällt dir Trimio?",
@@ -481,7 +491,9 @@
     "markAllRead": "Alle als gelesen markieren",
     "markRead": "Als gelesen markieren",
     "couldntLoad": "Benachrichtigungen konnten nicht geladen werden. Nach unten ziehen zum Wiederholen.",
-    "noNotifications": "Noch keine Benachrichtigungen"
+    "noNotifications": "Noch keine Benachrichtigungen",
+    "priceUpTitle": "{{name}} ist teurer geworden",
+    "priceUpBody": "Von {{from}} auf {{to}} pro {{cycle}}."
   },
   "verifyEmail": {
     "checkInbox": "Posteingang prüfen",

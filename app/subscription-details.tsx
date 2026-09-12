@@ -5,9 +5,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { format } from "date-fns";
 import apiClient from "../lib/api";
 import { useFmt } from "../lib/currency-store";
+import { useDateFormat } from "../lib/date-locale";
+import { useCycleLabel } from "../lib/cycle-label";
 import { useTheme, useIsDark, AppColors } from "../lib/theme";
 import { LogoImage } from "../components/LogoImage";
 import { getUpcomingOccurrences } from "../lib/recurrence";
@@ -26,6 +27,8 @@ export default function SubscriptionDetailsScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const fmtC = useFmt();
+  const fmtD = useDateFormat();
+  const cycleLabel = useCycleLabel();
   const queryClient = useQueryClient();
 
   const { data: subscriptions = [], isLoading, isError, refetch } = useQuery({
@@ -102,13 +105,13 @@ export default function SubscriptionDetailsScreen() {
             <LinearGradient colors={["#245F52", "#2F8E71"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
               <LogoImage name={sub.name} category={sub.category} size={56} />
               <Text style={styles.heroNameOnGradient}>{sub.name}</Text>
-              <Text style={styles.heroPriceOnGradient}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
+              <Text style={styles.heroPriceOnGradient}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
             </LinearGradient>
           ) : (
             <View style={[styles.hero, styles.heroLight]}>
               <LogoImage name={sub.name} category={sub.category} size={56} />
               <Text style={styles.heroName}>{sub.name}</Text>
-              <Text style={styles.heroPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
+              <Text style={styles.heroPrice}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
             </View>
           )}
 
@@ -140,7 +143,7 @@ export default function SubscriptionDetailsScreen() {
             upcoming.map(({ date }, i) => (
               <View key={i} style={styles.renewalRow}>
                 <MaterialCommunityIcons name="calendar-check-outline" size={18} color={c.textSecondary} />
-                <Text style={styles.renewalDate}>{format(date, "EEEE, MMMM d")}</Text>
+                <Text style={styles.renewalDate}>{fmtD(date, "EEEE, MMMM d")}</Text>
                 <Text style={styles.renewalPrice}>{fmtC(sub.price)}</Text>
               </View>
             ))

@@ -60,6 +60,7 @@ export default function SubscriptionsScreen() {
   const { language } = useLanguageStore();
   const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
+  const cycleLabel = useCycleLabel();
   const { currency, baseCurrencyCode, convert } = useCurrencyStore();
   const queryClient = useQueryClient();
   const c = useTheme();
@@ -141,7 +142,16 @@ export default function SubscriptionsScreen() {
     return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
   }, [search]);
 
-  const { data: subscriptions = [], refetch, isLoading: subscriptionsLoading } = useQuery({
+  const {
+    data: subscriptions = [],
+    refetch,
+    isLoading: subscriptionsLoading,
+    // Without this a failed request fell through to the empty state, so
+    // someone on a dropped connection was told they had no subscriptions and
+    // invited to load examples, which is the opposite of reassuring on the
+    // screen that holds their money. Calendar already had this branch.
+    isError: subscriptionsError,
+  } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => {
       const data = (await apiClient.get("/trpc/subscriptions.list")).data.result.data;
@@ -156,8 +166,12 @@ export default function SubscriptionsScreen() {
         const key = `${sub.id}:${sub.priceIncrease.changedAt}`;
         if (!seen.includes(key)) {
           sendLocalNotification(
-            `${sub.name} price went up`,
-            `Your subscription increased from ${fmtC(sub.priceIncrease.from)} to ${fmtC(sub.priceIncrease.to)} per ${sub.billingCycle}.`
+            t("notifications.priceUpTitle", { name: sub.name }),
+            t("notifications.priceUpBody", {
+              from: fmtC(sub.priceIncrease.from),
+              to: fmtC(sub.priceIncrease.to),
+              cycle: cycleLabel(sub.billingCycle),
+            })
           );
           newSeen.push(key);
         }
@@ -721,6 +735,14 @@ export default function SubscriptionsScreen() {
               <SkeletonCard />
               <SkeletonCard />
             </>
+          ) : subscriptionsError ? (
+            <View style={styles.emptyState}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={52} color={c.border} style={{ marginBottom: 12 }} />
+              <Text style={styles.emptyStateSubtext}>{t("subscriptions.couldntLoad")}</Text>
+              <TouchableOpacity style={styles.emptyStateButton} onPress={() => refetch()}>
+                <Text style={styles.emptyStateButtonText}>{t("common.tryAgain")}</Text>
+              </TouchableOpacity>
+            </View>
           ) : filtered.length === 0 ? (
             total === 0 ? (
               <View style={styles.emptyState}>
@@ -767,7 +789,7 @@ export default function SubscriptionsScreen() {
                       <Animated.View style={[styles.swipeDeleteWrapper, { transform: [{ translateX: trans }] }]}>
                         <TouchableOpacity style={styles.swipeDelete} onPress={() => confirmDelete(sub)}>
                           <MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
-                          <Text style={styles.swipeDeleteText}>Delete</Text>
+                          <Text style={styles.swipeDeleteText}>{t("subscriptions.delete")}</Text>
                         </TouchableOpacity>
                       </Animated.View>
                     );
@@ -780,7 +802,7 @@ export default function SubscriptionsScreen() {
                     onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
                   >
                     <Text style={styles.cardName}>{sub.name}</Text>
-                    <Text style={styles.cardPrice}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
+                    <Text style={styles.cardPrice}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
                       {sub.nextBillingDate

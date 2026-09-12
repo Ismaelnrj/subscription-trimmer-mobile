@@ -16,6 +16,8 @@ import {
   format,
 } from "date-fns";
 import { AppColors } from "../lib/theme";
+import { useTranslation } from "react-i18next";
+import { useDateFormat, weekdayInitials } from "../lib/date-locale";
 
 interface Props {
   month: Date;
@@ -52,23 +54,35 @@ function TodayPulse({ children }: { children: React.ReactNode }) {
 export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
   const styles = makeStyles(c);
   const gridStart = startOfWeek(startOfMonth(month));
+  const { t, i18n } = useTranslation();
+  const fmtD = useDateFormat();
   const gridEnd = endOfWeek(endOfMonth(month));
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => onChangeMonth(subMonths(month, 1))} style={styles.navButton}>
+        <TouchableOpacity
+          onPress={() => onChangeMonth(subMonths(month, 1))}
+          style={styles.navButton}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.a11yPrevMonth")}
+        >
           <MaterialCommunityIcons name="chevron-left" size={22} color={c.text} />
         </TouchableOpacity>
-        <Text style={styles.monthLabel}>{format(month, "MMMM yyyy")}</Text>
-        <TouchableOpacity onPress={() => onChangeMonth(addMonths(month, 1))} style={styles.navButton}>
+        <Text style={styles.monthLabel}>{fmtD(month, "MMMM yyyy")}</Text>
+        <TouchableOpacity
+          onPress={() => onChangeMonth(addMonths(month, 1))}
+          style={styles.navButton}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.a11yNextMonth")}
+        >
           <MaterialCommunityIcons name="chevron-right" size={22} color={c.text} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.weekdayRow}>
-        {["S", "M", "T", "W", "T", "F", "S"].map((label, i) => (
+        {weekdayInitials(i18n.language).map((label, i) => (
           <Text key={i} style={styles.weekdayLabel}>{label}</Text>
         ))}
       </View>
@@ -98,6 +112,18 @@ export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDa
               style={styles.cell}
               onPress={() => onSelectDate(day)}
               disabled={!inMonth}
+              accessibilityRole="button"
+              accessibilityState={{ selected, disabled: !inMonth }}
+              accessibilityLabel={
+                dotColors.length > 0
+                  ? t("calendar.a11yDayRenewals", {
+                      date: fmtD(day, "EEEE, d MMMM yyyy"),
+                      count: dotColors.length,
+                    })
+                  : selected
+                    ? t("calendar.a11yDaySelected", { date: fmtD(day, "EEEE, d MMMM yyyy") })
+                    : t("calendar.a11yDay", { date: fmtD(day, "EEEE, d MMMM yyyy") })
+              }
             >
               {today && !selected ? <TodayPulse>{circle}</TodayPulse> : circle}
               {dotColors.length > 0 && (

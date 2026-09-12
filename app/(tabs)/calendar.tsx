@@ -7,6 +7,8 @@ import { useTranslation } from "react-i18next";
 import { format, differenceInCalendarDays, addMonths, subMonths } from "date-fns";
 import apiClient from "../../lib/api";
 import { useFmt } from "../../lib/currency-store";
+import { useDateFormat } from "../../lib/date-locale";
+import { useCycleLabel } from "../../lib/cycle-label";
 import { useTheme, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
@@ -28,6 +30,8 @@ export default function CalendarScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const fmtC = useFmt();
+  const fmtD = useDateFormat();
+  const cycleLabel = useCycleLabel();
   const [view, setView] = useState<ViewMode>("timeline");
   const [month, setMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => new Date());
@@ -84,7 +88,7 @@ export default function CalendarScreen() {
     if (days <= 0) return t("dashboard.dueToday");
     if (days === 1) return t("dashboard.dueTomorrow");
     if (days <= 6) return t("dashboard.dueInDays", { count: days });
-    return format(date, "MMM d");
+    return fmtD(date, "MMM d");
   };
 
   return (
@@ -126,7 +130,7 @@ export default function CalendarScreen() {
                 <TouchableOpacity
                   key={`${sub.id}-${date.toISOString()}-${i}`}
                   style={styles.subCard}
-                  onPress={() => router.push("/(tabs)/subscriptions")}
+                  onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
                 >
                   <LogoImage name={sub.name} category={sub.category} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
@@ -164,7 +168,7 @@ export default function CalendarScreen() {
               </View>
 
               <Text style={styles.sectionTitle}>
-                {selectedDate ? format(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
+                {selectedDate ? fmtD(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
               </Text>
 
               {selectedDaySubs.length === 0 ? (
@@ -177,12 +181,12 @@ export default function CalendarScreen() {
                   <TouchableOpacity
                     key={`${sub.id}-${i}`}
                     style={styles.subCard}
-                    onPress={() => router.push("/(tabs)/subscriptions")}
+                    onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
                   >
                     <LogoImage name={sub.name} category={sub.category} />
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={styles.subName}>{sub.name}</Text>
-                      <Text style={styles.subMeta}>{fmtC(sub.price)} / {sub.billingCycle}</Text>
+                      <Text style={styles.subMeta}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
                     </View>
                     <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
                   </TouchableOpacity>
@@ -195,7 +199,7 @@ export default function CalendarScreen() {
                 <TouchableOpacity onPress={() => setMonth(subMonths(month, 1))} style={styles.navButton}>
                   <MaterialCommunityIcons name="chevron-left" size={22} color={c.text} />
                 </TouchableOpacity>
-                <Text style={styles.monthSummaryTitle}>{t("calendar.monthSummary", { month: format(month, "MMMM") })}</Text>
+                <Text style={styles.monthSummaryTitle}>{t("calendar.monthSummary", { month: fmtD(month, "MMMM") })}</Text>
                 <TouchableOpacity onPress={() => setMonth(addMonths(month, 1))} style={styles.navButton}>
                   <MaterialCommunityIcons name="chevron-right" size={22} color={c.text} />
                 </TouchableOpacity>
