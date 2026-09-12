@@ -210,12 +210,45 @@ last one left off without needing a recap typed out.
   on top of it (2026-09-05). 39 carried the chevron and the buildTips
   crash; 40 is the same build with the crash fixed. A versionCode can
   only ever be uploaded to Play once, which is why 39 was not reused.
-- EVERYTHING is published, through commit cc285cd. The 2026-09-05 run went
-  out first (through 0163d23), and a second `eas update` followed on
-  2026-09-11 at 07:12:03Z carrying the German `thresholdHint` fix. Backend
-  changes ride the Railway auto-deploys. There is no unpublished app work.
-  The next thing that needs a native build is the next native change, and
-  nothing pending is one.
+- EVERYTHING is published, through commit ef7a2853 (2026-09-12). Earlier runs
+  went out through 0163d23 and then cc285cd. Backend changes ride the Railway
+  auto-deploys. There is no unpublished app work. The next thing that needs a
+  native build is the next native change, and nothing pending is one.
+- THE 2026-09-12 PUBLISH carried a review round from Codex, the other
+  assistant, which produced six findings across two passes with no false
+  positives. Worth knowing what it found, because the pattern repeats:
+  `subscriptions.tsx` destructured `isLoading` but never `isError`, so a
+  failed request fell through to the empty state and told someone on a dropped
+  connection they had no subscriptions; both calendar renewal rows pushed to
+  the subscriptions list instead of the subscription; nothing imported a
+  date-fns locale anywhere, so every month and weekday name rendered English
+  regardless of app language; and `MonthCalendarGrid` had zero accessibility
+  props at all.
+- TWO HELPERS CAME OUT OF THAT and should be used rather than reinvented.
+  `lib/date-locale.ts` exposes `useDateFormat` and `weekdayInitials`, picking
+  the date-fns locale from i18n. Never localise the `"yyyy-MM-dd"` calls: those
+  build the day-map keys and are identifiers, not display text. `weekdayInitials`
+  derives the letters from the locale because the German row is S M D M D F S,
+  which is not a swap a translator can perform on a single string.
+  `lib/cycle-label.ts` maps the API's raw `monthly`/`yearly`/`weekly` to noun
+  forms, since German needs "pro Monat" and reusing `dashboard.monthly`
+  ("Monatlich", an adjective) is grammatical nonsense. It falls back to the raw
+  API value for an unrecognised cycle rather than blanking the price line.
+- AN ACCESSIBILITY BUG WORTH REMEMBERING THE SHAPE OF. The first fix used
+  `markedDates.get(day).length` as the spoken renewal count. `markedDates`
+  deduplicates by colour because that is what the dots draw, so three streaming
+  subscriptions on one day collapsed to one colour and the label said "1
+  renewal". It was invisible to anyone who could see the three dots were really
+  one dot, and wrong only for the person relying on the label, which is the
+  entire audience the label exists for. `renewalCounts` now comes from
+  `occurrencesByDay`, one entry per occurrence. Accessibility defects fail
+  precisely where nobody is looking, so they need simulating rather than
+  eyeballing.
+- STILL OUTSTANDING, found but deliberately not fixed because it was outside
+  the brief: `app/_layout.tsx` hardcodes all fourteen `Stack.Screen` titles in
+  English and does not import `useTranslation` at all, so every screen header
+  reads English with the app in German. Keys already exist for several of them
+  (`notifications.title`, `insights.screenTitle`, `referFriend.screenTitle`).
 - THAT 2026-09-11 UPDATE IS CONFIRMED APPLIED ON A REAL DEVICE, read off the
   Build Info panel rather than assumed from a successful publish: `Embedded
   launch (no OTA applied): false`, `Update ID:
