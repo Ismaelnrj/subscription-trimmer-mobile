@@ -21,7 +21,15 @@ import { useDateFormat, weekdayInitials } from "../lib/date-locale";
 
 interface Props {
   month: Date;
+  /* Distinct category colours per day, which is what the dots draw. It is
+     deliberately deduplicated, so its length is a count of categories and not
+     of renewals: three streaming subscriptions falling on one day produce a
+     single colour. Announcing that as "1 renewal" understates the day to the
+     one person who cannot see the dots, which is why the real count arrives
+     separately below rather than being inferred from this. */
   markedDates: Map<string, string[]>;
+  /** Actual number of renewals per day, for the spoken label. */
+  renewalCounts?: Map<string, number>;
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   onChangeMonth: (month: Date) => void;
@@ -51,7 +59,7 @@ function TodayPulse({ children }: { children: React.ReactNode }) {
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
-export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
+export function MonthCalendarGrid({ month, markedDates, renewalCounts, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
   const styles = makeStyles(c);
   const gridStart = startOfWeek(startOfMonth(month));
   const { t, i18n } = useTranslation();
@@ -92,6 +100,9 @@ export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDa
           const inMonth = isSameMonth(day, month);
           const selected = selectedDate != null && isSameDay(day, selectedDate);
           const dotColors = markedDates.get(dayKey(day)) ?? [];
+          // Falls back to the colour count only when no real count is supplied,
+          // so the label degrades to the old behaviour instead of saying zero.
+          const renewals = renewalCounts?.get(dayKey(day)) ?? dotColors.length;
           const today = isToday(day);
 
           const circle = (
@@ -115,10 +126,10 @@ export function MonthCalendarGrid({ month, markedDates, selectedDate, onSelectDa
               accessibilityRole="button"
               accessibilityState={{ selected, disabled: !inMonth }}
               accessibilityLabel={
-                dotColors.length > 0
+                renewals > 0
                   ? t("calendar.a11yDayRenewals", {
                       date: fmtD(day, "EEEE, d MMMM yyyy"),
-                      count: dotColors.length,
+                      count: renewals,
                     })
                   : selected
                     ? t("calendar.a11yDaySelected", { date: fmtD(day, "EEEE, d MMMM yyyy") })

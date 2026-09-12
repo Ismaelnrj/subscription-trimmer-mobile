@@ -54,6 +54,15 @@ export default function CalendarScreen() {
     return map;
   }, [subscriptions, month]);
 
+  // markedDates deduplicates by colour because that is what the dots draw.
+  // The spoken label needs the real number, so it is derived separately from
+  // the same source rather than from the length of the colour list.
+  const renewalCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const [key, subs] of occurrencesByDay) map.set(key, subs.length);
+    return map;
+  }, [occurrencesByDay]);
+
   const markedDates = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const [key, subs] of occurrencesByDay) {
@@ -146,6 +155,7 @@ export default function CalendarScreen() {
               <MonthCalendarGrid
                 month={month}
                 markedDates={markedDates}
+                renewalCounts={renewalCounts}
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
                 onChangeMonth={setMonth}
@@ -196,11 +206,21 @@ export default function CalendarScreen() {
           ) : (
             <View style={styles.monthSummaryCard}>
               <View style={styles.monthSummaryHeader}>
-                <TouchableOpacity onPress={() => setMonth(subMonths(month, 1))} style={styles.navButton}>
+                <TouchableOpacity
+                  onPress={() => setMonth(subMonths(month, 1))}
+                  style={styles.navButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("calendar.a11yPrevMonth")}
+                >
                   <MaterialCommunityIcons name="chevron-left" size={22} color={c.text} />
                 </TouchableOpacity>
                 <Text style={styles.monthSummaryTitle}>{t("calendar.monthSummary", { month: fmtD(month, "MMMM") })}</Text>
-                <TouchableOpacity onPress={() => setMonth(addMonths(month, 1))} style={styles.navButton}>
+                <TouchableOpacity
+                  onPress={() => setMonth(addMonths(month, 1))}
+                  style={styles.navButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("calendar.a11yNextMonth")}
+                >
                   <MaterialCommunityIcons name="chevron-right" size={22} color={c.text} />
                 </TouchableOpacity>
               </View>
