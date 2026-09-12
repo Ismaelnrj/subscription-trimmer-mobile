@@ -1,5 +1,11 @@
 .expo/
-.claude/
+# .claude holds local session state (settings.local.json and friends) which
+# should stay local, but .claude/skills is a project asset: a skill lives in
+# the repo precisely so everyone working on Trimio gets it. Git will not
+# descend into an ignored directory, so the exclusion has to be written as
+# "everything under .claude except skills" rather than a bare negation.
+.claude/*
+!.claude/skills/
 .agents/
 node_modules/
 dist/
