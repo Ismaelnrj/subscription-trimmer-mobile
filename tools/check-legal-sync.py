@@ -73,9 +73,41 @@ if missing:
 else:
     print(f"OK   Privacy Policy: all {len(privacy_server)} served sections present in the app screen")
 
-# the house rule, on user facing legal copy
+# The German copies, served at /de/datenschutz and /de/nutzungsbedingungen.
+# They live in backend/legal-de.json rather than as more JS arrays, so this
+# reads them directly. Prose cannot be diffed across languages, but structure
+# can: if someone adds an English section and forgets the German one, the
+# German document quietly says less than the English one about the same
+# service, which is exactly the drift this file exists to catch.
+de = json.loads(read("backend/legal-de.json"))
+for label, de_key, en_pairs in (
+        ("Terms of Service", "terms", js_array(server, "TERMS_SECTIONS")),
+        ("Privacy Policy", "privacy", privacy_server)):
+    de_pairs = [(t, b) for t, b in de[de_key]]
+    if len(de_pairs) != len(en_pairs):
+        print(f"FAIL {label} (de): {len(de_pairs)} sections, English has {len(en_pairs)}")
+        failed = True
+        continue
+    # numbering has to line up, so section 9 means the same thing in both
+    bad = [(a, b) for (a, _), (b, _) in zip(en_pairs, de_pairs)
+           if a.split(".")[0] != b.split(".")[0]]
+    if bad:
+        print(f"FAIL {label} (de): section numbering diverges")
+        for a, b in bad[:5]:
+            print(f"  en: {a}\n  de: {b}")
+        failed = True
+    else:
+        print(f"OK   {label} (de): {len(de_pairs)} sections, numbering matches English")
+    empty = [t for t, b in de_pairs if not b.strip()]
+    if empty:
+        print(f"FAIL {label} (de): {len(empty)} empty section(s): {empty[:3]}")
+        failed = True
+
+# the house rule, on user facing legal copy, in both languages
 for label, pairs in (("terms", js_array(server, "TERMS_SECTIONS")),
-                     ("privacy", privacy_server)):
+                     ("privacy", privacy_server),
+                     ("terms (de)", [(t, b) for t, b in de["terms"]]),
+                     ("privacy (de)", [(t, b) for t, b in de["privacy"]])):
     dashed = [t for t, b in pairs if re.search(r"[—–]", t + b)]
     if dashed:
         print(f"FAIL {label}: dash used in {len(dashed)} sections: {dashed[:3]}")

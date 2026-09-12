@@ -475,6 +475,15 @@ table = json.loads(pathlib.Path("tools/landing-de.json").read_text(encoding="utf
 de_page = fill(s, DE_META)
 de_page, hits = germanise(de_page, table)
 de_page = de_page.replace('<html lang="en"', '<html lang="de"', 1)
+# The German page must point at the German legal documents. Translating only
+# the link text would send a German reader to English terms, which is the one
+# place on the page where not understanding the words actually matters.
+legal_links = 0
+for en_href, de_href in (('/privacy-policy', '/de/datenschutz'),
+                         ('/terms', '/de/nutzungsbedingungen')):
+    legal_links += de_page.count(f'href="{en_href}"')
+    de_page = de_page.replace(f'href="{en_href}"', f'href="{de_href}"')
+assert legal_links >= 2, f"expected legal links to rewrite, found {legal_links}"
 de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
                           "<title>Trimio | Wissen, bevor abgebucht wird</title>", 1)
 # German writes a decimal comma. The mockup prices are the only numbers on the

@@ -28,11 +28,25 @@ PLACEHOLDER = re.compile(r"\{\{(\w+)\}\}")
 MD_SKIP = re.compile(r"^\s*(\|.*\||[-*+]\s|#{1,6}\s|```|---\s*$|\s*-{3,})")
 
 
-def flatten(d, prefix=""):
+def flatten(node, prefix=""):
+    """Descends dicts AND lists.
+
+    An earlier version only walked dicts, so a list-shaped file (the legal
+    copy is arrays of [title, body] pairs) flattened to a handful of entries
+    and the checker cheerfully reported "Clean" having looked at almost
+    nothing. A checker that silently checks 3 of 38 strings is worse than no
+    checker, because it is believed.
+    """
     out = {}
-    for k, v in d.items():
+    if isinstance(node, dict):
+        items = node.items()
+    elif isinstance(node, list):
+        items = ((str(i), v) for i, v in enumerate(node))
+    else:
+        return {prefix: node}
+    for k, v in items:
         key = f"{prefix}.{k}" if prefix else k
-        if isinstance(v, dict):
+        if isinstance(v, (dict, list)):
             out.update(flatten(v, key))
         else:
             out[key] = v

@@ -149,9 +149,23 @@ apply to code comments or internal docs like this file.
 
 ## Localization
 
-The app is fully localized into German already (`locales/de.json`), the
-Play Store *listing* itself may not be, that's a separate, free win, check
-Play Console.
+Everything user facing is German as well as English, as of 2026-09-12:
+
+- The app (`locales/en.json` and `locales/de.json`, 562 keys each).
+- The Play Store listing (uploaded 2026-09-10).
+- The website. `/` is English, `/de` is German, generated together by
+  `tools/build-landing.py` from `tools/landing-de.json` and paired with
+  hreflang. Two URLs rather than a client side toggle, because a toggle
+  leaves Google one page and the German copy effectively unindexed.
+- The legal documents. `/privacy-policy` and `/terms` in English,
+  `/de/datenschutz` and `/de/nutzungsbedingungen` in German, the German copy
+  in `backend/legal-de.json`.
+
+Terminology is shared across all four so the product says one thing: Abo and
+Abonnement, Testphase not Probeabo, Verlaengerung for a renewal, informal du
+throughout, including in the legal copy. Register does not affect
+enforceability, and switching to Sie only there would read as a different
+product.
 
 ## Where things stand (marketing push)
 
@@ -516,11 +530,26 @@ last one left off without needing a recap typed out.
   step if either side changes.
 - LEGAL PAGES: `/privacy-policy` and `/terms`, both server rendered from
   section arrays in `backend/server.js` through one shared `legalPage()`
-  helper. The privacy policy is also mirrored in the app at
-  `app/privacy-policy.tsx`; keep the two in sync. The terms were written
-  2026-09 and have NOT been reviewed by a lawyer, which the owner knows.
-  Section 10 is the load bearing one for this product: reminders are best
-  effort, and a missed reminder is not a liability.
+  helper, which takes a `lang` argument. The privacy policy is also mirrored
+  in the app at `app/privacy-policy.tsx`; keep the two in sync. The terms were
+  written 2026-09 and have NOT been reviewed by a lawyer, which the owner
+  knows. Section 10 is the load bearing one for this product: reminders are
+  best effort, and a missed reminder is not a liability.
+- The GERMAN copies are `backend/legal-de.json`, served at `/de/datenschutz`
+  and `/de/nutzungsbedingungen` (2026-09-12). They are JSON rather than more
+  JS arrays because generating 15,000 characters of legal prose as escaped JS
+  string literals is a quoting accident waiting to happen. The same
+  lawyer-review caveat applies, doubled: a translation of unreviewed terms is
+  unreviewed terms in two languages. It is still the more defensible position
+  than English only, since GDPR Art. 12 wants plain language for the audience
+  and German consumer law can treat foreign language terms as not validly
+  incorporated.
+- `tools/check-legal-sync.py` now also checks the German: equal section
+  counts, matching section numbering so section 9 means the same thing in
+  both, no empty bodies, and the no dash rule on all four documents. Prose
+  cannot be diffed across languages but structure can, and the failure it
+  catches is someone adding an English section and forgetting the German one,
+  so the German document quietly says less about the same service.
 - THE 17 USERS HONESTY BLOCK IS GONE. The owner had deliberately chosen
   that radical-honesty line, and the 2026-09 design handoff dropped it.
   Nothing on the page states a user count now. Restoring it is the

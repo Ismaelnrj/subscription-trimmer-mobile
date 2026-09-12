@@ -112,8 +112,22 @@ app.get('/sitemap.xml', (req, res) => {
     + 'xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
     + `<url><loc>${SITE}/</loc>${alts}</url>\n`
     + `<url><loc>${SITE}/de</loc>${alts}</url>\n`
-    + `<url><loc>${SITE}/privacy-policy</loc></url>\n`
-    + `<url><loc>${SITE}/terms</loc></url>\n`
+    + `<url><loc>${SITE}/privacy-policy</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/privacy-policy"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/de/datenschutz"/>`
+    + '</url>\n'
+    + `<url><loc>${SITE}/de/datenschutz</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/privacy-policy"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/de/datenschutz"/>`
+    + '</url>\n'
+    + `<url><loc>${SITE}/terms</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/terms"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/de/nutzungsbedingungen"/>`
+    + '</url>\n'
+    + `<url><loc>${SITE}/de/nutzungsbedingungen</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/terms"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/de/nutzungsbedingungen"/>`
+    + '</url>\n'
     + '</urlset>\n');
 });
 
@@ -173,12 +187,19 @@ function escapeHtml(s) {
   return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function legalPage(title, updated, intro, sections) {
+// The German copies live in backend/legal-de.json rather than as more arrays
+// here, because generating JS string literals for 15,000 characters of legal
+// prose is a quoting accident waiting to happen. tools/check-legal-sync.py
+// checks the JSON against these arrays, so the two cannot drift apart.
+const LEGAL_DE = require('./legal-de.json');
+const toSections = (pairs) => pairs.map(([title, body]) => ({ title, body }));
+
+function legalPage(title, updated, intro, sections, lang) {
   const body = sections.map(
     (s) => `<h2>${escapeHtml(s.title)}</h2><p>${escapeHtml(s.body)}</p>`
   ).join('\n');
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${escapeHtml(lang || 'en')}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -213,6 +234,26 @@ app.get('/terms', (req, res) => {
     'Effective date: September 4, 2026 \u00b7 Last updated: September 4, 2026',
     'These Terms of Service set out the agreement between you and Trimio. Please read them alongside our Privacy Policy, which explains how your information is handled.',
     TERMS_SECTIONS));
+});
+
+// German copies of both documents. The app and the Play listing are German, so
+// serving the terms and the privacy policy only in English left the two
+// documents a German user is most entitled to understand in a language the
+// rest of the product had already stopped using. Same effective dates as the
+// English, because they are the same documents.
+app.get('/de/datenschutz', (req, res) => {
+  res.set('Content-Type', 'text/html').send(legalPage(
+    'Trimio Datenschutzrichtlinie',
+    'G\u00fcltig ab: 27. April 2025 \u00b7 Zuletzt aktualisiert: 4. September 2026',
+    'Danke, dass du dich f\u00fcr Trimio entschieden hast. Diese Datenschutzrichtlinie erkl\u00e4rt, wie Trimio deine Daten erhebt, verwendet, speichert, sch\u00fctzt und weitergibt, wenn du die Trimio App und die zugeh\u00f6rigen Dienste nutzt.',
+    toSections(LEGAL_DE.privacy), 'de'));
+});
+app.get('/de/nutzungsbedingungen', (req, res) => {
+  res.set('Content-Type', 'text/html').send(legalPage(
+    'Trimio Nutzungsbedingungen',
+    'G\u00fcltig ab: 4. September 2026 \u00b7 Zuletzt aktualisiert: 4. September 2026',
+    'Diese Nutzungsbedingungen regeln die Vereinbarung zwischen dir und Trimio. Bitte lies sie zusammen mit unserer Datenschutzrichtlinie, die erkl\u00e4rt, wie mit deinen Daten umgegangen wird.',
+    toSections(LEGAL_DE.terms), 'de'));
 });
 
 app.use(express.json());
