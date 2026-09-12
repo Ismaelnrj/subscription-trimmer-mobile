@@ -43,8 +43,22 @@ def check_typecheck():
                       "This is the correct answer in a sandbox: run it on the "
                       "machine that has the dependencies installed.")
     code, out = run([sys.executable, "tools/typecheck.py"])
-    tail = out.splitlines()[-1] if out else ""
-    return (PASS if code == 0 else FAIL), tail
+    if code == 0:
+        return PASS, out.splitlines()[-1] if out else ""
+    # Showing only the summary line here was useless: it said "Typecheck
+    # failed" and hid every diagnostic, so the next step was always to run the
+    # same command again by hand. A failing check has to say what failed.
+    errors = [l for l in out.splitlines() if ": error TS" in l]
+    return FAIL, _detail(errors, out)
+
+
+def _detail(errors, raw):
+    if not errors:
+        return raw.strip().splitlines()[-1] if raw.strip() else "no output"
+    head = f"{len(errors)} error(s)"
+    shown = "\n".join("        " + e for e in errors[:12])
+    more = f"\n        ... and {len(errors) - 12} more" if len(errors) > 12 else ""
+    return f"{head}\n{shown}{more}"
 
 
 def check_legal():
