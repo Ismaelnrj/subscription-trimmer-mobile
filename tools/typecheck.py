@@ -21,11 +21,27 @@ Exit code is 0 only when a real typecheck ran and found nothing.
 import json
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+# node_modules/typescript/bin/tsc is a Node script relying on a shebang, which
+# Windows does not honour: running it directly there raises
+# "[WinError 193] %1 is not a valid Win32 application". That is not academic.
+# This script was written to stop a silent pass from shipping a crash, then
+# only ever exercised in a sandbox that correctly refuses to run it, so on the
+# one machine with node_modules installed it had never worked at all. Invoking
+# it through node is portable and needs no .cmd shim.
 LOCAL_TSC = ROOT / "node_modules" / "typescript" / "bin" / "tsc"
+
+
+def node_cmd():
+    exe = shutil.which("node")
+    if not exe:
+        fail("node is not on PATH, so the pinned TypeScript compiler cannot be\n"
+             "invoked. Install Node, or run this where node is available.")
+    return exe
 
 # Errors in the TS5xxx range are about the config or the command line, not the
 # code. tsc emits them and stops, so treating them as "no errors found" is the
@@ -55,7 +71,7 @@ def main():
     )["version"]
 
     proc = subprocess.run(
-        [str(LOCAL_TSC), "--noEmit"],
+        [node_cmd(), str(LOCAL_TSC), "--noEmit"],
         cwd=ROOT,
         capture_output=True,
         text=True,
