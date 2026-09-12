@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
+import { useCycleLabel } from "../../lib/cycle-label";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput, sanitiseAmountInput } from "../../lib/utils";
