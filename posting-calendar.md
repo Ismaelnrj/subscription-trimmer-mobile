@@ -7,20 +7,48 @@ into the paid track.
 ## The three decisions this is built on
 
 **German first.** The founder is in Vienna, the app ships verified DACH prices,
-and the Play listing has been German since 2026-09-10. TikTok and Reels serve
-locally, so German content reaches the market Trimio is actually strongest in,
-and it can be spoken natively on camera. English is a repost where a clip is
-language light, not a parallel production line.
+and the Play listing has been German since 2026-09-10. German content reaches
+the market Trimio is actually strongest in, and it can be spoken natively on
+camera. English is a repost where a clip is language light, not a parallel
+production line.
+
+**YouTube Shorts is the primary platform, not TikTok.** Partly because the
+owner does not want to use TikTok, and partly because Shorts genuinely suits
+this product better. Shorts cold starts the same way, serving strangers with no
+follower graph needed, and adds two things TikTok has not got. It is
+**searchable**, so a post about what Netflix costs keeps being found by people
+typing that question, and it is **durable**, where a TikTok is mostly finished
+after 48 hours. For four posts a week made by one person, content that compounds
+beats content that spikes.
+
+The knowledge pillar is the one that benefits. A pain post is a feed post
+either way. A price post is a search result, and only on YouTube.
+
+**Instagram Reels second**, same file, no extra production. It cross-posts to
+Facebook Reels in a single flow, and that audience skews older, which suits
+household subscription spend.
 
 **Four posts a week, shot in one sitting.** A solo operator posting daily quits
-in week three. Four is sustainable, and batching means one filming session
-rather than four interruptions. Wednesday and Sunday are the natural batch days
-because they leave the rest of the week for the app.
+in week three. Batching means one filming session rather than four
+interruptions.
 
 **Nothing paid until something organic proves itself.** The growth plan
 sequences this deliberately: boost a clip that already worked, then open an
-always on UAC test, never both from a standing start. A post that clears
-roughly 10,000 views on its own is the signal to spend behind it.
+always on UAC test, never both from a standing start. A post clearing roughly
+10,000 views on its own is the signal to spend behind it. Note the plan
+specifies Google UAC rather than Meta, because UAC optimises directly against
+Play Store installs and sees first party install data Meta cannot.
+
+## Titles do real work on YouTube
+
+This is the one habit that does not carry over from other platforms. A Short
+carries a 100 character title that is a **search field**, not a caption. Write
+it as the question somebody would type, not as a description of the video.
+
+Know which of your posts is a search result and which is a feed post, because
+it changes what you optimise. Monday's pain post nobody searches for: it lives
+or dies on the first two seconds. Friday's price post is searched every day,
+and its title matters more than its hook.
 
 ---
 

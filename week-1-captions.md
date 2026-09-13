@@ -1,7 +1,16 @@
 # Week 1 captions, ready to film
 
-Four posts. On-screen text is what appears in the video, the caption is what
-goes in the post field. Both are German unless marked otherwise.
+Four posts, primary platform YouTube Shorts, secondary Instagram Reels. German
+unless marked otherwise.
+
+**The title is the part that differs from other platforms.** A Short carries a
+100 character title that is a search field, and it is the single highest
+leverage line in the whole post. Write what somebody would type, not what the
+video is about. The description below it is read by almost nobody and indexed
+by the algorithm, so it carries the keywords the title had no room for.
+
+Instagram has no title, so there the description becomes the caption. Both are
+given for each post.
 
 Hold each on-screen line long enough to read twice. At phone size that is
 roughly a second per five words, and the most common mistake is cutting a
@@ -24,7 +33,14 @@ the number held on a plain Ink Navy field.
 | 5.0 to 7.5 | Die anderen drei laufen weiter. |
 | 7.5 to 10.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Caption**
+**Title** (53 characters, feed post: nobody searches this, so it is written
+to be clicked rather than found)
+
+```
+Du zahlst für 7 Abos. An wie viele erinnerst du dich?
+```
+
+**Description, and the Instagram caption**
 
 > Sieben ist der Durchschnitt. Die meisten kommen auf vier, wenn sie aufzählen.
 >
@@ -32,7 +48,7 @@ the number held on a plain Ink Navy field.
 >
 > Trimio zeigt dir jede Verlängerung, bevor sie abgebucht wird. Ohne Bankzugang.
 
-**Hashtags**
+**Hashtags**, for the Instagram caption. YouTube uses at most three, in the description, and the title carries the search weight instead
 
 ```
 #abofalle #geldsparen #finanztipps #sparen #abo #haushaltsbuch #finanzen #österreich #deutschland #app
@@ -59,7 +75,13 @@ early is what makes this post fail.
 | 5.0 to 7.0 | Name, Preis, Zeitraum. Automatisch. |
 | 7.0 to 9.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Caption**
+**Title** (43 characters)
+
+```
+Abo in 4 Sekunden eintragen, ohne zu tippen
+```
+
+**Description, and the Instagram caption**
 
 > Der Teil, den ich selbst am meisten nutze.
 >
@@ -69,7 +91,7 @@ early is what makes this post fail.
 > Über 120 Dienste sind außerdem als Vorlage hinterlegt, falls du die Mail
 > längst gelöscht hast.
 
-**Hashtags**
+**Hashtags**, for the Instagram caption. YouTube uses at most three, in the description, and the title carries the search weight instead
 
 ```
 #abo #appempfehlung #geldsparen #finanzapp #produktivität #android #sparen #finanztipps
@@ -102,7 +124,15 @@ a fact and a claim, and it is what lets this post age honestly.
 | 9.5 to 11.0 | Zusammen 55,95 € im Monat |
 | 11.0 to 13.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Caption**
+**Title** (53 characters). **This is the post that is actually searched**, so
+the title matters more than the hook. Lead with the service names, because
+those are what people type.
+
+```
+Was Netflix, Spotify und Disney+ 2026 wirklich kosten
+```
+
+**Description, and the Instagram caption**
 
 > Stand September 2026, alle Preise selbst geprüft.
 >
@@ -117,7 +147,7 @@ a fact and a claim, and it is what lets this post age honestly.
 >
 > Trimio sagt dir vorher Bescheid, wenn eines davon verlängert wird.
 
-**Hashtags**
+**Hashtags**, for the Instagram caption. YouTube uses at most three, in the description, and the title carries the search weight instead
 
 ```
 #netflix #spotify #disneyplus #amazonprime #streaming #geldsparen #abo #finanztipps #preise
@@ -149,7 +179,13 @@ Then just talk, roughly to this shape:
 >
 > Das ist Trimio. Ich baue sie alleine, in Wien.
 
-**Caption**
+**Title** (63 characters)
+
+```
+Ich habe ein Jahr für ein Abo gezahlt, das ich nie genutzt habe
+```
+
+**Description, and the Instagram caption**
 
 > Der ehrliche Grund, warum es Trimio gibt.
 >
@@ -159,7 +195,7 @@ Then just talk, roughly to this shape:
 > Wenn dir das bekannt vorkommt, erzähl es mir in den Kommentaren. Ich sammle
 > gerade, was Leuten wirklich durchrutscht.
 
-**Hashtags**
+**Hashtags**, for the Instagram caption. YouTube uses at most three, in the description, and the title carries the search weight instead
 
 ```
 #indiedev #buildinpublic #appentwicklung #selbstständig #wien #österreich #geldsparen #abo
@@ -174,8 +210,10 @@ German decimal commas: 15,99 €, never 15.99. The euro sign goes after the
 number with a space, which is the German convention and the one thing that
 marks copy as translated at a glance.
 
-**Caption band is 25% to 75% of frame height.** TikTok and Reels cover the
-bottom 20% and right 15% with their own UI.
+**Caption band is 25% to 75% of frame height.** Shorts, Reels and TikTok all
+cover roughly the bottom 20% and right 15% with their own UI. The two Monday
+cuts already measured clear, but with only 7px of margin on the right, so pull
+the card grid in about 60px before reusing that template.
 
 **Soft Mint never behind white text.** Navy behind white, or `#1F7A62` for type
 that must read as mint.
