@@ -33,12 +33,20 @@ the number held on a plain Ink Navy field.
 | 5.0 to 7.5 | Die anderen drei laufen weiter. |
 | 7.5 to 10.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Title** (53 characters, feed post: nobody searches this, so it is written
-to be clicked rather than found)
+**Title** (55 characters)
+
+Measured 2026-09-13. The original was "Du zahlst für 7 Abos. An wie viele
+erinnerst du dich?", written as a pure feed hook on the assumption nobody
+searches this. `vidiq_score_title` puts that at **61** and the version below at
+**81**, and the version below also carries the one German frame that has
+measured volume. A feed post that is also findable costs nothing extra.
 
 ```
-Du zahlst für 7 Abos. An wie viele erinnerst du dich?
+Geld sparen: die 3 Abos, an die du dich nicht erinnerst
 ```
+
+The on-screen hook does not change. The title is the search field, the first
+two seconds are still the seven-versus-four line.
 
 **Description, and the Instagram caption**
 
@@ -75,11 +83,19 @@ early is what makes this post fail.
 | 5.0 to 7.0 | Name, Preis, Zeitraum. Automatisch. |
 | 7.0 to 9.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Title** (43 characters)
+**Title** (52 characters)
+
+Measured 2026-09-13. "abo eintragen" comes back **under 750 a month**, so the
+original title ("Abo in 4 Sekunden eintragen, ohne zu tippen") was optimised
+for a query nobody types. It scores **67**; the version below scores **80** and
+leads with the frame that has 25,955 searches behind it.
 
 ```
-Abo in 4 Sekunden eintragen, ohne zu tippen
+Geld sparen Tipps: so behältst du alle Abos im Blick
 ```
+
+The video is unchanged: it is still the paste beat. Only the door people come
+through is different.
 
 **Description, and the Instagram caption**
 
@@ -158,15 +174,14 @@ Geld sparen Tipps: was Netflix, Spotify und Disney+ kosten
 #netflix #spotify #disneyplus #amazonprime #streaming #geldsparen #abo #finanztipps #preise
 ```
 
-**This note used to say "people search the names, not the category, and that is
-the whole reason this pillar exists."** The 2026-09-13 keyword check says the
-opposite: service-name cancellation terms are all under 750 a month, and the
-volume sits in the category framing at 25,955. I corrected the title and left
-this line standing, which is how a file ends up arguing with itself.
+**The category beats the service names here, which is the reverse of what this
+pillar was built on.** Every service-name cancellation term measured under 750
+a month; the category framing measured 25,955. So the title leads with the
+saving frame and the names ride in the second half, where they still help
+anyone scanning the result list. The service hashtags stay as a secondary
+signal rather than as the thing carrying the post.
 
-The service hashtags are still worth keeping, but as a secondary signal for
-anyone scanning rather than as the thing carrying the post. The title carries
-it, and the title now leads with the saving frame.
+This title scores **83**, the highest of the four.
 
 ---
 
@@ -191,10 +206,15 @@ Then just talk, roughly to this shape:
 >
 > Das ist Trimio. Ich baue sie alleine, in Wien.
 
-**Title** (63 characters)
+**Title** (82 characters)
+
+Same correction as the other three: the bare founder line scores **61**, the
+one below **73**. "geld sparen im alltag" is separately measured at 5,423 a
+month at competition 17.4, which is the lowest competition of any German term
+checked.
 
 ```
-Ich habe ein Jahr für ein Abo gezahlt, das ich nie genutzt habe
+Geld sparen im Alltag: ein Jahr lang für ein Abo gezahlt, das ich nie genutzt habe
 ```
 
 **Description, and the Instagram caption**
@@ -236,32 +256,80 @@ that must read as mint.
 **Every clip works muted.** Most viewers never turn sound on, including on the
 Sunday post, so the first line has to be burned in even there.
 
+**Never use `#abo` as one of the three YouTube hashtags.** On YouTube that
+token belongs to a large Arabic creator namespace: "abo flah" alone runs 50,361
+searches a month, "abo falah" 37,423, and the whole measured list for the term
+is names, not subscriptions. Tagging a German subscription video `#abo` files
+it next to none of its audience. Use these three per post instead, all of them
+inside the frame that measured:
+
+| Post | YouTube hashtags |
+|---|---|
+| Monday | `#geldsparen #finanztipps #sparen` |
+| Wednesday | `#geldsparen #finanzapp #finanztipps` |
+| Friday | `#geldsparen #streaming #finanztipps` |
+| Sunday | `#geldsparen #buildinpublic #österreich` |
+
+The longer lists under each post stay as written, because **those are the
+Instagram captions and Instagram is a different index.** vidIQ measures YouTube
+search and nothing else, so it has no verdict on what `#abo` or `#abofalle` do
+on Reels. Leaving them there is not an endorsement, it is an absence of
+evidence, and it should not be quietly upgraded into one.
+
 ## Filming order
 
 Shoot Wednesday and Friday together: both are screen recordings on the current
 build, one setup. Monday and Sunday are camera, also one setup. Two sittings,
 four posts, and the week is done before it starts.
 
-## Still unchecked, queued for when vidIQ is reconnected
+## All four titles are now measured, 2026-09-13
 
-Only Friday's title was verified against keyword data. The other three were
-written on judgement and remain unmeasured, which is worth stating plainly
-given the one term that was checked turned out to be wrong by a factor of
-thirty.
+Every title in this file was rewritten against data rather than judgement. The
+scores are `vidiq_score_title`, short form, and the volumes are monthly German
+YouTube searches.
 
-- **Monday.** A feed post, so search volume barely matters and the hook is the
-  whole job. Low value to check, but `vidiq_score_title` would still say
-  whether the phrasing reads as clickable.
-- **Wednesday.** "Abo eintragen" and "ohne zu tippen" are both unmeasured. Given
-  that "geld sparen apps" came back under 750, a product-mechanics title may
-  have no search behind it at all, and this one may belong in the feed-post
-  category with Monday rather than being optimised for search.
-- **Sunday.** Founder story, feed post by nature. Not worth a query.
-- **Worth checking beyond the titles:** whether "abofalle" has real volume, since
-  it carries a hashtag in three of four posts on the strength of my assumption
-  that Germans use the word. And whether the Week 2 and Week 3 hooks land on
-  anything, particularly "geld sparen im alltag" at 5,423, which is already
-  measured and is the strongest term available for Week 2.
+| Post | Was | Now | Change |
+|---|---|---|---|
+| Monday | 61 | **81** | +20 |
+| Wednesday | 67 | **80** | +13 |
+| Friday | (unscored) | **83** | leads the set |
+| Sunday | 61 | **73** | +12 |
+
+**The same move worked four times out of four:** put the measured frame at the
+front and leave the rest of the line alone. That is a suspiciously uniform
+result, and part of it is the scorer rewarding a keyword-led title as a matter
+of form rather than because these four titles are genuinely better. What keeps
+it from being circular is that the frame was chosen from volume data first and
+scored second, so the two signals are independent and they agree.
+
+**Terms that came back dead, all under 750 a month.** Recorded because the cost
+of rechecking them is a credit and the cost of assuming them is a week of
+posts:
+
+| Term | Monthly |
+|---|---|
+| netflix kündigen, netflix abo kündigen, netflix abo beenden | <750 |
+| abo verwalten, kündigen, abofalle | <750 |
+| geld sparen apps | <750 |
+| abo eintragen | <750 |
+
+`abofalle` is the one that stings: it carried a hashtag on the strength of my
+assumption that Germans reach for the word, and it does not register at all.
+Note also that I had it in three posts by memory and it was in one. Check the
+file, not the recollection.
+
+**Terms with real volume**, which is where every title now points:
+
+| Term | Monthly | Competition |
+|---|---|---|
+| **geld sparen tipps** | **25,955**, growing 43% | **24.5** |
+| geld sparen | 12,273 | 31.3 |
+| geld sparen im alltag | 5,423 | **17.4** |
+| geld sparen im haushalt | 5,057 | 31.3 |
+
+Still unmeasured: the Week 2 and Week 3 hooks, apart from "geld sparen im
+alltag", which is already carrying Week 2's Monday and is the lowest
+competition term in the set.
 
 The habit worth keeping: a title is a guess until it is measured, and
 "Netflix kündigen" looked obviously right until it came back at under 750.

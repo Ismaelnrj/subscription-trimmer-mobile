@@ -46,9 +46,17 @@ carries a 100 character title that is a **search field**, not a caption. Write
 it as the question somebody would type, not as a description of the video.
 
 Know which of your posts is a search result and which is a feed post, because
-it changes what you optimise. Monday's pain post nobody searches for: it lives
-or dies on the first two seconds. Friday's price post is searched every day,
-and its title matters more than its hook.
+it changes what you optimise. Monday's pain post lives or dies on the first two
+seconds. Friday's price post is searched every day, and its title matters more
+than its hook.
+
+**That distinction turned out to matter less than expected.** Week 1 was
+written with two of the four titles deliberately unoptimised, on the reasoning
+that a feed post gains nothing from a search frame. Scored on 2026-09-13, the
+feed-post titles came back at 61 and 67 and the same lines with the measured
+frame in front came back at 81 and 80. A search frame costs a feed post
+nothing, so put it there anyway. Only the hook has to earn the first two
+seconds; the title can quietly do a second job.
 
 ## What the keyword data actually says, measured 2026-09-13
 
@@ -81,7 +89,16 @@ get:
 
 And one result worth heeding: **"geld sparen apps" is also under 750.** Nobody
 is looking for an app. They are looking for a way to spend less, and an app is
-at best the answer to that, never the query.
+at best the answer to that, never the query. The same holds for the product
+mechanics: "abo eintragen" is under 750 too, so describing what the app does is
+not a query either.
+
+**And the word "Abo" is unusable as a YouTube tag.** On YouTube that token
+belongs to a large Arabic creator namespace ("abo flah" 50,361 a month, "abo
+falah" 37,423), so a German subscription video tagged `#abo` lands in a pool
+made almost entirely of something else. German subscription vocabulary has no
+YouTube search behind it in any form tested: not the word, not the action, not
+the trap. Every title in Week 1 now leads with the saving frame instead.
 
 So the knowledge pillar keeps its job and changes its framing. Not "so kündigst
 du Netflix", which nobody types. Instead the saving tip that happens to be
