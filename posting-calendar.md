@@ -50,6 +50,43 @@ it changes what you optimise. Monday's pain post nobody searches for: it lives
 or dies on the first two seconds. Friday's price post is searched every day,
 and its title matters more than its hook.
 
+## What the keyword data actually says, measured 2026-09-13
+
+This plan originally assumed "Netflix kündigen" was searched constantly. **It
+is not.** Checked against vidIQ, every German cancellation phrasing sits below
+the measurement floor, while the English equivalents have real volume:
+
+| Term | Monthly searches |
+|---|---|
+| netflix kündigen | under 750 |
+| netflix abo kündigen | under 750 |
+| netflix abo beenden | under 750 |
+| how to cancel netflix subscription | 9,542 |
+
+So the "how to cancel X" premise was wrong for German YouTube. Germans appear
+to ask that question of Google, which answers it in text, rather than of
+YouTube.
+
+**The German audience is there, it just searches for something else.** Saving
+tips, with volume most niches would envy and competition most niches do not
+get:
+
+| Term | Monthly searches | Competition |
+|---|---|---|
+| **geld sparen tipps** | **25,955**, growing 43% | **24.5**, low |
+| geld sparen | 12,273 | 31.3 |
+| geld sparen im alltag | 5,423 | 17.4 |
+| geld sparen im haushalt | 5,057 | 31.3 |
+| sparen im alltag | 4,018 | 17.1 |
+
+And one result worth heeding: **"geld sparen apps" is also under 750.** Nobody
+is looking for an app. They are looking for a way to spend less, and an app is
+at best the answer to that, never the query.
+
+So the knowledge pillar keeps its job and changes its framing. Not "so kündigst
+du Netflix", which nobody types. Instead the saving tip that happens to be
+about subscriptions, which 26,000 people a month are already looking for.
+
 ---
 
 ## The four pillars
@@ -57,7 +94,7 @@ and its title matters more than its hook.
 | Pillar | Job | Reach | Converts |
 |---|---|---|---|
 | **Pain** | Stop the scroll. Nobody searches for a subscription tracker, they search for relief | Highest | Low |
-| **Knowledge** | Be findable. "Netflix kündigen" is searched every day, forever | Evergreen | Medium |
+| **Knowledge** | Be findable. Framed as saving tips, not as cancelling a named service, see the keyword data below | Evergreen | Medium |
 | **Product** | Show the thing. Only meaningful once someone already cares | Low | Highest |
 | **Founder** | Be a person. Solo builders get latitude that companies do not | Medium | Medium |
 
@@ -103,11 +140,14 @@ German list whatever the calendar first said.
 
 ## Week 2, be findable
 
-**Mon, knowledge.** The highest intent search in this category.
-> So kündigst du Netflix, Spotify und Disney+ wirklich
+**Mon, knowledge.** Retitled against the keyword data. The original was "So
+kündigst du Netflix, Spotify und Disney+ wirklich", which targets a term
+measured at under 750 searches a month and would have found nobody.
+> Geld sparen im Alltag: der Posten, den fast alle übersehen
 
-Three cancellations, real screens, twenty seconds. Trimio appears once at the
-end as the thing that reminds you before the next one.
+Still the three cancellations on real screens, twenty seconds. Only the framing
+changes, from a how-to nobody searches to the saving tip 26,000 people a month
+do. Trimio appears once at the end.
 
 **Wed, pain.** The specific beats the general.
 > Drei Jahre Fitnessstudio. Zweimal dort gewesen.

@@ -124,12 +124,17 @@ a fact and a claim, and it is what lets this post age honestly.
 | 9.5 to 11.0 | Zusammen 55,95 € im Monat |
 | 11.0 to 13.0 | **Trimio** · Kostenlos bei Google Play |
 
-**Title** (53 characters). **This is the post that is actually searched**, so
-the title matters more than the hook. Lead with the service names, because
-those are what people type.
+**Title** (60 characters). **This is the post that is actually searched**, so
+the title matters more than the hook.
+
+Measured 2026-09-13: the German volume is in saving-tip framing, not in service
+names and not in the word "App". "geld sparen tipps" runs 25,955 a month at
+competition 24.5, while "geld sparen apps" sits under 750. So lead with the
+saving frame and let the service names ride in the second half, where they
+still help anyone scanning.
 
 ```
-Was Netflix, Spotify und Disney+ 2026 wirklich kosten
+Geld sparen Tipps: was Netflix, Spotify und Disney+ kosten
 ```
 
 **Description, and the Instagram caption**
