@@ -158,8 +158,15 @@ Geld sparen Tipps: was Netflix, Spotify und Disney+ kosten
 #netflix #spotify #disneyplus #amazonprime #streaming #geldsparen #abo #finanztipps #preise
 ```
 
-Service hashtags carry this post. People search the names, not the category,
-and that is the whole reason this pillar exists.
+**This note used to say "people search the names, not the category, and that is
+the whole reason this pillar exists."** The 2026-09-13 keyword check says the
+opposite: service-name cancellation terms are all under 750 a month, and the
+volume sits in the category framing at 25,955. I corrected the title and left
+this line standing, which is how a file ends up arguing with itself.
+
+The service hashtags are still worth keeping, but as a secondary signal for
+anyone scanning rather than as the thing carrying the post. The title carries
+it, and the title now leads with the saving frame.
 
 ---
 
@@ -234,3 +241,27 @@ Sunday post, so the first line has to be burned in even there.
 Shoot Wednesday and Friday together: both are screen recordings on the current
 build, one setup. Monday and Sunday are camera, also one setup. Two sittings,
 four posts, and the week is done before it starts.
+
+## Still unchecked, queued for when vidIQ is reconnected
+
+Only Friday's title was verified against keyword data. The other three were
+written on judgement and remain unmeasured, which is worth stating plainly
+given the one term that was checked turned out to be wrong by a factor of
+thirty.
+
+- **Monday.** A feed post, so search volume barely matters and the hook is the
+  whole job. Low value to check, but `vidiq_score_title` would still say
+  whether the phrasing reads as clickable.
+- **Wednesday.** "Abo eintragen" and "ohne zu tippen" are both unmeasured. Given
+  that "geld sparen apps" came back under 750, a product-mechanics title may
+  have no search behind it at all, and this one may belong in the feed-post
+  category with Monday rather than being optimised for search.
+- **Sunday.** Founder story, feed post by nature. Not worth a query.
+- **Worth checking beyond the titles:** whether "abofalle" has real volume, since
+  it carries a hashtag in three of four posts on the strength of my assumption
+  that Germans use the word. And whether the Week 2 and Week 3 hooks land on
+  anything, particularly "geld sparen im alltag" at 5,423, which is already
+  measured and is the strongest term available for Week 2.
+
+The habit worth keeping: a title is a guess until it is measured, and
+"Netflix kündigen" looked obviously right until it came back at under 750.
