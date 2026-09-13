@@ -51,13 +51,22 @@ line itself, and app footage would confound the result.
 > Abo hinzufügen in vier Sekunden. Bestätigungsmail einfügen, fertig.
 
 **Fri, knowledge.** Genuinely useful, no product mention until the last second.
-> Diese fünf Dienste haben 2026 die Preise erhöht
+> Was diese fünf Abos wirklich kosten, Stand September 2026
 
-Netflix, Spotify, Disney+, Xbox Game Pass, Amazon Prime. Use the verified
-numbers in `lib/service-templates.ts`, they are the six rows somebody checked.
-Do not invent figures here: the whole point of the freshness guard is that
-Trimio does not claim prices nobody stands behind, and neither should the
-marketing.
+**This was drafted as "these five raised their prices in 2026" and that claim
+cannot be supported.** The catalogue rows were corrected on 2026-09-05, which
+is the catalogue being fixed rather than evidence a provider raised anything:
+the figures were written in July 2026 and some were simply wrong. Netflix
+Standard and Amazon Prime needed no change at all. Stating an increase would be
+precisely the overclaim `isPriceFresh` exists to stop the app making, and the
+marketing has no licence the product refuses itself.
+
+A current price post is honest, just as searchable, and ages into an increase
+post naturally once there is a second dated reading to compare against.
+
+Use only the five DACH rows carrying a verified date. **Xbox Game Pass Ultimate
+is 22.99 USD on the GLOBAL row**, not a euro price, so it does not belong in a
+German list whatever the calendar first said.
 
 **Sun, founder.** Phone camera, no edit.
 > Ich habe Trimio gebaut, weil ich vergessen habe, ein Abo zu kündigen. Ein Jahr lang.
