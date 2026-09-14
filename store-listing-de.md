@@ -16,6 +16,12 @@ words for the same thing:
 - **Preis gestiegen** is the app's phrasing for a price increase, so the
   listing says Preiserh√∂hung, which is the searched noun form of it.
 - **du**, not Sie. The app is informal throughout (24 uses of du, 27 of dein).
+- **abgebucht**, not "du zahlst", for the tagline. A renewal is not something
+  you do: the money leaves on its own, which is the entire reason the product
+  exists. `zahlen` describes an act you perform and quietly misdescribes the
+  mechanic; `abbuchen` is the automatic debit and the word a German bank
+  statement uses. The closing line said "bevor du zahlst" until 2026-09-14,
+  against "Wissen, bevor abgebucht wird" everywhere else.
 
 No dash, en dash or em dash is used as clause separating punctuation anywhere
 below, per the copy rule.
@@ -77,7 +83,7 @@ Ob Streaming, Software, Fitnessstudio, Versicherung oder ein Probeabo, das du l√
 
 Mit Premium bekommst du unbegrenzt viele Abos, Ausgabenanalysen und Kalenderexport.
 
-Trimio: wissen, bevor du zahlst.
+Trimio: wissen, bevor abgebucht wird.
 ```
 
 1405 characters, well inside the limit.

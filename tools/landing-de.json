@@ -1,8 +1,10 @@
 {
   "_note": "German copy for the landing page. Terminology follows locales/de.json and store-listing-de.md so the site, the app and the Play listing use the same words: Abo and Abonnement, Testphase not Probeabo, Verlaengerung for a renewal, du not Sie. No dash is used as clause-separating punctuation. Longest-first replacement is handled by the builder, so substrings of other entries are safe here.",
+  "_note_punctuation": "WATCH SENTENCES SPLIT ACROSS TWO KEYS. The hero is one sentence broken over a <span>, so English 'See what is coming' + 'before you pay.' became German with no comma before 'bevor', which German requires. The comma now lives at the end of the first fragment. Any future entry that is half a sentence has to carry the punctuation the German needs, because neither half can see the other.",
   "Subscription clarity, before the charge": "Klarheit über deine Abos, vor der Abbuchung",
-  "See what is coming": "Sieh, was auf dich zukommt",
-  "before you pay.": "bevor du zahlst.",
+  "Trimio helps you see subscription renewals before you pay, without linking your bank.": "Trimio zeigt dir, was deine Abos kosten und wann sie sich verlängern, bevor abgebucht wird. Ohne Bankzugang und ohne Kartendaten.",
+  "See what is coming": "Sieh, was auf dich zukommt,",
+  "before you pay.": "bevor abgebucht wird.",
   "Trimio keeps every renewal visible, gives you time to decide, and never needs access to your bank.": "Trimio hält jede Verlängerung sichtbar, lässt dir Zeit zu entscheiden und braucht nie Zugriff auf dein Bankkonto.",
   "Create your account": "Konto erstellen",
   "Get it on Google Play": "Bei Google Play laden",
