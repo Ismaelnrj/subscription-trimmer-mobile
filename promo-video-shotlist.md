@@ -56,7 +56,7 @@ From the brand palette, measured not guessed:
 | 2.0 to 4.5 | Trimio Dashboard. Monthly total and Next Payment card visible. Let it settle, do not scroll yet. | Trimio shows you all of them. | Trimio zeigt dir alle. |
 | 4.5 to 7.5 | Add Expense. Paste a confirmation email into the box, fields fill themselves in. **This is the money shot.** | Paste the email. <br>It fills itself in. | E-Mail einfügen. <br>Füllt sich selbst aus. |
 | 7.5 to 10.0 | Stats tab. The donut draws in, category legend visible. Slow scroll. | See where it actually goes. | Sieh, wohin es wirklich geht. |
-| 10.0 to 12.5 | Calendar or a renewal alert. Show a date approaching with the amount. | Know before the charge lands. | Wissen, bevor abgebucht wird. |
+| 10.0 to 12.5 | Calendar or a renewal alert. Show a date approaching with the amount. | Know before you pay. | Wissen, bevor abgebucht wird. |
 | 12.5 to 15.0 | Trimio mark on Ink Navy. Google Play badge. Nothing else. | **Trimio** <br>Free on Google Play | **Trimio** <br>Kostenlos bei Google Play |
 
 ### Why this order

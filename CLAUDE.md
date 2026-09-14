@@ -406,8 +406,20 @@ last one left off without needing a recap typed out.
   with their own UI, which is what caused the caption overlap, so keep
   captions in the middle band; and Soft Mint must never sit behind white
   caption text (2.1:1), use Ink Navy behind white, or `#1F7A62` for text
-  that has to read as mint. Taglines matching the live store copy are
-  "Know before you're charged" and "Wissen, bevor abgebucht wird".
+  that has to read as mint. The two live taglines are "Know before you pay"
+  and "Wissen, bevor abgebucht wird", and THEY DO NOT BACK TRANSLATE INTO
+  EACH OTHER. That is deliberate, decided 2026-09-14, and it is the one
+  place in this product where the two languages say different things on
+  purpose. German renders it as "before it is debited", because a renewal is
+  not an act you perform: the money is taken while you do nothing, and
+  `abbuchen` is the verb a German bank statement uses, which is also how
+  every in-app English string already puts it (`chargedOnExpiry`, "You will
+  be charged {{amount}} automatically"). English keeps the shorter, punchier
+  "you pay" because a tagline is transcreated rather than translated, and
+  four words beat five on a share card. DO NOT "fix" either side toward the
+  other, in `tools/landing-de.json`, the store listings, or the video
+  captions. This entry used to record the English as "Know before you're
+  charged", which appears on no shipped surface at all.
 - A SoLoader NATIVE CRASH IS ON RECORD AND WAS DELIBERATELY NOT FIXED
   (2026-09-08, Sentry). `SoLoaderDSONotFoundError: couldn't find DSO to
   load: libc++_shared.so` at `MainApplication.onCreate`, one user, fatal,

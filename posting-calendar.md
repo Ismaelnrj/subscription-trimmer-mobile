@@ -230,8 +230,11 @@ behind white, or `#1F7A62` for type that must read as mint.
 caption carries the whole message or the post does not work.
 
 **Say the same thing the store says.** Someone who sees a clip and taps through
-should read the same promise twice: "Wissen, bevor abgebucht wird" and "Know
-before you're charged" are the two live taglines.
+should read the same promise twice. The two live taglines are "Know before you
+pay" and "Wissen, bevor abgebucht wird". They are not translations of each
+other and are not meant to be: German says "before it is debited" because a
+renewal is taken rather than paid, English keeps the shorter line. Use whichever
+matches the language of the clip and do not mix them.
 
 ---
 
