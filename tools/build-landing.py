@@ -54,13 +54,13 @@ head = f'''  <link rel="canonical" href="{CANON}__CANON_PATH__" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="__OG_LOCALE__" />
   <meta property="og:url" content="{CANON}__CANON_PATH__" />
-  <meta property="og:image" content="{CANON}/og.png?v=3" />
+  <meta property="og:image" content="{CANON}__OG_IMAGE__?v=3" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="__OG_TITLE__" />
   <meta name="twitter:description" content="__TW_DESC__" />
-  <meta name="twitter:image" content="{CANON}/og.png?v=3" />
+  <meta name="twitter:image" content="{CANON}__OG_IMAGE__?v=3" />
   <script type="application/ld+json">
   {{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Trimio",
    "operatingSystem":"Android","applicationCategory":"FinanceApplication",
@@ -415,6 +415,7 @@ EN_META = {
     "__LANG__": "en",
     "__OG_LOCALE__": "en_US",
     "__OG_TITLE__": "Trimio: know before you pay",
+    "__OG_IMAGE__": "/og.png",
     "__OG_DESC__": "Trimio keeps every renewal visible and gives you time to decide, without ever asking for your bank login.",
     "__TW_DESC__": "The subscription reminder that arrives before the charge, not after.",
     "__SCHEMA_DESC__": "Trimio tells you what a subscription is about to charge before it does, without ever asking for your bank login.",
@@ -426,6 +427,11 @@ DE_META = {
     "__LANG__": "de",
     "__OG_LOCALE__": "de_DE",
     "__OG_TITLE__": "Trimio: wissen, bevor abgebucht wird",
+    # A German link shared to WhatsApp or LinkedIn previewed with the English
+    # card until 2026-09-14: correct title, correct description, and a picture
+    # reading "Know before you pay." The card is the largest thing in a share
+    # preview and was the only part still in the wrong language.
+    "__OG_IMAGE__": "/og-de.png",
     "__OG_DESC__": "Trimio hält jede Verlängerung sichtbar und lässt dir Zeit zu entscheiden, ohne je nach deinem Bankzugang zu fragen.",
     "__TW_DESC__": "Die Abo-Erinnerung, die vor der Abbuchung kommt, nicht danach.",
     "__SCHEMA_DESC__": "Trimio sagt dir, was ein Abo gleich abbuchen wird, bevor es passiert, ohne je nach deinem Bankzugang zu fragen.",

@@ -88,6 +88,12 @@ app.get('/og.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');
   res.sendFile(path.join(__dirname, 'og.png'));
 });
+// The German page points at its own card. Same layout, German headline, so a
+// link shared from /de does not preview in English.
+app.get('/og-de.png', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'og-de.png'));
+});
 app.get('/icon.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=604800');
   res.sendFile(path.join(__dirname, 'icon.png'));
