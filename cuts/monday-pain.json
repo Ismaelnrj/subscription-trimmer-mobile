@@ -1,0 +1,16 @@
+{
+  "_note": "Week 1 Monday, the pain post. Straight from week-1-captions.md. No footage by design: this post is a test of whether the line alone stops a scroll, and app footage would confound the answer.",
+  "name": "monday-pain",
+  "format": "9:16",
+  "lang": "de",
+  "out": "build/monday-pain.mp4",
+  "scenes": [
+    {"type": "card", "dur": 2.5, "emphasis": true,
+     "lines": ["Du zahlst für sieben Abos."]},
+    {"type": "card", "dur": 2.5, "emphasis": true,
+     "lines": ["Du erinnerst dich an vier."]},
+    {"type": "card", "dur": 2.5,
+     "lines": ["Die anderen drei laufen weiter."]},
+    {"type": "endcard", "dur": 2.5, "cta": "Kostenlos bei Google Play"}
+  ]
+}

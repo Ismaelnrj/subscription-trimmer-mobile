@@ -26,3 +26,6 @@ google-play-service-account.json
 *.keystore
 *.pem
 *.p12
+
+# Rendered video cuts. Regenerate with tools/make-cut.py.
+build/
