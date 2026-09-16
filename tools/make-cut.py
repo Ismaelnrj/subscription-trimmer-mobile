@@ -428,6 +428,27 @@ def build(spec_path):
                  "-map", "[o]", "-an", "-r", str(FPS),
                  "-c:v", "libx264", "-preset", "slow", "-crf", "18",
                  "-pix_fmt", "yuv420p", str(seg)])
+        elif sc["type"] == "clip":
+            # Passthrough for footage that already carries its own composition.
+            # reframe would inlay it in Trimio chrome and stack a second header
+            # on top of the one it already has.
+            src = sc["src"]
+            if not pathlib.Path(src).exists():
+                raise CutError(f"scene {i}: {src} not found.")
+            hold = sc.get("hold", 0)
+            # `hold` freezes the final frame. The payoff shot is always the one
+            # cut a beat early, because whoever made it has already watched it
+            # forty times and cannot see it fresh any more.
+            vf = (f"scale={W}:{H}:force_original_aspect_ratio=decrease,"
+                  f"pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=0x0B1A26,fps={FPS}")
+            if hold:
+                vf += f",tpad=stop_mode=clone:stop_duration={hold}"
+            vf += ",format=yuv420p,setsar=1"
+            run([FFMPEG, "-y", "-ss", str(sc.get("in", 0)), "-t", str(sc["dur"]),
+                 "-i", src, "-vf", vf, "-an",
+                 "-t", str(sc["dur"] + hold), "-r", str(FPS),
+                 "-c:v", "libx264", "-preset", "slow", "-crf", "18",
+                 "-pix_fmt", "yuv420p", str(seg)])
         elif sc["type"] == "reframe":
             src = sc["src"]
             if not pathlib.Path(src).exists():
@@ -484,7 +505,10 @@ def build(spec_path):
          "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-r", str(FPS),
          str(out)])
 
-    dur = sum(s["dur"] for s in spec["scenes"])
+    # `hold` extends a clip past its `dur`, so summing dur alone under-reports
+    # the file that was actually written. A summary line that disagrees with
+    # the output is worse than no summary line.
+    dur = sum(s["dur"] + s.get("hold", 0) for s in spec["scenes"])
     print(f"wrote {out}  {W}x{H}  {dur:.1f}s  {len(segments)} scenes  H.264")
     return out
 

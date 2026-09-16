@@ -1,0 +1,12 @@
+{
+  "_note": "raw/real-app-en.mp4 trimmed to the auto-fill story. The source ran 26.5s and spent its second half on a cancellation guide that showed steps 1, 2 and 3 and then stopped, never reaching step 4, which is the Google Play step Android users actually need. That half is dropped rather than patched: the cancellation story already has its own Short with the complete list. The clean transition out of Details filled in is at 12.2s. Its last frame is then held, because the payoff shot is always the one cut a beat early.",
+  "name": "short-autofill-real",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-autofill-real.mp4",
+  "scenes": [
+    {"type": "clip", "src": "raw/real-app-en.mp4",
+     "in": 0, "dur": 12.2, "hold": 1.6},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}
