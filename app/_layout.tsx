@@ -19,7 +19,7 @@ import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
 import { AnimatedSplash } from "../components/AnimatedSplash";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
-import "../lib/i18n";
+import i18n from "../lib/i18n";
 
 // Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
 // can only submit error events, not read project data. Safe to ship in client code.
@@ -29,6 +29,21 @@ Sentry.init({
 });
 
 initAnalytics();
+
+/* The error boundary is the last thing standing when everything else has
+   failed, so it must never throw itself. It cannot use useTranslation (it is a
+   class component) and it cannot assume i18n survived whatever crashed, so it
+   reads the instance directly inside a try and falls back to English. An
+   untranslated fallback is a small cost; a boundary that throws while
+   rendering the crash screen leaves a white screen and no Sentry event. */
+function safeT(key: string, fallback: string): string {
+  try {
+    const s = i18n.t(key);
+    return typeof s === "string" && s && s !== key ? s : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string }> {
   state = { hasError: false, error: "" };
@@ -45,10 +60,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
     if (this.state.hasError) {
       return (
         <View style={errStyles.container}>
-          <Text style={errStyles.title}>Something went wrong</Text>
+          <Text style={errStyles.title}>{safeT("common.somethingWentWrong", "Something went wrong")}</Text>
           <Text style={errStyles.message}>{this.state.error}</Text>
           <TouchableOpacity style={errStyles.button} onPress={() => this.setState({ hasError: false, error: "" })}>
-            <Text style={errStyles.buttonText}>Try again</Text>
+            <Text style={errStyles.buttonText}>{safeT("common.tryAgain", "Try again")}</Text>
           </TouchableOpacity>
         </View>
       );

@@ -16,16 +16,38 @@ export interface ServiceTemplate {
   verified?: string;
 }
 
+/* ROWS THAT RESIST VERIFICATION, checked again 2026-09-16 so the next person
+   does not repeat the same dead ends:
+
+   DAZN, WOW Sport, RTL+ Basic. Every public figure is a different product.
+   DAZN Unlimited is 44.99 monthly, 24.99 on an annual commitment, and 9.99 on
+   a running promotion; WOW Sport quotes 5.98 only inside a 12 month tie in;
+   RTL+ is mostly sold inside bundles and its standalone monthly rate is not
+   quoted. The catalogue's 29.99 / 14.99 / 4.99 match none of those. They are
+   left alone rather than replaced with a number that is wrong in a new way.
+
+   Disney+ US. Three sources, three answers: 16.99, 17.99, and 18.99 from
+   21 October. Not pinned, so not touched.
+
+   Netflix Basic US. The plan itself no longer exists; Netflix retired it and
+   the nearest tier is Standard with ads at 8.99. Renaming the row would orphan
+   anything matching on the old name, so it needs a decision rather than an
+   edit.
+
+   These stay unverified on purpose. isPriceFresh keeps the market price
+   insight quiet about all of them, which is the correct behaviour: the app
+   would rather say nothing than quote a figure nobody stands behind. */
+
 export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   // ─── STREAMING (Global / USD) ───────────────────────────────────────────────
-  { id: "netflix-standard", name: "Netflix Standard", defaultPrice: 15.49, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "netflix.com", popular: true },
-  { id: "netflix-premium", name: "Netflix Premium", defaultPrice: 22.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
+  { id: "netflix-standard", name: "Netflix Standard", defaultPrice: 19.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "netflix.com", popular: true, verified: "2026-09-16" },
+  { id: "netflix-premium", name: "Netflix Premium", defaultPrice: 26.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", verified: "2026-09-16" },
   { id: "netflix-basic", name: "Netflix Basic", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
   { id: "disney-plus", name: "Disney+", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "disneyplus.com", popular: true },
   { id: "hulu-ads", name: "Hulu (With Ads)", defaultPrice: 7.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "hulu-no-ads", name: "Hulu (No Ads)", defaultPrice: 17.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "hbo-max", name: "HBO Max", defaultPrice: 15.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
-  { id: "amazon-prime", name: "Amazon Prime", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "amazon.com", popular: true },
+  { id: "amazon-prime", name: "Amazon Prime", defaultPrice: 14.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL", domain: "amazon.com", popular: true, verified: "2026-09-16" },
   { id: "apple-tv-plus", name: "Apple TV+", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "GLOBAL" },
   { id: "peacock-premium", name: "Peacock Premium", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
   { id: "paramount-plus", name: "Paramount+", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
@@ -35,7 +57,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "shudder", name: "Shudder", defaultPrice: 5.99, currency: "USD", billingCycle: "monthly", category: "streaming", region: "US" },
 
   // ─── ENTERTAINMENT / MUSIC (Global / USD) ───────────────────────────────────
-  { id: "spotify", name: "Spotify Premium", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "spotify.com", popular: true },
+  { id: "spotify", name: "Spotify Premium", defaultPrice: 12.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "spotify.com", popular: true, verified: "2026-09-16" },
   { id: "apple-music", name: "Apple Music", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "youtube-premium", name: "YouTube Premium", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "amazon-music", name: "Amazon Music Unlimited", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
@@ -54,10 +76,10 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "readwise", name: "Readwise", defaultPrice: 7.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
 
   // ─── SOFTWARE (Global / USD) ─────────────────────────────────────────────────
-  { id: "adobe-cc", name: "Adobe Creative Cloud", defaultPrice: 54.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "adobe.com", popular: true },
-  { id: "ms365-personal", name: "Microsoft 365 Personal", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "microsoft.com", popular: true },
+  { id: "adobe-cc", name: "Adobe Creative Cloud", defaultPrice: 54.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "adobe.com", popular: true, verified: "2026-09-16" },
+  { id: "ms365-personal", name: "Microsoft 365 Personal", defaultPrice: 6.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "microsoft.com", popular: true, verified: "2026-09-16" },
   { id: "ms365-family", name: "Microsoft 365 Family", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
-  { id: "icloud-50gb", name: "iCloud+ 50GB", defaultPrice: 0.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "icloud.com", popular: true },
+  { id: "icloud-50gb", name: "iCloud+ 50GB", defaultPrice: 0.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL", domain: "icloud.com", popular: true, verified: "2026-09-16" },
   { id: "icloud-200gb", name: "iCloud+ 200GB", defaultPrice: 2.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
   { id: "icloud-2tb", name: "iCloud+ 2TB", defaultPrice: 9.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
   { id: "google-one-100", name: "Google One 100GB", defaultPrice: 1.99, currency: "USD", billingCycle: "monthly", category: "software", region: "GLOBAL" },
@@ -138,7 +160,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "deezer-de-hifi", name: "Deezer HiFi", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "audible-de", name: "Audible", defaultPrice: 9.95, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "tidal-de", name: "Tidal", defaultPrice: 10.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
-  { id: "xbox-game-pass-de", name: "Xbox Game Pass Ultimate", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "xbox.com", popular: true },
+  { id: "xbox-game-pass-de", name: "Xbox Game Pass Ultimate", defaultPrice: 20.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", domain: "xbox.com", popular: true, verified: "2026-09-16" },
   { id: "ps-plus-essential-de", name: "PlayStation Plus Essential", defaultPrice: 8.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "ps-plus-extra-de", name: "PlayStation Plus Extra", defaultPrice: 13.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
   { id: "ps-plus-premium-de", name: "PlayStation Plus Premium", defaultPrice: 16.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },

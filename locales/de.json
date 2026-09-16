@@ -1,6 +1,7 @@
 {
   "common": {
     "error": "Fehler",
+    "somethingWentWrong": "Da ist etwas schiefgelaufen",
     "cancel": "Abbrechen",
     "save": "Speichern",
     "close": "Schließen",
