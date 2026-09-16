@@ -1,0 +1,15 @@
+{
+  "_note": "Short 2 of 3. The How to Cancel steps, which is the knowledge pillar: useful whether or not you install anything, which is the only kind of promotion that travels.",
+  "name": "short-cancel",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-cancel.mp4",
+  "scenes": [
+    {"type": "card", "dur": 3.0, "emphasis": true,
+     "lines": ["Cancelling should not be a scavenger hunt."]},
+    {"type": "reframe", "src": "raw/walkthrough-en.mp4",
+     "in": 111.0, "dur": 6.0, "crop": [165, 380, 750, 700],
+     "caption": "Trimio tells you where to click."},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}

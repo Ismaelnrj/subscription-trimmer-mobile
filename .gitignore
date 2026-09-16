@@ -29,3 +29,6 @@ google-play-service-account.json
 
 # Rendered video cuts. Regenerate with tools/make-cut.py.
 build/
+
+# Source recordings. Large, and the cut specs reference them by path.
+raw/

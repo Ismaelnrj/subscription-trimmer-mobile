@@ -273,6 +273,68 @@ def render_endcard(scene, fmt, lang, idx):
     return img.convert("RGB").resize((W, H), Image.LANCZOS)
 
 
+def render_chrome(scene, fmt, lang, idx, content_box):
+    """The navy furniture a reframed clip sits in: header above, caption below.
+
+    Separate from the footage so that neither ever covers the other. The source
+    walkthrough put its own caption line and the app's tab bar below y=1536,
+    which is inside the strip Shorts and Reels paint their UI over, so both were
+    being covered on every phone that played it."""
+    W, H = fmt
+    bx, by, bw, bh = content_box
+    chrome = Image.new("RGBA", (W * SS, H * SS), (0, 0, 0, 0))
+    d = ImageDraw.Draw(chrome)
+
+    left = W * SIDE_MARGIN
+    mh = H * 0.028
+    icons.draw_mark(chrome, left * SS + (icons.MARK_W / icons.MARK_H * mh) * SS / 2,
+                    H * 0.045 * SS, mh * SS, PAPER, MINT)
+    d = ImageDraw.Draw(chrome)
+    d.text((left * SS + (icons.MARK_W / icons.MARK_H * mh + 18) * SS,
+            (H * 0.045 - mh * 0.62) * SS), "Trimio",
+           font=font("SemiBold", 34), fill=PAPER)
+
+    tag = scene.get("tagline", "Know before you pay.")
+    check_copy(tag, lang, f"scene {idx} (tagline)")
+    d.text((left * SS, H * 0.072 * SS), tag, font=font("ExtraBold", 46), fill=PAPER)
+
+    text = scene["caption"]
+    where = f"scene {idx} (reframe caption)"
+    check_copy(text, lang, where)
+    check_hold(text, scene["dur"], where)
+
+    pad = W * 0.04
+    limit = W * RIGHT_LIMIT - left - 2 * pad
+    f, lines = typeset(d, text, "SemiBold", scene.get("size", 50), limit, W)
+    check_contrast(PAPER, NAVY, where)
+
+    lh = f.size * 1.3
+    block = lh * len(lines)
+    widest = max(d.textlength(l, font=f) for l in lines)
+    top = (by + bh + H * 0.035) * SS + pad * SS
+    box = [left * SS, top - pad * SS,
+           left * SS + widest + 2 * pad * SS, top + block + pad * SS]
+    check_band(box[1] / SS, box[3] / SS, H, where)
+    d.rounded_rectangle(box, radius=int(W * 0.02 * SS), fill=NAVY + (245,))
+    for i, line in enumerate(lines):
+        d.text((left * SS + pad * SS, top + i * lh), line, font=f, fill=PAPER)
+
+    return chrome.resize((W, H), Image.LANCZOS)
+
+
+def render_backdrop(fmt, content_box):
+    """Ground plus the paper card the clip is inlaid into."""
+    W, H = fmt
+    bx, by, bw, bh = content_box
+    img = ground(W * SS, H * SS)
+    d = ImageDraw.Draw(img)
+    r = int(W * 0.028 * SS)
+    d.rounded_rectangle([(bx - 10) * SS, (by - 10) * SS,
+                        (bx + bw + 10) * SS, (by + bh + 10) * SS],
+                        radius=r, fill=(11, 26, 38, 255))
+    return img.convert("RGB").resize((W, H), Image.LANCZOS)
+
+
 def render_caption_plate(scene, fmt, lang, idx):
     """A transparent overlay: white type on a navy plate, for use over footage.
 
@@ -366,6 +428,48 @@ def build(spec_path):
                  "-map", "[o]", "-an", "-r", str(FPS),
                  "-c:v", "libx264", "-preset", "slow", "-crf", "18",
                  "-pix_fmt", "yuv420p", str(seg)])
+        elif sc["type"] == "reframe":
+            src = sc["src"]
+            if not pathlib.Path(src).exists():
+                raise CutError(f"scene {i}: {src} not found.")
+            cx, cy, cw, ch = sc["crop"]
+            # The content box lives entirely above the platform's UI strip. The
+            # clip is scaled to fill it rather than the frame, which is what
+            # lets the source be punched into: a crop tight on the thing being
+            # shown comes out LARGER here than it was in the original, instead
+            # of being shrunk to make room for furniture.
+            # Width stops at RIGHT_LIMIT, not at the frame edge. The like,
+            # comment and share column lives in the right 15%, so content that
+            # runs to 0.917 has its right edge sitting under buttons.
+            box_x, box_y = W * SIDE_MARGIN, H * 0.13
+            box_w = W * RIGHT_LIMIT - box_x
+            box_h = H * 0.50
+            s = min(box_w / cw, box_h / ch)
+            dw, dh = int(cw * s) // 2 * 2, int(ch * s) // 2 * 2
+            dx, dy = int(box_x + (box_w - dw) / 2), int(box_y + (box_h - dh) / 2)
+            box = (dx, dy, dw, dh)
+
+            bg = work / f"{i:02d}-bg.png"
+            ch_png = work / f"{i:02d}-chrome.png"
+            render_backdrop(fmt, box).save(bg)
+            render_chrome(sc, fmt, lang, i, box).save(ch_png)
+
+            zoom = ""
+            if sc.get("push", 1.0) > 1.0:
+                p, fr = sc["push"], max(1, int(sc["dur"] * FPS))
+                zoom = (f",zoompan=z='min(zoom+{(p-1)/fr:.6f},{p})':d=1:"
+                        f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+                        f"s={dw}x{dh}:fps={FPS}")
+            run([FFMPEG, "-y", "-loop", "1", "-i", str(bg),
+                 "-ss", str(sc["in"]), "-t", str(sc["dur"]), "-i", src,
+                 "-i", str(ch_png),
+                 "-filter_complex",
+                 f"[1:v]crop={cw}:{ch}:{cx}:{cy},scale={dw*2}:{dh*2}"
+                 f",scale={dw}:{dh}{zoom},setsar=1[a];"
+                 f"[0:v][a]overlay={dx}:{dy}[b];[b][2:v]overlay=0:0,"
+                 f"format=yuv420p[o]",
+                 "-map", "[o]", "-an", "-t", str(sc["dur"]), "-r", str(FPS),
+                 "-c:v", "libx264", "-preset", "slow", "-crf", "17", str(seg)])
         else:
             raise CutError(f"scene {i}: unknown type {sc['type']!r}")
         segments.append(seg)

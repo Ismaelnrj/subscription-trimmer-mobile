@@ -1,0 +1,15 @@
+{
+  "_note": "Short 1 of 3, carved from raw/walkthrough-en.mp4. English captions because the recorded UI is English: a German caption over a visibly English screen tells a German viewer the app is not localised, which is false and self-inflicted. German versions need a German screen recording.",
+  "name": "short-duplicate",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-duplicate.mp4",
+  "scenes": [
+    {"type": "card", "dur": 2.6, "emphasis": true,
+     "lines": ["You already pay for it. Twice."]},
+    {"type": "reframe", "src": "raw/walkthrough-en.mp4",
+     "in": 89.5, "dur": 6.0, "crop": [165, 700, 750, 620],
+     "caption": "Trimio checks before you add."},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}
