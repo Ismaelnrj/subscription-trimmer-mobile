@@ -1,0 +1,18 @@
+{
+  "_note": "Replaces the motion-graphic cancellation guide, which showed steps 1, 2, 3 and 5 and dropped step 4. Step 4 is the one telling an Android user that steps 1 to 3 will not work if they subscribed through Google Play, which makes it the most relevant line in the list for the only platform Trimio ships on. Cut from the real screen instead, in two beats so step 4 gets its own. The crop deliberately starts below the Apple and Google Play info box: that box is legitimate in-app guidance about the user's own DAZN subscription, but leading an Android-only promo with the word Apple is confusing.",
+  "name": "short-cancel-real",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-cancel-real.mp4",
+  "scenes": [
+    {"type": "card", "dur": 3.6, "emphasis": true,
+     "lines": ["Cancelling is easy. Finding the cancel button is not."]},
+    {"type": "reframe", "src": "raw/rec-cancel-en.mp4",
+     "in": 23.2, "dur": 2.5, "crop": [20, 555, 680, 380], "push": 1.04,
+     "caption": "Every service, step by step."},
+    {"type": "reframe", "src": "raw/rec-cancel-en.mp4",
+     "in": 25.7, "dur": 2.5, "crop": [20, 940, 680, 475],
+     "caption": "Including the one most guides miss."},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}
