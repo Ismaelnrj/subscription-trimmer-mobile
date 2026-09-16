@@ -1,0 +1,15 @@
+{
+  "_note": "From raw/rec-autofill-en.mp4, a real Android capture. The steady window at 10.5s shows the pasted email, the Detected line and the filled fields at once, so the whole mechanism reads in a single frame rather than needing the transition. English captions because the recorded UI is English.",
+  "name": "short-autofill",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-autofill.mp4",
+  "scenes": [
+    {"type": "card", "dur": 3.2, "emphasis": true,
+     "lines": ["Adding subscriptions by hand is why people stop."]},
+    {"type": "reframe", "src": "raw/rec-autofill-en.mp4",
+     "in": 10.5, "dur": 2.5, "crop": [20, 62, 680, 540], "push": 1.05,
+     "caption": "Paste the email. Trimio reads it."},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}

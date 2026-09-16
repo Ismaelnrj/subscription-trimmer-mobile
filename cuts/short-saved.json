@@ -1,0 +1,15 @@
+{
+  "_note": "The savings toast firing off a real cancellation, with the referral ask arriving as a consequence rather than as a request. Not in the shot list: it happened while recording.",
+  "name": "short-saved",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-saved.mp4",
+  "scenes": [
+    {"type": "card", "dur": 3.2, "emphasis": true,
+     "lines": ["Ten euros a month is 120 a year."]},
+    {"type": "reframe", "src": "raw/rec-autofill-en.mp4",
+     "in": 21.4, "dur": 2.5, "crop": [25, 95, 675, 335], "push": 1.04,
+     "caption": "Trimio does the maths."},
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}

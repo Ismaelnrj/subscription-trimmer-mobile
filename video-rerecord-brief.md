@@ -137,6 +137,52 @@ in the app and the current take shows it empty.
 
 ---
 
+## 4b. What the 2026-09-16 recordings taught
+
+Two real Android captures arrived (`raw/rec-autofill-en.mp4` and a second take)
+and two Shorts were cut from the first. They fixed the biggest problem in this
+brief: **the auto-fill is performed on camera**, and it works. What they also
+showed is where the next take should differ.
+
+**Record at 1080 wide, not 720.** Both captures are 720x1608. The reframe
+punches in, so a 680px crop only scales up 1.2x before it fills the content
+box, and the text ends up smaller than it needs to be. At 1080 the same crop
+has half again as much detail to spend. If the recorder offers 1080 or "high",
+use it.
+
+**Hold the payoff frame, and dismiss the keyboard first.** The single most
+useful frame in the whole capture is at 0:10.5, where the pasted email, the
+`Detected: Shopify · EUR 10.00 · monthly` line and the filled name and price
+fields are all visible at once. The entire mechanism reads in one still. That
+window lasts **2.5 seconds** before the next tap. Give it eight. Paste, let it
+detect, dismiss the keyboard, then take your hands off the phone and count.
+
+**The best beat was an accident, and it was too short.** Deleting Shopify fired
+`You just saved €120.00 this year by cutting Shopify. Know someone who needs to
+see this? Invite a friend`, which is the referral ask arriving as a consequence
+of something the person just did rather than as a request. That is the most
+persuasive thing in either recording and it was on screen for **2.5 seconds**,
+for seventeen words of text. Trigger it deliberately, then do not touch the
+phone until it disappears on its own.
+
+**Crop the status bar out, or hide it.** The red recording indicator sits in
+every frame at roughly y=30 to y=55.
+
+**Show taps is still off.** Nothing in either capture shows where the finger
+went, so the auto-fill looks like it happened by itself rather than because
+somebody pasted.
+
+**Fixed in the demo account before the next take:** the dashboard shows
+`Netflix Standard · €15.49` while the verified catalogue row is `15.99`. The
+template is right, the stored subscription is stale. Same for Shopify at
+€10.00 and DAZN, both unverified rows.
+
+**Checked and correct, so do not "fix" these:** the `Detected:` line uses
+middle dots, not dashes. The Netflix icon red sampled at #C34A3C is the
+validated `streaming` category colour `#C24C3C`, not Netflix red. The savings
+toast green sampled at #1E7761 is the theme's `success` token `#1F7A62`, which
+is the deepened mint the brand rules require for exactly this use.
+
 ## 5. Hard constraints
 
 These are not preferences. Each has already cost something once.
