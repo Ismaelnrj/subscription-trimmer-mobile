@@ -204,7 +204,9 @@
     "a11yDay": "{{date}}",
     "a11yDaySelected": "{{date}}, ausgewählt",
     "a11yDayRenewals_one": "{{date}}, {{count}} Verlängerung",
-    "a11yDayRenewals_other": "{{date}}, {{count}} Verlängerungen"
+    "a11yDayRenewals_other": "{{date}}, {{count}} Verlängerungen",
+    "a11yDayRenewalsTotal_one": "{{date}}, {{count}} Verlängerung, {{total}}",
+    "a11yDayRenewalsTotal_other": "{{date}}, {{count}} Verlängerungen, {{total}} insgesamt"
   },
   "review": {
     "title": "Gefällt dir Trimio?",

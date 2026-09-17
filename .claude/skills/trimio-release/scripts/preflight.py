@@ -3,7 +3,7 @@
 
     preflight.py
 
-Four checks, each of which has already caught something real:
+Five checks, each of which has already caught something real:
 
   typecheck      A bare `npx tsc` once passed silently and shipped a crash to
                  every user. tools/typecheck.py insists on the pinned compiler
@@ -17,6 +17,9 @@ Four checks, each of which has already caught something real:
                  dropped a {{symbol}} the English spent.
   copy rule      No dash as clause-separating punctuation in anything a user
                  reads. Eight English strings broke this while German had none.
+  price freshness  A verified catalogue row that ages past the six month window
+                 stops generating the market price insight, silently. Nothing
+                 logs it, so the only way to notice is to look on purpose.
 
 The point of collecting them here is that "did I run all of them" is itself a
 thing to get wrong at the end of a long day, and a check you forgot is
@@ -98,6 +101,20 @@ def check_locales():
     return PASS, f"{len(en)} keys, names and placeholders both match"
 
 
+def check_prices():
+    """A verified row that ages past the freshness window stops generating the
+    market price insight silently. Nothing logs it and nothing in the UI shows
+    it, so the only way to find out is to look on purpose."""
+    code, out = run([sys.executable, "tools/check-prices.py"])
+    lines = [l.strip() for l in out.splitlines() if l.strip()]
+    summary = next((l for l in lines if "verified," in l), "")
+    if code == 0:
+        expiring = next((l for l in lines if l.startswith("No expired rows, but")), "")
+        return PASS, (expiring or summary)
+    bad = [l for l in lines if l.startswith(("EXPIRED", "STRUCTURAL", "UNREADABLE"))]
+    return FAIL, "; ".join(bad) or summary
+
+
 def check_copy_rule():
     dash = re.compile(r"[–—]|\s-\s")
     bad = []
@@ -118,6 +135,7 @@ def main():
         ("legal sync", check_legal),
         ("locale parity", check_locales),
         ("copy rule", check_copy_rule),
+        ("price freshness", check_prices),
     ]
     print()
     worst = 0
@@ -142,7 +160,7 @@ def main():
         print("  That is not the same as passing. Run this again where they "
               "can execute.\n")
     else:
-        print("  All four passed.\n")
+        print("  All five passed.\n")
     return worst
 
 

@@ -17,7 +17,7 @@ import {
 } from "date-fns";
 import { AppColors } from "../lib/theme";
 import { useTranslation } from "react-i18next";
-import { useDateFormat, weekdayInitials } from "../lib/date-locale";
+import { useDateFormat, weekdayInitials, weekStartsOnFor, dateLocaleFor } from "../lib/date-locale";
 
 interface Props {
   month: Date;
@@ -30,6 +30,17 @@ interface Props {
   markedDates: Map<string, string[]>;
   /** Actual number of renewals per day, for the spoken label. */
   renewalCounts?: Map<string, number>;
+  /* What each day actually costs. Dots say a day has renewals; they cannot say
+     whether it is 4.99 or 80, and on a spend tracker that difference is the
+     entire question. Rendered rounded to whole units, because at seven columns
+     the cents cost more width than they carry meaning. */
+  dayTotals?: Map<string, number>;
+  /* Formats a day's total for the grid. Takes the raw base-currency amount,
+     NOT a pre-rounded one: rounding before the store converts would round in
+     the wrong currency and disagree with the day header below. */
+  formatDayTotal?: (amount: number) => string;
+  /** Honours the reader's reduce-motion setting; the pulse is off when true. */
+  reduceMotion?: boolean;
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   onChangeMonth: (month: Date) => void;
@@ -59,12 +70,16 @@ function TodayPulse({ children }: { children: React.ReactNode }) {
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
-export function MonthCalendarGrid({ month, markedDates, renewalCounts, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
+export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals, formatDayTotal, reduceMotion, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
   const styles = makeStyles(c);
-  const gridStart = startOfWeek(startOfMonth(month));
   const { t, i18n } = useTranslation();
   const fmtD = useDateFormat();
-  const gridEnd = endOfWeek(endOfMonth(month));
+  // With the locale, so a German grid starts on Monday like every other German
+  // calendar. Without it date-fns defaults to Sunday whatever the language.
+  const weekOpts = { locale: dateLocaleFor(i18n.language),
+                     weekStartsOn: weekStartsOnFor(i18n.language) };
+  const gridStart = startOfWeek(startOfMonth(month), weekOpts);
+  const gridEnd = endOfWeek(endOfMonth(month), weekOpts);
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
 
   return (
@@ -103,7 +118,11 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, selectedD
           // Falls back to the colour count only when no real count is supplied,
           // so the label degrades to the old behaviour instead of saying zero.
           const renewals = renewalCounts?.get(dayKey(day)) ?? dotColors.length;
+          const total = dayTotals?.get(dayKey(day)) ?? 0;
           const today = isToday(day);
+          // Three dots is what fits. Silently dropping the fourth made a heavy
+          // day look identical to a light one, so the surplus is counted.
+          const extraDots = Math.max(0, dotColors.length - 3);
 
           const circle = (
             <View style={[styles.dayCircle, selected && styles.dayCircleSelected, today && !selected && styles.dayCircleToday]}>
@@ -127,22 +146,38 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, selectedD
               accessibilityState={{ selected, disabled: !inMonth }}
               accessibilityLabel={
                 renewals > 0
-                  ? t("calendar.a11yDayRenewals", {
+                  /* The amount belongs in the label too. A sighted reader gets
+                     it from the number under the dots; without it here, the one
+                     person relying on the label is told a day is busy and not
+                     what it costs, which is the half that matters. */
+                  ? t(total > 0 && formatDayTotal
+                        ? "calendar.a11yDayRenewalsTotal"
+                        : "calendar.a11yDayRenewals", {
                       date: fmtD(day, "EEEE, d MMMM yyyy"),
                       count: renewals,
+                      total: formatDayTotal ? formatDayTotal(total) : "",
                     })
                   : selected
                     ? t("calendar.a11yDaySelected", { date: fmtD(day, "EEEE, d MMMM yyyy") })
                     : t("calendar.a11yDay", { date: fmtD(day, "EEEE, d MMMM yyyy") })
               }
             >
-              {today && !selected ? <TodayPulse>{circle}</TodayPulse> : circle}
+              {today && !selected && !reduceMotion ? <TodayPulse>{circle}</TodayPulse> : circle}
               {dotColors.length > 0 && (
                 <View style={styles.dotRow}>
                   {dotColors.slice(0, 3).map((color, i) => (
                     <View key={i} style={[styles.dot, { backgroundColor: color }]} />
                   ))}
+                  {extraDots > 0 && <Text style={styles.dotOverflow}>+{extraDots}</Text>}
                 </View>
+              )}
+              {total > 0 && formatDayTotal && (
+                <Text
+                  style={[styles.dayTotal, selected && styles.dayTotalSelected]}
+                  numberOfLines={1}
+                >
+                  {formatDayTotal(total)}
+                </Text>
               )}
             </TouchableOpacity>
           );
@@ -168,7 +203,19 @@ function makeStyles(c: AppColors) {
     dayText: { fontSize: 13, color: c.text },
     dayTextMuted: { color: c.textMuted },
     dayTextSelected: { color: "#FFFFFF", fontWeight: "700" },
-    dotRow: { flexDirection: "row", gap: 3, marginTop: 2, height: 4 },
-    dot: { width: 4, height: 4, borderRadius: 2 },
+    dotRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3, height: 8 },
+    dot: { width: 5, height: 5, borderRadius: 2.5 },
+    /* Both of these are c.text, and the obvious choices were all measured and
+       rejected. This is the smallest type in the app at 8 and 9px, so it is the
+       worst possible place for a low contrast token: textMuted lands at 2.98:1
+       on the light card and 3.77:1 on the dark one, and dark primary at 3.94:1,
+       all under the 4.5:1 floor. Mint is worse still at 1.9:1. c.text measures
+       14.1:1 light and 14.0:1 dark, and size plus weight already keep these
+       subordinate to the day number without borrowing contrast to do it.
+       An amount is information, not decoration: if it cannot be read it may as
+       well not be drawn. */
+    dotOverflow: { fontSize: 8, lineHeight: 8, fontWeight: "700", color: c.text },
+    dayTotal: { fontSize: 9, lineHeight: 11, marginTop: 1, color: c.text, fontWeight: "600" },
+    dayTotalSelected: { fontWeight: "800" },
   });
 }

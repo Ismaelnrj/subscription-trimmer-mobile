@@ -24,19 +24,33 @@ export function useDateFormat() {
     dfFormat(date, pattern, { locale });
 }
 
-/** The seven weekday initials, in the app's language, starting Sunday.
+/** Which day the week starts on in the app's language: 0 Sunday, 1 Monday.
+
+    Germany and Austria start the week on Monday, universally and by ISO 8601,
+    and date-fns already knows this. The calendar grid was built with a bare
+    `startOfWeek()`, which defaults to Sunday, so a German user got an American
+    week. It was not a misalignment (the labels were generated Sunday-first to
+    match) but it read as foreign on the app's most locale-sensitive screen. */
+export function weekStartsOnFor(language: string): 0 | 1 {
+  return (dateLocaleFor(language).options?.weekStartsOn ?? 0) as 0 | 1;
+}
+
+/** The seven weekday initials, in the app's language, in the locale's own order.
 
     Hardcoding ["S","M","T","W","T","F","S"] is wrong in German twice over:
-    the letters differ (S M D M D F S) and two of them collide differently,
-    so it is not a translation anyone can do by swapping a string. Deriving
-    them from the locale keeps them correct for any language added later. */
+    the letters differ and two of them collide differently, so it is not a
+    translation anyone can do by swapping a string. Deriving them from the
+    locale keeps them correct for any language added later, and starting from
+    the locale's own first weekday keeps them lined up with a grid that does
+    the same. English stays S M T W T F S; German becomes M D M D F S S. */
 export function weekdayInitials(language: string): string[] {
   const locale = dateLocaleFor(language);
-  // 2026-09-06 is a Sunday, so this walks Sun..Sat in order.
+  const start = weekStartsOnFor(language);
+  // 2026-09-06 is a Sunday, so adding `start` lands on the locale's day one.
   const sunday = new Date(2026, 8, 6);
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(sunday);
-    d.setDate(sunday.getDate() + i);
+    d.setDate(sunday.getDate() + start + i);
     return dfFormat(d, "EEEEE", { locale });
   });
 }

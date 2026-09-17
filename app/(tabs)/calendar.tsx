@@ -1,12 +1,12 @@
-import { useMemo, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { format, differenceInCalendarDays, addMonths, subMonths } from "date-fns";
 import apiClient from "../../lib/api";
-import { useFmt } from "../../lib/currency-store";
+import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useDateFormat } from "../../lib/date-locale";
 import { useCycleLabel } from "../../lib/cycle-label";
 import { useTheme, AppColors } from "../../lib/theme";
@@ -30,6 +30,12 @@ export default function CalendarScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const fmtC = useFmt();
+  /* The grid gets whole units. Seven columns on a phone cannot spare the width
+     for cents, and "15.99" against "16" tells a reader nothing extra about
+     whether a day is heavy. Converts before rounding, so the rounding happens
+     in the currency the number is displayed in. */
+  const { currency, convert } = useCurrencyStore();
+  const fmtCompact = (amount: number) => `${currency.symbol}${Math.round(convert(amount))}`;
   const fmtD = useDateFormat();
   const cycleLabel = useCycleLabel();
   const [view, setView] = useState<ViewMode>("timeline");
@@ -63,6 +69,31 @@ export default function CalendarScreen() {
     return map;
   }, [occurrencesByDay]);
 
+  /* What each day costs, so the grid can say how heavy a day is rather than
+     only that it has something on it. Built from occurrencesByDay for the same
+     reason renewalCounts is: markedDates deduplicates by colour, so summing off
+     it would undercount a day holding two subscriptions in one category. */
+  const dayTotals = useMemo(() => {
+    const map = new Map<string, number>();
+    occurrencesByDay.forEach((subs, key) =>
+      map.set(key, subs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0))
+    );
+    return map;
+  }, [occurrencesByDay]);
+
+  /* The today circle pulses forever while the screen is open. For anyone who
+     has asked their phone to reduce motion, that is exactly the kind of thing
+     the setting exists to stop. */
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((on) => { if (!cancelled) setReduceMotion(on); })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
+    return () => { cancelled = true; sub?.remove?.(); };
+  }, []);
+
   const markedDates = useMemo(() => {
     const map = new Map<string, string[]>();
     for (const [key, subs] of occurrencesByDay) {
@@ -73,6 +104,7 @@ export default function CalendarScreen() {
   }, [occurrencesByDay]);
 
   const selectedDaySubs = selectedDate ? occurrencesByDay.get(dayKey(selectedDate)) ?? [] : [];
+  const selectedDayTotal = selectedDaySubs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0);
 
   const upcoming = useMemo(
     () => getUpcomingOccurrences(subscriptions as any[], new Date(), TIMELINE_WINDOW_DAYS),
@@ -156,6 +188,9 @@ export default function CalendarScreen() {
                 month={month}
                 markedDates={markedDates}
                 renewalCounts={renewalCounts}
+                dayTotals={dayTotals}
+                formatDayTotal={fmtCompact}
+                reduceMotion={reduceMotion}
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
                 onChangeMonth={setMonth}
@@ -177,9 +212,14 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.sectionTitle}>
-                {selectedDate ? fmtD(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
-              </Text>
+              <View style={styles.dayHeaderRow}>
+                <Text style={styles.sectionTitle}>
+                  {selectedDate ? fmtD(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
+                </Text>
+                {selectedDayTotal > 0 && (
+                  <Text style={styles.dayHeaderTotal}>{fmtC(selectedDayTotal)}</Text>
+                )}
+              </View>
 
               {selectedDaySubs.length === 0 ? (
                 <View style={styles.emptyState}>
@@ -263,6 +303,11 @@ function makeStyles(c: AppColors) {
     segmentText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
     segmentTextActive: { color: "#FFFFFF" },
     sectionTitle: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginTop: 20, marginBottom: 10 },
+    dayHeaderRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 },
+    /* The day list showed each price and never their sum, so the one number a
+       person actually wants from a day, what it costs them, had to be added up
+       in their head. */
+    dayHeaderTotal: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginTop: 20, marginBottom: 10 },
     emptyState: { alignItems: "center", paddingVertical: 32 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
     subCard: {
