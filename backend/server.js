@@ -826,9 +826,18 @@ function trpc(data) { return { result: { data } }; }
 const REVENUECAT_SECRET_API_KEY = process.env.REVENUECAT_SECRET_API_KEY;
 const REVENUECAT_PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
-// Looks up the subscriber directly on RevenueCat's servers so premium status
-// can't be granted by just calling our API with { isPremium: true } — the
-// client-reported value is only trusted as a fallback when this key isn't set.
+/* Looks up the subscriber directly on RevenueCat's servers, so premium can
+   never be granted by calling our own API with { isPremium: true }. There is no
+   fallback to the client-reported value: with no key the caller refuses with
+   503 rather than believing anyone. This comment used to say the client was
+   trusted as a fallback, which described the hole that was removed.
+
+   It THROWS on any non-ok response rather than returning false, and that is
+   load bearing. Returning false would read a RevenueCat outage as "not a
+   subscriber" and the caller would write is_paid = false, cancelling a paying
+   customer because a third party had a bad afternoon. Throwing reaches the
+   handler's catch, which answers 500 and writes nothing, so a transient failure
+   leaves an existing entitlement exactly as it was. */
 async function fetchPremiumEntitlementFromRevenueCat(openId) {
   const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(openId)}`, {
     headers: { Authorization: `Bearer ${REVENUECAT_SECRET_API_KEY}` },
