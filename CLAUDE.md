@@ -212,11 +212,17 @@ last one left off without needing a recap typed out.
   only ever be uploaded to Play once, which is why 39 was not reused.
 - PUBLISHED THROUGH ef7a2853 (2026-09-12). Earlier runs went out through
   0163d23 and then cc285cd. Backend changes ride the Railway auto-deploys.
-- UNPUBLISHED AS OF 2026-09-17, master at d8bbd8a9. Six app files changed since
-  the last publish: `_layout.tsx`, `help-support.tsx`, `privacy-policy.tsx`,
-  `service-templates.ts` and both locale files. `needs_native_build.py ef7a2853`
-  says OTA is enough, so one `eas update --channel production` clears it. The
-  backend also changed and needs its Railway deploy.
+- EVERYTHING IS PUBLISHED AGAIN, through 8c002028 (2026-09-17), and the Railway
+  deploy for the same range is green. The owner ran `tools/typecheck.py` on their
+  machine first and it came back clean, which matters because three screens
+  changed and no sandbox can run it.
+  That publish finally shipped `df2db7a5`, the fourteen localised screen headers,
+  which had been sitting unpublished since BEFORE the 2026-09-17 session started.
+  It was only caught by checking whether it was an ancestor of the stated
+  baseline rather than trusting the note that said everything was published.
+  THE LESSON: `git merge-base --is-ancestor <commit> <publish baseline>` is how
+  you find out, and "everything is published" in this file is a claim to verify,
+  not a fact to rely on.
 - THE 2026-09-17 BACKEND CHANGE CARRIES A MIGRATION, which is unusual for this
   repo and worth watching the first boot for. `users.referred_by` was created
   with no ON DELETE action, so Postgres refused to delete any account that had
@@ -227,8 +233,16 @@ last one left off without needing a recap typed out.
   CONSTRAINT IF EXISTS against a wrong name silently succeeds and then a second
   constraint gets added with the old behaviour) and rebuilds it ON DELETE SET
   NULL. The handler also nulls the pointers first, so deletion works even if the
-  migration has not run. IT HAS NOT BEEN RUN AGAINST A REAL DATABASE: no
-  Postgres in a sandbox, so check the Railway boot log once.
+  migration has not run.
+  THE DEPLOY IS GREEN, so the migration did not throw: initDB runs at boot and a
+  failing DO block would have taken the service down with it. That proves it RAN,
+  not that it did the right thing, which are different claims. The cheap way to
+  settle the second one, in the Railway database console:
+  `SELECT conname, confdeltype FROM pg_constraint WHERE conrelid = 'users'::regclass
+   AND contype = 'f' AND conname LIKE '%referred_by%';`
+  `confdeltype` should read `n`, which is SET NULL. Anything else and the
+  constraint was not rebuilt, though the handler's own null-out still keeps
+  account deletion working.
 - EMAIL NOW CARRIES AN UNSUBSCRIBE, added 2026-09-17. `users.email_opt_out`,
   honoured by both bulk queries, a signed link in both footers, and GET plus
   POST `/unsubscribe` (POST is RFC 8058 one-click, which must act with no
