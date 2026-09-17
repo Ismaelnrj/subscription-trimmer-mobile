@@ -223,6 +223,35 @@ last one left off without needing a recap typed out.
   THE LESSON: `git merge-base --is-ancestor <commit> <publish baseline>` is how
   you find out, and "everything is published" in this file is a claim to verify,
   not a fact to rely on.
+- PUSHED THROUGH 4ad99cf8 (2026-09-17), which is NOT the same as published.
+  `ac3b1aa3..4ad99cf8` went to master, so the backend half rode the Railway
+  auto-deploy, but the JS half does NOT reach phones until the owner runs
+  `eas update --channel production` from their own machine. Verified OTA-safe
+  before pushing: zero files touched under android/, assets/, app.json,
+  package.json or eas.json, so runtimeVersion correctly stays 1.0.1.
+  Frontend files in that range, the ones waiting on the publish:
+  `lib/api.ts`, `lib/auth-store.ts`, `lib/query-client.ts`,
+  `lib/parse-subscription.ts`, `app/_layout.tsx`,
+  `app/(tabs)/subscriptions.tsx`, both locale files.
+- THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
+  more than the other four findings. `/api/auth/verify-premium` used to fall back
+  to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
+  authenticated user could POST `{"isPremium": true}` and take the paid tier with
+  a single request. It now refuses with 503 and writes nothing. A startup warning
+  is not an access control.
+  THE COROLLARY NOBODY EXPECTS: that endpoint is now HARD DEPENDENT on the key
+  being present in Railway. Unset, no purchase can confirm through it at all, and
+  new purchasers wait on the RevenueCat webhook plus `retryPendingPremiumSync`
+  instead. Refusing is the right default for a claim about money, but check the
+  variable exists before assuming purchases confirm.
+- `fetchPremiumEntitlementFromRevenueCat` THROWS on a non-ok response and must
+  keep throwing. Returning false would read a RevenueCat outage as "not a
+  subscriber", and the caller would write `is_paid = false` and cancel a paying
+  customer because a third party was briefly unreachable. Throwing reaches the
+  handler's catch, which answers 500 before the UPDATE, so a transient failure
+  leaves an existing entitlement untouched. 4ad99cf8 records that in the source,
+  and also deleted a comment that still described the removed fail-open as the
+  intended design, which is how a hole gets re-added by the next reader.
 - THE 2026-09-17 BACKEND CHANGE CARRIES A MIGRATION, which is unusual for this
   repo and worth watching the first boot for. `users.referred_by` was created
   with no ON DELETE action, so Postgres refused to delete any account that had
