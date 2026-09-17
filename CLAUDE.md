@@ -251,6 +251,24 @@ last one left off without needing a recap typed out.
   asks you to log in is an unsubscribe that does not work. Gmail and Yahoo have
   required this from bulk senders since Feb 2024, so its absence was costing
   inbox placement on the transactional mail too.
+- ACCOUNT DELETION REACHES POSTHOG TOO, added 2026-09-17. Six tables cascade off
+  `DELETE FROM users`: subscriptions, price_history (twice, from both its
+  subscription_id and its user_id), notifications, notification_preferences and
+  user_settings. Nothing is soft deleted. But `identifyUser(user.id)` in
+  `lib/auth-store.ts` means PostHog holds a person profile keyed to the numeric
+  id, and dropping the Postgres row does not touch it: `reset()` on logout stops
+  future attribution and deletes nothing. `deletePostHogPerson` now erases the
+  profile and its events with `delete_events=true`.
+  IT IS NOT AWAITED INTO THE RESPONSE AND EVERY FAILURE PATH IS SWALLOWED, on
+  purpose: the right to erasure cannot depend on a third party being reachable,
+  and the account row is already gone by the time it runs. Needs
+  POSTHOG_PERSONAL_API_KEY (a personal key, NOT the project key the app embeds,
+  which can only write) and POSTHOG_PROJECT_ID in Railway. Unset, it is a no-op.
+  For the record on what was at stake: the events are funnel milestones only and
+  `subscription_added` deliberately sends billing_cycle, category and
+  is_first_subscription and never the name or the price, so the residue was
+  pseudonymous rather than personal. Defensible, but not worth arguing on behalf
+  of an app positioned as "we never see your data".
 - `/delete-account` EXISTS because Play requires a deletion route reachable
   without installing the app, separate from the in-app one. STILL TO DO: declare
   it in Play Console's Data Safety form, which is a Console action nobody can do

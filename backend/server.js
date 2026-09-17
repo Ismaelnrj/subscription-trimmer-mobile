@@ -1319,6 +1319,53 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
   }
 });
 
+/* ── PostHog erasure ────────────────────────────────────────────────────────
+   Deleting the Postgres row leaves the PostHog person profile behind, keyed to
+   the numeric user id that identifyUser() sends from lib/auth-store.ts. The
+   events themselves are deliberately thin (funnel milestones, never a
+   subscription name or price), so once the account row is gone that id maps to
+   nobody and the residue is pseudonymous rather than personal. Defensible, but
+   an app whose whole positioning is "we never see your data" should not be
+   arguing the fine point, so the profile goes too.
+
+   THIS MUST NEVER BLOCK THE DELETE. The right to erasure cannot depend on a
+   third party being reachable, so every failure path here logs and returns.
+   The account is already gone by the time this runs.
+
+   Needs POSTHOG_PERSONAL_API_KEY (a personal key, not the project key the app
+   embeds: that one can only write) and POSTHOG_PROJECT_ID. Unset, this is a
+   no-op and the behaviour is exactly what it was before. */
+const POSTHOG_API_HOST = process.env.POSTHOG_API_HOST || 'https://eu.posthog.com';
+
+async function deletePostHogPerson(userId) {
+  const key = process.env.POSTHOG_PERSONAL_API_KEY;
+  const project = process.env.POSTHOG_PROJECT_ID;
+  if (!key || !project) return;
+  const auth = { Authorization: `Bearer ${key}` };
+  try {
+    const found = await fetch(
+      `${POSTHOG_API_HOST}/api/projects/${project}/persons/?distinct_id=${encodeURIComponent(userId)}`,
+      { headers: auth }
+    );
+    if (!found.ok) throw new Error(`lookup ${found.status}`);
+    const { results = [] } = await found.json();
+    if (!results.length) return;                       // never identified, nothing to erase
+    for (const person of results) {
+      // delete_events=true, or the profile goes and its events stay behind
+      // attached to the distinct id, which is the half that matters.
+      const del = await fetch(
+        `${POSTHOG_API_HOST}/api/projects/${project}/persons/${person.id}/?delete_events=true`,
+        { method: 'DELETE', headers: auth }
+      );
+      if (!del.ok) throw new Error(`delete ${del.status}`);
+    }
+    console.log(`PostHog person erased for user ${userId}`);
+  } catch (e) {
+    // Loud in the log, invisible to the caller: their account IS deleted.
+    console.error(`PostHog erasure failed for user ${userId}, profile may remain:`, e.message);
+  }
+}
+
 app.delete('/api/auth/account', authMiddleware, async (req, res) => {
   try {
     const { password, idToken } = req.body;
@@ -1354,6 +1401,9 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
        schema and costs one statement. */
     await pool.query('UPDATE users SET referred_by = NULL WHERE referred_by = $1', [req.userId]);
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
+    // After the row is gone, and deliberately not awaited into the response:
+    // a slow or down PostHog must not make a successful deletion look failed.
+    deletePostHogPerson(req.userId);
     res.json({ success: true });
   } catch (err) {
     handleError(err, res);
