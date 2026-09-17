@@ -5,7 +5,8 @@ import * as Sentry from "@sentry/react-native";
 import { useFonts } from "expo-font";
 import { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/query-client";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "../lib/auth-store";
@@ -79,8 +80,6 @@ const errStyles = StyleSheet.create({
   button: { backgroundColor: "#142B3A", paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },
   buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
 });
-
-const queryClient = new QueryClient();
 
 SplashScreen.preventAutoHideAsync();
 

@@ -5,6 +5,13 @@ export interface ParsedSubscription {
   name?: string;
   price?: string;
   billingCycle?: "monthly" | "yearly" | "weekly";
+  /* The currency the RECEIPT was written in, when it could be told. There was
+     no such field before, so a "$9.99" receipt returned "9.99" and the form
+     stored it in whatever the account's currency happened to be: a US receipt
+     silently relabelled as euros, at a nine to one error on the amount. The
+     caller compares this against the account currency and says so when they
+     differ rather than quietly converting or quietly ignoring. */
+  currency?: string;
 }
 
 // $ must be escaped (\$) so the regex engine treats it as a literal character,
@@ -48,16 +55,36 @@ function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Word-boundary match so a key like "google" doesn't match a footer mention
-// of "powered by Google Pay" inside an otherwise-unrelated merchant email.
 function matchesWholeWord(lower: string, key: string): boolean {
   return new RegExp(`\\b${escapeRegex(key)}\\b`, "i").test(lower);
 }
 
+/* A footer saying how the card was charged, as opposed to the email being FROM
+   the processor. "Powered by Google Pay" at the bottom of a Netflix receipt is
+   the first; a PayPal receipt is the second, and only the second should switch
+   on merchant extraction. */
+const INCIDENTAL_MENTION = /(?:powered|processed|secured|handled|managed|paid|billed)\s+(?:by|with|through|via)\s*$/i;
+
+/* This used to be a word-boundary test, with a comment claiming the boundary
+   stopped "google" matching a footer mention of "Google Pay". It does not:
+   "google" IS a whole word inside "Google Pay", so both matched and the email
+   was treated as a PayPal-style intermediary receipt. For any service not in
+   the known list that then meant extractName returned undefined and the name
+   field came back BLANK, because step 2 gives up rather than fall through to
+   the generic patterns. A footer line was suppressing merchant detection.
+
+   The boundary check stays, since it is still needed; what is added is that a
+   mention introduced by "powered by" and friends is read as incidental. */
 function isIntermediaryText(text: string): boolean {
   const lower = text.toLowerCase();
   for (const name of PAYMENT_INTERMEDIARIES) {
-    if (matchesWholeWord(lower, name)) return true;
+    const re = new RegExp(`\\b${escapeRegex(name)}\\b`, "gi");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(lower)) !== null) {
+      const preceding = lower.slice(Math.max(0, m.index - 30), m.index);
+      if (INCIDENTAL_MENTION.test(preceding)) continue;
+      return true;
+    }
   }
   return false;
 }
@@ -83,10 +110,27 @@ function extractMerchantFromIntermediaryEmail(text: string): string | undefined 
   return undefined;
 }
 
+/* Same incidental-mention rule as isIntermediaryText, and for a sharper reason.
+   KNOWN_SERVICES contains `google`, so "Powered by Google Pay" in a footer
+   matched a known service and the subscription came back named "Google". The
+   first fix to the intermediary check moved the failure here rather than
+   removing it: the name went from blank to confidently wrong, which is worse.
+   A processor named in a "powered by" line is never the thing being bought. */
+function mentionedAsService(lower: string, key: string): boolean {
+  const re = new RegExp(`\\b${escapeRegex(key)}\\b`, "gi");
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(lower)) !== null) {
+    const preceding = lower.slice(Math.max(0, m.index - 30), m.index);
+    if (INCIDENTAL_MENTION.test(preceding)) continue;
+    return true;
+  }
+  return false;
+}
+
 function detectKnownService(text: string): string | undefined {
   const lower = text.toLowerCase();
   for (const [key, label] of Object.entries(KNOWN_SERVICES)) {
-    if (matchesWholeWord(lower, key)) return label;
+    if (mentionedAsService(lower, key)) return label;
   }
   return undefined;
 }
@@ -131,26 +175,68 @@ function extractName(text: string): string | undefined {
 
 const BILLING_CONTEXT_RE = /(?:per month|\/month|\/mo\b|monthly|per year|\/year|annually|per week|\/week|subscription|membership|plan|renewal|recurring|charged)/i;
 
-function extractPrice(text: string): string | undefined {
-  // Match currency symbol followed by number, e.g. $9.99 or €14,99
-  const withSymbol = new RegExp(
-    `(?:${CURRENCY_PATTERN})\\s*(\\d{1,6}(?:[.,]\\d{1,2})?)`,
-    "g"
-  );
+const SYMBOL_TO_CODE: Record<string, string> = {
+  "$": "USD", "€": "EUR", "£": "GBP", "₹": "INR", "¥": "JPY",
+  "R$": "BRL", "C$": "CAD", "A$": "AUD", "MX$": "MXN",
+};
 
-  // Match number followed by currency code, e.g. 9.99 USD
-  const withCode = /(\d{1,6}(?:[.,]\d{1,2})?)\s*(?:USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\b/gi;
+/* A number, with or without thousands separators, in either convention.
+   Grouped forms are tried first so "1.234,56" is taken whole instead of the
+   engine settling for "1.23". */
+const NUMBER = "\\d{1,3}(?:[.,]\\d{3})+(?:[.,]\\d{1,2})?|\\d{1,6}(?:[.,]\\d{1,2})?";
 
-  const candidates: { value: number; index: number }[] = [];
+/* `parseFloat(raw.replace(",", "."))` was the old reading, and it replaces only
+   the FIRST separator, so "1.234,56" became "1.23": a thousandfold error on any
+   amount over 999, quietly, in an app about money.
+
+   When both separators appear the LAST one is the decimal point, which is true
+   in both conventions and needs no guess about locale. When only one appears,
+   three digits after it means it is a thousands separator ("1.234" is one
+   thousand two hundred and thirty four, not 1.234), anything else is a decimal. */
+function parseAmount(raw: string): number | undefined {
+  const t = raw.trim();
+  const lastDot = t.lastIndexOf(".");
+  const lastComma = t.lastIndexOf(",");
+  let decimal = "";
+  if (lastDot >= 0 && lastComma >= 0) decimal = lastDot > lastComma ? "." : ",";
+  else if (lastDot >= 0) decimal = /\.\d{3}(?!\d)/.test(t) ? "" : ".";
+  else if (lastComma >= 0) decimal = /,\d{3}(?!\d)/.test(t) ? "" : ",";
+
+  let normalised: string;
+  if (decimal) {
+    const grouping = decimal === "." ? "," : ".";
+    normalised = t.split(grouping).join("").replace(decimal, ".");
+  } else {
+    normalised = t.replace(/[.,]/g, "");
+  }
+  const n = parseFloat(normalised);
+  return isNaN(n) ? undefined : n;
+}
+
+function extractPrice(text: string): { price: string; currency?: string } | undefined {
+  // Symbol before the number: $9.99, €14,99, €1.234,56
+  const withSymbol = new RegExp(`(${CURRENCY_PATTERN})\\s*(${NUMBER})`, "g");
+  // Code on either side: 9,99 EUR and EUR 9,99 both occur in German receipts,
+  // and only the first was matched before.
+  const codeAfter = new RegExp(`(${NUMBER})\\s*(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\\b`, "gi");
+  const codeBefore = new RegExp(`\\b(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\\s*(${NUMBER})`, "gi");
+
+  const candidates: { value: number; index: number; currency?: string }[] = [];
+  const add = (value: number | undefined, index: number, currency?: string) => {
+    if (value !== undefined && value > 0 && value < 100000) {
+      candidates.push({ value, index, currency });
+    }
+  };
 
   let m: RegExpExecArray | null;
   while ((m = withSymbol.exec(text)) !== null) {
-    const n = parseFloat(m[1].replace(",", "."));
-    if (!isNaN(n) && n > 0 && n < 10000) candidates.push({ value: n, index: m.index });
+    add(parseAmount(m[2]), m.index, SYMBOL_TO_CODE[m[1].replace(/\\/g, "")]);
   }
-  while ((m = withCode.exec(text)) !== null) {
-    const n = parseFloat(m[1].replace(",", "."));
-    if (!isNaN(n) && n > 0 && n < 10000) candidates.push({ value: n, index: m.index });
+  while ((m = codeAfter.exec(text)) !== null) {
+    add(parseAmount(m[1]), m.index, m[2].toUpperCase());
+  }
+  while ((m = codeBefore.exec(text)) !== null) {
+    add(parseAmount(m[2]), m.index, m[1].toUpperCase());
   }
 
   if (candidates.length === 0) return undefined;
@@ -175,7 +261,13 @@ function extractPrice(text: string): string | undefined {
     .map(([k]) => parseFloat(k))
     .sort((a, b) => a - b)[0];
 
-  return best.toFixed(2);
+  // The currency of a candidate that actually carried one, preferring the pool
+  // the amount came from. A receipt can mention several, so this takes the one
+  // attached to the figure being returned rather than the first seen anywhere.
+  const currency = pool.find((c) => c.value === best && c.currency)?.currency
+    ?? candidates.find((c) => c.value === best && c.currency)?.currency;
+
+  return { price: best.toFixed(2), currency };
 }
 
 function extractCycle(text: string): "monthly" | "yearly" | "weekly" | undefined {
@@ -188,9 +280,11 @@ function extractCycle(text: string): "monthly" | "yearly" | "weekly" | undefined
 
 export function parseSubscriptionEmail(text: string): ParsedSubscription {
   if (!text || text.trim().length < 5) return {};
+  const amount = extractPrice(text);
   return {
     name: extractName(text),
-    price: extractPrice(text),
+    price: amount?.price,
+    currency: amount?.currency,
     billingCycle: extractCycle(text),
   };
 }

@@ -32,7 +32,7 @@ if (!process.env.REVENUECAT_WEBHOOK_SECRET) {
   console.warn('WARNING: REVENUECAT_WEBHOOK_SECRET is not set. The RevenueCat webhook endpoint will reject all requests.');
 }
 if (!process.env.REVENUECAT_SECRET_API_KEY) {
-  console.warn('WARNING: REVENUECAT_SECRET_API_KEY is not set. /api/auth/verify-premium will trust the client-reported premium status instead of verifying it against RevenueCat — set this before going to production.');
+  console.warn('WARNING: REVENUECAT_SECRET_API_KEY is not set. /api/auth/verify-premium will REFUSE every request with 503 rather than trust the client, so no purchase can be confirmed through it until this is set. The RevenueCat webhook remains the other path in.');
 }
 if (!process.env.GOOGLE_CLIENT_IDS) {
   console.warn('WARNING: GOOGLE_CLIENT_IDS is not set. /api/auth/google will reject all requests until it is set to a comma-separated list of your Android/iOS/Web Google OAuth client IDs.');
@@ -1417,13 +1417,21 @@ app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
     const user = userResult.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    let isPremium;
-    if (REVENUECAT_SECRET_API_KEY) {
-      isPremium = await fetchPremiumEntitlementFromRevenueCat(user.open_id);
-    } else {
-      // Degraded mode: no way to verify server-side, so trust the client.
-      isPremium = req.body.isPremium === true;
+    /* NEVER trust req.body.isPremium. This used to fall back to it whenever
+       REVENUECAT_SECRET_API_KEY was unset, which meant any authenticated user
+       could POST {"isPremium": true} and hand themselves the paid tier with one
+       request. A startup warning is not an access control.
+
+       Entitlement is a claim about money, so an unverifiable claim is refused
+       rather than believed: 503, and nothing is written. The client already
+       treats a failed sync as "not yet confirmed" and retries through
+       retryPendingPremiumSync, and the RevenueCat webhook is the other path in,
+       so a real purchase still lands once the key is configured. */
+    if (!REVENUECAT_SECRET_API_KEY) {
+      console.error('verify-premium called with no REVENUECAT_SECRET_API_KEY: refusing to change entitlement');
+      return res.status(503).json({ error: 'PREMIUM_VERIFICATION_UNAVAILABLE' });
     }
+    const isPremium = await fetchPremiumEntitlementFromRevenueCat(user.open_id);
 
     // Clearing cancelled_at/win_back_sent_at here too (not just in the webhook's
     // GRANT branch) matters because this endpoint can confirm a resubscribe

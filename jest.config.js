@@ -3,7 +3,6 @@ module.exports = {
   transformIgnorePatterns: [
     "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|@sentry/react-native|native-base|react-native-svg|react-native-purchases)",
   ],
-  testMatch: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx"],
+  testMatch: ["**/__tests__/**/*.test.ts", "**/__tests__/**/*.test.tsx", "**/__tests__/**/*.test.js"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
-  setupFilesAfterFramework: [],
 };

@@ -80,17 +80,18 @@ export default function SubscriptionsScreen() {
   const [showEmailPaste, setShowEmailPaste] = useState(false);
   const [emailText, setEmailText] = useState("");
   const [loadingExamples, setLoadingExamples] = useState(false);
-  const [savingsCard, setSavingsCard] = useState<{ name: string; yearly: number } | null>(null);
+  const [removedCard, setRemovedCard] = useState<{ name: string; yearly: number } | null>(null);
+  const [currencyNotice, setCurrencyNotice] = useState<{ receipt: string; account: string } | null>(null);
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const savingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const removedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reviewDeadline = useRef(0);
   useEffect(() => () => {
-    if (savingsTimer.current) clearTimeout(savingsTimer.current);
+    if (removedTimer.current) clearTimeout(removedTimer.current);
     if (reviewTimer.current) clearTimeout(reviewTimer.current);
   }, []);
 
@@ -288,10 +289,10 @@ export default function SubscriptionsScreen() {
     onSuccess: (_data, sub) => {
       invalidate();
       const yearly = toMonthly(parseFloat(sub.price), sub.billingCycle) * 12;
-      setSavingsCard({ name: sub.name, yearly });
-      if (savingsTimer.current) clearTimeout(savingsTimer.current);
+      setRemovedCard({ name: sub.name, yearly });
+      if (removedTimer.current) clearTimeout(removedTimer.current);
       // Long enough to read the savings and tap the invite link before it goes away.
-      savingsTimer.current = setTimeout(() => setSavingsCard(null), 5000);
+      removedTimer.current = setTimeout(() => setRemovedCard(null), 5000);
       // Cancelling a subscription is the clearest "this app just saved me
       // money" moment there is, ask for a review right after the savings
       // toast has had a chance to be seen.
@@ -607,22 +608,22 @@ export default function SubscriptionsScreen() {
 
   return (
     <View style={styles.container}>
-      {savingsCard && (
-        <View style={styles.savingsCard}>
-          <MaterialCommunityIcons name="party-popper" size={22} color="#FFFFFF" />
+      {removedCard && (
+        <View style={styles.removedCard}>
+          <MaterialCommunityIcons name="check-circle-outline" size={22} color="#FFFFFF" />
           <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.savingsCardText}>
-              {t("subscriptions.savedThisYear", { amount: fmtC(savingsCard.yearly), name: savingsCard.name })}
+            <Text style={styles.removedCardText}>
+              {t("subscriptions.removedFromTrimio", { amount: fmtC(removedCard.yearly), name: removedCard.name })}
             </Text>
             <TouchableOpacity
               onPress={() => {
-                if (savingsTimer.current) clearTimeout(savingsTimer.current);
-                setSavingsCard(null);
+                if (removedTimer.current) clearTimeout(removedTimer.current);
+                setRemovedCard(null);
                 track("referral_invite_tapped", { source: "savings_toast" });
                 router.push("/refer-a-friend");
               }}
             >
-              <Text style={styles.savingsCardInvite}>
+              <Text style={styles.removedCardInvite}>
                 {t("subscriptions.inviteFriendPrompt")} {t("subscriptions.inviteFriend")} →
               </Text>
             </TouchableOpacity>
@@ -982,6 +983,17 @@ export default function SubscriptionsScreen() {
                         onChangeText={(t) => {
                           setEmailText(t);
                           const parsed = parseSubscriptionEmail(t);
+                          /* The amount is taken exactly as the receipt wrote it
+                             and never converted. A rate is not known for the
+                             receipt's date, so converting would invent a number,
+                             and silently treating a dollar figure as euros is the
+                             error this used to make. Say so instead and let the
+                             person decide. */
+                          setCurrencyNotice(
+                            parsed.currency && parsed.currency !== currency.code
+                              ? { receipt: parsed.currency, account: currency.code }
+                              : null
+                          );
                           setFormData((prev) => ({
                             ...prev,
                             name: parsed.name ?? "",
@@ -991,6 +1003,17 @@ export default function SubscriptionsScreen() {
                         }}
                         textAlignVertical="top"
                       />
+                      {currencyNotice && (
+                        <View style={styles.currencyNotice}>
+                          <MaterialCommunityIcons name="information-outline" size={14} color={c.warning} />
+                          <Text style={styles.currencyNoticeText}>
+                            {t("subscriptions.currencyMismatch", {
+                              receipt: currencyNotice.receipt,
+                              account: currencyNotice.account,
+                            })}
+                          </Text>
+                        </View>
+                      )}
                       {(formData.name || formData.price) && (
                         <View style={styles.parsedPreview}>
                           <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
@@ -1181,14 +1204,14 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
-    savingsCard: {
+    removedCard: {
       position: "absolute", top: 12, left: 16, right: 16, zIndex: 50,
       backgroundColor: c.success, borderRadius: 12, padding: 14,
       flexDirection: "row", alignItems: "center",
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
-    savingsCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
-    savingsCardInvite: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
+    removedCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
+    removedCardInvite: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
@@ -1352,6 +1375,8 @@ function makeStyles(c: AppColors) {
       fontSize: 13, color: c.text, minHeight: 100, borderWidth: 1,
       borderColor: c.border, borderRadius: 6, padding: 10, backgroundColor: c.inputBg,
     },
+    currencyNotice: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 8 },
+    currencyNoticeText: { flex: 1, fontSize: 11, lineHeight: 15, color: c.text },
     parsedPreview: {
       flexDirection: "row", alignItems: "center", gap: 6,
       marginTop: 8, backgroundColor: c.success + "18",

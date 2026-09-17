@@ -26,13 +26,42 @@ apiClient.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Retry a request up to maxRetries times for network errors or 5xx responses
-async function retryRequest(error: any, retries = 2): Promise<any> {
+const MAX_RETRIES = 2;
+
+/* Only methods that are safe to repeat. A GET or a HEAD can be re-issued
+   freely; a POST cannot, because a 5xx can arrive AFTER the server has already
+   done the work, and a blind retry then creates a second subscription or a
+   second account. The write paths that genuinely want retrying (the premium
+   sync) do it themselves, where they know whether repeating is safe. */
+const RETRYABLE_METHODS = new Set(["get", "head", "options"]);
+
+/* The counter lives on the config, not in a parameter.
+
+   It used to be a parameter with a default of 2, and the response interceptor
+   called retryRequest(error) with no second argument. Each retry went back
+   through that same interceptor, which reset the count to 2 again, so nothing
+   ever decremented: a simulation of the old code ran past 40 attempts without
+   settling. Offline, that is one request per second forever, and because
+   logout() awaits a call through this client, it also meant logging out could
+   never finish while the network was down. Carrying the count on the config
+   makes it survive the trip through the interceptor, which is the whole point. */
+async function retryRequest(error: any): Promise<any> {
+  const config = error.config;
+  if (!config) return Promise.reject(error);
+
   const isNetworkError = !error.response;
   const isServerError = error.response?.status >= 500;
-  if ((isNetworkError || isServerError) && retries > 0 && error.config) {
-    await new Promise((r) => setTimeout(r, (3 - retries) * 1000));
-    return apiClient({ ...error.config }).catch((e) => retryRequest(e, retries - 1));
+  const method = String(config.method ?? "get").toLowerCase();
+  const attempt = config._retryCount ?? 0;
+
+  if (
+    (isNetworkError || isServerError) &&
+    RETRYABLE_METHODS.has(method) &&
+    attempt < MAX_RETRIES
+  ) {
+    config._retryCount = attempt + 1;
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    return apiClient(config);
   }
   return Promise.reject(error);
 }
