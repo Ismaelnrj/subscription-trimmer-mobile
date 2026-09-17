@@ -7,11 +7,20 @@ import * as Updates from "expo-updates";
 import Constants from "expo-constants";
 import { useTheme, AppColors } from "../lib/theme";
 
+/* The canonical host, not the Railway one: the bare service hostname was
+   showing in a privacy context, and it breaks the day the service is renamed.
+   Language aware too, because /privacy-policy is English only and a German
+   reader was being sent to it regardless of the app's language. */
+const PRIVACY_URL = (lang: string) =>
+  lang?.startsWith("de")
+    ? "https://www.subtrimio.com/de/datenschutz"
+    : "https://www.subtrimio.com/privacy-policy";
+
 export default function HelpSupportScreen() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const c = useTheme();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const FAQ = [
     { q: t("helpSupport.faq1Q"), a: t("helpSupport.faq1A") },
@@ -55,7 +64,7 @@ export default function HelpSupportScreen() {
                 <Text style={styles.contactValue}>Trimio@subtrimio.com</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL("https://subscription-trimmer-mobile-production.up.railway.app/privacy-policy")}>
+            <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL(PRIVACY_URL(i18n.language))}>
               <MaterialCommunityIcons name="shield-outline" size={22} color={c.primary} />
               <View>
                 <Text style={styles.contactLabel}>{t("helpSupport.privacyPolicy")}</Text>

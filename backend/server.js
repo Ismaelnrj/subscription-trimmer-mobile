@@ -98,6 +98,91 @@ app.get('/icon.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=604800');
   res.sendFile(path.join(__dirname, 'icon.png'));
 });
+
+/* ── Unsubscribe ────────────────────────────────────────────────────────────
+   Two routes for one action. GET is the link a person clicks in the footer.
+   POST is RFC 8058 one-click, which is what Gmail and Yahoo call when the
+   reader presses their own unsubscribe button, and it must act without any
+   confirmation step or it does not count.
+
+   No auth: the signature in the URL IS the authorisation, which is the point.
+   Somebody who wants to stop receiving email should never be asked to log in
+   first, and an unsubscribe that needs a password is an unsubscribe that does
+   not work. */
+function unsubscribePage(title, body) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${title} · Trimio</title></head>
+    <body style="margin:0;font-family:system-ui,-apple-system,sans-serif;background:#F7F6F1;color:#142B3A">
+      <div style="max-width:440px;margin:12vh auto;padding:40px 32px;background:#FCFBF8;border:1px solid #DCDEDB;border-radius:12px;text-align:center">
+        <h1 style="font-size:22px;margin:0 0 12px">${title}</h1>
+        <p style="color:#52616B;font-size:15px;line-height:1.6;margin:0">${body}</p>
+        <p style="margin-top:28px"><a href="${PUBLIC_URL}" style="color:#1F7A62;font-size:14px">www.subtrimio.com</a></p>
+      </div></body></html>`;
+}
+
+async function applyUnsubscribe(req) {
+  const id = parseInt(req.query.u ?? req.body?.u, 10);
+  const token = req.query.t ?? req.body?.t;
+  if (!id || !token) return false;
+  const expected = unsubscribeToken(id);
+  // Constant time, so the endpoint cannot be used as an oracle to guess a
+  // token one character at a time.
+  const a = Buffer.from(String(token));
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  await pool.query('UPDATE users SET email_opt_out = TRUE WHERE id = $1', [id]);
+  await pool.query(
+    'UPDATE notification_preferences SET email_reminders = FALSE WHERE user_id = $1',
+    [id]
+  );
+  return true;
+}
+
+app.get('/unsubscribe', async (req, res) => {
+  try {
+    const ok = await applyUnsubscribe(req);
+    res.status(ok ? 200 : 400).type('html').send(
+      ok
+        ? unsubscribePage('You are unsubscribed', 'You will not receive any more emails from Trimio. Push notifications and the app itself are unaffected, and you can turn email reminders back on any time in Account Settings.')
+        : unsubscribePage('That link did not work', 'It may have been altered or truncated by your email client. You can turn email reminders off directly in the app under Account Settings.')
+    );
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+app.post('/unsubscribe', express.urlencoded({ extended: false }), async (req, res) => {
+  try {
+    const ok = await applyUnsubscribe(req);
+    // One-click senders want a 2xx and nothing else; a body or a redirect here
+    // gets read as a failure by some providers.
+    res.sendStatus(ok ? 200 : 400);
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+/* ── Account deletion, from a browser ───────────────────────────────────────
+   Google Play requires a deletion route reachable WITHOUT installing the app,
+   declared in the Data Safety form, on top of the in-app one that already
+   exists in Account Settings. This page is that route. It deliberately does
+   not delete anything by itself: deletion needs the account password or a
+   fresh Google sign in, neither of which belongs in a URL, so it explains the
+   in-app path and gives an email address for anyone who cannot reach it. */
+app.get('/delete-account', (_, res) => {
+  res.type('html').send(unsubscribePage(
+    'Delete your Trimio account',
+    `In the app, open <strong>Profile &rarr; Account Settings</strong>, scroll to the bottom and tap
+     <strong>Delete My Account</strong>. You will be asked for your password, or to confirm with Google
+     if you signed in that way.<br /><br />
+     This permanently removes your account, every subscription you tracked, your settings and your
+     notification history. It cannot be undone.<br /><br />
+     If you no longer have the app installed, email
+     <a href="mailto:${FROM_EMAIL}" style="color:#1F7A62">${FROM_EMAIL}</a> from the address on the
+     account and it will be deleted for you.`
+  ));
+});
 // Every URL advertised here uses the www host. The bare domain 301s to www at
 // the DNS level, so listing bare URLs meant publishing redirects as the
 // preferred address and splitting ranking signals across two hosts.
@@ -329,7 +414,37 @@ const FROM_EMAIL = process.env.SMTP_FROM || 'noreply@trimio.app';
 console.log('BREVO_API_KEY set:', !!BREVO_API_KEY);
 console.log('FROM_EMAIL:', FROM_EMAIL);
 
-async function sendEmail(to, subject, html, retries = 3) {
+const PUBLIC_URL = process.env.PUBLIC_URL || 'https://www.subtrimio.com';
+
+/* Signs the user id so an unsubscribe link cannot be used to opt somebody
+   else out by editing the number in the URL. HMAC rather than a stored token
+   because it needs no table and never expires, which is the correct lifetime
+   for "stop emailing me". */
+function unsubscribeToken(userId) {
+  return crypto.createHmac('sha256', JWT_SECRET).update(`unsub:${userId}`).digest('hex').slice(0, 32);
+}
+
+function unsubscribeUrlFor(userId) {
+  return `${PUBLIC_URL}/unsubscribe?u=${userId}&t=${unsubscribeToken(userId)}`;
+}
+
+/* Every bulk email carries a visible opt out. Gmail and Yahoo have required
+   one-click List-Unsubscribe from bulk senders since February 2024, and
+   without it deliverability degrades for every message including the
+   transactional ones, so this is a inbox-placement matter as much as a legal
+   one. The win-back email is plainly marketing; the renewal digest is the
+   service people asked for, but it is still recurring bulk mail and the same
+   rules apply to it. */
+function emailFooter(unsubscribeUrl) {
+  if (!unsubscribeUrl) return '';
+  return `<p style="color:#8A949B;font-size:12px;text-align:center;margin-top:28px;line-height:1.6">
+      You are receiving this because you turned on email reminders in Trimio.<br />
+      <a href="${unsubscribeUrl}" style="color:#1F7A62">Unsubscribe from Trimio emails</a>
+    </p>`;
+}
+
+async function sendEmail(to, subject, html, opts = {}) {
+  const { retries = 3, unsubscribeUrl = null } = opts;
   if (!BREVO_API_KEY) {
     console.log(`[DEV] Email to ${to} | ${subject}`);
     return;
@@ -344,6 +459,12 @@ async function sendEmail(to, subject, html, retries = 3) {
           to: [{ email: to }],
           subject,
           htmlContent: html,
+          ...(unsubscribeUrl ? {
+            headers: {
+              'List-Unsubscribe': `<${unsubscribeUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          } : {}),
         }),
       });
       const json = await res.json();
@@ -536,8 +657,43 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS win_back_sent_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by INTEGER REFERENCES users(id)`);
+  /* referred_by was created with no ON DELETE action, so Postgres defaults to
+     NO ACTION and REFUSES to delete any account that has successfully referred
+     somebody: the referred user's row still points at them. Account deletion
+     returned a 500 for exactly the users the referral programme rewards most,
+     and it broke two obligations at once, Google Play's account deletion
+     requirement and the GDPR right to erasure.
+
+     SET NULL keeps the referred person's account intact and simply forgets who
+     sent them, which is the right trade: their bonus month was already granted
+     and claimed through referral_rewarded, so nothing is clawed back.
+
+     Done by lookup rather than by guessing the constraint name, because a
+     DROP CONSTRAINT IF EXISTS against the wrong name silently succeeds and
+     then the ADD below creates a SECOND constraint with the old behaviour
+     still attached. */
+  await pool.query(`
+    DO $$
+    DECLARE fk text;
+    BEGIN
+      SELECT con.conname INTO fk
+      FROM pg_constraint con
+      JOIN pg_attribute att
+        ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey)
+      WHERE con.conrelid = 'users'::regclass
+        AND con.contype = 'f'
+        AND att.attname = 'referred_by'
+        AND con.confdeltype <> 'n';          -- 'n' is already ON DELETE SET NULL
+      IF fk IS NOT NULL THEN
+        EXECUTE format('ALTER TABLE users DROP CONSTRAINT %I', fk);
+        ALTER TABLE users ADD CONSTRAINT users_referred_by_fkey
+          FOREIGN KEY (referred_by) REFERENCES users(id) ON DELETE SET NULL;
+      END IF;
+    END $$;
+  `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
@@ -1161,6 +1317,12 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
       }
     }
 
+    /* Belt as well as braces. The migration above fixes the constraint, but a
+       deploy where it has not run yet would still fail this delete with a
+       foreign key violation, and the failure mode is a person being told they
+       cannot delete their account. Clearing the pointers first works on either
+       schema and costs one statement. */
+    await pool.query('UPDATE users SET referred_by = NULL WHERE referred_by = $1', [req.userId]);
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {
@@ -1768,6 +1930,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       JOIN notification_preferences np ON np.user_id = u.id
       LEFT JOIN user_settings us ON us.user_id = u.id
       WHERE np.email_reminders = TRUE AND u.is_verified = TRUE
+        AND u.email_opt_out IS NOT TRUE
         AND (u.is_paid = TRUE OR u.bonus_premium_until > NOW())
     `);
 
@@ -1824,7 +1987,9 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
             You're receiving this because you enabled email reminders in Trimio.
             Tap the button above (or open the app) to manage your notification preferences.
           </p>
-        </div>`
+          ${emailFooter(unsubscribeUrlFor(user.id))}
+        </div>`,
+        { unsubscribeUrl: unsubscribeUrlFor(user.id) }
       ).catch(e => console.error(`Email failed for user ${user.id}:`, e));
       sent++;
     }
@@ -1854,6 +2019,7 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
         AND cancelled_at IS NOT NULL
         AND cancelled_at <= NOW() - INTERVAL '4 days'
         AND win_back_sent_at IS NULL
+        AND email_opt_out IS NOT TRUE
     `);
 
     let sent = 0;
@@ -1869,7 +2035,9 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
             <a href="trimio://upgrade" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
           </div>
           <p style="color:#52616B;font-size:12px;margin-top:20px">This is an automatic reminder. No action needed if you meant to cancel.</p>
-        </div>`
+          ${emailFooter(unsubscribeUrlFor(user.id))}
+        </div>`,
+        { unsubscribeUrl: unsubscribeUrlFor(user.id) }
       ).catch(e => console.error(`Win-back email failed for user ${user.id}:`, e));
       await pool.query('UPDATE users SET win_back_sent_at = NOW() WHERE id = $1', [user.id]);
       sent++;
