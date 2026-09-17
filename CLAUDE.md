@@ -210,10 +210,37 @@ last one left off without needing a recap typed out.
   on top of it (2026-09-05). 39 carried the chevron and the buildTips
   crash; 40 is the same build with the crash fixed. A versionCode can
   only ever be uploaded to Play once, which is why 39 was not reused.
-- EVERYTHING is published, through commit ef7a2853 (2026-09-12). Earlier runs
-  went out through 0163d23 and then cc285cd. Backend changes ride the Railway
-  auto-deploys. There is no unpublished app work. The next thing that needs a
-  native build is the next native change, and nothing pending is one.
+- PUBLISHED THROUGH ef7a2853 (2026-09-12). Earlier runs went out through
+  0163d23 and then cc285cd. Backend changes ride the Railway auto-deploys.
+- UNPUBLISHED AS OF 2026-09-17, master at d8bbd8a9. Six app files changed since
+  the last publish: `_layout.tsx`, `help-support.tsx`, `privacy-policy.tsx`,
+  `service-templates.ts` and both locale files. `needs_native_build.py ef7a2853`
+  says OTA is enough, so one `eas update --channel production` clears it. The
+  backend also changed and needs its Railway deploy.
+- THE 2026-09-17 BACKEND CHANGE CARRIES A MIGRATION, which is unusual for this
+  repo and worth watching the first boot for. `users.referred_by` was created
+  with no ON DELETE action, so Postgres refused to delete any account that had
+  successfully referred somebody: the referred row still pointed at it. Account
+  deletion returned 500 for exactly the users the referral programme rewards,
+  breaking Play's deletion requirement and GDPR erasure together. The migration
+  finds the constraint by lookup (not by guessing its name, since DROP
+  CONSTRAINT IF EXISTS against a wrong name silently succeeds and then a second
+  constraint gets added with the old behaviour) and rebuilds it ON DELETE SET
+  NULL. The handler also nulls the pointers first, so deletion works even if the
+  migration has not run. IT HAS NOT BEEN RUN AGAINST A REAL DATABASE: no
+  Postgres in a sandbox, so check the Railway boot log once.
+- EMAIL NOW CARRIES AN UNSUBSCRIBE, added 2026-09-17. `users.email_opt_out`,
+  honoured by both bulk queries, a signed link in both footers, and GET plus
+  POST `/unsubscribe` (POST is RFC 8058 one-click, which must act with no
+  confirmation step or it does not count). Neither route is authenticated on
+  purpose: the HMAC in the URL is the authorisation, and an unsubscribe that
+  asks you to log in is an unsubscribe that does not work. Gmail and Yahoo have
+  required this from bulk senders since Feb 2024, so its absence was costing
+  inbox placement on the transactional mail too.
+- `/delete-account` EXISTS because Play requires a deletion route reachable
+  without installing the app, separate from the in-app one. STILL TO DO: declare
+  it in Play Console's Data Safety form, which is a Console action nobody can do
+  from a repo.
 - THE 2026-09-12 PUBLISH carried a review round from Codex, the other
   assistant, which produced six findings across two passes with no false
   positives. Worth knowing what it found, because the pattern repeats:
@@ -347,6 +374,27 @@ last one left off without needing a recap typed out.
   Werbung 4.99 -> 6.99, Xbox Game Pass Ultimate US 19.99 -> 22.99. US rows
   and the DACH sport services (DAZN, WOW, RTL+) were NOT verified: the
   sources were mostly promotional pricing and could not be pinned down.
+- A SECOND PASS ON 2026-09-17 took it from 6 verified rows to 14, all of the
+  Quick Add set. Four were wrong: Netflix Standard USD 15.49 -> 19.99, Netflix
+  Premium USD 22.99 -> 26.99, Spotify Premium USD 10.99 -> 12.99, and Xbox Game
+  Pass Ultimate DACH 14.99 -> 20.99. That last one is the big miss and its
+  source is Xbox's own newsroom: Microsoft raised it to 26.99 in Oct 2025 and cut
+  it to 20.99 on 21 Apr 2026, so the catalogue sat six euros under the truth.
+  Amazon Prime, Adobe CC, Microsoft 365 Personal and iCloud+ 50GB were checked
+  and already correct, so they carry a date rather than a change.
+  NOTE THE SIDE EFFECT: eight rows that were silent now speak, because
+  isPriceFresh only lets the insight talk about fresh rows.
+  148 rows remain unverified. The ones that RESIST verification are listed in a
+  comment at the top of `lib/service-templates.ts` so nobody repeats the dead
+  ends: DAZN, WOW Sport and RTL+ still quote a different product in every source
+  (44.99 monthly vs 24.99 annual vs 9.99 promo for DAZN Unlimited alone), Disney+
+  US returned three different answers, and Netflix Basic US names a plan that no
+  longer exists, which needs a decision rather than an edit since renaming
+  orphans anything matching the old name.
+- PRICE VERIFICATION IS POSSIBLE FROM A SANDBOX, via WebSearch. Direct fetches to
+  netflix.com and friends are egress-blocked like everything else, but the search
+  tool routes differently and works. Use two independent sources before changing
+  a number, and never stamp `verified` on something you did not actually check.
 - The market price tests lean on real catalogue rows, so renaming a
   template can orphan a fixture silently. That already happened once:
   stripping region tokens renamed "Drei AT S" to "Drei S" and the test kept
@@ -391,14 +439,42 @@ last one left off without needing a recap typed out.
   wants those same shots.
 - The mark mismatch is RESOLVED: 1.0.3 is live, so the Play Store app and
   subtrimio.com both show the chevron.
-- In progress: Phase 2 (posting cadence). The owner has an existing promo
-  video (`trimio_promo_clean_vertical.mp4`, 15s vertical) that needs a
-  re-cut before reuse: it shows the pre-redesign Dashboard/Stats/Add
-  Expense screens (now outdated), wrongly shows an Apple App Store badge
-  (there is no iOS build), and has a caption/UI overlap issue. Fresh
-  screenshots for it should come from the owner's own phone, not a
-  generated mock, the real device is authentic and already has the
-  current build via OTA.
+- In progress: Phase 2 (posting cadence). The old promo
+  (`trimio_promo_clean_vertical.mp4`) is superseded and not worth re-cutting.
+- VIDEO IS NOW A PIPELINE, not hand editing. `tools/make-cut.py` builds a cut
+  from a JSON spec in `cuts/` and REFUSES anything breaking the rules before it
+  renders a frame: dash as clause punctuation, Apple named, a decimal point in
+  German copy, a line too short to read twice, type outside the 25 to 75 percent
+  caption band, missing footage. `tools/test-make-cut.py` feeds each rule
+  something that breaks it and fails if the renderer accepts it, plus four cases
+  it must NOT reject including a compound hyphen, which is German spelling and
+  was over-corrected once already. Run it after touching the renderer.
+  Three scene types: `card` (brand frame, no footage), `reframe` (crop a region
+  of a clip and inlay it, scaling to fill a content box that clears both UI
+  zones, so a tight crop comes out LARGER than in the source), and `clip`
+  (passthrough for footage that already has its own composition; `reframe` would
+  stack a second header on it). ffmpeg comes from `imageio_ffmpeg`, since there
+  is no system ffmpeg in a sandbox.
+- WHAT THE PLATFORM COVERS, measured not guessed: the bottom 20% and the right
+  15% of a vertical frame. Every video sent for review before 2026-09-16 put its
+  own footer, the app's tab bar or the floating button inside that strip.
+- THE SHORTS THAT EXIST, all English because the recordings are English:
+  auto-fill paste, savings toast into the referral nudge, duplicate catch, and
+  the cancellation guide. German Shorts need a German RECORDING, not German
+  subtitles over an English screen, which would tell a German viewer the app is
+  not localised when it has 589 keys and a toggle in Settings.
+- `video-rerecord-brief.md` IS THE HANDOFF for the next recording, written so
+  Codex or the owner can execute it without re-deriving anything: findings with
+  timestamps, capture setup, an eight beat shot list, and a checklist. Its two
+  highest value lines are record at 1080 rather than 720, and hold the payoff
+  frame about four times longer than feels right. The best still in the whole
+  capture, pasted email plus Detected line plus filled fields all at once, lasted
+  2.5 seconds.
+- GENERATED VIDEO MUST NEVER TOUCH THE UI. Every model smears text and the screen
+  IS text. Earlier drafts produced "Trlmio", an iPhone running an Android-only
+  app, and a green mock dashboard that is not Trimio's. Generative tools are fine
+  for the human half of a frame and never the screen half. Higgsfield is the
+  connected generator; there is no Runway connector and none is needed.
 - VIDEO CAPTION CONSTRAINTS, the reasons the old cut needs redoing and the
   traps in redoing it: no Apple App Store badge (Android only, the Play link
   is `play.google.com/store/apps/details?id=com.trimio.app`); TikTok and
