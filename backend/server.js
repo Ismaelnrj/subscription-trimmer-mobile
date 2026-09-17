@@ -170,18 +170,48 @@ app.post('/unsubscribe', express.urlencoded({ extended: false }), async (req, re
    not delete anything by itself: deletion needs the account password or a
    fresh Google sign in, neither of which belongs in a URL, so it explains the
    in-app path and gives an email address for anyone who cannot reach it. */
-app.get('/delete-account', (_, res) => {
-  res.type('html').send(unsubscribePage(
-    'Delete your Trimio account',
-    `In the app, open <strong>Profile &rarr; Account Settings</strong>, scroll to the bottom and tap
+/* NOT FROM_EMAIL. That is the SENDING address, `noreply@` by convention and
+   `noreply@trimio.app` by default, on a domain this project does not even own.
+   Telling somebody to email a no-reply address, on the one page whose entire
+   job is to give them a way to reach us, would have published a dead end to
+   Google. The support address is the one the legal documents already use in
+   23 places. */
+const SUPPORT_EMAIL = 'Trimio@subtrimio.com';
+
+const DELETE_PAGE = {
+  en: {
+    title: 'Delete your Trimio account',
+    body: `In the app, open <strong>Profile &rarr; Account Settings</strong>, scroll to the bottom and tap
      <strong>Delete My Account</strong>. You will be asked for your password, or to confirm with Google
      if you signed in that way.<br /><br />
      This permanently removes your account, every subscription you tracked, your settings and your
      notification history. It cannot be undone.<br /><br />
      If you no longer have the app installed, email
-     <a href="mailto:${FROM_EMAIL}" style="color:#1F7A62">${FROM_EMAIL}</a> from the address on the
-     account and it will be deleted for you.`
-  ));
+     <a href="mailto:${SUPPORT_EMAIL}" style="color:#1F7A62">${SUPPORT_EMAIL}</a> from the address on
+     the account and it will be deleted for you.`,
+  },
+  de: {
+    title: 'Trimio Konto löschen',
+    body: `Öffne in der App <strong>Profil &rarr; Kontoeinstellungen</strong>, scrolle nach unten und
+     tippe auf <strong>Mein Konto löschen</strong>. Du wirst nach deinem Passwort gefragt, oder nach
+     einer Bestätigung mit Google, falls du dich so angemeldet hast.<br /><br />
+     Damit werden dein Konto, alle erfassten Abos, deine Einstellungen und dein
+     Benachrichtigungsverlauf dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.<br /><br />
+     Wenn du die App nicht mehr installiert hast, schreib von der Adresse des Kontos an
+     <a href="mailto:${SUPPORT_EMAIL}" style="color:#1F7A62">${SUPPORT_EMAIL}</a>, dann löschen wir
+     es für dich.`,
+  },
+};
+
+app.get('/delete-account', (req, res) => {
+  /* Play only needs one URL, but somebody asking to delete their account should
+     not have to read a second language to do it. Accept-Language is the only
+     signal a server-rendered page has, and only the FIRST tag counts: browsers
+     send the preferred language first, so matching `de` anywhere would serve
+     German to "en-GB,de;q=0.7", who plainly asked for English. */
+  const wantsGerman = /^\s*de\b/i.test(req.headers['accept-language'] || '');
+  const copy = wantsGerman ? DELETE_PAGE.de : DELETE_PAGE.en;
+  res.type('html').send(unsubscribePage(copy.title, copy.body));
 });
 // Every URL advertised here uses the www host. The bare domain 301s to www at
 // the DNS level, so listing bare URLs meant publishing redirects as the
