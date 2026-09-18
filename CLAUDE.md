@@ -751,6 +751,23 @@ last one left off without needing a recap typed out.
   TOP LEFT FOR THE BUG IS NOT TASTE. The platform paints its own UI over the
   bottom 20% and the right 15%, so those are the two places a watermark cannot
   go, and top left is what remains.
+  A PROP PHONE IN A GENERATED SHOT IS THE SAME MISTAKE WEARING A DISGUISE, and
+  it cost a whole promo on 2026-09-18. A UGC render had the actor hold a phone
+  up to camera, and the icon was pasted onto the screen afterwards. At thumbnail
+  size it looked fine, which is why it was first waved through here. At full
+  resolution it was obviously a sticker: a white halo around the tile, a smeared
+  grey artefact above it where the previous screen content had been half erased,
+  no perspective match to a phone that is visibly tilted, and none of the warm
+  window gradient the rest of the screen carries.
+  IT CANNOT BE FIXED IN POST, and reaching for that wastes an afternoon. A
+  convincing screen replacement needs per frame tracking and a homography across
+  the whole handheld take. There is no numpy, no OpenCV and no tracker in a
+  sandbox, and ffmpeg's `perspective` filter is static.
+  SO THE PROMPT MUST SAY IT: "No phone, no laptop, no tablet, no screen of any
+  kind visible anywhere in the frame, and nothing held up to camera." The last
+  clause is the one that was missing. If the app genuinely has to be seen, the
+  product half comes from a REAL screen recording cut in as its own beat through
+  make-cut's `reframe`, never from a prop in a generated frame.
 - VIDEO CAPTION CONSTRAINTS, the reasons the old cut needs redoing and the
   traps in redoing it: no Apple App Store badge (Android only, the Play link
   is `play.google.com/store/apps/details?id=com.trimio.app`); TikTok and
