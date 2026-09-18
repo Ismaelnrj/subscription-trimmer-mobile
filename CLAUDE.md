@@ -730,6 +730,27 @@ last one left off without needing a recap typed out.
   app, and a green mock dashboard that is not Trimio's. Generative tools are fine
   for the human half of a frame and never the screen half. Higgsfield is the
   connected generator; there is no Runway connector and none is needed.
+  THAT INCLUDES THE MARK, and a UGC tool cannot be told otherwise. Asked for a
+  logo, Zeely invented one: the 2026-09-18 English render put it on the sweater
+  as an embroidered patch with the mint triangle crossing into the chevron's
+  notch. It was stable across all 13 seconds and recognisable, so it was not the
+  Pac-Man failure, but it is not the artwork either.
+  `tools/brand-video.py` IS THE ANSWER, added 2026-09-18. It composites the mark
+  onto a finished clip afterwards, through `make-icons.draw_mark`, so the same
+  masks every other Trimio surface uses. Two things, either or both: a corner bug
+  on a small navy plate, and an end card rendered by `make-cut.render_endcard`,
+  which means the copy rules, the contrast floor and the caption band are
+  enforced by the same code that guards every other cut.
+  IT KEEPS THE AUDIO, which is the whole reason it is not a scene type in
+  make-cut.py. That pipeline passes `-an` to every scene and its concat carries
+  no audio stream at all, because it was built for silent screen recordings. Run
+  a talking head through it and the captions land correctly and the voiceover
+  disappears, which is the entire content. The end card tail gets a matching
+  silent track, or concat drops audio from the whole output rather than just the
+  tail.
+  TOP LEFT FOR THE BUG IS NOT TASTE. The platform paints its own UI over the
+  bottom 20% and the right 15%, so those are the two places a watermark cannot
+  go, and top left is what remains.
 - VIDEO CAPTION CONSTRAINTS, the reasons the old cut needs redoing and the
   traps in redoing it: no Apple App Store badge (Android only, the Play link
   is `play.google.com/store/apps/details?id=com.trimio.app`); TikTok and
