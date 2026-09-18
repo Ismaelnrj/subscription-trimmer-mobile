@@ -298,6 +298,18 @@ last one left off without needing a recap typed out.
   is_first_subscription and never the name or the price, so the residue was
   pseudonymous rather than personal. Defensible, but not worth arguing on behalf
   of an app positioned as "we never see your data".
+  HOW THE KEY IS MADE, since the docs do not spell it out: PostHog's Create
+  personal API key dialog exposes Person as ONE three-state selector, No access /
+  Read / Write, not two tickable scopes, so you cannot grant read and write
+  separately. Pick Write. Verified 2026-09-18 by calling
+  `GET /api/projects/<id>/persons/?limit=1` with a Write-only key and getting
+  results back, so `person:write` covers reads and the lookup needs nothing extra.
+  PostHog's own scope docs do not state that, which is why it was worth measuring.
+  Scope the key to the Trimio PROJECT, not the organisation: the Organizations
+  tab grants every project inside it, and this key only ever erases one person.
+  Read the project id off the browser URL (`eu.posthog.com/project/<id>/...`),
+  NOT from `GET /api/projects/`, which needs `project:read` and answers 403 for a
+  correctly scoped key, which reads as a broken key and is not one.
 - `/delete-account` EXISTS because Play requires a deletion route reachable
   without installing the app, separate from the in-app one. STILL TO DO: declare
   it in Play Console's Data Safety form, which is a Console action nobody can do
