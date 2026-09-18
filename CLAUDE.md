@@ -272,6 +272,21 @@ last one left off without needing a recap typed out.
   `confdeltype` should read `n`, which is SET NULL. Anything else and the
   constraint was not rebuilt, though the handler's own null-out still keeps
   account deletion working.
+  SETTLED 2026-09-18, AND IT DID THE RIGHT THING. Read off the live database:
+  `"users_referred_by_fkey" FOREIGN KEY (referred_by) REFERENCES users(id) ON
+  DELETE SET NULL`. The lookup-by-constraint approach worked and there is exactly
+  ONE such constraint, which was the real hazard: a DROP CONSTRAINT IF EXISTS
+  against a guessed name succeeds silently and leaves a second constraint behind
+  carrying the old behaviour. The same output confirmed all five cascades off
+  `users` (notification_preferences, notifications, price_history, subscriptions,
+  user_settings), every one ON DELETE CASCADE, so deletion orphans nothing.
+  HOW TO READ IT AGAIN WITHOUT THE ONE-LETTER CODE: Railway's Database > Data tab
+  is not a free query input, and its Console tab is a SHELL, not psql. Run
+  `psql -U postgres` there first (the prompt becomes `railway=#`), then `\d users`,
+  which spells the rule out as ON DELETE SET NULL and lists every inbound cascade
+  at the same time. `q` leaves the pager, `\q` leaves psql. Paste is mangled in
+  that console (bracketed paste arrives literally as `^[[200~`), so short typed
+  commands beat long pasted ones.
 - EMAIL NOW CARRIES AN UNSUBSCRIBE, added 2026-09-17. `users.email_opt_out`,
   honoured by both bulk queries, a signed link in both footers, and GET plus
   POST `/unsubscribe` (POST is RFC 8058 one-click, which must act with no
