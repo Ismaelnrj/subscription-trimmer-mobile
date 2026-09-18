@@ -9,6 +9,7 @@ import {
   startOfMonth,
   endOfMonth,
 } from "date-fns";
+import { parseApiDate } from "./utils";
 
 export interface RecurringSub {
   nextBillingDate: string | Date;
@@ -22,8 +23,11 @@ export interface RecurringSub {
  * assumed to recur indefinitely on the same day-of-month/day-of-year).
  */
 export function getOccurrencesInMonth(sub: RecurringSub, monthDate: Date): Date[] {
-  const anchor = new Date(sub.nextBillingDate);
-  if (isNaN(anchor.getTime())) return [];
+  /* parseApiDate, not new Date(). The API sends TIMESTAMPTZ as an instant at
+     midnight UTC, so new Date() on it lands on the PREVIOUS local day anywhere
+     west of UTC, and every occurrence this projects inherits that shift. */
+  const anchor = parseApiDate(sub.nextBillingDate);
+  if (!anchor || isNaN(anchor.getTime())) return [];
 
   const rangeStart = startOfMonth(monthDate);
   const rangeEnd = endOfMonth(monthDate);
@@ -91,8 +95,8 @@ export function getUpcomingOccurrences<T extends RecurringSub>(
   // occurrences. Computed once per sub since it doesn't vary by month.
   const earliestAllowedBySub = new Map<T, Date>();
   for (const sub of subs) {
-    const anchor = new Date(sub.nextBillingDate);
-    if (isNaN(anchor.getTime())) continue;
+    const anchor = parseApiDate(sub.nextBillingDate);
+    if (!anchor || isNaN(anchor.getTime())) continue;
     earliestAllowedBySub.set(sub, rangeStart > anchor ? rangeStart : startOfDay(anchor));
   }
 

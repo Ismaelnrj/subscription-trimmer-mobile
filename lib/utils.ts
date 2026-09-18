@@ -71,3 +71,26 @@ export function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
+
+/** Turns what the API sends for a billing or trial date into the CALENDAR DAY
+ *  the user meant, at local midnight.
+ *
+ *  `next_billing_date` and `trial_end_date` are TIMESTAMPTZ, and the create
+ *  handler stores `new Date("2026-10-16").toISOString()`, which is midnight
+ *  UTC. `new Date(...)` on that gives the instant, so its LOCAL day is the day
+ *  BEFORE anywhere west of UTC. Measured: for a 16 October renewal, a phone in
+ *  New York or Los Angeles read day 15 while the notification scheduler, which
+ *  already sliced the string before parsing, read 16. The calendar marked a
+ *  renewal a day early and the reminder arrived on the right day, in the same
+ *  app, from the same row.
+ *
+ *  Reading the leading YYYY-MM-DD is what makes it timezone-proof: those digits
+ *  are the day, and nothing about the reader's offset can change them. */
+export function parseApiDate(value: string | Date | null | undefined): Date | null {
+  if (value == null) return null;
+  if (value instanceof Date) return Number.isFinite(value.getTime()) ? value : null;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value));
+  if (iso) return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
+  const d = new Date(String(value));
+  return Number.isFinite(d.getTime()) ? d : null;
+}
