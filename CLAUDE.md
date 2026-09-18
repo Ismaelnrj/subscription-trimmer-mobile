@@ -242,6 +242,22 @@ last one left off without needing a recap typed out.
   1.0.1. The frontend files that went out were `lib/api.ts`, `lib/auth-store.ts`,
   `lib/query-client.ts`, `lib/parse-subscription.ts`, `app/_layout.tsx`,
   `app/(tabs)/subscriptions.tsx` and both locale files.
+- PUBLISHED THROUGH 81b709ba (2026-09-18, second publish of the day). The owner
+  ran `tools/typecheck.py` clean and the full jest suite green first: 20 suites,
+  231 tests. Verified OTA-safe across the widest range, `bd6d683f..HEAD`: zero
+  files touched under android/, assets/, app.json, package.json or eas.json, so
+  runtimeVersion correctly stayed 1.0.1 and no native build was needed.
+  NOT YET CONFIRMED ON A DEVICE. The publish exited zero and that is ALL that is
+  known so far. This file's own rule applies: read `Embedded launch (no OTA
+  applied): false` and a real `Update ID` off the Build Info panel before calling
+  it landed. Fill that in when it is read, or delete this sentence and say it was
+  never checked. Do not quietly upgrade "published" into "confirmed".
+  THE LAST COMMIT CARRYING ANYTHING A PHONE RUNS IS 43e0df2f. `dba47863` and
+  `81b709ba` are a test file and CLAUDE.md, which never enter a JS bundle, so a
+  future session finding master ahead of the publish baseline should check WHAT
+  the gap contains before publishing again. This is the same shape as the
+  889b5c22 note above and it keeps recurring because the fix for a documentation
+  commit looks identical to the fix for a missed screen.
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
