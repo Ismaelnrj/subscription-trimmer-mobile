@@ -17,7 +17,14 @@ const read = (p) => fs.readFileSync(path.join(__dirname, "..", p), "utf8");
    type declaration and the slices come back empty or inverted. This caught me
    out while writing these tests, which is a fair argument for the tests. */
 const AUTH_FILE = read("lib/auth-store.ts");
-const AUTH = AUTH_FILE.slice(AUTH_FILE.indexOf("create<AuthState>"));
+/* Comments stripped BEFORE slicing. These two assertions used to pass by
+   matching the comment that QUOTES the old broken condition as prose, so after
+   the condition was fixed they kept passing and pinned nothing at all. A test
+   that reads an explanation of a bug instead of the code is worse than no test,
+   because it reports green either way. */
+const AUTH = AUTH_FILE
+  .replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "")
+  .slice(AUTH_FILE.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "").indexOf("create<AuthState>"));
 const QUERY = read("lib/query-client.ts");
 
 describe("signing out clears the cache", () => {
@@ -45,13 +52,16 @@ describe("signing out clears the cache", () => {
 describe("switching accounts clears the cache", () => {
   it("setUser resets when the user id changes", () => {
     const setUser = AUTH.slice(AUTH.indexOf("setUser: (user)"), AUTH.indexOf("setLoading:"));
-    expect(setUser).toMatch(/previous\.id !== user\.id/);
+    expect(setUser).toMatch(/previousId !== nextId/);
     expect(setUser).toMatch(/resetQueryCache\(\)/);
   });
 
   it("does not clear for the same user, so a profile refresh keeps the cache", () => {
     const setUser = AUTH.slice(AUTH.indexOf("setUser: (user)"), AUTH.indexOf("setLoading:"));
-    expect(setUser).toMatch(/user && previous && previous\.id !== user\.id/);
+    // Identity compared with null counted as an identity, so A -> null -> B
+    // resets on both legs while A -> A still keeps the warm cache.
+    expect(setUser).toMatch(/previousId = get\(\)\.user\?\.id \?\? null/);
+    expect(setUser).toMatch(/nextId = user\?\.id \?\? null/);
   });
 });
 

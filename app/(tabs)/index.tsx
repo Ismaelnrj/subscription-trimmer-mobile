@@ -49,11 +49,31 @@ export default function DashboardScreen() {
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
 
+  /* The scheduler needs these, so the dashboard fetches them. They used not to
+     be passed at all, which meant every switch on the notification preferences
+     screen wrote a database row and changed nothing on the device.
+
+     Same cache key the preferences screen uses, so this is usually a cache read
+     rather than a second request. */
+  const { data: notifPrefs } = useQuery({
+    queryKey: ["notifications", "preferences"],
+    queryFn: async () => (await apiClient.get("/trpc/notifications.getPreferences")).data.result.data,
+  });
+
   const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
-    onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol),
+    onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol, notifPrefs ?? {}),
   });
+
+  /* Reschedule when the preferences themselves change, not only when the
+     subscription list refetches. Without this, turning renewal alerts off left
+     the existing queue in place until something unrelated happened to refetch
+     subscriptions. */
+  useEffect(() => {
+    if (!notifPrefs || !subscriptions.length) return;
+    scheduleRenewalReminders(subscriptions as any[], currency.symbol, notifPrefs);
+  }, [notifPrefs?.pushEnabled, notifPrefs?.renewalAlerts, notifPrefs?.renewalAlertDays]);
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],

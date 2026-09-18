@@ -39,8 +39,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
        Comparing ids rather than clearing unconditionally keeps the ordinary
        case (a profile refresh for the same person) from throwing away a warm
        cache on every launch. */
-    const previous = get().user;
-    if (user && previous && previous.id !== user.id) resetQueryCache();
+    /* Compare IDENTITY, treating signed-out as an identity of its own.
+
+       This used to read `user && previous && previous.id !== user.id`, which
+       skips the null transitions entirely: A to null clears nothing because
+       `user` is null, and null to B clears nothing because `previous` is null.
+       An expired session goes A -> null -> B through exactly that path, since
+       clearSessionAndSignOut calls setUser(null) and login calls setUser(B), so
+       account B could read account A's subscriptions out of the global query
+       keys before its own fetch returned.
+
+       The old comment argued for comparing ids rather than clearing
+       unconditionally, to keep a profile refresh from throwing away a warm
+       cache. That reasoning was right and is preserved: same id still means no
+       reset. It just has to count null as a value rather than as a reason to
+       skip the check. */
+    const previousId = get().user?.id ?? null;
+    const nextId = user?.id ?? null;
+    if (previousId !== nextId) {
+      resetQueryCache();
+      // Reminders belong to the session that scheduled them, so an identity
+      // change has to clear the OS queue as well as the in-memory cache.
+      import("./notification-scheduler")
+        .then((m) => m.cancelAllReminders())
+        .catch(() => {});
+    }
     if (user) identifyUser(user.id);
     set({
       user,
@@ -73,6 +96,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await SecureStore.deleteItemAsync("auth_token").catch(() => {});
     await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
     resetAnalytics();
+    /* Cancel the OS notification queue too. Nothing did, so account A's
+       subscription names and amounts stayed scheduled to appear on the lock
+       screen after sign-out. cancelAllReminders also bumps a generation
+       counter, which stops a scheduler that was already running from re-adding
+       them once this finishes. */
+    await (await import("./notification-scheduler")).cancelAllReminders();
     // After the token is gone, so nothing in flight can write to the cache
     // with the old credentials still attached.
     await resetQueryCache();
@@ -88,7 +117,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (token) {
         const apiClient = (await import("./api")).default;
         const res = await apiClient.get("/auth/me");
-        set({ user: res.data, isAuthenticated: true });
+        // Through setUser, not a bare set(), so restoring a session runs the
+        // same identity check and analytics identify as every other path.
+        get().setUser(res.data);
       }
     } catch {
       await SecureStore.deleteItemAsync("auth_token");

@@ -41,24 +41,94 @@ export async function requestNotificationPermission() {
   await registerForPushNotificationsAsync();
 }
 
-export async function scheduleRenewalReminders(subscriptions: any[], currencySymbol: string) {
+/* Scheduled notifications outlive the session that created them.
+
+   Nothing cancelled them on sign-out, and the only cancel in this file runs at
+   the START of scheduling a fresh list. So signing out and leaving the app on
+   the login screen left account A's subscription NAMES AND AMOUNTS queued to
+   appear on the lock screen hours later, on a device that may not be theirs any
+   more. That is the same class as the query cache leak: data belonging to a
+   session that has ended.
+
+   The generation counter closes the race the cancel alone cannot. Scheduling is
+   async and loops with an await per notification, so a scheduler that started
+   before logout can still be running after it and re-add everything it was
+   supposed to lose. Each run captures the generation it began in and stops the
+   moment that number moves. */
+let sessionGeneration = 0;
+
+export async function cancelAllReminders(): Promise<void> {
+  sessionGeneration++;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch (err) {
+    // Never block a sign-out on the OS notification queue.
+    console.warn("[Notifications] Could not cancel reminders:", err);
+  }
+}
+
+/** What the notification preferences screen actually controls.
+ *
+ *  This used to take only subscriptions and a symbol, and always scheduled 7,
+ *  3 and 1 day reminders. It never read pushEnabled, renewalAlerts or
+ *  renewalAlertDays, so the three switches on that screen changed a database
+ *  row and nothing else: turning renewal alerts off left every reminder queued,
+ *  and the next dashboard refetch scheduled them all again.
+ *
+ *  Undefined means "not loaded yet", which is deliberately treated as ON. The
+ *  alternative is silently dropping somebody's reminders because a preferences
+ *  query was slow, and a missing reminder is the one failure this product
+ *  cannot afford. */
+export type ReminderPrefs = {
+  pushEnabled?: boolean;
+  renewalAlerts?: boolean;
+  renewalAlertDays?: number;
+};
+
+const LEAD_TIME_KEYS: Record<number, string> = {
+  1: "notifications.reminders.tomorrow",
+  3: "notifications.reminders.in3",
+  7: "notifications.reminders.in7",
+};
+
+export async function scheduleRenewalReminders(
+  subscriptions: any[],
+  currencySymbol: string,
+  prefs: ReminderPrefs = {}
+) {
+  const myGeneration = sessionGeneration;
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
+    // Push off means nothing at all, not even trial reminders. The cancel above
+    // has already cleared the queue, so returning here IS the disable.
+    if (prefs.pushEnabled === false) return;
 
     const now = new Date();
     const scheduled: string[] = [];
 
+    /* ONE reminder at the chosen lead time, not three at fixed ones. The screen
+       offers 1, 3 or 7 days as a single choice, so scheduling all three ignored
+       the answer and told somebody who asked for one warning that they would
+       get three. Falls back to 3, which is the same default the backend uses
+       for renewal_alert_days. */
+    const leadDays = LEAD_TIME_KEYS[prefs.renewalAlertDays as number] ? (prefs.renewalAlertDays as number) : 3;
+    const renewalRemindersOn = prefs.renewalAlerts !== false;
+
     for (const sub of subscriptions) {
+      /* Bail the moment the session changes under us. This loop awaits once per
+         notification, so a run that began before a sign-out can still be going
+         after it and would re-queue everything cancelAllReminders just cleared,
+         with the old account's names in it. */
+      if (sessionGeneration !== myGeneration) return;
       if (!sub.nextBillingDate) continue;
       const rawBilling = String(sub.nextBillingDate).slice(0, 10);
       const billing = parseLocalDate(rawBilling);
 
       const amount = formatAmount(sub.price, currencySymbol);
-      const reminders = [
-        { daysBefore: 7, whenKey: "notifications.reminders.in7" },
-        { daysBefore: 3, whenKey: "notifications.reminders.in3" },
-        { daysBefore: 1, whenKey: "notifications.reminders.tomorrow" },
-      ];
+      const reminders = renewalRemindersOn
+        ? [{ daysBefore: leadDays, whenKey: LEAD_TIME_KEYS[leadDays] }]
+        : [];
 
       for (const { daysBefore, whenKey } of reminders) {
         const triggerDate = new Date(billing);

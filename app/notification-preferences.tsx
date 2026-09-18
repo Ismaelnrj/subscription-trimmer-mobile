@@ -9,6 +9,18 @@ import { useTheme, AppColors } from "../lib/theme";
 import { useDateFormat } from "../lib/date-locale";
 import { parseApiDate } from "../lib/utils";
 
+/* How many days before a renewal the reminder email actually goes out.
+
+   This preview used 7 while the sender selects `next_billing_date BETWEEN now
+   AND now + 3 days`, so the screen named a date no email would arrive on. The
+   label directly above it already said 3 days, in both languages, so the
+   preview was the only thing disagreeing and there was nothing to decide.
+
+   MUST match the window in backend/server.js's email reminder cron. There is no
+   way to share a constant across the app and the server here, so
+   __tests__/notification-prefs.test.js asserts both numbers instead. */
+const EMAIL_LEAD_DAYS = 3;
+
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -193,13 +205,13 @@ export default function NotificationPreferencesScreen() {
                   .map((s: any) => {
                     /* parseApiDate, so the preview names the same day the
                        reminder actually targets. new Date() on a TIMESTAMPTZ
-                       gives an instant at midnight UTC, and subtracting seven
-                       days from it lands on the previous local day west of UTC,
-                       so this list showed the wrong date for the same users the
-                       calendar was already wrong for. */
+                       gives an instant at midnight UTC, and subtracting the
+                       lead time from it lands on the previous local day west of
+                       UTC, so this list showed the wrong date for the same users
+                       the calendar was already wrong for. */
                     const renew = parseApiDate(s.nextBillingDate);
                     if (!renew) return null;
-                    const emailMs = renew.getTime() - 7 * 86400000;
+                    const emailMs = renew.getTime() - EMAIL_LEAD_DAYS * 86400000;
                     return { name: s.name, price: s.price, emailMs };
                   })
                   .filter((s): s is { name: string; price: number; emailMs: number } => s != null && s.emailMs > now)
