@@ -6,12 +6,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
+import { useDateFormat } from "../lib/date-locale";
 
 export default function NotificationsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const fmtD = useDateFormat();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: notifications = [], isLoading, isError, refetch: refetchHistory } = useQuery({
@@ -92,7 +94,7 @@ export default function NotificationsScreen() {
                 <View style={styles.notificationContent}>
                   <Text style={styles.notificationTitle}>{n.title}</Text>
                   <Text style={styles.notificationMessage}>{n.message}</Text>
-                  <Text style={styles.notificationTime}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                  <Text style={styles.notificationTime}>{fmtD(new Date(n.createdAt), "P")}</Text>
                   {!n.read && (
                     <View style={styles.notificationActions}>
                       <TouchableOpacity style={styles.actionButton} onPress={() => markAsReadMutation.mutate(n.id)}>

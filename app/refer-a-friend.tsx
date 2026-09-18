@@ -7,6 +7,7 @@ import * as Sentry from "@sentry/react-native";
 import apiClient from "../lib/api";
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
+import { useDateFormat } from "../lib/date-locale";
 
 export default function ReferAFriendScreen() {
   const [loading, setLoading] = useState(true);
@@ -23,6 +24,7 @@ export default function ReferAFriendScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const fmtD = useDateFormat();
   const setUser = useAuthStore((s) => s.setUser);
 
   const load = useCallback(async () => {
@@ -113,7 +115,7 @@ export default function ReferAFriendScreen() {
                 <View style={styles.bonusCard}>
                   <MaterialCommunityIcons name="crown" size={22} color={c.success} />
                   <Text style={styles.bonusText}>
-                    {t("referFriend.bonusActive", { date: new Date(bonusPremiumUntil!).toLocaleDateString() })}
+                    {t("referFriend.bonusActive", { date: fmtD(new Date(bonusPremiumUntil!), "P") })}
                   </Text>
                 </View>
               )}

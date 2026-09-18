@@ -17,6 +17,7 @@ import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput, sanitiseAmountInput } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
+import { useDateFormat } from "../../lib/date-locale";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
 import { track } from "../../lib/analytics";
@@ -67,6 +68,7 @@ export default function SubscriptionsScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const fmtD = useDateFormat();
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -814,7 +816,7 @@ export default function SubscriptionsScreen() {
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
                       {sub.nextBillingDate
-                        ? t("subscriptions.next", { date: new Date(sub.nextBillingDate).toLocaleDateString() })
+                        ? t("subscriptions.next", { date: fmtD(new Date(sub.nextBillingDate), "P") })
                         : t("subscriptions.noDate")}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>

@@ -1,7 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTranslation } from "react-i18next";
 import { useTheme, AppColors } from "../lib/theme";
+import { PREMIUM_PRICES } from "../lib/pricing";
 
 type Props = {
   title: string;
@@ -12,6 +14,7 @@ export function PremiumGate({ title, description }: Props) {
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
+  const { t } = useTranslation();
 
   return (
     <TouchableOpacity style={styles.container} onPress={() => router.push("/upgrade")} activeOpacity={0.85}>
@@ -23,7 +26,18 @@ export function PremiumGate({ title, description }: Props) {
       <Text style={styles.desc}>{description}</Text>
       <View style={styles.button}>
         <MaterialCommunityIcons name="lock-open-outline" size={15} color="#fff" />
-        <Text style={styles.buttonText}>Unlock Premium — from $2.99/mo</Text>
+        {/* Was the string "Unlock Premium — from $2.99/mo", hardcoded three
+            ways at once: untranslated, so German users read English on six
+            surfaces across four screens; with an em dash, which this project's
+            copy rule forbids as clause punctuation; and with the price written
+            inline instead of taken from lib/pricing.ts, so it could drift from
+            every other price in the app without anything noticing.
+
+            profile.unlockPremium already said exactly this, in both languages,
+            with a comma rather than a dash. No new key was needed. */}
+        <Text style={styles.buttonText}>
+          {t("profile.unlockPremium", { price: PREMIUM_PRICES.monthly })}
+        </Text>
       </View>
     </TouchableOpacity>
   );

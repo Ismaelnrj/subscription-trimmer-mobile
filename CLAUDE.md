@@ -762,6 +762,43 @@ last one left off without needing a recap typed out.
   option EXISTS in `@tanstack/react-query` 4.32.0, which this project pins, and
   was REMOVED from useQuery in v5. Upgrading to v5 without moving that call would
   silently stop every reminder in the app, with nothing erroring anywhere.
+- THE UPGRADE SCREEN SHOWED A PRICE GOOGLE PLAY WAS NOT GOING TO CHARGE, until
+  2026-09-18. It fetched the RevenueCat offerings and used them ONLY to make the
+  purchase: every price it DISPLAYED came from `PREMIUM_PRICES` in
+  `lib/pricing.ts`, which is hardcoded USD. So a subscriber in Austria read
+  "$2.99" on the screen where they decide to pay and was then charged in euros at
+  Play's own local price.
+  `app/tip-jar.tsx` had this right the whole time (`priceFor` falls back only
+  when the offerings are absent), so the fix was copying a pattern that already
+  existed in the codebase rather than inventing one.
+  `lib/pricing.ts` DESCRIBED ITSELF as a fallback "shown before RevenueCat's
+  localized priceString loads", which was true of the tip jar and had never been
+  true of the upgrade screen. Another comment that documented an intention rather
+  than the behaviour.
+  STILL SHOWING THE USD FALLBACK ON PURPOSE: `components/PremiumGate.tsx` and
+  `app/(tabs)/profile.tsx`. They are banners rather than purchase screens, and
+  fetching offerings from each would be four extra round trips for a line of
+  marketing copy. If that ever bothers somebody, the fix is a shared offerings
+  store, not four more fetches.
+- DATES NOW FOLLOW THE APP LANGUAGE EVERYWHERE, fixed 2026-09-18. Four call sites
+  ignored it: a bare `toLocaleDateString()` in `subscriptions.tsx`,
+  `refer-a-friend.tsx` and `notifications.tsx`, which uses the DEVICE locale, so
+  a German user on an English phone read English dates inside German UI; and
+  `notification-preferences.tsx` pinned `"en-GB"`, so German users ALWAYS got
+  English. All four now use `useDateFormat` from `lib/date-locale.ts`, which
+  already existed for exactly this and is the helper to reach for.
+- THE COPY RULE WAS BEING BROKEN IN JSX, WHERE THE LOCALE CHECK CANNOT SEE IT.
+  Both locale files were clean of dashes and always had been, and two em dashes
+  were sitting in JSX text nodes instead: `{s.name} — {date}` in
+  notification-preferences, and `Unlock Premium — from $2.99/mo` in PremiumGate.
+  Checking `locales/*.json` alone will never find that class, so
+  `__tests__/display-localization.test.js` checks JSX text nodes too.
+  THAT PremiumGate STRING WAS WRONG THREE WAYS AT ONCE: an em dash, no `t()` at
+  all so six surfaces across four screens showed English to German users, and the
+  price written inline instead of taken from `lib/pricing.ts`. `profile.unlockPremium`
+  already said exactly that sentence in both languages, with a comma. No new key
+  was needed, which is usually the sign that a string was written in the wrong
+  place rather than that it needed translating.
 - Deliberately deferred, revisit later, not now: iOS (real inbound demand
   exists from the owner's own circle, but wait for Android traction/signal
   first). The primary-colour rebrand was deferred for a while and then

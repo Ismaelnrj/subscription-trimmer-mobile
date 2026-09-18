@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
+import { useDateFormat } from "../lib/date-locale";
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
@@ -15,6 +16,7 @@ export default function NotificationPreferencesScreen() {
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const fmtD = useDateFormat();
 
   const { data: subscriptions = [] } = useQuery<any[]>({
     queryKey: ["subscriptions", "list"],
@@ -203,8 +205,15 @@ export default function NotificationPreferencesScreen() {
                     {upcoming.map((s, i) => (
                       <View key={i} style={styles.upcomingRow}>
                         <MaterialCommunityIcons name="email-outline" size={13} color={c.primary} />
+                        {/* Two things were wrong on this one line. The locale was
+                            hardcoded to "en-GB", so a German user read English
+                            month abbreviations inside German UI, and the
+                            separator was an em dash, which this project's copy
+                            rule forbids as clause punctuation in any Trimio
+                            facing text. A colon carries the same meaning and is
+                            allowed. */}
                         <Text style={styles.upcomingText}>
-                          {s.name} — {new Date(s.emailMs).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          {s.name}: {fmtD(new Date(s.emailMs), "d MMM")}
                         </Text>
                       </View>
                     ))}

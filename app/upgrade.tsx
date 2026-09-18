@@ -43,10 +43,26 @@ export default function UpgradeScreen() {
     { icon: "headset",             label: t("upgrade.feat_support"),        free: "—",                             premium: "✓" },
   ];
 
+  /* The price shown must be the price Google Play will actually charge.
+
+     This screen already fetched the offerings, and used them ONLY to make the
+     purchase: every price on it came from PREMIUM_PRICES, which is hardcoded
+     USD. So a subscriber in Austria read "$2.99" on the screen where they
+     decide to pay, and then Google Play charged them in euros at Play's own
+     local price. lib/pricing.ts even described itself as a fallback "shown
+     before RevenueCat's localized priceString loads", which was true of the tip
+     jar and had never been true here: nothing ever replaced it.
+
+     PREMIUM_PRICES stays as the fallback it claims to be, for the moment before
+     the offerings resolve and for a device where IAP is unavailable. Copied
+     from priceFor in app/tip-jar.tsx, which had this right already. */
+  const priceFor = (plan: PlanKey, fallback: string) =>
+    packages.find((p) => p.product.identifier === PRODUCT_IDS[plan])?.product.priceString ?? fallback;
+
   const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
-    { key: "monthly",  label: t("upgrade.monthly"),  price: PREMIUM_PRICES.monthly, sub: t("upgrade.perMonth") },
-    { key: "yearly",   label: t("upgrade.yearly"),   price: PREMIUM_PRICES.yearly,  sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
-    { key: "lifetime", label: t("upgrade.lifetime"), price: PREMIUM_PRICES.lifetime, sub: t("upgrade.oneTime"), badge: t("upgrade.bestValue") },
+    { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly", PREMIUM_PRICES.monthly), sub: t("upgrade.perMonth") },
+    { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly", PREMIUM_PRICES.yearly),  sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
+    { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime", PREMIUM_PRICES.lifetime), sub: t("upgrade.oneTime"), badge: t("upgrade.bestValue") },
   ];
 
   useEffect(() => {
