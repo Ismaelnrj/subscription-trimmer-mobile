@@ -778,6 +778,17 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
+  /* Which billing date a reminder email has already gone out for.
+
+     There was no send record at all, so the cron had no way to know it had
+     already written. Running daily, a renewal three days out got an email on
+     day 3, day 2 AND day 1: three messages for one renewal, from a screen that
+     previews exactly one date per subscription.
+
+     Keyed to the DATE rather than a timestamp, so it resets itself. When the
+     cycle advances, next_billing_date no longer equals this and the next
+     renewal sends normally, with nothing to clean up. */
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS reminder_sent_for TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
@@ -2181,7 +2192,9 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
         `SELECT * FROM subscriptions
          WHERE user_id = $1
            AND is_active = TRUE
-           AND next_billing_date BETWEEN $2 AND $3`,
+           AND next_billing_date BETWEEN $2 AND $3
+           -- skip anything already reminded for THIS billing date
+           AND (reminder_sent_for IS NULL OR reminder_sent_for <> next_billing_date)`,
         [user.id, now.toISOString(), in3Days.toISOString()]
       );
       if (subsResult.rows.length === 0) continue;
@@ -2202,7 +2215,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
         </tr>`
       ).join('');
 
-      await sendEmail(
+      const delivered = await sendEmail(
         user.email,
         `Trimio: ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing soon`,
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
@@ -2228,8 +2241,20 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
           ${emailFooter(unsubscribeUrlFor(user.id))}
         </div>`,
         { unsubscribeUrl: unsubscribeUrlFor(user.id) }
-      ).catch(e => console.error(`Email failed for user ${user.id}:`, e));
-      sent++;
+      ).then(() => true).catch(e => { console.error(`Email failed for user ${user.id}:`, e); return false; });
+
+      /* Mark ONLY after the send actually succeeded, so a Brevo outage means a
+         retry on the next run rather than a renewal that silently never gets
+         its reminder. The old code incremented `sent` inside a catch-and-
+         continue, so the number it reported was attempts rather than
+         deliveries. */
+      if (delivered) {
+        await pool.query(
+          'UPDATE subscriptions SET reminder_sent_for = next_billing_date WHERE id = ANY($1::int[])',
+          [subsResult.rows.map(r => r.id)]
+        );
+        sent++;
+      }
     }
 
     res.json({ success: true, emailsSent: sent });

@@ -103,3 +103,41 @@ describe("a new subscription's first billing date is calendar safe", () => {
     expect(/setMonth\(/.test(src)).toBe(false);
   });
 });
+
+describe("one renewal sends one reminder email", () => {
+  /* There was no send record at all. Running daily, a renewal three days out
+     emailed on day 3, day 2 AND day 1: three messages for one renewal, from a
+     screen that previews exactly one date per subscription. */
+  const CRON = SERVER.slice(SERVER.indexOf("const in3Days"), SERVER.indexOf("emailsSent: sent"));
+
+  it("records which billing date a reminder was sent for", () => {
+    expect(SERVER).toMatch(/ADD COLUMN IF NOT EXISTS reminder_sent_for TIMESTAMPTZ/);
+  });
+
+  it("skips a subscription already reminded for that exact date", () => {
+    expect(CRON).toMatch(/reminder_sent_for IS NULL OR reminder_sent_for <> next_billing_date/);
+  });
+
+  it("marks only after the send succeeded", () => {
+    // A Brevo outage must mean a retry next run, not a renewal that silently
+    // never gets its reminder.
+    expect(CRON).toMatch(/if \(delivered\)/);
+    expect(CRON).toMatch(/SET reminder_sent_for = next_billing_date/);
+  });
+
+  it("counts deliveries rather than attempts", () => {
+    /* `sent++` used to run after a catch-and-continue, so the number the
+       endpoint reported included emails that had failed. */
+    const code = CRON.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    expect(/\)\.catch\(e => console\.error\(`Email failed[^\n]*\n\s*sent\+\+/.test(code)).toBe(false);
+  });
+
+  it("resets itself when the cycle advances, mirrored", () => {
+    // reminder_sent_for is keyed to the DATE, so the next cycle differs and
+    // sends normally with nothing to clean up.
+    const shouldSend = (sentFor, nextBilling) => sentFor == null || sentFor !== nextBilling;
+    expect(shouldSend(null, "2026-10-16")).toBe(true);
+    expect(shouldSend("2026-10-16", "2026-10-16")).toBe(false);  // same cycle, already sent
+    expect(shouldSend("2026-10-16", "2026-11-16")).toBe(true);   // advanced, send again
+  });
+});
