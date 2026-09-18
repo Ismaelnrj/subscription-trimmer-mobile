@@ -258,6 +258,19 @@ last one left off without needing a recap typed out.
   the gap contains before publishing again. This is the same shape as the
   889b5c22 note above and it keeps recurring because the fix for a documentation
   commit looks identical to the fix for a missed screen.
+- PUBLISHED THROUGH 39a58081 (2026-09-18, third publish of the day), which
+  supersedes the baseline above. It carried exactly ONE client file,
+  `lib/language-store.ts`, the skip-when-preferences-unloaded fix. Everything
+  else in `81b709ba..39a58081` is backend, tests and this document. Native
+  check across that range: zero files under android/, assets/, app.json,
+  package.json or eas.json, so runtimeVersion stayed 1.0.1 and no build was
+  needed. The backend half rides the same Railway deploy.
+  ALSO NOT CONFIRMED ON A DEVICE. Same rule as the entry above, same reason:
+  three publishes went out on 2026-09-18 and not one of them has been read off
+  the Build Info panel yet. Whoever picks this up should either read it and fill
+  in the Update ID, or say plainly that it was never checked. Three unverified
+  publishes stacked on each other is how a silently broken bundle survives a
+  whole day.
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
