@@ -102,6 +102,11 @@ def main():
     ap.add_argument("--endcard-seconds", type=float, default=2.6)
     ap.add_argument("--no-bug", action="store_true")
     ap.add_argument("--no-endcard", action="store_true")
+    ap.add_argument("--lift", type=float, default=0, metavar="PCT",
+                    help="reserve PCT%% of the frame height as a navy band at the "
+                         "bottom, shrinking the footage to sit above it. The fix "
+                         "for captions a UGC tool burned in too low: they cannot "
+                         "be moved afterwards, but the whole frame can.")
     a = ap.parse_args()
 
     src = pathlib.Path(a.src)
@@ -123,8 +128,24 @@ def main():
         d = pathlib.Path(tmp)
         inputs, filters, n = ["-i", str(src)], [], 1
 
-        v = f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase," \
-            f"crop={W}:{H},fps={FPS},setsar=1[v0]"
+        if a.lift:
+            if not 0 < a.lift < 40:
+                print("REFUSED: --lift wants a percentage between 0 and 40. "
+                      "Past that there is more band than picture.", file=sys.stderr)
+                return 2
+            # Shrink to (100 - lift)% and seat it at the top, so everything
+            # burned into the footage rises by the same fraction. A caption at
+            # 82% of the old frame lands at 82% of the new one, which is 74% of
+            # the whole, and the band underneath is navy rather than a crop of
+            # somebody's kitchen.
+            keep = 1 - a.lift / 100
+            iw, ih = int(W * keep) // 2 * 2, int(H * keep) // 2 * 2
+            v = (f"[0:v]scale={iw}:{ih}:force_original_aspect_ratio=increase,"
+                 f"crop={iw}:{ih},fps={FPS},setsar=1,"
+                 f"pad={W}:{H}:{(W - iw) // 2}:0:color=0x{NAVY[0]:02x}{NAVY[1]:02x}{NAVY[2]:02x}[v0]")
+        else:
+            v = (f"[0:v]scale={W}:{H}:force_original_aspect_ratio=increase,"
+                 f"crop={W}:{H},fps={FPS},setsar=1[v0]")
         filters.append(v)
         last = "v0"
 
