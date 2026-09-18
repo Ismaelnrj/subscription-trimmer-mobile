@@ -223,16 +223,25 @@ last one left off without needing a recap typed out.
   THE LESSON: `git merge-base --is-ancestor <commit> <publish baseline>` is how
   you find out, and "everything is published" in this file is a claim to verify,
   not a fact to rely on.
-- PUSHED THROUGH 4ad99cf8 (2026-09-17), which is NOT the same as published.
-  `ac3b1aa3..4ad99cf8` went to master, so the backend half rode the Railway
-  auto-deploy, but the JS half does NOT reach phones until the owner runs
-  `eas update --channel production` from their own machine. Verified OTA-safe
-  before pushing: zero files touched under android/, assets/, app.json,
-  package.json or eas.json, so runtimeVersion correctly stays 1.0.1.
-  Frontend files in that range, the ones waiting on the publish:
-  `lib/api.ts`, `lib/auth-store.ts`, `lib/query-client.ts`,
-  `lib/parse-subscription.ts`, `app/_layout.tsx`,
-  `app/(tabs)/subscriptions.tsx`, both locale files.
+- PUBLISHED THROUGH bd6d683f AND CONFIRMED ON A REAL DEVICE (2026-09-18). The
+  owner ran `tools/typecheck.py` on their machine first and it came back clean,
+  which matters because seven JS files changed and no sandbox can run it.
+  The evidence is read off the Build Info panel, not inferred from a publish that
+  exited zero: `Embedded launch (no OTA applied): false`, `Update ID:
+  01a0b41b-04ce-7439-8dd9-4a6a36d15b07`, `Update published:
+  2026-09-18T10:41:04.718Z`, against `Native build: 40`, `Channel: production`
+  and `Runtime version: 1.0.1`. That pairing is the frozen runtimeVersion proving
+  itself once more: a build carrying 1.0.1 asked for updates tagged 1.0.1 and got
+  one.
+  MASTER IS AT 889b5c22, ONE COMMIT AHEAD OF THAT BASELINE, and it does not
+  matter: 889b5c22 touches CLAUDE.md alone, and documentation never enters a JS
+  bundle. bd6d683f is the last commit carrying anything a phone runs. Do not
+  "fix" the gap with another publish.
+  Verified OTA-safe before pushing any of it: zero files touched under android/,
+  assets/, app.json, package.json or eas.json, so runtimeVersion correctly stayed
+  1.0.1. The frontend files that went out were `lib/api.ts`, `lib/auth-store.ts`,
+  `lib/query-client.ts`, `lib/parse-subscription.ts`, `app/_layout.tsx`,
+  `app/(tabs)/subscriptions.tsx` and both locale files.
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
