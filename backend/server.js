@@ -523,6 +523,53 @@ async function sendVerificationEmail(email, code) {
   );
 }
 
+/* The confirmation that an account is gone.
+
+   Not required by Play or by GDPR, and added because without it the only way to
+   find out your account was deleted is to open the app and find yourself logged
+   out. Deletion needs the password or a fresh Google sign in, so a stolen token
+   alone cannot do it, but the person whose account it was should still be told
+   by the one channel that does not depend on them still having the app.
+
+   It carries NO unsubscribe footer, unlike every bulk email here. Two reasons:
+   this is transactional rather than bulk, so RFC 8058 does not apply, and
+   unsubscribeUrlFor HMACs the user id, which by this point names a row that no
+   longer exists. The link would resolve to nothing. */
+const DELETED_EMAIL = {
+  en: {
+    subject: 'Your Trimio account has been deleted',
+    heading: 'Your account has been deleted',
+    body: `Your Trimio account is gone, along with every subscription you tracked, your settings,
+     your reminders and your notification history. Nothing was kept, and this cannot be undone.`,
+    warn: `If this was not you, contact us straight away at`,
+    thanks: 'Thanks for having used Trimio.',
+  },
+  de: {
+    subject: 'Dein Trimio Konto wurde gelöscht',
+    heading: 'Dein Konto wurde gelöscht',
+    body: `Dein Trimio Konto ist gelöscht, zusammen mit allen erfassten Abos, deinen Einstellungen,
+     deinen Erinnerungen und deinem Benachrichtigungsverlauf. Es wurde nichts aufbewahrt, und das
+     lässt sich nicht rückgängig machen.`,
+    warn: `Falls du das nicht warst, melde dich sofort bei uns unter`,
+    thanks: 'Danke, dass du Trimio genutzt hast.',
+  },
+};
+
+async function sendAccountDeletedEmail(to, wantsGerman) {
+  const c = wantsGerman ? DELETED_EMAIL.de : DELETED_EMAIL.en;
+  await sendEmail(
+    to,
+    c.subject,
+    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+      <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
+      <p style="color:#52616B;line-height:1.6">${c.body}</p>
+      <p style="color:#52616B;line-height:1.6">${c.warn}
+        <a href="mailto:${SUPPORT_EMAIL}" style="color:#1F7A62">${SUPPORT_EMAIL}</a>.</p>
+      <p style="color:#8A949B;font-size:12px;margin-top:24px">${c.thanks}</p>
+    </div>`
+  );
+}
+
 // crypto.randomInt, not Math.random: these codes gate email verification and
 // password resets, and Math.random's PRNG state is recoverable from enough
 // observed outputs, which is not a property you want on a reset code.
@@ -1408,11 +1455,25 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
        foreign key violation, and the failure mode is a person being told they
        cannot delete their account. Clearing the pointers first works on either
        schema and costs one statement. */
+    /* Read off the row BEFORE it is deleted. `user` came from the SELECT above
+       and stays in memory afterwards, but naming it here is the point: once the
+       DELETE has run there is nowhere left to look this address up, so anything
+       the confirmation needs has to be taken while the row still exists. */
+    const deletedEmail = user.email;
+    const wantsGerman = /^\s*de\b/i.test(req.headers['accept-language'] || '');
+
     await pool.query('UPDATE users SET referred_by = NULL WHERE referred_by = $1', [req.userId]);
     await pool.query('DELETE FROM users WHERE id = $1', [req.userId]);
     // After the row is gone, and deliberately not awaited into the response:
     // a slow or down PostHog must not make a successful deletion look failed.
     deletePostHogPerson(req.userId);
+    /* Same rule, same reason. sendEmail retries three times with a backoff, so
+       awaiting this could hold the response for seconds and then fail it over a
+       courtesy message, on a request that has already succeeded irreversibly. */
+    if (deletedEmail) {
+      sendAccountDeletedEmail(deletedEmail, wantsGerman)
+        .catch(e => console.error(`Account deleted email failed for user ${req.userId}:`, e.message));
+    }
     res.json({ success: true });
   } catch (err) {
     handleError(err, res);

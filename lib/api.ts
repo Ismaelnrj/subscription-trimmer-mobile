@@ -2,6 +2,7 @@ import axios from "axios";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Alert } from "react-native";
+import i18n from "./i18n";
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:3000";
 
@@ -15,6 +16,22 @@ const apiClient = axios.create({
 
 // Add token to requests
 apiClient.interceptors.request.use(async (config) => {
+  /* Accept-Language is the ONLY language signal the backend has. There is no
+     language column on the user, and anything the server sends by email or
+     renders as a page would otherwise be English for everyone, including the
+     German half of the audience. The account deletion email is the first thing
+     to depend on it.
+
+     Its own try/catch, deliberately: i18n is not worth failing a request over,
+     and an English email is a far smaller problem than a request that never
+     leaves. Normalised to a bare "de" or "en" because the server tests the
+     FIRST tag, so a regional form like de-AT must still read as German. */
+  try {
+    config.headers["Accept-Language"] = i18n.language?.startsWith("de") ? "de" : "en";
+  } catch {
+    // leave the header off, the server falls back to English
+  }
+
   try {
     const token = await SecureStore.getItemAsync("auth_token");
     if (token) {

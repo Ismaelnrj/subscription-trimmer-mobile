@@ -333,7 +333,29 @@ last one left off without needing a recap typed out.
 - `/delete-account` EXISTS because Play requires a deletion route reachable
   without installing the app, separate from the in-app one. STILL TO DO: declare
   it in Play Console's Data Safety form, which is a Console action nobody can do
-  from a repo.
+  from a repo. The page itself is confirmed rendering correctly in a browser on
+  a phone (2026-09-18), so the URL is ready to paste into the form.
+- DELETING AN ACCOUNT NOW SENDS A CONFIRMATION EMAIL, added 2026-09-18. Neither
+  Play nor GDPR requires one: it exists because without it the only way to learn
+  your account was deleted is to open the app and find yourself signed out.
+  It follows the same rule as the PostHog erasure and for the same reason. The
+  address is read off the row BEFORE the DELETE, since afterwards there is
+  nowhere to look it up, and the send is NOT awaited into the response. `sendEmail`
+  retries three times with a backoff, so awaiting it could hold the response for
+  seconds and then fail a deletion that has already happened irreversibly.
+  IT CARRIES NO UNSUBSCRIBE FOOTER, unlike every bulk email here, which is
+  deliberate twice over: it is transactional so RFC 8058 does not apply, and
+  `unsubscribeUrlFor` HMACs the user id, which by then names a row that no longer
+  exists, so the link would resolve to nothing.
+- THE BACKEND HAD NO LANGUAGE SIGNAL AT ALL until that email needed one. There is
+  no language column on `users`, and `lib/api.ts` sent no `Accept-Language`, so
+  anything the server wrote would have been English for every user including the
+  German half. The request interceptor now sends a bare `de` or `en` from i18n,
+  in its OWN try/catch: an English email is a far smaller problem than a request
+  that never leaves. Bare rather than regional because the server tests the FIRST
+  tag with `^\s*de\b`, so `de-AT` must still read as German.
+  That header is the reusable half. Anything server-rendered or server-sent can
+  now be localised, which was not previously possible.
 - THE 2026-09-12 PUBLISH carried a review round from Codex, the other
   assistant, which produced six findings across two passes with no false
   positives. Worth knowing what it found, because the pattern repeats:
