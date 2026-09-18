@@ -141,16 +141,26 @@ export default function AccountSettingsScreen() {
     settingsMutation.mutate({ budgetGoal: goal, currency: currency.code, currencySymbol: currency.symbol });
   };
 
+  /* Neither of these sends budgetGoal, and that is the fix rather than an
+     omission. They used to pass `settings?.budgetGoal ?? null` purely to stop
+     the endpoint nulling a field they were not editing, which meant they sent
+     null whenever the settings query had not resolved yet. Changing your
+     currency before that first load landed wiped your budget goal, silently,
+     because the write itself succeeded.
+
+     settings.update now treats an absent key as "leave this alone" and only an
+     explicit null as "clear it", so saying nothing is the correct way to not
+     touch a field. Do not reintroduce budgetGoal here to be helpful. */
   const handleSaveAlertThreshold = () => {
     const threshold = alertThresholdInput ? parseFloat(alertThresholdInput) : 50;
     if (isNaN(threshold) || threshold <= 0) { Alert.alert(t("common.error"), t("accountSettings.errInvalidNumber")); return; }
-    settingsMutation.mutate({ alertThreshold: threshold, budgetGoal: settings?.budgetGoal ?? null, currency: currency.code, currencySymbol: currency.symbol });
+    settingsMutation.mutate({ alertThreshold: threshold, currency: currency.code, currencySymbol: currency.symbol });
   };
 
   const handleSelectCurrency = (cur: typeof CURRENCIES[0]) => {
     setCurrency(cur);
     setShowCurrencyPicker(false);
-    settingsMutation.mutate({ budgetGoal: settings?.budgetGoal ?? null, currency: cur.code, currencySymbol: cur.symbol });
+    settingsMutation.mutate({ currency: cur.code, currencySymbol: cur.symbol });
   };
 
   return (

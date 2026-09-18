@@ -229,14 +229,20 @@ export default function SubscriptionsScreen() {
     queryClient.invalidateQueries({ queryKey: ["analytics"] });
   };
 
+  /* Sends ONLY the categories, which is the whole point of this mutation.
+
+     It used to resend budgetGoal, currency and currencySymbol as well, each
+     falling back to a hardcoded default when `settings` had not loaded. Saving
+     a custom category before that first query resolved therefore cleared the
+     person's budget goal AND reset a euro subscriber to USD, which also changes
+     what every stored price is interpreted as. Nothing errored: the write
+     succeeded, it just wrote the defaults.
+
+     settings.update now preserves any field whose key is absent, so omitting
+     them is how you leave them alone. */
   const settingsMutation = useMutation({
     mutationFn: async (cats: string[]) => {
-      const res = await apiClient.post("/trpc/settings.update", {
-        budgetGoal: settings?.budgetGoal ?? null,
-        currency: settings?.currency ?? "USD",
-        currencySymbol: settings?.currencySymbol ?? "$",
-        customCategories: cats,
-      });
+      const res = await apiClient.post("/trpc/settings.update", { customCategories: cats });
       return res.data.result.data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),

@@ -1855,13 +1855,35 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
     if (alertThreshold !== undefined && alertThreshold !== null && (typeof alertThreshold !== 'number' || !Number.isFinite(alertThreshold) || alertThreshold <= 0)) {
       return res.status(400).json({ error: 'alertThreshold must be a positive number' });
     }
+    /* budget_goal used to be an unconditional SET, sitting next to two columns
+       that already used COALESCE. That made this endpoint a full replace for one
+       field and a partial update for the others, and the asymmetry cost people
+       their budget goal.
+
+       Anything that saved a DIFFERENT setting had to resend budgetGoal to avoid
+       nulling it, so the client passed `settings?.budgetGoal ?? null`, which is
+       null whenever the settings query has not resolved. Changing your currency
+       on a slow connection therefore wiped your budget, with no error anywhere:
+       the write succeeded, it just wrote null.
+
+       Presence of the KEY is now the signal, which is the only way to tell "do
+       not touch this" from "clear it". An omitted budgetGoal preserves the
+       stored value; an explicit null still clears it, which the clear button
+       depends on. Same treatment for currency, so a partial update can never
+       reset somebody to USD either. */
+    const setsBudget = Object.prototype.hasOwnProperty.call(req.body, 'budgetGoal');
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      `UPDATE user_settings SET budget_goal = $1, currency = $2, currency_symbol = $3,
-       custom_categories = COALESCE($4, custom_categories), alert_threshold = COALESCE($5, alert_threshold)
-       WHERE user_id = $6`,
+      `UPDATE user_settings SET
+         budget_goal = CASE WHEN $1::boolean THEN $2::numeric ELSE budget_goal END,
+         currency = COALESCE($3, currency),
+         currency_symbol = COALESCE($4, currency_symbol),
+         custom_categories = COALESCE($5, custom_categories),
+         alert_threshold = COALESCE($6, alert_threshold)
+       WHERE user_id = $7`,
       [
-        budgetGoal ?? null, currency || 'USD', currencySymbol || '$',
+        setsBudget, setsBudget ? (budgetGoal ?? null) : null,
+        currency || null, currencySymbol || null,
         customCategories !== undefined ? JSON.stringify(customCategories) : null,
         alertThreshold !== undefined ? alertThreshold : null,
         req.userId,

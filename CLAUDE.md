@@ -410,11 +410,38 @@ last one left off without needing a recap typed out.
   `occurrencesByDay`, one entry per occurrence. Accessibility defects fail
   precisely where nobody is looking, so they need simulating rather than
   eyeballing.
-- STILL OUTSTANDING, found but deliberately not fixed because it was outside
-  the brief: `app/_layout.tsx` hardcodes all fourteen `Stack.Screen` titles in
-  English and does not import `useTranslation` at all, so every screen header
-  reads English with the app in German. Keys already exist for several of them
-  (`notifications.title`, `insights.screenTitle`, `referFriend.screenTitle`).
+- THAT ENTRY IS FIXED AND THIS NOTE REPLACES IT. It used to say `app/_layout.tsx`
+  hardcoded all fourteen `Stack.Screen` titles in English and did not import
+  `useTranslation` at all. Checked 2026-09-18: it imports `useTranslation`, calls
+  `t("screenTitles.<x>")` fourteen times, and both locale files carry the
+  `screenTitles` block. `df2db7a5` did this and shipped in the 2026-09-17
+  publish. The note outlived the work by a day, which is its own lesson: a STILL
+  OUTSTANDING line is a claim with an expiry date, so check it before repeating it.
+- `settings.update` IS A PARTIAL UPDATE, and every caller must send ONLY the
+  fields it is editing. This was not true until 2026-09-18 and the asymmetry was
+  invisible: three columns used COALESCE and `budget_goal` was a bare assignment
+  in the same statement, which reads as deliberate rather than as a bug.
+  What it cost: any caller saving a different setting had to resend budgetGoal or
+  lose it, so both callers passed `settings?.budgetGoal ?? null`, which is null
+  until the settings query resolves. Changing your currency in Account Settings,
+  or saving a custom category on the Subscriptions screen, BEFORE that first load
+  landed wiped the budget goal. The category path also resent
+  `settings?.currency ?? "USD"` and reset a euro subscriber to dollars, which is
+  worse than it sounds: the currency decides what every stored price MEANS, so
+  the numbers stay and their interpretation changes. Nothing errored in any of
+  it. The write succeeded, it just wrote defaults.
+  THE RULE NOW: presence of the KEY decides. An absent field is preserved, an
+  explicit `null` clears it, and those cannot be the same thing because clearing
+  a budget goal is a real action the UI offers. Do not "protect" a neighbouring
+  field by resending it, which is exactly how this started.
+  BOTH HALVES WERE NEEDED, and neither works alone: an old client still sends the
+  key so the backend still honours it, and a new client against an old backend
+  still gets nulled by `budgetGoal ?? null`. Backend rides Railway, client needs
+  the publish, and between the two the behaviour is unchanged rather than worse.
+  `__tests__/settings-update.test.js` pins both sides.
+  FOUND BY GREPPING THE WHOLE REPO for the endpoint rather than the one screen
+  under repair. `app/(tabs)/subscriptions.tsx` was the second caller and would
+  have been missed, which is the buildTips crash repeating in a new place.
 - THAT 2026-09-11 UPDATE IS CONFIRMED APPLIED ON A REAL DEVICE, read off the
   Build Info panel rather than assumed from a successful publish: `Embedded
   launch (no OTA applied): false`, `Update ID:
