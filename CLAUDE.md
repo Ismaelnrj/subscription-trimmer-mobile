@@ -310,6 +310,26 @@ last one left off without needing a recap typed out.
   Read the project id off the browser URL (`eu.posthog.com/project/<id>/...`),
   NOT from `GET /api/projects/`, which needs `project:read` and answers 403 for a
   correctly scoped key, which reads as a broken key and is not one.
+  IT IS LIVE AND CONFIRMED WORKING, 2026-09-18. Both variables are set in Railway
+  and a real deletion produced `PostHog person erased for user 31` in the logs,
+  so this is verified end to end rather than merely configured. A green deploy
+  only ever proved the variables were present: the call fires on account deletion
+  alone and swallows every error, so nothing short of deleting an account can
+  tell you it works.
+  HOW TO RE-TEST IT, because one step is easy to skip and turns the test into a
+  false pass: register a throwaway account and ADD ONE SUBSCRIPTION before
+  deleting it. With no event captured there is no PostHog person, so
+  `deletePostHogPerson` finds nothing, returns early and logs NOTHING, which
+  looks like silence and proves neither success nor failure. Registration only
+  does `.trim().toLowerCase()` on the address and never strips a plus tag, so
+  `you+test1@gmail.com` is a distinct account that still reaches your inbox. No
+  working inbox is needed either: `is_verified` gates only the two bulk email
+  queries and the referral reward, never registration, login or adding a
+  subscription.
+  WHAT THE LOG LINE DOES NOT MEAN: `delete_events=true` queues an ASYNC deletion
+  and covers only events captured before the request, so the line means PostHog
+  ACCEPTED the erasure, not that the events are already gone. Confirm that by
+  searching the distinct id in the People view later, not by reading the log.
 - `/delete-account` EXISTS because Play requires a deletion route reachable
   without installing the app, separate from the in-app one. STILL TO DO: declare
   it in Play Console's Data Safety form, which is a Console action nobody can do
