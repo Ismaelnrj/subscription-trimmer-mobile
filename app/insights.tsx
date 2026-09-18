@@ -39,11 +39,30 @@ function matchesKeywords(name: string, keywords: string[]): boolean {
 // rates are USD-based (rates[X] = units of X per 1 USD), matching how
 // currency-store.ts fetches them — converts an amount between any two
 // currency codes present in that table.
-function convertCurrency(amount: number, from: string, to: string, rates: Record<string, number>): number {
+/* Returns null when the rates cannot support the conversion, and the caller
+   stays quiet rather than guessing.
+
+   `?? 1` used to stand in for a missing rate, which silently asserts that the
+   currency is worth exactly one dollar. Three templates are priced in CHF and
+   CHF is not in FALLBACK_RATES, so before the live rates load, or offline, a
+   Swiss row converted about 25 percent wrong and could have produced a
+   "you may be overpaying" alert from a number nothing supported.
+
+   Unreachable today, because those three rows carry no `verified` date and
+   isPriceFresh gates the insight. Verifying any one of them would make it
+   reachable immediately, which is the wrong way to find out.
+
+   This is the same argument the freshness gate below already makes in its own
+   comment: an unchecked figure telling somebody they are overpaying is worse
+   than saying nothing. A rate nobody has is an unchecked figure. */
+function convertCurrency(amount: number, from: string, to: string, rates: Record<string, number>): number | null {
   if (from === to) return amount;
-  const fromRate = rates[from] ?? 1;
-  const toRate = rates[to] ?? 1;
-  return amount * (toRate / fromRate);
+  const usable = (r: unknown): r is number => typeof r === "number" && Number.isFinite(r) && r > 0;
+  const fromRate = rates[from];
+  const toRate = rates[to];
+  if (!usable(fromRate) || !usable(toRate)) return null;
+  const converted = amount * (toRate / fromRate);
+  return Number.isFinite(converted) ? converted : null;
 }
 
 // Configurable thresholds — these can be tuned without code changes if they
@@ -157,6 +176,8 @@ export function buildTips(
         baseCurrencyCode,
         rates
       );
+      // No usable rate means no comparable figure, so there is nothing to say.
+      if (marketMonthlyInBase == null) continue;
       const trackedMonthly = toMonthly(s.price, s.billingCycle);
       if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
         tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#C4544A",

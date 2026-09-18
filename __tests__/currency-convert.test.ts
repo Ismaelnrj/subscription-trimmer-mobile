@@ -85,6 +85,56 @@ describe("a bad rate never becomes a price", () => {
   });
 });
 
+/* THERE ARE TWO CONVERSION IMPLEMENTATIONS, which is worth knowing before
+   changing either. lib/currency-store.ts converts for DISPLAY, and
+   app/insights.tsx has its own convertCurrency for the market price comparison,
+   because that one converts between two arbitrary currencies rather than from
+   the base to the display currency.
+
+   They had the same `?? 1` defect and it was fixed in the store first. This
+   block exists so the second one cannot quietly keep it. */
+describe("the insights comparison refuses rather than guesses", () => {
+  const usable = (r: unknown): r is number =>
+    typeof r === "number" && Number.isFinite(r) && r > 0;
+
+  function convertCurrency(amount: number, from: string, to: string, rates: Record<string, unknown>): number | null {
+    if (from === to) return amount;
+    const f = rates[from], t = rates[to];
+    if (!usable(f) || !usable(t)) return null;
+    const c = amount * (t / f);
+    return Number.isFinite(c) ? c : null;
+  }
+
+  const FALLBACK = { USD: 1, EUR: 0.92, GBP: 0.79 };
+
+  it("returns null for a currency the rates table does not have", () => {
+    /* Three service templates are priced in CHF and CHF is not in
+       FALLBACK_RATES. `?? 1` asserted CHF was worth one dollar, converting a
+       35 CHF plan to 32.20 EUR when the truth is about 40.25. That error
+       SUPPRESSES a correct overpaying alert rather than raising a false one,
+       which is the harder kind to notice. */
+    expect(convertCurrency(35, "CHF", "EUR", FALLBACK)).toBe(null);
+  });
+
+  it("converts once a real rate is available", () => {
+    expect(convertCurrency(35, "CHF", "EUR", { ...FALLBACK, CHF: 0.8 })).toBeCloseTo(40.25);
+  });
+
+  it("returns null for zero, NaN and negative rates", () => {
+    for (const bad of [0, NaN, -1, "0.9", null, undefined]) {
+      expect(convertCurrency(10, "USD", "EUR", { USD: 1, EUR: bad })).toBe(null);
+    }
+  });
+
+  it("short-circuits a same-currency comparison without touching rates", () => {
+    expect(convertCurrency(15.99, "EUR", "EUR", {})).toBe(15.99);
+  });
+
+  it("leaves the ordinary path alone", () => {
+    expect(convertCurrency(15.99, "EUR", "USD", FALLBACK)).toBeCloseTo(17.38, 2);
+  });
+});
+
 describe("the rate fetch filters before anything is stored", () => {
   it("drops zero, negative, NaN and non-numeric entries", () => {
     const out = clean({ EUR: 0.92, GBP: 0, JPY: -1, BRL: NaN, CAD: "x", AUD: null });
