@@ -265,12 +265,11 @@ last one left off without needing a recap typed out.
   check across that range: zero files under android/, assets/, app.json,
   package.json or eas.json, so runtimeVersion stayed 1.0.1 and no build was
   needed. The backend half rides the same Railway deploy.
-  ALSO NOT CONFIRMED ON A DEVICE. Same rule as the entry above, same reason:
-  three publishes went out on 2026-09-18 and not one of them has been read off
-  the Build Info panel yet. Whoever picks this up should either read it and fill
-  in the Update ID, or say plainly that it was never checked. Three unverified
-  publishes stacked on each other is how a silently broken bundle survives a
-  whole day.
+  THE OWNER CONFIRMED IT ON A DEVICE, and the specific values were not captured
+  here. That is a weaker record than the bd6d683f entry above, which carries the
+  Update ID and timestamp read off the panel, and the difference is worth being
+  honest about: "the owner said yes" and "these are the numbers that were read"
+  are not the same evidence. Next time, write the Update ID down.
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
@@ -384,10 +383,10 @@ last one left off without needing a recap typed out.
   ACCEPTED the erasure, not that the events are already gone. Confirm that by
   searching the distinct id in the People view later, not by reading the log.
 - `/delete-account` EXISTS because Play requires a deletion route reachable
-  without installing the app, separate from the in-app one. STILL TO DO: declare
-  it in Play Console's Data Safety form, which is a Console action nobody can do
-  from a repo. The page itself is confirmed rendering correctly in a browser on
-  a phone (2026-09-18), so the URL is ready to paste into the form.
+  without installing the app, separate from the in-app one. The page is
+  confirmed rendering correctly in a browser on a phone, and it IS NOW DECLARED
+  in Play Console's Data Safety form (2026-09-18, owner confirmed). This entry
+  used to read STILL TO DO; it is done, and the requirement is met.
 - DELETING AN ACCOUNT NOW SENDS A CONFIRMATION EMAIL, added 2026-09-18. Neither
   Play nor GDPR requires one: it exists because without it the only way to learn
   your account was deleted is to open the app and find yourself signed out.
@@ -869,6 +868,26 @@ last one left off without needing a recap typed out.
   Skipping costs pending reminders staying in the previous language until the
   next refetch reschedules them properly. Not skipping costs somebody
   notifications they explicitly opted out of. Those are not close.
+  `tools/check-language-store.py` IS THE BEHAVIOURAL COVERAGE, since jest cannot
+  provide it (see below). It copies the real module to a temporary directory
+  with ONLY its import specifiers rewritten to local stubs, runs it on Node's
+  native TypeScript stripping, and reads what the store actually passed the
+  scheduler. Nothing is reimplemented, so the store's own logic decides the
+  result.
+  NEGATIVE TESTED AGAINST THIS REPO'S OWN HISTORY, which is the cheapest honest
+  way to prove a guard works: five failures against `31a93689` (no preferences
+  passed at all), exactly one against `43e0df2f` (the `prefs ?? {}` half fix,
+  which left the unloaded case open), and clean against current. It also REFUSES
+  with exit 2 rather than passing when node is too old to strip types or when
+  the store stops importing something a stub provides, because stale stubs would
+  quietly test the wrong module. Same shape as `tools/typecheck.py`: a check that
+  cannot run must say so, never exit 0.
+  THE DECISION NOT TO FIX JEST INSTEAD, taken 2026-09-18 with the owner's
+  agreement: making jest execute that path needs a babel plugin devDependency
+  plus a transform override coupled to jest-expo's preset internals, which are
+  not a stable API across SDK bumps, and none of it can be verified from a
+  sandbox. A build-config change nobody can test, to cover three lines, is a
+  worse trade than this script.
   JEST CANNOT EXECUTE `rescheduleReminders` AT ALL, and this entry used to claim
   `__tests__/language-reminders.test.js` drove the real store, which was wrong.
   It reaches its three dependencies through dynamic `import()`, babel leaves
@@ -915,6 +934,15 @@ last one left off without needing a recap typed out.
   sends `billingAnchorDay` and `lib/recurrence.ts` clamps from it. Weekly
   ignores it, since there is no day of month to preserve. A yearly 29 February
   correctly returns to the 29th in the next leap year.
+  THE MIGRATION RAN AND THE COLUMN IS THERE, read off the live database on
+  2026-09-18: `billing_anchor_day | smallint` in `\\d subscriptions`. The owner
+  also confirmed the backfill. As with the publish above, the counts were not
+  written down here, so this records that it was checked rather than what it
+  said. If a month-end subscription ever drifts again, re-run
+  `select count(*) total, count(next_billing_date) dated,
+  count(billing_anchor_day) filled from subscriptions;` before assuming the
+  code is at fault: an unfilled column and a broken anchor look identical from
+  the app.
   AND THEN AN ORDINARY EDIT THREW IT STRAIGHT BACK AWAY, caught by Codex's
   review of 81b709ba within hours of the above shipping. `subscriptions.update`
   read a SUPPLIED `nextBillingDate` as a CHANGED one. The edit form seeds its
@@ -1078,10 +1106,11 @@ last one left off without needing a recap typed out.
   Never create a second `v=spf1` record, edit the existing one, two SPF
   records invalidate SPF entirely and would break transactional email.
 - PRE BUILD CHECKS: run `python3 tools/typecheck.py`, `python3
-  tools/check-legal-sync.py`, and the locale parity check before any
-  native build. check-legal-sync.py fails if either legal document drifts
-  between its app copy and its served copy, and enforces the no dash rule
-  on both.
+  tools/check-legal-sync.py`, `python3 tools/check-language-store.py`, and the
+  locale parity check before any native build. check-legal-sync.py fails if
+  either legal document drifts between its app copy and its served copy, and
+  enforces the no dash rule on both. check-language-store.py covers the one path
+  jest cannot execute, and exits 2 rather than 0 when it cannot run.
 - NEVER trust a bare `npx tsc --noEmit`, and never report it as clean.
   This project pins TypeScript 5.3.3, but a cloud/sandbox session has no
   `node_modules` (installs are blocked), so npx falls through to the
