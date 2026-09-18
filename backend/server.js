@@ -362,18 +362,24 @@ app.get('/terms', (req, res) => {
 // documents a German user is most entitled to understand in a language the
 // rest of the product had already stopped using. Same effective dates as the
 // English, because they are the same documents.
+/* The heading, the date line and the intro used to be inline string literals
+   here, while the SECTIONS came from legal-de.json. That split meant the app
+   could not render a complete German document without either importing this
+   file or copying three strings, and a copy is a thing that drifts. They now
+   live in legal-de.json alongside the sections, so the served page and the
+   in-app screen read the same source and cannot disagree. */
 app.get('/de/datenschutz', (req, res) => {
   res.set('Content-Type', 'text/html').send(legalPage(
-    'Trimio Datenschutzrichtlinie',
-    'G\u00fcltig ab: 27. April 2025 \u00b7 Zuletzt aktualisiert: 4. September 2026',
-    'Danke, dass du dich f\u00fcr Trimio entschieden hast. Diese Datenschutzrichtlinie erkl\u00e4rt, wie Trimio deine Daten erhebt, verwendet, speichert, sch\u00fctzt und weitergibt, wenn du die Trimio App und die zugeh\u00f6rigen Dienste nutzt.',
+    LEGAL_DE.meta.privacyTitle,
+    LEGAL_DE.meta.privacyUpdated,
+    LEGAL_DE.meta.privacyIntro,
     toSections(LEGAL_DE.privacy), 'de'));
 });
 app.get('/de/nutzungsbedingungen', (req, res) => {
   res.set('Content-Type', 'text/html').send(legalPage(
-    'Trimio Nutzungsbedingungen',
-    'G\u00fcltig ab: 4. September 2026 \u00b7 Zuletzt aktualisiert: 4. September 2026',
-    'Diese Nutzungsbedingungen regeln die Vereinbarung zwischen dir und Trimio. Bitte lies sie zusammen mit unserer Datenschutzrichtlinie, die erkl\u00e4rt, wie mit deinen Daten umgegangen wird.',
+    LEGAL_DE.meta.termsTitle,
+    LEGAL_DE.meta.termsUpdated,
+    LEGAL_DE.meta.termsIntro,
     toSections(LEGAL_DE.terms), 'de'));
 });
 

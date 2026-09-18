@@ -2,6 +2,16 @@ import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTheme, AppColors } from "../lib/theme";
 import { useTranslation } from "react-i18next";
+import legalDe from "../backend/legal-de.json";
+
+/* Imported, not translated here and not copied here. See the note in
+   app/terms-of-service.tsx: this is the same file backend/server.js serves at
+   /de/datenschutz, so the app and the website cannot disagree about a legal
+   document. The English SECTIONS below must keep their shape, because
+   tools/check-legal-sync.py compares them against the served copy. */
+const UPDATED_EN = "Effective date: April 27, 2025 · Last updated: September 4, 2026";
+const INTRO_EN =
+  'Thank you for choosing Trimio. This Privacy Policy explains how Trimio collects, uses, stores, protects, and shares your information when you use the Trimio mobile application and related services (the "Service"). By creating an account or using the Service, you acknowledge that you have read and understood this Privacy Policy.';
 
 const SECTIONS = [
   { title: "1. Who We Are", body: "Trimio is operated by Ismael Naranjo, based in Vienna, Austria, who acts as the data controller under the General Data Protection Regulation (GDPR). You can reach us at Trimio@subtrimio.com." },
@@ -25,20 +35,25 @@ const SECTIONS = [
 ];
 
 export default function PrivacyPolicyScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const c = useTheme();
   const styles = makeStyles(c);
+
+  const isDe = i18n.language?.startsWith("de") ?? false;
+  const sections = isDe
+    ? legalDe.privacy.map(([title, body]) => ({ title, body }))
+    : SECTIONS;
+  const updated = isDe ? legalDe.meta.privacyUpdated : UPDATED_EN;
+  const intro = isDe ? legalDe.meta.privacyIntro : INTRO_EN;
 
   return (
     <>
       <Stack.Screen options={{ title: t("screenTitles.privacyPolicy"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <Text style={styles.updated}>Effective date: April 27, 2025 · Last updated: September 4, 2026</Text>
-          <Text style={styles.intro}>
-            Thank you for choosing Trimio. This Privacy Policy explains how Trimio collects, uses, stores, protects, and shares your information when you use the Trimio mobile application and related services (the &quot;Service&quot;). By creating an account or using the Service, you acknowledge that you have read and understood this Privacy Policy.
-          </Text>
-          {SECTIONS.map((s) => (
+          <Text style={styles.updated}>{updated}</Text>
+          <Text style={styles.intro}>{intro}</Text>
+          {sections.map((s) => (
             <View key={s.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{s.title}</Text>
               <Text style={styles.sectionBody}>{s.body}</Text>

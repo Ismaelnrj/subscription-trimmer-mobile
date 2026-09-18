@@ -954,6 +954,37 @@ last one left off without needing a recap typed out.
   cannot be diffed across languages but structure can, and the failure it
   catches is someone adding an English section and forgetting the German one,
   so the German document quietly says less about the same service.
+- THE GERMAN LEGAL DOCUMENTS ARE NOW IN THE APP, not only on the website
+  (2026-09-18). Both in-app screens were English only, 20 terms sections and 18
+  privacy sections hardcoded, while `backend/legal-de.json` already held complete
+  German versions served at `/de/nutzungsbedingungen` and `/de/datenschutz`. So
+  the same person reading the terms on the site got German and in the app got
+  English, which works against the reason the German was written at all: German
+  consumer law can treat foreign language terms as not validly incorporated, and
+  the in-app screen is where people actually meet them.
+  NOTHING WAS TRANSLATED TO DO THIS. Both screens `import legalDe from
+  "../backend/legal-de.json"`, the same file the server requires, so the app and
+  the website render the same bytes. A copy was deliberately refused: a second
+  version of a legal document is the one kind of drift not worth any convenience.
+  THE HEADING, DATE LINE AND INTRO MOVED INTO THAT JSON TOO, as `meta`. They were
+  inline literals in `server.js`, which is why the app could not render a
+  complete German document without copying three strings. The served output is
+  byte-identical, verified against the pre-change `server.js` rather than assumed.
+  THE ENGLISH `const SECTIONS = [...]` IN BOTH SCREENS MUST KEEP ITS SHAPE.
+  `check-legal-sync.py` parses that array BY NAME and compares it against
+  `TERMS_SECTIONS` in `server.js`. Restructuring it silently breaks the parser,
+  which is the thing that stops the two English copies drifting.
+  THE CHECKER GREW FIVE MORE CHECKS and they were NEGATIVE TESTED, because a
+  guard nobody has seen fail is a guard nobody has tested, which this file
+  already records as a lesson about typecheck.py. Removing the app's German
+  import, blanking a meta string, and restoring an inline German heading in
+  server.js each produce a FAIL and exit 1. That matters here more than usual:
+  deleting the import breaks no build and fails no test, it just quietly serves
+  English terms to German users again.
+  `tools/build-legal-de.py` DOES NOT EXIST and is not needed. The `_note` in
+  legal-de.json used to name it as the generator; `server.js` requires the JSON
+  directly, so the JSON is the source and there is nothing to regenerate. The
+  note now says so.
 - THE 17 USERS HONESTY BLOCK IS GONE. The owner had deliberately chosen
   that radical-honesty line, and the 2026-09 design handoff dropped it.
   Nothing on the page states a user count now. Restoring it is the

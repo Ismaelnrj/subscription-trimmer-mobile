@@ -2,6 +2,21 @@ import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTheme, AppColors } from "../lib/theme";
 import { useTranslation } from "react-i18next";
+import legalDe from "../backend/legal-de.json";
+
+/* The German text is IMPORTED, not translated here and not copied here.
+
+   backend/legal-de.json is the same file backend/server.js serves at
+   /de/nutzungsbedingungen, so the document a German user reads in the app and
+   the one they read on the website are the same bytes. A copy would be a second
+   version of a legal document, which is the one kind of drift worth refusing
+   outright: a policy that says two different things is worse than either.
+
+   The English SECTIONS below stay exactly as they are, because
+   tools/check-legal-sync.py parses that array by name and compares it against
+   TERMS_SECTIONS in backend/server.js. Do not restructure it. */
+const UPDATED_EN = "Last updated: September 4, 2026";
+const INTRO_EN = "Please read these Terms of Service carefully before using Trimio.";
 
 const SECTIONS = [
   { title: "1. Who We Are", body: "Trimio is operated by Ismael Naranjo, based in Vienna, Austria. You can reach us at Trimio@subtrimio.com. These Terms of Service govern your use of the Trimio mobile application, the Trimio website, and related services (the \"Service\")." },
@@ -27,18 +42,27 @@ const SECTIONS = [
 ];
 
 export default function TermsOfServiceScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const c = useTheme();
   const styles = makeStyles(c);
+
+  /* Read off i18n rather than the language store, so this screen is correct
+     even if it is somehow reached before the store has loaded. */
+  const isDe = i18n.language?.startsWith("de") ?? false;
+  const sections = isDe
+    ? legalDe.terms.map(([title, body]) => ({ title, body }))
+    : SECTIONS;
+  const updated = isDe ? legalDe.meta.termsUpdated : UPDATED_EN;
+  const intro = isDe ? legalDe.meta.termsIntro : INTRO_EN;
 
   return (
     <>
       <Stack.Screen options={{ title: t("screenTitles.termsOfService"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          <Text style={styles.updated}>Last updated: September 4, 2026</Text>
-          <Text style={styles.intro}>Please read these Terms of Service carefully before using Trimio.</Text>
-          {SECTIONS.map((s) => (
+          <Text style={styles.updated}>{updated}</Text>
+          <Text style={styles.intro}>{intro}</Text>
+          {sections.map((s) => (
             <View key={s.title} style={styles.section}>
               <Text style={styles.sectionTitle}>{s.title}</Text>
               <Text style={styles.sectionBody}>{s.body}</Text>

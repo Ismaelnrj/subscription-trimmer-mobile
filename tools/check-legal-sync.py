@@ -115,4 +115,67 @@ for label, pairs in (("terms", js_array(server, "TERMS_SECTIONS")),
     else:
         print(f"OK   {label}: no em or en dashes")
 
+# The German is now REACHABLE IN THE APP, not only on the website. Both screens
+# import backend/legal-de.json directly rather than carrying a copy, because a
+# copy of a legal document is the one kind of drift worth refusing outright.
+# These checks exist so that wiring cannot be quietly removed: deleting the
+# import would not break a build or fail a test, it would just silently serve
+# English terms to German users again, which is exactly the state this replaced.
+APP_LEGAL = {
+    "app/terms-of-service.tsx": ("terms", "termsUpdated", "termsIntro"),
+    "app/privacy-policy.tsx": ("privacy", "privacyUpdated", "privacyIntro"),
+}
+for path, (arr, updated_key, intro_key) in APP_LEGAL.items():
+    src = read(path)
+    problems = []
+    if "legal-de.json" not in src:
+        problems.append("does not import backend/legal-de.json")
+    if f"legalDe.{arr}" not in src:
+        problems.append(f"never reads legalDe.{arr}")
+    if 'startsWith("de")' not in src:
+        problems.append("never branches on the app language")
+    for k in (updated_key, intro_key):
+        if f"legalDe.meta.{k}" not in src:
+            problems.append(f"never reads legalDe.meta.{k}")
+    if problems:
+        print(f"FAIL {path}: German is not reachable in the app")
+        for p in problems:
+            print("  ", p)
+        failed = True
+    else:
+        print(f"OK   {path}: renders the German from legal-de.json")
+
+# The heading, date line and intro live in the JSON too, so the served page and
+# the in-app screen read the same source. They used to be inline literals in
+# server.js, which is why the app could not show a complete German document.
+meta = de.get("meta", {})
+needed = ["termsTitle", "termsUpdated", "termsIntro",
+          "privacyTitle", "privacyUpdated", "privacyIntro"]
+missing = [k for k in needed if not str(meta.get(k, "")).strip()]
+if missing:
+    print(f"FAIL legal-de.json: meta is missing or empty: {missing}")
+    failed = True
+else:
+    dashed = [k for k in needed if re.search(r"[—–]", meta[k])]
+    if dashed:
+        print(f"FAIL legal-de.json meta: dash used in {dashed}")
+        failed = True
+    else:
+        print(f"OK   legal-de.json: meta complete, {len(needed)} strings, no em or en dashes")
+
+# server.js must READ those, not restate them. An inline German heading here
+# would be a second copy of a string the app also renders.
+for route, key in (("/de/datenschutz", "privacyTitle"),
+                   ("/de/nutzungsbedingungen", "termsTitle")):
+    i = server.index(f"app.get('{route}'")
+    block = server[i:i + 700]
+    if f"LEGAL_DE.meta.{key}" not in block:
+        print(f"FAIL {route}: does not read LEGAL_DE.meta.{key}")
+        failed = True
+    elif re.search(r"'Trimio (Datenschutzrichtlinie|Nutzungsbedingungen)'", block):
+        print(f"FAIL {route}: still carries an inline German heading")
+        failed = True
+    else:
+        print(f"OK   {route}: reads its heading from legal-de.json")
+
 sys.exit(1 if failed else 0)
