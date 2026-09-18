@@ -504,6 +504,41 @@ last one left off without needing a recap typed out.
   since the catalogue holds 127 unique service names and a user browses at
   most one row per name. It now says "über 120". If the catalogue changes,
   re-count with a unique-name count, not a row count.
+- `chipText` IN `app/(tabs)/subscriptions.tsx` CARRIES `textTransform: "capitalize"`,
+  and that is deliberate: category names arrive lowercase and want title casing.
+  It is also why the free trial checkbox renders as "This Is A Free Trial" while
+  `locales/en.json` says "This is a free trial". The string is NOT wrong and the
+  screen recordings showing it are NOT mockups, which is worth knowing because
+  the mismatch looks exactly like fabricated UI at first glance.
+  IT WAS STILL A BUG IN GERMAN, fixed 2026-09-18. German capitalises nouns but
+  not verbs, articles or adjectives, so "Dies ist eine kostenlose Testphase" was
+  rendering as "Dies Ist Eine Kostenlose Testphase", which reads as machine
+  translation on a product whose claim is that it is properly localised. Every
+  OTHER chip is a single capitalised noun in both languages, so the transform is
+  a no-op for them: the trial toggle was the only chip carrying a sentence. It
+  now opts out via `styles.trialToggleText` (`textTransform: "none"`) rather than
+  changing `chipText`, so the category chips keep the casing they need.
+  THE GENERAL SHAPE: a text transform is a layout decision applied to language,
+  and it stops being correct the moment one string in the shared style is a
+  sentence instead of a label. The other two `capitalize` call sites
+  (`categoryBadgeText`, `legendName`) were checked and are category names only.
+- EXCHANGE RATES ARE VALIDATED AT BOTH ENDS as of 2026-09-18, and the reason is
+  that `?? 1` looks like a guard and is not one: it catches null and undefined
+  ONLY. A rate of `0` divided through to Infinity and a `NaN` rate propagated, so
+  a single bad value from `api.frankfurter.app` rendered EVERY price in the app
+  as "€Infinity" or "€NaN", with nothing having thrown. `fetchRates` used to
+  spread the response straight into the store unchecked.
+  Now the fetch keeps only finite positive numbers and refuses to replace good
+  rates with an empty set, and `convert` returns the amount untouched unless both
+  rates are finite and positive. Showing an unconverted number is a small quiet
+  error; showing NaN where a monthly cost belongs looks like the app has fallen
+  over.
+  ONE DELIBERATE BEHAVIOUR CHANGE: a MISSING rate no longer defaults to 1. It
+  used to, which meant an absent base was silently treated as USD and prices that
+  were never entered in dollars got converted anyway, the same class of error as
+  the 2026-09-05 baseCurrencyCode bug. The picker only offers the nine currencies
+  FALLBACK_RATES covers, so this path does not fire in practice, but honest is
+  better than confidently wrong. `__tests__/currency-convert.test.ts` pins it.
 - CATEGORY COLOURS (`lib/categories.ts`) drive four surfaces at once: the
   quick add icons, the subscription card icons, the Stats donut with its
   legend, and the calendar day dots. The rebrand missed them entirely

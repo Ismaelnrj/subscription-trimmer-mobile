@@ -1095,7 +1095,17 @@ export default function SubscriptionsScreen() {
                   size={16}
                   color={formData.isFreeTrial ? "#FFFFFF" : c.textSecondary}
                 />
-                <Text style={[styles.chipText, formData.isFreeTrial && styles.chipTextActive]}>
+                {/* Opts out of chipText's textTransform: "capitalize". That
+                    transform exists for the CATEGORY chips, whose names arrive
+                    lowercase and want title casing. This chip is the only one
+                    carrying a whole sentence, and capitalising a sentence is
+                    wrong in English and actually ungrammatical in German, which
+                    capitalises nouns but not verbs, articles or adjectives:
+                    "Dies ist eine kostenlose Testphase" was rendering as "Dies
+                    Ist Eine Kostenlose Testphase". Every other chip is a single
+                    capitalised noun in both languages, so the transform is a
+                    no-op for them and only this one needed the exemption. */}
+                <Text style={[styles.chipText, styles.trialToggleText, formData.isFreeTrial && styles.chipTextActive]}>
                   {t("subscriptions.isFreeTrialLabel")}
                 </Text>
               </TouchableOpacity>
@@ -1334,6 +1344,7 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", alignItems: "center", gap: 6,
       alignSelf: "flex-start", marginBottom: 12,
     },
+    trialToggleText: { textTransform: "none" },
     chipCustomActive: { backgroundColor: "#142B3A", borderColor: "#142B3A" },
     chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
     chipText: { fontSize: 12, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", textTransform: "capitalize" },

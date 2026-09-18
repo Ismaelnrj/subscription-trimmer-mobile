@@ -83,7 +83,20 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
       const res = await fetch("https://api.frankfurter.app/latest?base=USD");
       if (!res.ok) return;
       const data = await res.json();
-      set({ rates: { USD: 1, ...data.rates } });
+      /* Every price the app displays is computed from these numbers, so a third
+         party's bad afternoon must not reach the store. This used to spread
+         `data.rates` in unchecked: a single 0 turned every converted price into
+         Infinity, and a single NaN turned them all into NaN, so the whole app
+         would read "€NaN" with nothing having thrown. Keep only finite positive
+         numbers, and if that leaves nothing usable, keep the existing rates
+         rather than replacing good ones with an empty set. */
+      const clean: Record<string, number> = {};
+      for (const [code, rate] of Object.entries(data?.rates ?? {})) {
+        const n = Number(rate);
+        if (Number.isFinite(n) && n > 0) clean[code] = n;
+      }
+      if (Object.keys(clean).length === 0) return;
+      set({ rates: { ...get().rates, USD: 1, ...clean } });
     } catch {
       // keep fallback rates
     }
@@ -92,9 +105,18 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   convert: (amount: number) => {
     const { rates, baseCurrencyCode, currency } = get();
     if (baseCurrencyCode === currency.code) return amount;
-    const baseRate = rates[baseCurrencyCode] ?? 1;
-    const targetRate = rates[currency.code] ?? 1;
-    return amount * (targetRate / baseRate);
+    /* `?? 1` was the only guard here and it catches null and undefined ONLY, so
+       a rate of 0 still divided through to Infinity and a NaN rate still
+       propagated. Both render as a price: "€Infinity", "€NaN". Showing an
+       unconverted number is a small, quiet error; showing NaN where somebody's
+       monthly cost should be looks like the app has fallen over. So anything
+       not finite and positive falls back to returning the amount untouched. */
+    const baseRate = rates[baseCurrencyCode];
+    const targetRate = rates[currency.code];
+    const usable = (r: unknown): r is number => typeof r === "number" && Number.isFinite(r) && r > 0;
+    if (!usable(baseRate) || !usable(targetRate)) return amount;
+    const converted = amount * (targetRate / baseRate);
+    return Number.isFinite(converted) ? converted : amount;
   },
 }));
 
