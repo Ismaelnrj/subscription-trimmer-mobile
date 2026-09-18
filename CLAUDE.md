@@ -733,6 +733,35 @@ last one left off without needing a recap typed out.
   A scan of every `t("...")` in app/, components/ and lib/ found 520
   distinct keys with zero missing and zero template-literal keys, so that
   scan is complete rather than partial.
+- RENEWAL REMINDERS WERE ENGLISH ONLY UNTIL 2026-09-18, and that was the largest
+  localisation gap in the product as well as the least visible. `lib/notification-
+  scheduler.ts` hardcoded every string it sent: "in 7 days", "{{name}} renews
+  {{when}}", "will be charged on", "trial ends tomorrow", "Cancel now if you
+  don't want to be charged". A notification is the one surface you cannot find by
+  opening the app and looking, which is why 589 translated keys, a German store
+  listing, German legal documents and a German landing page all coexisted with it.
+  It matters more than its size suggests: the reminder IS the product. "Wissen,
+  bevor abgebucht wird" is a promise kept by this file and almost nowhere else.
+  FORMATTING IS LANGUAGE AWARE TOO, not just the words. German writes a decimal
+  COMMA and puts the symbol after the amount, so it renders "10,00 €" rather than
+  "€10.00". This project already refuses a decimal point in German copy elsewhere
+  (`tools/make-cut.py` rejects a render containing one), so the notification had
+  been breaking a rule the video pipeline enforces on captions. The date also
+  follows the APP language now: a bare `toLocaleDateString()` uses the DEVICE
+  locale, so a German user on an English phone got an English date inside German
+  text.
+  SWITCHING LANGUAGE NOW RESCHEDULES, which is not optional here. The OS bakes
+  the text in when the notification is scheduled, so pending reminders keep the
+  old language until something reschedules them, and the only thing that did was
+  the dashboard's subscriptions query happening to refetch. `setLanguage` now
+  calls a fire-and-forget reschedule that reads the cached list out of
+  `lib/query-client.ts`, swallowing everything: changing language must succeed
+  even with notifications denied or the cache empty.
+  ALSO ON RECORD, since it will matter at the next SDK bump: reminders are
+  scheduled from `onSuccess` on a `useQuery` in `app/(tabs)/index.tsx`. That
+  option EXISTS in `@tanstack/react-query` 4.32.0, which this project pins, and
+  was REMOVED from useQuery in v5. Upgrading to v5 without moving that call would
+  silently stop every reminder in the app, with nothing erroring anywhere.
 - Deliberately deferred, revisit later, not now: iOS (real inbound demand
   exists from the owner's own circle, but wait for Android traction/signal
   first). The primary-colour rebrand was deferred for a while and then

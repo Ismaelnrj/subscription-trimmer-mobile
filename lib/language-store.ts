@@ -4,6 +4,34 @@ import i18n from "./i18n";
 
 const LANGUAGE_KEY = "app_language";
 
+/* Renewal reminders are scheduled with the OS ahead of time, with their text
+   baked in at scheduling time, so switching language does not change the ones
+   already queued. Without this, somebody who switches to German keeps getting
+   English reminders until the dashboard happens to refetch and reschedule them,
+   which is the one message this app exists to send.
+
+   Deliberately not awaited and fully swallowed: changing language must succeed
+   even if notification permission was refused, the cache is empty, or the OS
+   refuses the schedule. The imports are dynamic so this module stays cheap for
+   callers that never switch language, and so a missing dependency can never
+   take the language store down with it. */
+function rescheduleReminders() {
+  (async () => {
+    try {
+      const [{ queryClient }, { useCurrencyStore }, { scheduleRenewalReminders }] = await Promise.all([
+        import("./query-client"),
+        import("./currency-store"),
+        import("./notification-scheduler"),
+      ]);
+      const subs = queryClient.getQueryData<any[]>(["subscriptions", "list"]);
+      if (!Array.isArray(subs) || subs.length === 0) return;
+      await scheduleRenewalReminders(subs, useCurrencyStore.getState().currency.symbol);
+    } catch (e) {
+      console.warn("[Language] Could not reschedule reminders:", e);
+    }
+  })();
+}
+
 interface LanguageState {
   language: "en" | "de";
   setLanguage: (lang: "en" | "de") => Promise<void>;
@@ -17,6 +45,7 @@ export const useLanguageStore = create<LanguageState>((set) => ({
     await i18n.changeLanguage(lang);
     await SecureStore.setItemAsync(LANGUAGE_KEY, lang).catch(() => {});
     set({ language: lang });
+    rescheduleReminders();
   },
 
   loadLanguage: async () => {

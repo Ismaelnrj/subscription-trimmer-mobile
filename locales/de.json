@@ -497,7 +497,16 @@
     "couldntLoad": "Benachrichtigungen konnten nicht geladen werden. Nach unten ziehen zum Wiederholen.",
     "noNotifications": "Noch keine Benachrichtigungen",
     "priceUpTitle": "{{name}} ist teurer geworden",
-    "priceUpBody": "Von {{from}} auf {{to}} pro {{cycle}}."
+    "priceUpBody": "Von {{from}} auf {{to}} pro {{cycle}}.",
+    "reminders": {
+      "in7": "in 7 Tagen",
+      "in3": "in 3 Tagen",
+      "tomorrow": "morgen",
+      "renewTitle": "{{name}} wird {{when}} verlängert",
+      "renewBody": "{{amount}} wird am {{date}} abgebucht.",
+      "trialTitle": "Testphase von {{name}} endet morgen",
+      "trialBody": "Kündige jetzt, wenn {{amount}} nicht abgebucht werden soll."
+    }
   },
   "verifyEmail": {
     "checkInbox": "Posteingang prüfen",

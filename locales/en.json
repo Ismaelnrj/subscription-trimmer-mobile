@@ -497,7 +497,16 @@
     "couldntLoad": "Couldn't load notifications. Pull down to retry.",
     "noNotifications": "No notifications yet",
     "priceUpTitle": "{{name}} went up in price",
-    "priceUpBody": "It went from {{from}} to {{to}} per {{cycle}}."
+    "priceUpBody": "It went from {{from}} to {{to}} per {{cycle}}.",
+    "reminders": {
+      "in7": "in 7 days",
+      "in3": "in 3 days",
+      "tomorrow": "tomorrow",
+      "renewTitle": "{{name}} renews {{when}}",
+      "renewBody": "{{amount}} will be charged on {{date}}.",
+      "trialTitle": "{{name}} trial ends tomorrow",
+      "trialBody": "Cancel now if you do not want to be charged {{amount}}."
+    }
   },
   "verifyEmail": {
     "checkInbox": "Check your inbox",
