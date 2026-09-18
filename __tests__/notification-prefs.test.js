@@ -68,9 +68,15 @@ describe("finding 5: reminders must not outlive the session", () => {
 
   it("a scheduler already running cannot re-add them", () => {
     /* Scheduling awaits once per notification, so a run that started before
-       sign-out can finish after it. The cancel alone does not cover that. */
+       sign-out can finish after it. The cancel alone does not cover that.
+
+       A run now takes the NEXT generation rather than reading the current one,
+       so a newer run invalidates an older one exactly the way a sign-out does.
+       Two overlapping runs used to share a number and neither could stop the
+       other. __tests__/notification-race.test.js exercises what that does; this
+       only pins that the mechanism is still here. */
     expect(SCHEDULER).toMatch(/let sessionGeneration = 0/);
-    expect(SCHEDULER).toMatch(/const myGeneration = sessionGeneration/);
+    expect(SCHEDULER).toMatch(/const myGeneration = nextGeneration\(\)/);
     expect(SCHEDULER).toMatch(/if \(sessionGeneration !== myGeneration\) return/);
   });
 });

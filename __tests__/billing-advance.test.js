@@ -94,6 +94,101 @@ describe("reading alerts cannot move a payment due today", () => {
   });
 });
 
+describe("the billing day survives being written to the database and read back", () => {
+  /* Codex's recheck of 31a93689. The clamp above is only half the fix: the
+     anchor was DERIVED from the date being advanced, so it survived within one
+     call and was lost the moment the clamped value was persisted. A real
+     advance is one call per request with a write in between, so 31 January
+     became 28 February and then 28 March, permanently. The tests above missed
+     it because they either pass an explicit anchor of 31 or advance several
+     months inside a single call, and neither is what production does. */
+
+  // What alerts.list does: read the row, advance it, write the DATE back. The
+  // anchor column is deliberately not rewritten.
+  const request = (row, onDate) => ({
+    ...row,
+    next_billing_date: advanceBillingDate(
+      new Date(row.next_billing_date), row.billing_cycle, startOfUtcDay(utc(onDate)), row.billing_anchor_day
+    ).date,
+  });
+
+  const overMonths = (row, dates) => dates.map((d) => day((row = request(row, d)).next_billing_date));
+
+  it("returns to the 31st in March after clamping in February", () => {
+    const row = { next_billing_date: utc("2026-01-31"), billing_cycle: "monthly", billing_anchor_day: 31 };
+    expect(overMonths(row, ["2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01"]))
+      .toEqual(["2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31"]);
+  });
+
+  it("without a stored anchor it still drifts, which is what the column is for", () => {
+    /* Pins the defect rather than the fix, so this test says out loud what a
+       row predating the migration does. Backfilling cannot recover the 31: a
+       stored 28 February cannot prove whether 28, 29, 30 or 31 was meant, and
+       guessing would move a real billing date. */
+    const row = { next_billing_date: utc("2026-01-31"), billing_cycle: "monthly", billing_anchor_day: null };
+    expect(overMonths(row, ["2026-02-01", "2026-03-01", "2026-04-01"]))
+      .toEqual(["2026-02-28", "2026-03-28", "2026-04-28"]);
+  });
+
+  it("a legacy row is no worse off than before the column existed", () => {
+    // The fallback must be the day of the date itself, so nothing moves for
+    // anyone on the deploy that adds this.
+    const withNull = advanceBillingDate(utc("2026-01-15"), "monthly", startOfUtcDay(utc("2026-02-01")), null);
+    const withUndef = advanceBillingDate(utc("2026-01-15"), "monthly", startOfUtcDay(utc("2026-02-01")), undefined);
+    expect(day(withNull.date)).toBe("2026-02-15");
+    expect(day(withUndef.date)).toBe("2026-02-15");
+  });
+
+  it("rejects a nonsense anchor rather than trusting it", () => {
+    // 0, 99 and "banana" must all fall back, not produce a date in the wrong month.
+    for (const bad of [0, -1, 99, "banana", NaN, 1.5]) {
+      const r = advanceBillingDate(utc("2026-01-15"), "monthly", startOfUtcDay(utc("2026-02-01")), bad);
+      expect(day(r.date)).toBe("2026-02-15");
+    }
+  });
+
+  it("keeps 29 February on an annual subscription until the next leap year", () => {
+    const row = { next_billing_date: utc("2028-02-29"), billing_cycle: "yearly", billing_anchor_day: 29 };
+    expect(overMonths(row, ["2028-03-01", "2029-03-01", "2030-03-01", "2031-03-01", "2032-03-01"]))
+      .toEqual(["2029-02-28", "2030-02-28", "2031-02-28", "2032-02-29", "2033-02-28"]);
+  });
+
+  it("weekly cycles ignore the anchor entirely", () => {
+    // There is no day-of-month to preserve, and applying one would be a bug.
+    const row = { next_billing_date: utc("2026-01-31"), billing_cycle: "weekly", billing_anchor_day: 31 };
+    expect(overMonths(row, ["2026-02-08", "2026-02-15"])).toEqual(["2026-02-14", "2026-02-21"]);
+  });
+});
+
+describe("the anchor is stored where it can still be trusted", () => {
+  it("has a column and a backfill that touches no billing date", () => {
+    expect(SERVER).toMatch(/ADD COLUMN IF NOT EXISTS billing_anchor_day SMALLINT/);
+    const backfill = SERVER.slice(SERVER.indexOf("UPDATE subscriptions\n       SET billing_anchor_day"));
+    const stmt = backfill.slice(0, backfill.indexOf("`"));
+    // The migration must write the new column and nothing else.
+    expect(stmt).toMatch(/WHERE billing_anchor_day IS NULL/);
+    expect(/SET[\s\S]*next_billing_date\s*=/.test(stmt)).toBe(false);
+  });
+
+  it("is recorded when a subscription is created", () => {
+    const create = SERVER.slice(SERVER.indexOf("subscriptions.create"), SERVER.indexOf("subscriptions.update"));
+    expect(create).toMatch(/billing_anchor_day/);
+  });
+
+  it("only moves when the date is deliberately set", () => {
+    /* Editing a name or a price must not touch it, and it must never be
+       re-derived from the stored date, which may already be a clamped 28th. */
+    const update = SERVER.slice(SERVER.indexOf("subscriptions.update"), SERVER.indexOf("subscriptions.delete"));
+    const code = update.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    expect(code).toMatch(/newAnchorDay = existing\.billing_anchor_day/);
+    expect(code).toMatch(/newAnchorDay = parsed\.getUTCDate\(\)/);
+  });
+
+  it("reaches the client, so the calendar draws the day the server bills", () => {
+    expect(SERVER).toMatch(/billingAnchorDay:/);
+  });
+});
+
 describe("a new subscription's first billing date is calendar safe", () => {
   it("does not overflow from a 31st", () => {
     /* nextBillingDate() had the same setMonth defect, so adding a subscription

@@ -789,6 +789,31 @@ async function initDB() {
      cycle advances, next_billing_date no longer equals this and the next
      renewal sends normally, with nothing to clean up. */
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS reminder_sent_for TIMESTAMPTZ`);
+  /* The day of the month this subscription is really billed on.
+
+     next_billing_date cannot carry it, because a month is not a fixed length.
+     A subscription due on the 31st has to be written as 28 February, and once
+     that clamped value is persisted it becomes the anchor for the NEXT
+     advance, so the 31st turns into the 28th permanently after its first
+     February. Within a single call the anchor survived; across two requests
+     with a database write between them it did not, which is the shape every
+     real advance takes.
+
+     Backfilled from the day next_billing_date already says. That recovers
+     nothing for a row that has already drifted, and it must not pretend
+     otherwise: a stored 28 February cannot tell you whether the customer meant
+     28, 29, 30 or 31, and guessing would move real billing dates on real
+     subscriptions to settle a question the data cannot answer. Writing only
+     the new column leaves every existing date exactly where it is, so the
+     worst case is the behaviour we already had, and everything created or
+     edited from now on carries the true day. */
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS billing_anchor_day SMALLINT`);
+  await pool.query(`
+    UPDATE subscriptions
+       SET billing_anchor_day = EXTRACT(DAY FROM (next_billing_date AT TIME ZONE 'UTC'))::smallint
+     WHERE billing_anchor_day IS NULL
+       AND next_billing_date IS NOT NULL
+  `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
@@ -946,10 +971,24 @@ function addMonthsUTC(date, months, anchorDay) {
 
    `anchorDay` is carried through every step rather than read from the current
    value, so 31 January clamps to 28 February and then returns to 31 March
-   instead of sticking at the 28th for the rest of the subscription's life. */
-function advanceBillingDate(start, billingCycle, notBefore) {
+   instead of sticking at the 28th for the rest of the subscription's life.
+
+   IT HAS TO BE PASSED IN, not derived here, and that is the whole point of the
+   fourth parameter. Deriving it from `start` only preserves the day within ONE
+   call. A real advance is one call per request with a database write in
+   between, so the next request reads back the clamped 28 February and derives
+   28 from it: January 31 -> February 28 -> March 28, permanently. Supplying it
+   from the stored anchor is what carries the day across that boundary.
+
+   Falling back to the day of `start` when no anchor is given keeps the old
+   behaviour for rows that predate the column, which is the correct default: it
+   is exactly what the date already says, so nothing moves. */
+function advanceBillingDate(start, billingCycle, notBefore, storedAnchorDay) {
   let d = new Date(start);
-  const anchorDay = d.getUTCDate();
+  const parsedAnchor = Number(storedAnchorDay);
+  const anchorDay = Number.isInteger(parsedAnchor) && parsedAnchor >= 1 && parsedAnchor <= 31
+    ? parsedAnchor
+    : d.getUTCDate();
   let iterations = 0;
   while (d < notBefore && iterations < 1000) {
     iterations++;
@@ -1094,6 +1133,12 @@ function formatSub(s) {
     category: s.category,
     nextBillingDate: s.next_billing_date,
     trialEndDate: s.trial_end_date || null,
+    /* The calendar projects future renewals from nextBillingDate, so it needs
+       the same anchor the server advances with or the two disagree about which
+       day a month-end subscription falls on. SMALLINT comes back as a number
+       from node-postgres, but this endpoint is not the only writer and an
+       absent column must read as absent rather than as NaN. */
+    billingAnchorDay: Number.isInteger(Number(s.billing_anchor_day)) ? Number(s.billing_anchor_day) : null,
     created_at: s.created_at,
     isActive: s.is_active ?? true,
   };
@@ -1733,9 +1778,14 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       }
     }
 
+    /* Recorded at creation, when the intended day is known for certain: it is
+       the day the person picked, or today's day for a generated date. Reading
+       it back off next_billing_date later cannot tell a chosen 28th from a
+       31st that was clamped. */
+    const anchorDay = new Date(billingDate).getUTCDate();
     const result = await pool.query(
-      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null]
+      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay]
     );
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
@@ -1768,15 +1818,30 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     let newBillingDate = billingCycle !== existing.billing_cycle
       ? nextBillingDate(billingCycle)
       : existing.next_billing_date;
+    /* The anchor only moves when the DATE is deliberately set: a new date the
+       user picked, or a regenerated one after a cycle change. Editing a name
+       or a price must not touch it, and it must never be re-derived from the
+       stored date, since that value may already be a clamped 28th. */
+    let newAnchorDay = existing.billing_anchor_day ?? null;
+    if (billingCycle !== existing.billing_cycle) {
+      newAnchorDay = new Date(newBillingDate).getUTCDate();
+    }
     if (nextBillingDateInput) {
       const parsed = new Date(nextBillingDateInput);
       if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
       newBillingDate = parsed.toISOString();
+      newAnchorDay = parsed.getUTCDate();
+    }
+    // Legacy rows arrive with no anchor at all. Seeding it from the date says
+    // only what the date already says, so nothing moves.
+    if (newAnchorDay == null && newBillingDate) {
+      const seed = new Date(newBillingDate);
+      if (!isNaN(seed.getTime())) newAnchorDay = seed.getUTCDate();
     }
 
     const result = await pool.query(
-      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6 WHERE id = $7 AND user_id = $8 RETURNING *',
-      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, id, req.userId]
+      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6, billing_anchor_day = $7 WHERE id = $8 AND user_id = $9 RETURNING *',
+      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, newAnchorDay, id, req.userId]
     );
 
     // Rows written before prices were rounded can hold sub-cent figures, so an
@@ -2024,7 +2089,13 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
            billing date at all, and this is the narrower half of that: it can
            still advance genuinely stale dates, but never today's. */
         const today = startOfUtcDay(now);
-        const { date: advanced, advanced: didAdvance } = advanceBillingDate(billingDate, sub.billing_cycle, today);
+        /* The stored anchor, not the day of the date being advanced. Without
+           it a subscription billed on the 31st loses that day the first time
+           it passes a February, because the clamped 28th is what gets written
+           and what the next request reads back as its starting point. */
+        const { date: advanced, advanced: didAdvance } = advanceBillingDate(
+          billingDate, sub.billing_cycle, today, sub.billing_anchor_day
+        );
         billingDate = advanced;
         if (didAdvance && billingDate >= today) {
           await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
@@ -2032,7 +2103,10 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       } else {
         // Missing billing date — set it now and skip alert for this cycle
         billingDate = new Date(nextBillingDate(sub.billing_cycle));
-        await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
+        await pool.query(
+          'UPDATE subscriptions SET next_billing_date = $1, billing_anchor_day = $2 WHERE id = $3',
+          [billingDate.toISOString(), billingDate.getUTCDate(), sub.id]
+        );
       }
 
       const days = Math.ceil((billingDate - now) / 86400000);

@@ -25,7 +25,16 @@ function rescheduleReminders() {
       ]);
       const subs = queryClient.getQueryData<any[]>(["subscriptions", "list"]);
       if (!Array.isArray(subs) || subs.length === 0) return;
-      await scheduleRenewalReminders(subs, useCurrencyStore.getState().currency.symbol);
+      /* Preferences must come along. Calling without them falls back to the
+         scheduler's `{}` default, which means push on, renewal alerts on and a
+         three day lead, so switching language RE-ENABLED reminders somebody had
+         turned off and silently replaced a seven day choice with three.
+
+         Reading the same cache key the dashboard and the preferences screen
+         use, so this reflects whatever was last loaded rather than refetching
+         during a language switch. */
+      const prefs = queryClient.getQueryData<any>(["notifications", "preferences"]);
+      await scheduleRenewalReminders(subs, useCurrencyStore.getState().currency.symbol, prefs ?? {});
     } catch (e) {
       console.warn("[Language] Could not reschedule reminders:", e);
     }

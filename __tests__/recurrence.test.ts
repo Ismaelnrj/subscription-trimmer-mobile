@@ -28,6 +28,32 @@ describe("getOccurrencesInMonth - monthly", () => {
     const sub = { nextBillingDate: iso(2026, 1, 31), billingCycle: "monthly" };
     expect(getOccurrencesInMonth(sub, new Date(2024, 1, 1)).map(ymd)).toEqual(["2024-02-29"]);
   });
+
+  it("draws the stored anchor day, not the day the date was clamped to", () => {
+    /* Once the server has advanced a 31st subscription through a February,
+       nextBillingDate reads 28 February. Projecting from that alone drew every
+       later month on the 28th while the server went on billing the 31st: the
+       calendar and the charge disagreed. billingAnchorDay is the server's own
+       anchor, so both now say the same day. */
+    const sub = { nextBillingDate: iso(2026, 2, 28), billingCycle: "monthly", billingAnchorDay: 31 };
+    expect(getOccurrencesInMonth(sub, new Date(2026, 2, 1)).map(ymd)).toEqual(["2026-03-31"]);
+    expect(getOccurrencesInMonth(sub, new Date(2026, 3, 1)).map(ymd)).toEqual(["2026-04-30"]);
+    expect(getOccurrencesInMonth(sub, new Date(2026, 4, 1)).map(ymd)).toEqual(["2026-05-31"]);
+  });
+
+  it("falls back to the date's own day when no anchor is stored", () => {
+    // Rows created before the column exists have none, and must behave exactly
+    // as they did before, so nobody's calendar moves on the deploy.
+    const sub = { nextBillingDate: iso(2026, 2, 28), billingCycle: "monthly" };
+    expect(getOccurrencesInMonth(sub, new Date(2026, 2, 1)).map(ymd)).toEqual(["2026-03-28"]);
+  });
+
+  it("ignores an anchor that is not a real day of the month", () => {
+    for (const bad of [0, -1, 99, NaN, null, undefined] as any[]) {
+      const sub = { nextBillingDate: iso(2026, 5, 15), billingCycle: "monthly", billingAnchorDay: bad };
+      expect(getOccurrencesInMonth(sub, new Date(2026, 5, 1)).map(ymd)).toEqual(["2026-06-15"]);
+    }
+  });
 });
 
 describe("getOccurrencesInMonth - yearly", () => {

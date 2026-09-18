@@ -788,6 +788,83 @@ last one left off without needing a recap typed out.
   option EXISTS in `@tanstack/react-query` 4.32.0, which this project pins, and
   was REMOVED from useQuery in v5. Upgrading to v5 without moving that call would
   silently stop every reminder in the app, with nothing erroring anywhere.
+- A CHECK BEFORE AN `await` DOES NOT GOVERN WHAT HAPPENS AFTER IT, and that is
+  the shape of the notification cancellation bug fixed 2026-09-18 (Codex's
+  recheck of 31a93689). `scheduleRenewalReminders` checked the session
+  generation at the top of each subscription, which reads like the race is
+  covered and is not: the dangerous moment is INSIDE the enqueue. Sign out while
+  `scheduleNotificationAsync` is in flight and it completes afterwards, the OS
+  keeps the notification, and the same iteration then queues the TRIAL reminder
+  with no check in front of it at all. So `await cancelAllReminders()` could
+  return with the queue empty and two of account A's notifications appear in it
+  a moment later, names and amounts included, on a device that may not be theirs.
+  THE RULE: a pre-call check decides whether to START; only a post-call check
+  decides what EXISTS. Every enqueue now goes through `enqueue()`, which checks
+  on both sides and cancels the identifier it was just handed if the session
+  moved, and a false answer aborts the whole run rather than just that enqueue.
+  Both a cancel and a schedule now take the NEXT generation, so a newer run
+  invalidates an older one exactly the way a sign-out does. Two overlapping runs
+  used to share a number and neither could stop the other, while the newer one's
+  opening `cancelAll` wiped what the older one had queued and the older one kept
+  adding to the queue the newer one owned. That is how switching reminders OFF
+  could be undone by an enabled run that was already in flight.
+  THE SWEEP IN `cancelAllReminders` IS GENERATION GUARDED AND THAT IS NOT
+  OPTIONAL: it fires after the in-flight run settles, which can be long after
+  somebody has signed in again, so unguarded it would clear the NEW account's
+  reminders. It is also deliberately not awaited into the caller, because a run
+  parked inside an OS call that never returns must not be able to hang a
+  sign-out.
+  MEASURED, not reasoned about. `__tests__/notification-race.test.js` drives the
+  real scheduler against a mocked OS queue whose enqueue can be made to hang on
+  demand, which is the only way to express "while pending". Against the previous
+  code the cancel case leaves 2 notifications behind and the disable case leaves
+  2; against the fix both are 0, and the working paths still queue 2.
+- SWITCHING LANGUAGE USED TO SILENTLY TURN REMINDERS BACK ON, fixed the same
+  day. `lib/language-store.ts` reschedules on a language change, because the OS
+  bakes the text in at scheduling time and pending reminders would otherwise
+  stay in the old language. It called the scheduler with no preferences, and the
+  scheduler's `{}` default means push on, renewal alerts on, three day lead. So
+  changing language re-enabled reminders somebody had switched off and replaced
+  a seven day choice with three. Nothing errored, and the scheduler was right
+  the whole time: only the caller was wrong, which is why a scheduler unit test
+  could never have found it. `__tests__/language-reminders.test.js` drives the
+  real store instead.
+  THE GENERAL RULE THIS PROJECT KEEPS RELEARNING: a default that means "not
+  loaded yet" is not consent. Absent still means ON in the scheduler, on
+  purpose, because dropping reminders because a query was slow is the one
+  failure this product cannot afford. Every CALLER must pass what it knows.
+- THE BILLING DAY IS NOW STORED, because `next_billing_date` cannot carry it.
+  `subscriptions.billing_anchor_day SMALLINT`, added 2026-09-18. A month is not
+  a fixed length, so a subscription due on the 31st has to be WRITTEN as 28
+  February, and `advanceBillingDate` derived its anchor from the date it was
+  advancing. That survived within one call and was lost the moment the clamped
+  value was persisted, and a real advance is one call per request with a
+  database write in between: 31 January became 28 February and then 28 March,
+  permanently. The earlier tests missed it because they pass an explicit anchor
+  of 31 or advance several months inside a single call, and production does
+  neither. Measured across the persistence boundary: `2026-02-28 2026-03-28
+  2026-04-28` before, `2026-02-28 2026-03-31 2026-04-30` after.
+  THE BACKFILL DELIBERATELY RECOVERS NOTHING. It reads the day
+  `next_billing_date` already says and writes ONLY the new column, never a date.
+  A stored 28 February cannot prove whether 28, 29, 30 or 31 was meant, so
+  guessing would move real billing dates on real subscriptions to settle a
+  question the data cannot answer. A row that has already drifted stays drifted,
+  which is the behaviour we already had, and everything created or edited from
+  now on carries the true day. The anchor only moves when the DATE is
+  deliberately set (a date the user picked, or a regenerated one after a cycle
+  change) and is never re-derived from the stored value.
+  THE CLIENT NEEDS IT TOO, or the calendar and the charge disagree: `formatSub`
+  sends `billingAnchorDay` and `lib/recurrence.ts` clamps from it. Weekly
+  ignores it, since there is no day of month to preserve. A yearly 29 February
+  correctly returns to the 29th in the next leap year.
+- THE JEST SUITES CANNOT RUN IN A SANDBOX, but the LOGIC in them can, and the
+  difference is worth the twenty minutes. Node 22 strips TypeScript types
+  natively (`node --experimental-strip-types`), so a scratchpad copy of a module
+  with its imports rewritten to local stubs runs for real. That is how the
+  notification race, the language store and the billing anchor above were each
+  checked against BOTH the old and the new code before being committed, rather
+  than reasoned about. The pure source-reading suites need even less: a thirty
+  line `expect` shim runs all 121 of those assertions here.
 - THE UPGRADE SCREEN SHOWED A PRICE GOOGLE PLAY WAS NOT GOING TO CHARGE, until
   2026-09-18. It fetched the RevenueCat offerings and used them ONLY to make the
   purchase: every price it DISPLAYED came from `PREMIUM_PRICES` in

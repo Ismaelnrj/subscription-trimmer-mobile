@@ -54,17 +54,59 @@ export async function requestNotificationPermission() {
    async and loops with an await per notification, so a scheduler that started
    before logout can still be running after it and re-add everything it was
    supposed to lose. Each run captures the generation it began in and stops the
-   moment that number moves. */
+   moment that number moves.
+
+   A CHECK AT THE TOP OF THE LOOP IS NOT ENOUGH, which is the thing that is easy
+   to get wrong here and was wrong until 2026-09-18. The dangerous moment is not
+   between subscriptions, it is INSIDE the await: if the sign-out lands while an
+   enqueue is in flight, that enqueue completes afterwards and the OS keeps the
+   notification. The check had already passed, so nothing stops it, and the same
+   iteration then went on to enqueue the trial reminder with no check at all.
+   Every enqueue therefore re-checks AFTER it resolves and cancels the
+   identifier it was just given if the session moved underneath it. A pre-call
+   check governs whether to start; only a post-call check governs what exists. */
 let sessionGeneration = 0;
 
+/* Both cancelling and scheduling take the next generation, so a newer run
+   invalidates an older one exactly the way a sign-out does. Two overlapping
+   runs used to share a number and neither could stop the other, while the newer
+   one's opening cancelAll wiped what the older one had already queued and the
+   older one kept adding to the queue the newer one owned. That is how a
+   preference change to "off" could be refilled by an enabled run that was
+   already in flight. */
+function nextGeneration(): number {
+  sessionGeneration += 1;
+  return sessionGeneration;
+}
+
+/* Runs are serialised against each other. The generation alone stops an older
+   run from WRITING, but two runs interleaving their opening cancelAll with the
+   other's enqueues is still worth ruling out rather than reasoning about. */
+let runChain: Promise<void> = Promise.resolve();
+
 export async function cancelAllReminders(): Promise<void> {
-  sessionGeneration++;
+  const cancelledAt = nextGeneration();
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (err) {
     // Never block a sign-out on the OS notification queue.
     console.warn("[Notifications] Could not cancel reminders:", err);
   }
+  /* Deliberately NOT awaited into the caller. An in-flight run may be parked
+     inside an OS call that never returns, and a sign-out cannot wait on that.
+     Its enqueues clean up after themselves; this is the sweep for the case
+     where one registered a notification and then threw, so there is no
+     identifier to cancel individually.
+
+     Guarded by the generation because an unguarded sweep is worse than no
+     sweep: by the time the old run settles somebody may have signed in again,
+     and this would wipe the new account's reminders instead. */
+  runChain
+    .then(() => {
+      if (sessionGeneration !== cancelledAt) return;
+      return Notifications.cancelAllScheduledNotificationsAsync();
+    })
+    .catch(() => {});
 }
 
 /** What the notification preferences screen actually controls.
@@ -91,14 +133,56 @@ const LEAD_TIME_KEYS: Record<number, string> = {
   7: "notifications.reminders.in7",
 };
 
-export async function scheduleRenewalReminders(
+/** Enqueue one notification, session-aware on both sides of the await.
+ *
+ *  Returns false if the session moved while the OS was working, in which case
+ *  the notification it just created is cancelled again by its identifier. The
+ *  caller uses that answer to stop rather than carrying on to the next enqueue,
+ *  which is the half the trial reminder was missing. */
+async function enqueue(
+  /* Derived from the function rather than naming the exported type, so it
+     cannot drift if expo-notifications renames it at an SDK bump. */
+  request: Parameters<typeof Notifications.scheduleNotificationAsync>[0],
+  generation: number
+): Promise<boolean> {
+  if (sessionGeneration !== generation) return false;
+  const id = await Notifications.scheduleNotificationAsync(request);
+  if (sessionGeneration !== generation) {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(id);
+    } catch {
+      // Best effort. The sweep in cancelAllReminders is the other half.
+    }
+    return false;
+  }
+  return true;
+}
+
+export function scheduleRenewalReminders(
   subscriptions: any[],
   currencySymbol: string,
   prefs: ReminderPrefs = {}
+): Promise<void> {
+  /* Taken SYNCHRONOUSLY, before waiting for a turn in the chain, so an older
+     run is invalidated the moment a newer one is requested rather than whenever
+     it happens to start. */
+  const myGeneration = nextGeneration();
+  const run = runChain.then(() => performSchedule(subscriptions, currencySymbol, prefs, myGeneration));
+  runChain = run.catch(() => {});
+  return run;
+}
+
+async function performSchedule(
+  subscriptions: any[],
+  currencySymbol: string,
+  prefs: ReminderPrefs,
+  myGeneration: number
 ) {
-  const myGeneration = sessionGeneration;
+  // A cancel, or a newer run, may have arrived while this one waited its turn.
+  if (sessionGeneration !== myGeneration) return;
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
+    if (sessionGeneration !== myGeneration) return;
 
     // Push off means nothing at all, not even trial reminders. The cancel above
     // has already cleared the queue, so returning here IS the disable.
@@ -137,19 +221,25 @@ export async function scheduleRenewalReminders(
 
         if (triggerDate > now) {
           const when = i18n.t(whenKey);
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: i18n.t("notifications.reminders.renewTitle", { name: sub.name, when }),
-              /* The body carries the amount, so with an unparseable price there
-                 is nothing useful to say and the title already says what renews
-                 and when. Dropping the body beats printing NaN at somebody. */
-              body: amount
-                ? i18n.t("notifications.reminders.renewBody", { amount, date: formatDate(billing) })
-                : undefined,
-              data: { subscriptionId: sub.id },
+          const live = await enqueue(
+            {
+              content: {
+                title: i18n.t("notifications.reminders.renewTitle", { name: sub.name, when }),
+                /* The body carries the amount, so with an unparseable price there
+                   is nothing useful to say and the title already says what renews
+                   and when. Dropping the body beats printing NaN at somebody. */
+                body: amount
+                  ? i18n.t("notifications.reminders.renewBody", { amount, date: formatDate(billing) })
+                  : undefined,
+                data: { subscriptionId: sub.id },
+              },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
             },
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
-          });
+            myGeneration
+          );
+          // The session moved while that was in flight. Stop the whole run: the
+          // trial reminder below belongs to the same account.
+          if (!live) return;
           scheduled.push(`${sub.name} (${daysBefore}d)`);
         }
       }
@@ -161,16 +251,20 @@ export async function scheduleRenewalReminders(
         trialReminder.setDate(trialReminder.getDate() - 1);
         trialReminder.setHours(9, 0, 0, 0);
         if (trialReminder > now) {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: i18n.t("notifications.reminders.trialTitle", { name: sub.name }),
-              body: amount
-                ? i18n.t("notifications.reminders.trialBody", { amount })
-                : undefined,
-              data: { subscriptionId: sub.id },
+          const live = await enqueue(
+            {
+              content: {
+                title: i18n.t("notifications.reminders.trialTitle", { name: sub.name }),
+                body: amount
+                  ? i18n.t("notifications.reminders.trialBody", { amount })
+                  : undefined,
+                data: { subscriptionId: sub.id },
+              },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trialReminder },
             },
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trialReminder },
-          });
+            myGeneration
+          );
+          if (!live) return;
         }
       }
     }

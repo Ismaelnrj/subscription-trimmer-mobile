@@ -14,6 +14,20 @@ import { parseApiDate } from "./utils";
 export interface RecurringSub {
   nextBillingDate: string | Date;
   billingCycle: string;
+  /** The day of the month this subscription is really billed on.
+   *
+   *  nextBillingDate cannot carry it. A subscription due on the 31st has to be
+   *  written as 28 February in a February, so projecting from the stored date
+   *  alone draws every later month on the 28th while the server bills on the
+   *  31st: the calendar and the charge disagree. Optional because rows created
+   *  before the column exists have none, in which case the stored date's own
+   *  day is the best available answer and is exactly what was used before. */
+  billingAnchorDay?: number | null;
+}
+
+function anchorDayOf(sub: RecurringSub, anchor: Date): number {
+  const d = Number(sub.billingAnchorDay);
+  return Number.isInteger(d) && d >= 1 && d <= 31 ? d : getDate(anchor);
 }
 
 /**
@@ -32,9 +46,11 @@ export function getOccurrencesInMonth(sub: RecurringSub, monthDate: Date): Date[
   const rangeStart = startOfMonth(monthDate);
   const rangeEnd = endOfMonth(monthDate);
 
+  // Weekly has no day-of-month to preserve, so the anchor day never applies.
   if (sub.billingCycle === "weekly") return getWeeklyOccurrences(anchor, rangeStart, rangeEnd);
-  if (sub.billingCycle === "yearly") return getYearlyOccurrence(anchor, rangeStart);
-  return getMonthlyOccurrence(anchor, rangeStart);
+  const anchorDay = anchorDayOf(sub, anchor);
+  if (sub.billingCycle === "yearly") return getYearlyOccurrence(anchor, anchorDay, rangeStart);
+  return getMonthlyOccurrence(anchorDay, rangeStart);
 }
 
 function getWeeklyOccurrences(anchor: Date, rangeStart: Date, rangeEnd: Date): Date[] {
@@ -53,17 +69,19 @@ function getWeeklyOccurrences(anchor: Date, rangeStart: Date, rangeEnd: Date): D
 }
 
 // Clamps the anchor's day-of-month into the target month (e.g. a subscription
-// anchored on the 31st falls on the 28th/29th in February).
-function getMonthlyOccurrence(anchor: Date, targetMonthStart: Date): Date[] {
-  const day = Math.min(getDate(anchor), getDate(lastDayOfMonth(targetMonthStart)));
+// anchored on the 31st falls on the 28th/29th in February). Clamping happens
+// per month from the true anchor day, so it never compounds: February draws the
+// 28th and March goes back to the 31st.
+function getMonthlyOccurrence(anchorDay: number, targetMonthStart: Date): Date[] {
+  const day = Math.min(anchorDay, getDate(lastDayOfMonth(targetMonthStart)));
   return [setDate(targetMonthStart, day)];
 }
 
 // Only occurs once a year, in the anchor's month; clamps Feb 29 -> Feb 28 in
 // non-leap years the same way the monthly case clamps month-end overflow.
-function getYearlyOccurrence(anchor: Date, targetMonthStart: Date): Date[] {
+function getYearlyOccurrence(anchor: Date, anchorDay: number, targetMonthStart: Date): Date[] {
   if (targetMonthStart.getMonth() !== anchor.getMonth()) return [];
-  const day = Math.min(getDate(anchor), getDate(lastDayOfMonth(targetMonthStart)));
+  const day = Math.min(anchorDay, getDate(lastDayOfMonth(targetMonthStart)));
   return [setDate(targetMonthStart, day)];
 }
 
