@@ -568,30 +568,55 @@ export default function SubscriptionsScreen() {
     if (!isPremium) { router.push("/upgrade"); return; }
     if (subscriptions.length === 0) { Alert.alert(t("subscriptions.noDataTitle"), t("subscriptions.noDataBody")); return; }
 
-    const monthlyTotal = subscriptions.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
+    /* PAUSED SUBSCRIPTIONS ARE EXCLUDED FROM THE TOTAL, because the rest of the
+       app excludes them. The dashboard reads analytics.summary, whose query
+       filters is_active = TRUE, while this reduced over every row in
+       subscriptions.list, which does not filter. So pausing Netflix left the
+       dashboard saying one monthly total and this export saying another, for the
+       same data on the same day, with nothing to explain the gap.
+
+       The paused rows are still EXPORTED, since a record of what you have is
+       the point of an export, and a Status column now says which is which.
+       Including them in the sum is what was wrong, not listing them. */
+    const activeSubs = subscriptions.filter((s: any) => s.isActive !== false);
+    const monthlyTotal = activeSubs.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
     const csvEscape = (v: string) => {
       let str = String(v);
       if (/^[=+\-@]/.test(str)) str = `'${str}`; // prevent formula injection in Excel/Sheets
       return `"${str.replace(/"/g, '""')}"`;
     };
+    /* toISOString() THROWS a RangeError on an invalid date, and this was guarded
+       for truthiness only. One malformed date anywhere in the list crashed the
+       whole export rather than blanking one cell. */
+    const isoDay = (v: any) => {
+      if (!v) return "";
+      const ms = new Date(v).getTime();
+      return Number.isFinite(ms) ? new Date(ms).toISOString().split("T")[0] : "";
+    };
 
     const rows = [
-      ["Name", "Price", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost"].join(","),
+      ["Name", "Price", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost", "Status"].join(","),
       ...subscriptions.map((s: any) => [
         csvEscape(s.name),
         s.price.toFixed(2),
         csvEscape(s.billingCycle),
         toMonthly(s.price, s.billingCycle).toFixed(2),
         csvEscape(s.category),
-        s.nextBillingDate ? new Date(s.nextBillingDate).toISOString().split("T")[0] : "",
-        s.trialEndDate ? new Date(s.trialEndDate).toISOString().split("T")[0] : "",
+        isoDay(s.nextBillingDate),
+        isoDay(s.trialEndDate),
         (toMonthly(s.price, s.billingCycle) * 12).toFixed(2),
+        s.isActive === false ? "paused" : "active",
       ].join(",")),
       "",
       `# Summary`,
-      `# Monthly Total,${monthlyTotal.toFixed(2)}`,
-      `# Yearly Total,${(monthlyTotal * 12).toFixed(2)}`,
+      // Both totals are active-only, so they match what the app shows. Naming
+      // the counts separately is what makes the difference explicable to
+      // somebody reading the file a month later.
+      `# Monthly Total (active),${monthlyTotal.toFixed(2)}`,
+      `# Yearly Total (active),${(monthlyTotal * 12).toFixed(2)}`,
       `# Subscriptions,${subscriptions.length}`,
+      `# Active,${activeSubs.length}`,
+      `# Paused,${subscriptions.length - activeSubs.length}`,
       `# Generated,${new Date().toISOString().split("T")[0]}`,
     ].join("\n");
 
