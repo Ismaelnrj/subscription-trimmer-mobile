@@ -827,12 +827,33 @@ last one left off without needing a recap typed out.
   changing language re-enabled reminders somebody had switched off and replaced
   a seven day choice with three. Nothing errored, and the scheduler was right
   the whole time: only the caller was wrong, which is why a scheduler unit test
-  could never have found it. `__tests__/language-reminders.test.js` drives the
-  real store instead.
+  could never have found it.
   THE GENERAL RULE THIS PROJECT KEEPS RELEARNING: a default that means "not
   loaded yet" is not consent. Absent still means ON in the scheduler, on
   purpose, because dropping reminders because a query was slow is the one
   failure this product cannot afford. Every CALLER must pass what it knows.
+  JEST CANNOT EXECUTE `rescheduleReminders` AT ALL, and this entry used to claim
+  `__tests__/language-reminders.test.js` drove the real store, which was wrong.
+  It reaches its three dependencies through dynamic `import()`, babel leaves
+  those untransformed, and jest's VM rejects them with
+  `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG` ("A dynamic import callback was
+  invoked without --experimental-vm-modules"). The store's own try/catch
+  swallows that, so a behavioural test there goes green having run NOTHING,
+  which is the exact failure mode this file keeps recording. Metro handles
+  dynamic import, so only the test is affected, never the app. Making it
+  executable needs a babel plugin devDependency (pnpm will not resolve one that
+  is not explicitly installed) or a transform change, which is not worth it for
+  a three line caller. The test is therefore a SOURCE-READING one that says so
+  in its own header, and the behaviour was verified by running the real store
+  outside jest against both the old and the new code.
+  THE SHAPE TO REMEMBER: a fire-and-forget call inside its own catch is the
+  right design here and it is also the thing that hides a test harness failing
+  to run. When a swallowed path is under test, prove the code RAN before
+  believing what it asserts.
+  AND THE REGEX LESSON, since it cost two wrong answers about correct code: an
+  argument list has nesting in it. `scheduleRenewalReminders\([^)]*prefs` stops
+  dead at the `)` inside `useCurrencyStore.getState()`. Count brackets, do not
+  match them.
 - THE BILLING DAY IS NOW STORED, because `next_billing_date` cannot carry it.
   `subscriptions.billing_anchor_day SMALLINT`, added 2026-09-18. A month is not
   a fixed length, so a subscription due on the 31st has to be WRITTEN as 28

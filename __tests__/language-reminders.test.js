@@ -5,112 +5,117 @@
  * otherwise stay in the old language. It called the scheduler with no
  * preferences at all, and the scheduler's `{}` default means push on, renewal
  * alerts on and a three day lead. So changing language RE-ENABLED reminders
- * somebody had switched off, and quietly replaced a seven day choice with three.
+ * somebody had switched off, and quietly replaced a seven day choice with
+ * three. Nothing errored: the scheduler was right the whole time and only the
+ * caller was wrong, which is why a scheduler unit test could never find it.
  *
- * Behavioural, through the real language store. A scheduler unit test cannot
- * catch this: the scheduler was always right, the caller was not passing it
- * anything. */
+ * THIS IS A SOURCE-READING TEST AND IT IS NOT THE ONE I WANTED. The first
+ * version drove the real store with mocked modules, the way
+ * notification-race.test.js drives the real scheduler. It cannot work here, and
+ * the reason is worth writing down so nobody spends an afternoon rediscovering
+ * it: `rescheduleReminders` reaches its three dependencies through dynamic
+ * `import()`, babel leaves those untransformed, and jest's VM rejects them with
+ *
+ *     TypeError: A dynamic import callback was invoked without
+ *     --experimental-vm-modules   (ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG)
+ *
+ * The store's own catch swallows that, so the test went green on the assertion
+ * side of nothing having run. It is a jest limitation only: Metro handles
+ * dynamic import, so the shipped path is unaffected. Making it executable needs
+ * a babel plugin devDependency or a transform change, which is not a trade
+ * worth making for a three line caller.
+ *
+ * So: the BEHAVIOUR was verified by executing the real store outside jest,
+ * against both the old and the new code. Old passed `undefined` as the third
+ * argument; new passes `{pushEnabled: false, renewalAlerts: true,
+ * renewalAlertDays: 3}`. What follows pins the shape of the fix so it cannot be
+ * quietly undone, and says out loud that it is not proof the code ran. */
 
-const mockPrefs = { value: undefined };
-const mockScheduleRenewalReminders = jest.fn(async () => {});
+const fs = require("fs");
+const path = require("path");
+const read = (p) => fs.readFileSync(path.join(__dirname, "..", p), "utf8");
 
-jest.mock("expo-secure-store", () => ({
-  setItemAsync: jest.fn(async () => {}),
-  getItemAsync: jest.fn(async () => null),
-}));
+const STORE = read("lib/language-store.ts");
+// Comments quote the old broken call, and a test that matches its own
+// explanation is a test that passes while checking nothing. This project has
+// been caught by that three times.
+const CODE = STORE.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
 
-jest.mock("../lib/i18n", () => ({
-  __esModule: true,
-  default: { language: "en", changeLanguage: jest.fn(async () => {}) },
-}));
-
-jest.mock("../lib/query-client", () => ({
-  queryClient: {
-    getQueryData: jest.fn((key) => {
-      if (key[0] === "subscriptions") return [{ id: 1, name: "Netflix", price: 15.99, nextBillingDate: "2026-12-01" }];
-      if (key[0] === "notifications") return mockPrefs.value;
-      return undefined;
-    }),
-  },
-  resetQueryCache: jest.fn(),
-}));
-
-jest.mock("../lib/currency-store", () => ({
-  useCurrencyStore: { getState: () => ({ currency: { symbol: "$" } }) },
-}));
-
-jest.mock("../lib/notification-scheduler", () => ({
-  scheduleRenewalReminders: mockScheduleRenewalReminders,
-  cancelAllReminders: jest.fn(async () => {}),
-}));
-
-const { useLanguageStore } = require("../lib/language-store");
-
-/* The reschedule is deliberately not awaited into setLanguage, so that changing
-   language cannot fail on a denied notification permission. That means the call
-   arrives a few microtasks later, after three dynamic imports resolve. */
-const settle = async () => {
-  for (let i = 0; i < 6; i++) await new Promise((r) => setTimeout(r, 0));
-};
-
-beforeEach(() => {
-  mockScheduleRenewalReminders.mockClear();
-  mockPrefs.value = undefined;
-});
+/** The scheduler call's arguments, split at the TOP level only.
+ *
+ *  Worth the dozen lines rather than a regex. The first version used
+ *  `scheduleRenewalReminders\([^)]*prefs`, which stops dead at the `)` inside
+ *  `useCurrencyStore.getState()`, and its companion `[^,)]+` happily matched
+ *  half an expression. Both reported the wrong answer about code that was
+ *  already correct. An argument list has nesting in it, so it needs counting,
+ *  not matching. */
+function callArgs() {
+  const open = CODE.indexOf("scheduleRenewalReminders(");
+  if (open === -1) return [];
+  let depth = 0;
+  let start = open + "scheduleRenewalReminders(".length;
+  const args = [];
+  for (let i = start; i < CODE.length; i++) {
+    const c = CODE[i];
+    if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" && depth === 0) {
+      args.push(CODE.slice(start, i).trim());
+      return args;
+    } else if (c === ")" || c === "]" || c === "}") depth--;
+    else if (c === "," && depth === 0) {
+      args.push(CODE.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  return args;
+}
 
 describe("changing language must not change anybody's notification settings", () => {
-  it("reschedules at all", async () => {
-    // The control: everything below is about WHAT it passes, so first pin that
-    // it still passes anything.
-    await useLanguageStore.getState().setLanguage("de");
-    await settle();
-    expect(mockScheduleRenewalReminders).toHaveBeenCalled();
+  it("reads the preferences the rest of the app writes", () => {
+    // A different cache key would read undefined forever and look like it worked.
+    expect(CODE).toMatch(/getQueryData[^\n]*\["notifications", "preferences"\]/);
   });
 
-  it("carries the user's disabled push setting through", async () => {
-    mockPrefs.value = { pushEnabled: false, renewalAlerts: true, renewalAlertDays: 3 };
-    await useLanguageStore.getState().setLanguage("de");
-    await settle();
-
-    // Before the fix this third argument was absent entirely, and the
-    // scheduler's default re-enabled push.
-    const prefs = mockScheduleRenewalReminders.mock.calls[0][2];
-    expect(prefs.pushEnabled).toBe(false);
+  it("passes them to the scheduler", () => {
+    expect(callArgs()).toHaveLength(3);
+    expect(callArgs()[2]).toMatch(/prefs/);
   });
 
-  it("carries a disabled renewal alert through", async () => {
-    mockPrefs.value = { pushEnabled: true, renewalAlerts: false, renewalAlertDays: 7 };
-    await useLanguageStore.getState().setLanguage("en");
-    await settle();
-    expect(mockScheduleRenewalReminders.mock.calls[0][2].renewalAlerts).toBe(false);
+  it("no longer calls the scheduler with only a list and a symbol", () => {
+    /* The defect exactly: two arguments, so the scheduler's `{}` default
+       decided somebody's notification settings for them. */
+    expect(callArgs().length).toBeGreaterThan(2);
   });
 
-  it("keeps a seven day lead time instead of dropping to three", async () => {
-    mockPrefs.value = { pushEnabled: true, renewalAlerts: true, renewalAlertDays: 7 };
-    await useLanguageStore.getState().setLanguage("de");
-    await settle();
-    expect(mockScheduleRenewalReminders.mock.calls[0][2].renewalAlertDays).toBe(7);
+  it("sends an object rather than undefined when preferences have not loaded", () => {
+    // Absent means ON in the scheduler, deliberately, because dropping
+    // reminders because a query was slow is the failure this product cannot
+    // afford. The caller must still pass something rather than nothing.
+    expect(CODE).toMatch(/prefs \?\? \{\}/);
   });
 
-  it("passes an empty object rather than undefined when preferences have not loaded", async () => {
-    /* An unloaded preference is not consent to enable anything, but it is not
-       consent to disable either: the scheduler treats absent as ON on purpose,
-       because silently dropping reminders because a query was slow is the one
-       failure this product cannot afford. What matters here is that the third
-       argument is always present and never undefined. */
-    mockPrefs.value = undefined;
-    await useLanguageStore.getState().setLanguage("de");
-    await settle();
-    expect(mockScheduleRenewalReminders.mock.calls[0][2]).toEqual({});
+  it("still cannot fail the language change itself", () => {
+    /* The reschedule is fire and forget inside its own try/catch on purpose:
+       changing language must succeed with notifications denied, an empty cache,
+       or an OS that refuses the schedule. That is also what hid the dynamic
+       import failure above, which is the cost of the design and worth keeping
+       anyway. */
+    expect(CODE).toMatch(/catch \(e\)/);
+    expect(CODE).toMatch(/console\.warn\("\[Language\] Could not reschedule reminders:"/);
   });
 
-  it("reads the preferences from the same cache key the rest of the app writes", async () => {
-    // A different key would read undefined forever and look like it worked.
-    const { queryClient } = require("../lib/query-client");
-    mockPrefs.value = { pushEnabled: false };
-    await useLanguageStore.getState().setLanguage("de");
-    await settle();
-    const keys = queryClient.getQueryData.mock.calls.map((c) => JSON.stringify(c[0]));
-    expect(keys).toContain(JSON.stringify(["notifications", "preferences"]));
+  it("the rule the scheduler applies to what it is given, mirrored", () => {
+    // Runs for real, unlike everything above it. Absent is ON, explicit false
+    // is OFF, and an unrecognised lead time falls back to three.
+    const effective = (p = {}) => ({
+      push: p.pushEnabled !== false,
+      renewals: p.renewalAlerts !== false,
+      lead: [1, 3, 7].includes(p.renewalAlertDays) ? p.renewalAlertDays : 3,
+    });
+    expect(effective()).toEqual({ push: true, renewals: true, lead: 3 });
+    expect(effective({ pushEnabled: false })).toEqual({ push: false, renewals: true, lead: 3 });
+    expect(effective({ renewalAlerts: false })).toEqual({ push: true, renewals: false, lead: 3 });
+    expect(effective({ renewalAlertDays: 7 })).toEqual({ push: true, renewals: true, lead: 7 });
+    expect(effective({ renewalAlertDays: 4 })).toEqual({ push: true, renewals: true, lead: 3 });
   });
 });
