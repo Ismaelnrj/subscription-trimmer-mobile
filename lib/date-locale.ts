@@ -16,12 +16,34 @@ export function dateLocaleFor(language: string) {
   return language?.startsWith("de") ? de : enUS;
 }
 
-/** `const fmtD = useDateFormat()` then `fmtD(date, "EEEE, MMMM d")`. */
+/** `const fmtD = useDateFormat()` then `fmtD(date, "EEEE, MMMM d")`.
+
+    RETURNS "" FOR AN INVALID DATE, and that guard is not decoration. date-fns
+    `format` THROWS a RangeError on an invalid date, where the
+    `toLocaleDateString()` calls this replaced returned the harmless string
+    "Invalid Date". Inside a render a throw reaches the ErrorBoundary, so a
+    single malformed date from the API would turn one ugly row into the crash
+    screen for the whole app.
+
+    It is reachable. `app/notification-preferences.tsx` derives its value from
+    `new Date(s.nextBillingDate).getTime()`, which is NaN for a bad date, and
+    `new Date(NaN)` is invalid. `app/notifications.tsx` formats `n.createdAt`
+    straight off the API with no check at all.
+
+    Empty is the right fallback: showing nothing beats showing "Invalid Date",
+    and both beat taking the screen down. */
 export function useDateFormat() {
   const { i18n } = useTranslation();
   const locale = dateLocaleFor(i18n.language);
-  return (date: Date | number, pattern: string) =>
-    dfFormat(date, pattern, { locale });
+  return (date: Date | number, pattern: string) => {
+    const ms = typeof date === "number" ? date : date?.getTime?.();
+    if (ms == null || !Number.isFinite(ms)) return "";
+    try {
+      return dfFormat(ms, pattern, { locale });
+    } catch {
+      return "";
+    }
+  };
 }
 
 /** Which day the week starts on in the app's language: 0 Sunday, 1 Monday.

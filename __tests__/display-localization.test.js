@@ -46,6 +46,40 @@ describe("dates follow the app's language, not the phone's", () => {
   });
 });
 
+describe("an invalid date cannot take a screen down", () => {
+  const LOCALE = read("lib/date-locale.ts");
+
+  it("useDateFormat guards before calling date-fns", () => {
+    /* date-fns `format` THROWS a RangeError on an invalid date, where the
+       toLocaleDateString() calls it replaced returned the harmless string
+       "Invalid Date". Inside a render a throw reaches the ErrorBoundary, so one
+       malformed date from the API would replace a screen with the crash screen.
+
+       Reachable: notification-preferences derives its value from
+       new Date(x).getTime(), NaN for a bad date, and notifications formats
+       n.createdAt straight off the API. */
+    expect(LOCALE).toMatch(/Number\.isFinite\(ms\)/);
+    expect(LOCALE).toMatch(/try\s*\{/);
+    expect(LOCALE).toMatch(/catch/);
+  });
+
+  it("the guard behaves, mirrored", () => {
+    // Mirror of the helper's rule, since the real one is a hook.
+    const fmt = (date) => {
+      const ms = typeof date === "number" ? date : date?.getTime?.();
+      if (ms == null || !Number.isFinite(ms)) return "";
+      return "formatted";
+    };
+    expect(fmt(new Date("not-a-date"))).toBe("");
+    expect(fmt(new Date(NaN))).toBe("");
+    expect(fmt(NaN)).toBe("");
+    expect(fmt(undefined)).toBe("");
+    expect(fmt(null)).toBe("");
+    expect(fmt(new Date(2026, 8, 18))).toBe("formatted");
+    expect(fmt(Date.now())).toBe("formatted");
+  });
+});
+
 describe("the purchase screen shows the price Play will charge", () => {
   const UPGRADE = read("app/upgrade.tsx");
 
