@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTheme, AppColors } from "../lib/theme";
+import { useTranslation } from "react-i18next";
 
 const SECTIONS = [
   { title: "1. Who We Are", body: "Trimio is operated by Ismael Naranjo, based in Vienna, Austria. You can reach us at Trimio@subtrimio.com. These Terms of Service govern your use of the Trimio mobile application, the Trimio website, and related services (the \"Service\")." },
@@ -26,12 +27,13 @@ const SECTIONS = [
 ];
 
 export default function TermsOfServiceScreen() {
+  const { t } = useTranslation();
   const c = useTheme();
   const styles = makeStyles(c);
 
   return (
     <>
-      <Stack.Screen options={{ title: "Terms of Service", headerShown: true }} />
+      <Stack.Screen options={{ title: t("screenTitles.termsOfService"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.updated}>Last updated: September 4, 2026</Text>

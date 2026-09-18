@@ -122,6 +122,31 @@ describe("the premium banner is translated and priced from one source", () => {
   });
 });
 
+describe("no screen overrides its localised header with English", () => {
+  const SCREENS = fs
+    .readdirSync(path.join(__dirname, "..", "app"))
+    .filter((f) => f.endsWith(".tsx"))
+    .map((f) => `app/${f}`);
+
+  it("every Stack.Screen title goes through t()", () => {
+    /* df2db7a5 localised all fourteen headers in app/_layout.tsx, and SIX
+       screens then overrode them at render with a hardcoded English string:
+       terms-of-service, privacy-policy, help-support, alerts, tip-jar and
+       verify-email. The localisation work was half defeated and invisible,
+       because finding it needs the app in German AND a visit to those exact
+       screens. A screen's own options win over the layout's, so this is the
+       check that keeps _layout.tsx meaningful. */
+    const offenders = [];
+    for (const f of SCREENS) {
+      const src = read(f).replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|\/\/[^\n]*/g, "");
+      for (const m of src.matchAll(/<Stack\.Screen[^>]*?title:\s*"([^"]+)"/g)) {
+        offenders.push(`${f}: ${m[1]}`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 describe("no dash as clause punctuation in any user-facing text", () => {
   it("not in the locale files", () => {
     for (const f of ["locales/en.json", "locales/de.json"]) {

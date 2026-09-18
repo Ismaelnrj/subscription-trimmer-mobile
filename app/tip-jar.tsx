@@ -62,7 +62,7 @@ export default function TipJarScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Tip Jar", headerShown: true }} />
+      <Stack.Screen options={{ title: t("screenTitles.tipJar"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerEmoji}>🫙</Text>

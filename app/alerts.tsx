@@ -43,7 +43,7 @@ export default function AlertsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Alerts" }} />
+      <Stack.Screen options={{ title: t("screenTitles.alerts") }} />
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}

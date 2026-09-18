@@ -35,7 +35,7 @@ export default function HelpSupportScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Help & Support" }} />
+      <Stack.Screen options={{ title: t("screenTitles.helpSupport") }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
           <Text style={styles.sectionTitle}>{t("helpSupport.faq")}</Text>

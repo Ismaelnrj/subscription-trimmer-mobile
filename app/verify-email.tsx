@@ -59,7 +59,7 @@ export default function VerifyEmailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Verify Email", headerShown: true }} />
+      <Stack.Screen options={{ title: t("screenTitles.verifyEmail"), headerShown: true }} />
       <View style={styles.container}>
         <View style={styles.icon}>
           <MaterialCommunityIcons name="email-check-outline" size={56} color={c.primary} />

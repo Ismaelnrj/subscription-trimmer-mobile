@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
 import { useTheme, AppColors } from "../lib/theme";
+import { useTranslation } from "react-i18next";
 
 const SECTIONS = [
   { title: "1. Who We Are", body: "Trimio is operated by Ismael Naranjo, based in Vienna, Austria, who acts as the data controller under the General Data Protection Regulation (GDPR). You can reach us at Trimio@subtrimio.com." },
@@ -24,12 +25,13 @@ const SECTIONS = [
 ];
 
 export default function PrivacyPolicyScreen() {
+  const { t } = useTranslation();
   const c = useTheme();
   const styles = makeStyles(c);
 
   return (
     <>
-      <Stack.Screen options={{ title: "Privacy Policy", headerShown: true }} />
+      <Stack.Screen options={{ title: t("screenTitles.privacyPolicy"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.updated}>Effective date: April 27, 2025 · Last updated: September 4, 2026</Text>
