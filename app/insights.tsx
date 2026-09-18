@@ -11,6 +11,7 @@ import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
 import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
 import { findTemplateByExactName, isPriceFresh } from "../lib/service-templates";
+import { daysUntil } from "../lib/utils";
 
 export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
@@ -191,8 +192,10 @@ export function buildTips(
   // Trial alerts
   for (const s of subs) {
     if (!s.trialEndDate) continue;
-    const days = Math.ceil((new Date(s.trialEndDate).getTime() - now.getTime()) / 86400000);
-    if (days >= 0 && days <= 7) {
+    const days = daysUntil(s.trialEndDate, now);
+    // `days != null` first: null >= 0 is TRUE in JavaScript, so a nullable
+    // number compared against a threshold passes silently.
+    if (days != null && days >= 0 && days <= 7) {
       tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#C4544A",
         title: days === 0 ? t("insights.trialTitleToday", { name: s.name })
                          : t("insights.trialTitleDays", { name: s.name, count: days }),
@@ -240,8 +243,8 @@ export function buildTips(
 
   // Renewals this week
   const thisWeek = subs.filter(s => {
-    const days = Math.ceil((new Date(s.nextBillingDate).getTime() - now.getTime()) / 86400000);
-    return days >= 0 && days <= 7;
+    const days = daysUntil(s.nextBillingDate, now);
+    return days != null && days >= 0 && days <= 7;
   });
   if (thisWeek.length >= 2) {
     const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);

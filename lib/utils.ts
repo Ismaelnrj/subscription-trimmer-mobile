@@ -94,3 +94,32 @@ export function parseApiDate(value: string | Date | null | undefined): Date | nu
   const d = new Date(String(value));
   return Number.isFinite(d.getTime()) ? d : null;
 }
+
+/** CALENDAR days from today until a billing or trial date. Today is 0,
+ *  tomorrow is 1, yesterday is -1. Null when the date cannot be read.
+ *
+ *  Calendar days is what the app means. "Renews in 3 days" is a statement
+ *  about which day it lands on, not about 72 hours elapsing, and the app
+ *  never knows or shows a time of day.
+ *
+ *  `Math.ceil((target - now) / 86400000)` is what every call site used to do,
+ *  and it answers a different question: how many 24 hour blocks fit in the gap.
+ *  That makes the answer depend on WHAT TIME you open the app, and it was
+ *  wrong in both directions. Measured against a 16 October charge, asking on
+ *  14 October: Vienna at 01:00 said 3, New York at 20:00 said 1, and the
+ *  answer is 2 in both places at every hour.
+ *
+ *  Returns null rather than a number for an unreadable date, and callers MUST
+ *  check for it, because `null >= 0` is true in JavaScript. A nullable number
+ *  compared against a threshold is a silent pass, not a type error. */
+export function daysUntil(
+  value: string | Date | null | undefined,
+  from: Date = new Date()
+): number | null {
+  const target = parseApiDate(value);
+  if (!target) return null;
+  const a = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const b = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  // Round, not floor: a DST transition makes one of these days 23 or 25 hours.
+  return Math.round((a.getTime() - b.getTime()) / 86400000);
+}

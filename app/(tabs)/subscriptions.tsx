@@ -14,7 +14,7 @@ import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useCycleLabel } from "../../lib/cycle-label";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
-import { normaliseDateInput, sanitiseAmountInput } from "../../lib/utils";
+import { normaliseDateInput, sanitiseAmountInput, daysUntil, parseApiDate } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors } from "../../lib/theme";
 import { useDateFormat } from "../../lib/date-locale";
@@ -808,10 +808,8 @@ export default function SubscriptionsScreen() {
           ) : (
             filtered.map((sub: any) => {
               const equiv = monthlyEquiv(sub.price, sub.billingCycle);
-              const trialDate = sub.trialEndDate ? new Date(sub.trialEndDate) : null;
-              const trialDaysLeft = trialDate
-                ? Math.ceil((trialDate.getTime() - Date.now()) / 86400000)
-                : null;
+              const trialDate = parseApiDate(sub.trialEndDate);
+              const trialDaysLeft = daysUntil(sub.trialEndDate);
               const isCustomCat = !(DEFAULT_CATEGORIES as readonly string[]).includes(sub.category);
               return (
                 <Swipeable

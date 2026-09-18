@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
+import { daysUntil } from "../../lib/utils";
 import { useCurrencyStore, useFmt } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
@@ -123,8 +124,8 @@ export default function DashboardScreen() {
 
   const trialsSoon = (subscriptions as any[]).filter((s) => {
     if (!s.trialEndDate) return false;
-    const days = Math.ceil((new Date(s.trialEndDate).getTime() - Date.now()) / 86400000);
-    return days >= 0 && days <= 14;
+    const days = daysUntil(s.trialEndDate);
+    return days != null && days >= 0 && days <= 14;
   }).sort((a, b) =>
     new Date(a.trialEndDate).getTime() - new Date(b.trialEndDate).getTime()
   );
@@ -194,7 +195,8 @@ export default function DashboardScreen() {
 
   const nextSubDueLabel = (() => {
     if (!nextSub) return null;
-    const days = Math.ceil((new Date(nextSub.nextBillingDate).getTime() - Date.now()) / 86400000);
+    const days = daysUntil(nextSub.nextBillingDate);
+    if (days == null) return null;   // unreadable date, so no badge rather than a wrong one
     if (days <= 0) return t("dashboard.dueToday");
     if (days === 1) return t("dashboard.dueTomorrow");
     return t("dashboard.dueInDays", { count: days });
@@ -329,7 +331,8 @@ export default function DashboardScreen() {
               <Text style={styles.trialsSectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
             </View>
             {trialsSoon.map((sub: any) => {
-              const days = Math.ceil((new Date(sub.trialEndDate).getTime() - Date.now()) / 86400000);
+              // trialsSoon already filtered these to a readable date in range.
+              const days = daysUntil(sub.trialEndDate) ?? 0;
               const urgency = days <= 3 ? c.danger : c.warning;
               return (
                 <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>

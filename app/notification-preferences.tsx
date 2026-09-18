@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 import { useDateFormat } from "../lib/date-locale";
+import { parseApiDate } from "../lib/utils";
 
 export default function NotificationPreferencesScreen() {
   const queryClient = useQueryClient();
@@ -190,11 +191,18 @@ export default function NotificationPreferencesScreen() {
                 const now = Date.now();
                 const upcoming = subscriptions
                   .map((s: any) => {
-                    const renewMs = new Date(s.nextBillingDate).getTime();
-                    const emailMs = renewMs - 7 * 86400000;
+                    /* parseApiDate, so the preview names the same day the
+                       reminder actually targets. new Date() on a TIMESTAMPTZ
+                       gives an instant at midnight UTC, and subtracting seven
+                       days from it lands on the previous local day west of UTC,
+                       so this list showed the wrong date for the same users the
+                       calendar was already wrong for. */
+                    const renew = parseApiDate(s.nextBillingDate);
+                    if (!renew) return null;
+                    const emailMs = renew.getTime() - 7 * 86400000;
                     return { name: s.name, price: s.price, emailMs };
                   })
-                  .filter((s) => s.emailMs > now)
+                  .filter((s): s is { name: string; price: number; emailMs: number } => s != null && s.emailMs > now)
                   .sort((a, b) => a.emailMs - b.emailMs)
                   .slice(0, 3);
 

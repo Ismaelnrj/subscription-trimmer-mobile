@@ -75,3 +75,50 @@ describe("an API timestamp resolves to the day the user meant", () => {
     expect(parseApiDate(new Date("nope"))).toBe(null);
   });
 });
+
+/* "In 3 days" means the charge lands three calendar days from today. The app
+   never knows or shows a time of day, so counting 24 hour blocks answers a
+   question nobody asked, and the answer moved with the clock.
+
+   Measured against a 16 October charge, asked on 14 October: the old
+   Math.ceil((target - now) / 86400000) said 3 at 01:00 in Vienna and 1 at
+   20:00 in New York. Both should be 2, at every hour, everywhere. */
+function daysUntil(value: string | Date | null | undefined, from: Date = new Date()): number | null {
+  const target = parseApiDate(value);
+  if (!target) return null;
+  const a = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+  const b = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  return Math.round((a.getTime() - b.getTime()) / 86400000);
+}
+
+describe("days until a charge counts calendar days", () => {
+  const CHARGE = "2026-10-16T00:00:00.000Z";
+
+  it("gives the same answer at every hour of the day", () => {
+    const answers = new Set<number | null>();
+    for (let h = 0; h < 24; h++) answers.add(daysUntil(CHARGE, new Date(2026, 9, 14, h)));
+    expect([...answers]).toEqual([2]);
+  });
+
+  it("is 0 today, 1 tomorrow, -1 yesterday", () => {
+    expect(daysUntil("2026-10-14T00:00:00.000Z", new Date(2026, 9, 14, 23, 59))).toBe(0);
+    expect(daysUntil("2026-10-15T00:00:00.000Z", new Date(2026, 9, 14, 0, 1))).toBe(1);
+    expect(daysUntil("2026-10-13T00:00:00.000Z", new Date(2026, 9, 14, 12))).toBe(-1);
+  });
+
+  it("survives a DST transition, which is why it rounds", () => {
+    // One of the days in the span is 23 or 25 hours long, so flooring a raw
+    // division would drop or add a day across the changeover weekend.
+    expect(daysUntil("2026-10-26T00:00:00.000Z", new Date(2026, 9, 24, 12))).toBe(2);
+    expect(daysUntil("2026-11-02T00:00:00.000Z", new Date(2026, 10, 1, 12))).toBe(1);
+  });
+
+  it("returns null for an unreadable date, which callers MUST check", () => {
+    /* `null >= 0` is TRUE in JavaScript, so `days >= 0 && days <= 7` passes
+       for null and a broken row would show up as due today. Every call site
+       tests `days != null` first. */
+    expect(daysUntil("nope")).toBe(null);
+    expect(daysUntil(null)).toBe(null);
+    expect((null as any) >= 0).toBe(true);   // the trap, pinned so it stays visible
+  });
+});
