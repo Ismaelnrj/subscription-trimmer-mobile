@@ -163,8 +163,22 @@ describe("the billing day survives being written to the database and read back",
 describe("the anchor is stored where it can still be trusted", () => {
   it("has a column and a backfill that touches no billing date", () => {
     expect(SERVER).toMatch(/ADD COLUMN IF NOT EXISTS billing_anchor_day SMALLINT/);
-    const backfill = SERVER.slice(SERVER.indexOf("UPDATE subscriptions\n       SET billing_anchor_day"));
-    const stmt = backfill.slice(0, backfill.indexOf("`"));
+    /* Matched, not sliced from a literal containing a newline. That anchor was
+       written on a machine with LF endings and the repo is also worked in from
+       Windows, where the file has CRLF, so `\n` never matched, indexOf returned
+       -1 and the slice collapsed to "". An empty string then fails every
+       assertion for a reason that has nothing to do with the code under test,
+       and the inverse is worse: an empty slice can just as easily satisfy a
+       negative assertion and pass while checking nothing. Never anchor a slice
+       on whitespace that a line ending can change. */
+    /* Found by the statement it IS, not by the value it happens to assign. An
+       earlier version keyed on `EXTRACT`, so a migration that wrote a literal
+       day and moved next_billing_date failed as "no match" rather than as
+       "touches a billing date", which points the next reader at the test
+       instead of at the defect. */
+    const m = /`([^`]*UPDATE\s+subscriptions[^`]*billing_anchor_day[^`]*)`/.exec(SERVER);
+    expect(m).not.toBe(null);
+    const stmt = m[1];
     // The migration must write the new column and nothing else.
     expect(stmt).toMatch(/WHERE billing_anchor_day IS NULL/);
     expect(/SET[\s\S]*next_billing_date\s*=/.test(stmt)).toBe(false);
