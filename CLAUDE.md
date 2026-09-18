@@ -390,6 +390,32 @@ last one left off without needing a recap typed out.
   date-fns locale anywhere, so every month and weekday name rendered English
   regardless of app language; and `MonthCalendarGrid` had zero accessibility
   props at all.
+- THE CALENDAR MARKED RENEWALS A DAY EARLY WEST OF UTC, until 2026-09-18, and
+  the reminder for the same row arrived on the right day. Two different answers,
+  same app, same data.
+  WHY: `next_billing_date` and `trial_end_date` are TIMESTAMPTZ, and
+  subscriptions.create stores `new Date("2026-10-16").toISOString()`, which is
+  MIDNIGHT UTC. So the API sends an instant rather than a day, and `new Date()`
+  on it resolves to the PREVIOUS local day at any negative offset.
+  `lib/notification-scheduler.ts` already did `String(x).slice(0, 10)` before
+  parsing, so reminders were never wrong. `lib/recurrence.ts` did not, and every
+  occurrence it projects inherits its anchor, so the calendar grid, the timeline
+  and the analytics month were all shifted together.
+  MEASURED, not reasoned about: a 16 October renewal read day 15 in New York and
+  Los Angeles, day 16 in Vienna, Tokyo and Auckland. After the fix all five read
+  16, so the DACH audience saw no change at all. That is also why it survived:
+  it is invisible from Vienna. The currency picker offers USD, CAD, BRL and MXN,
+  so the affected users are real rather than hypothetical.
+  `parseApiDate` IN `lib/utils.ts` IS THE FIX AND THE THING TO REUSE. It reads
+  the leading YYYY-MM-DD digits, which is what makes it offset-proof: those
+  digits are the day and no reader's timezone can change what they say. Never go
+  back to `new Date(sub.nextBillingDate)` for anything that asks WHICH DAY.
+  STILL UNFIXED ON PURPOSE, eight sites in `insights.tsx`, `(tabs)/index.tsx` and
+  `notification-preferences.tsx` that do `Math.ceil((new Date(x) - now) / 86400000)`.
+  Same root cause, much milder: a few hours out only changes a rounding. Moving
+  them would shift what the "3 days left" badges say, which is a product decision
+  about whether that counts CALENDAR days or 24 hour periods, so it wants an
+  answer before an edit.
 - TWO HELPERS CAME OUT OF THAT and should be used rather than reinvented.
   `lib/date-locale.ts` exposes `useDateFormat` and `weekdayInitials`, picking
   the date-fns locale from i18n. Never localise the `"yyyy-MM-dd"` calls: those
