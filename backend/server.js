@@ -910,12 +910,60 @@ function handleError(err, res) {
   res.status(500).json({ error: 'Internal server error' });
 }
 
+/* Billing dates are stored as midnight UTC, so all of this works in UTC
+   components. The server runs in UTC, and mixing local getters in would make
+   the result depend on where the container happens to be.
+
+   `setMonth(getMonth() + 1)` OVERFLOWS, which is the bug this replaces. There
+   is no 31 February, so 31 January plus one month is 3 March: February is
+   skipped entirely and the day of month is permanently changed to the 3rd.
+   Every later advance then compounds from the wrong day.
+
+   Clamping to the last day of the target month is what people mean by monthly,
+   and it is what the client's getMonthlyOccurrence already did, so this also
+   ends a disagreement between what the calendar drew and what the server
+   stored. */
+function addMonthsUTC(date, months, anchorDay) {
+  const firstOfTarget = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + months, 1));
+  const y = firstOfTarget.getUTCFullYear();
+  const m = firstOfTarget.getUTCMonth();
+  const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m, Math.min(anchorDay, lastDay)));
+}
+
+/* Rolls a billing date forward until it is no longer before `notBefore`.
+
+   `anchorDay` is carried through every step rather than read from the current
+   value, so 31 January clamps to 28 February and then returns to 31 March
+   instead of sticking at the 28th for the rest of the subscription's life. */
+function advanceBillingDate(start, billingCycle, notBefore) {
+  let d = new Date(start);
+  const anchorDay = d.getUTCDate();
+  let iterations = 0;
+  while (d < notBefore && iterations < 1000) {
+    iterations++;
+    if (billingCycle === 'weekly') d = new Date(d.getTime() + 7 * 86400000);
+    else if (billingCycle === 'yearly') d = addMonthsUTC(d, 12, anchorDay);
+    else d = addMonthsUTC(d, 1, anchorDay);
+  }
+  return { date: d, advanced: iterations > 0 };
+}
+
+/** Midnight UTC today. Comparing against this rather than the current instant
+ *  is what keeps a payment due TODAY in today's alerts: a date stored at
+ *  midnight is already "past" by one minute after midnight, so comparing with
+ *  `now` advanced it on the morning of the billing day and the alert vanished
+ *  before the day it was warning about had even started. */
+function startOfUtcDay(d = new Date()) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
 function nextBillingDate(billingCycle) {
-  const d = new Date();
-  if (billingCycle === 'weekly') d.setDate(d.getDate() + 7);
-  else if (billingCycle === 'yearly') d.setFullYear(d.getFullYear() + 1);
-  else d.setMonth(d.getMonth() + 1);
-  return d.toISOString();
+  const today = startOfUtcDay();
+  const anchorDay = today.getUTCDate();
+  if (billingCycle === 'weekly') return new Date(today.getTime() + 7 * 86400000).toISOString();
+  if (billingCycle === 'yearly') return addMonthsUTC(today, 12, anchorDay).toISOString();
+  return addMonthsUTC(today, 1, anchorDay).toISOString();
 }
 
 function toMonthly(price, billingCycle) {
@@ -1956,14 +2004,18 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       // Guard against null/invalid dates to prevent infinite loops.
       let billingDate = sub.next_billing_date ? new Date(sub.next_billing_date) : null;
       if (billingDate && !isNaN(billingDate.getTime())) {
-        let iterations = 0;
-        while (billingDate < now && iterations < 1000) {
-          iterations++;
-          if (sub.billing_cycle === 'weekly') billingDate.setDate(billingDate.getDate() + 7);
-          else if (sub.billing_cycle === 'yearly') billingDate.setFullYear(billingDate.getFullYear() + 1);
-          else billingDate.setMonth(billingDate.getMonth() + 1);
-        }
-        if (iterations > 0 && billingDate >= now) {
+        /* Advance to TODAY, not to this instant. Comparing a midnight-UTC date
+           against `now` made a payment due today count as past from one minute
+           after midnight, so simply READING alerts rolled it into next month
+           and wrote that to the database. The alert for the day it was warning
+           about disappeared on that very day, which is the one day it existed
+           to cover. A read endpoint should not be able to move somebody's
+           billing date at all, and this is the narrower half of that: it can
+           still advance genuinely stale dates, but never today's. */
+        const today = startOfUtcDay(now);
+        const { date: advanced, advanced: didAdvance } = advanceBillingDate(billingDate, sub.billing_cycle, today);
+        billingDate = advanced;
+        if (didAdvance && billingDate >= today) {
           await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [billingDate.toISOString(), sub.id]);
         }
       } else {
