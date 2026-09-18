@@ -91,6 +91,22 @@ describe("no caller resends a field it is not editing", () => {
     expect(call).not.toMatch(/currency/);
   });
 
+  it("a failed settings load does not look like having no settings", () => {
+    /* The budget field stays empty, the "current goal" line is conditional on
+       the value so it hides, and the clear button goes with it. Somebody with a
+       50 euro budget on a dropped connection saw exactly what somebody with no
+       budget saw, with nothing indicating a failure. Same shape as the
+       subscriptions.tsx defect from the 2026-09-12 review. */
+    const src = read("app/account-settings.tsx");
+    expect(src).toMatch(/isError:\s*settingsError/);
+    expect(src).toMatch(/settingsError\s*&&/);
+    expect(src).toMatch(/accountSettings\.couldntLoad/);
+  });
+
+  it("that warning is announced to a screen reader", () => {
+    expect(read("app/account-settings.tsx")).toMatch(/accessibilityRole="alert"/);
+  });
+
   it("saving the budget itself still sends it, including an explicit null", () => {
     /* The other half of the contract. Clearing a budget goal is a real action
        and has to keep working, which is why absence and null cannot mean the

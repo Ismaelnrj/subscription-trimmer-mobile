@@ -41,7 +41,16 @@ export default function AccountSettingsScreen() {
   const [budgetDirty, setBudgetDirty] = useState(false);
   const [thresholdDirty, setThresholdDirty] = useState(false);
 
-  const { data: settings } = useQuery({
+  /* isError matters here more than on most screens, because a failed load is
+     INDISTINGUISHABLE from having nothing saved. The budget field stays empty,
+     the "current goal" line is hidden because it is conditional on the value,
+     and the clear button disappears with it. Somebody with a 50 euro budget on
+     a dropped connection sees exactly what somebody with no budget sees.
+
+     Same shape as the subscriptions.tsx defect from the 2026-09-12 review,
+     which fell through to the empty state and told people on a bad connection
+     that they had no subscriptions. */
+  const { data: settings, isError: settingsError } = useQuery({
     queryKey: ["settings"],
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
   });
@@ -168,6 +177,13 @@ export default function AccountSettingsScreen() {
       <Stack.Screen options={{ title: t("profile.accountSettings") }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
+
+          {settingsError && (
+            <View style={styles.loadErrorRow} accessibilityRole="alert">
+              <MaterialCommunityIcons name="alert-circle-outline" size={16} color={c.danger} />
+              <Text style={styles.loadErrorText}>{t("accountSettings.couldntLoad")}</Text>
+            </View>
+          )}
 
           <Text style={styles.sectionTitle}>{t("accountSettings.currency")}</Text>
           <View style={styles.card}>
@@ -395,6 +411,15 @@ function makeStyles(c: AppColors) {
       letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
     },
     card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 8 },
+    /* c.danger is already the deepened coral (#C4544A), which is the value the
+       palette rules require for coral carrying text on a light ground. The raw
+       #D96B62 would not clear the contrast floor here. */
+    loadErrorRow: {
+      flexDirection: "row", alignItems: "flex-start", gap: 8,
+      backgroundColor: c.dangerLight, borderWidth: 1, borderColor: c.dangerBorder,
+      borderRadius: 10, padding: 12, marginBottom: 12,
+    },
+    loadErrorText: { flex: 1, fontSize: 12, lineHeight: 18, color: c.danger },
     label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
     input: {
       borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,

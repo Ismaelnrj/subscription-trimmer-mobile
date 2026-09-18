@@ -395,7 +395,8 @@
     "errWeakPassword": "New password must be at least 8 characters with one uppercase letter and one number.",
     "errInvalidNumber": "Please enter a valid number.",
     "saved": "Saved",
-    "done": "Done"
+    "done": "Done",
+    "couldntLoad": "Couldn't load your saved settings. Check your connection before saving, or you may be looking at empty fields rather than empty settings."
   },
   "notifPrefs": {
     "loading": "Loading...",
