@@ -1818,19 +1818,36 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     let newBillingDate = billingCycle !== existing.billing_cycle
       ? nextBillingDate(billingCycle)
       : existing.next_billing_date;
-    /* The anchor only moves when the DATE is deliberately set: a new date the
-       user picked, or a regenerated one after a cycle change. Editing a name
-       or a price must not touch it, and it must never be re-derived from the
-       stored date, since that value may already be a clamped 28th. */
+    /* The anchor only moves when the DATE actually CHANGES: a different date
+       the user picked, or a regenerated one after a cycle change. Editing a
+       name or a price must not touch it, and it must never be re-derived from
+       the stored date, since that value may already be a clamped 28th.
+
+       "SUPPLIED" IS NOT THE SAME AS "CHANGED", and reading it that way undid
+       this whole feature for anybody who edits a subscription. The edit form
+       seeds its date field from the stored row and posts every field back, so
+       renaming Netflix resubmitted the clamped 28 February, which was read as
+       a deliberate choice of the 28th and overwrote the anchor of 31. One
+       rename and a month-end subscription was back to drifting.
+
+       Comparing the calendar DAY rather than trusting the presence of the key
+       also makes this correct for clients already installed, which cannot be
+       changed and will go on resubmitting unchanged dates for as long as
+       somebody skips an update. */
     let newAnchorDay = existing.billing_anchor_day ?? null;
-    if (billingCycle !== existing.billing_cycle) {
+    const cycleChanged = billingCycle !== existing.billing_cycle;
+    if (cycleChanged) {
       newAnchorDay = new Date(newBillingDate).getUTCDate();
     }
     if (nextBillingDateInput) {
       const parsed = new Date(nextBillingDateInput);
       if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
+      const submittedDay = parsed.toISOString().slice(0, 10);
+      const storedDay = existing.next_billing_date
+        ? new Date(existing.next_billing_date).toISOString().slice(0, 10)
+        : null;
       newBillingDate = parsed.toISOString();
-      newAnchorDay = parsed.getUTCDate();
+      if (cycleChanged || submittedDay !== storedDay) newAnchorDay = parsed.getUTCDate();
     }
     // Legacy rows arrive with no anchor at all. Seeding it from the date says
     // only what the date already says, so nothing moves.

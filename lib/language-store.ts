@@ -34,7 +34,19 @@ function rescheduleReminders() {
          use, so this reflects whatever was last loaded rather than refetching
          during a language switch. */
       const prefs = queryClient.getQueryData<any>(["notifications", "preferences"]);
-      await scheduleRenewalReminders(subs, useCurrencyStore.getState().currency.symbol, prefs ?? {});
+      /* Not loaded means DO NOTHING, not "use the defaults". The scheduler
+         treats an absent preference as ON, which is right for the scheduler
+         (dropping reminders because a query was slow is the failure this
+         product cannot afford) and wrong for this caller, because here the
+         fallback would re-enable reminders somebody had turned off. Passing
+         `prefs ?? {}` fixed the cached case and left this one open.
+
+         Skipping costs almost nothing: pending reminders stay in the previous
+         language until the dashboard's next refetch reschedules them with the
+         real preferences. Re-enabling notifications somebody opted out of
+         costs a great deal more. */
+      if (!prefs) return;
+      await scheduleRenewalReminders(subs, useCurrencyStore.getState().currency.symbol, prefs);
     } catch (e) {
       console.warn("[Language] Could not reschedule reminders:", e);
     }

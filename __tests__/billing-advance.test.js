@@ -160,6 +160,78 @@ describe("the billing day survives being written to the database and read back",
   });
 });
 
+describe("editing a subscription does not throw the anchor away", () => {
+  /* Codex's review of 81b709ba, and the one that undid the whole feature.
+     The edit form seeds its date field from the stored row and posts every
+     field back, so renaming Netflix resubmitted the clamped 28 February. The
+     handler read a SUPPLIED date as a CHANGED date and overwrote the anchor of
+     31 with 28. One rename and a month-end subscription drifted again.
+
+     The block is lifted out of the handler and executed with the exact payload
+     the form sends, because the defect is entirely in what that payload means
+     and a test built from an idealised one would never see it. */
+  const BLOCK = SERVER.slice(
+    SERVER.indexOf("let newBillingDate = billingCycle !== existing.billing_cycle"),
+    SERVER.indexOf("const result = await pool.query(", SERVER.indexOf("subscriptions.update"))
+  );
+  const decide = (existing, body) =>
+    new Function("existing", "billingCycle", "nextBillingDateInput", "nextBillingDate", "res",
+      BLOCK + "\nreturn { newBillingDate, newAnchorDay };"
+    )(existing, body.billingCycle, body.nextBillingDate, nextBillingDate, { status: () => ({ json: () => {} }) });
+
+  // Really billed on the 31st, currently sitting at a clamped 28 February.
+  const clamped = { next_billing_date: utc("2027-02-28"), billing_cycle: "monthly", billing_anchor_day: 31 };
+
+  it("keeps the anchor through a name-only edit", () => {
+    const r = decide(clamped, { billingCycle: "monthly", nextBillingDate: "2027-02-28" });
+    expect(r.newAnchorDay).toBe(31);
+    // What it costs if this regresses: the next renewal moves to the 28th.
+    expect(day(advanceBillingDate(new Date(r.newBillingDate), "monthly", utc("2027-03-01"), r.newAnchorDay).date))
+      .toBe("2027-03-31");
+  });
+
+  it("keeps it when no date is sent at all", () => {
+    const r = decide(clamped, { billingCycle: "monthly", nextBillingDate: undefined });
+    expect(r.newAnchorDay).toBe(31);
+    expect(day(new Date(r.newBillingDate))).toBe("2027-02-28");
+  });
+
+  it("moves it when the user really picks a different day", () => {
+    const r = decide(clamped, { billingCycle: "monthly", nextBillingDate: "2027-03-15" });
+    expect(r.newAnchorDay).toBe(15);
+    /* new Date() because the handler's newBillingDate is a Date when it comes
+       off the existing row and an ISO string when it comes from the request.
+       Postgres takes either, so it is not a bug, but a test that assumed one
+       shape passed on the paths that happened to match and threw on this one. */
+    expect(day(new Date(r.newBillingDate))).toBe("2027-03-15");
+  });
+
+  it("moves it when the user picks a month end", () => {
+    const r = decide(clamped, { billingCycle: "monthly", nextBillingDate: "2027-03-31" });
+    expect(r.newAnchorDay).toBe(31);
+  });
+
+  it("regenerates it when the billing cycle changes", () => {
+    const r = decide(clamped, { billingCycle: "yearly", nextBillingDate: undefined });
+    expect(r.newAnchorDay).toBe(new Date(r.newBillingDate).getUTCDate());
+  });
+
+  it("seeds a legacy row from its date rather than leaving it null", () => {
+    // No anchor stored, so the date is the only evidence there is. Says what
+    // the date already says, so nothing moves.
+    const legacy = { ...clamped, billing_anchor_day: null };
+    expect(decide(legacy, { billingCycle: "monthly", nextBillingDate: "2027-02-28" }).newAnchorDay).toBe(28);
+  });
+
+  it("compares the day, not the presence of the key", () => {
+    /* The distinction the fix turns on, and the reason it is done server side:
+       clients already installed cannot be changed and will go on resubmitting
+       unchanged dates for as long as somebody skips an update. */
+    const code = BLOCK.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    expect(code).toMatch(/submittedDay !== storedDay/);
+  });
+});
+
 describe("the anchor is stored where it can still be trusted", () => {
   it("has a column and a backfill that touches no billing date", () => {
     expect(SERVER).toMatch(/ADD COLUMN IF NOT EXISTS billing_anchor_day SMALLINT/);

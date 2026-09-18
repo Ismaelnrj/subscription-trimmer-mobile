@@ -87,11 +87,22 @@ describe("changing language must not change anybody's notification settings", ()
     expect(callArgs().length).toBeGreaterThan(2);
   });
 
-  it("sends an object rather than undefined when preferences have not loaded", () => {
-    // Absent means ON in the scheduler, deliberately, because dropping
-    // reminders because a query was slow is the failure this product cannot
-    // afford. The caller must still pass something rather than nothing.
-    expect(CODE).toMatch(/prefs \?\? \{\}/);
+  it("schedules nothing at all when preferences have not loaded", () => {
+    /* Codex's review of 81b709ba. `prefs ?? {}` fixed the CACHED case and left
+       this one open: the scheduler reads an absent preference as ON, which is
+       right for the scheduler and wrong for this caller, because here it
+       re-enables reminders somebody turned off.
+
+       Skipping costs a language switch that leaves pending reminders in the
+       old language until the dashboard's next refetch. Not skipping costs
+       somebody notifications they explicitly opted out of. */
+    expect(CODE).toMatch(/if \(!prefs\) return;/);
+    expect(/prefs \?\? \{\}/.test(CODE)).toBe(false);
+  });
+
+  it("passes the preferences straight through once they exist", () => {
+    // No defaulting on the way past, or the guard above is decorative.
+    expect(callArgs()[2]).toBe("prefs");
   });
 
   it("still cannot fail the language change itself", () => {

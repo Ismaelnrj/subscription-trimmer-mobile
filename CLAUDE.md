@@ -848,6 +848,14 @@ last one left off without needing a recap typed out.
   loaded yet" is not consent. Absent still means ON in the scheduler, on
   purpose, because dropping reminders because a query was slow is the one
   failure this product cannot afford. Every CALLER must pass what it knows.
+  `prefs ?? {}` ONLY FIXED THE CACHED CASE, which Codex pointed out reviewing
+  81b709ba. With the preferences query not yet resolved it still fell through
+  to the scheduler's enabled default, so a language switch before the dashboard
+  had loaded re-enabled reminders somebody had turned off: the same bug in a
+  narrower window. `rescheduleReminders` now RETURNS rather than defaulting.
+  Skipping costs pending reminders staying in the previous language until the
+  next refetch reschedules them properly. Not skipping costs somebody
+  notifications they explicitly opted out of. Those are not close.
   JEST CANNOT EXECUTE `rescheduleReminders` AT ALL, and this entry used to claim
   `__tests__/language-reminders.test.js` drove the real store, which was wrong.
   It reaches its three dependencies through dynamic `import()`, babel leaves
@@ -894,6 +902,36 @@ last one left off without needing a recap typed out.
   sends `billingAnchorDay` and `lib/recurrence.ts` clamps from it. Weekly
   ignores it, since there is no day of month to preserve. A yearly 29 February
   correctly returns to the 29th in the next leap year.
+  AND THEN AN ORDINARY EDIT THREW IT STRAIGHT BACK AWAY, caught by Codex's
+  review of 81b709ba within hours of the above shipping. `subscriptions.update`
+  read a SUPPLIED `nextBillingDate` as a CHANGED one. The edit form seeds its
+  date field from the stored row and posts every field back, so renaming
+  Netflix resubmitted the clamped 28 February, which was taken as a deliberate
+  choice of the 28th and overwrote the anchor of 31. One rename and a month-end
+  subscription was drifting again. Measured, not argued: anchor 31 went to 28
+  and the next advance gave 2027-03-28 instead of 2027-03-31.
+  THE FIX COMPARES THE CALENDAR DAY against the stored one and only treats a
+  DIFFERENT day as a change. Deliberately server side rather than client side:
+  clients already installed cannot be changed and will go on resubmitting
+  unchanged dates for as long as somebody skips an update, so a client-only fix
+  would leave the bug live on every phone that has not updated. Codex asked for
+  both halves; the client half was skipped ON PURPOSE, because the server is
+  authoritative and correct on its own and the alternative was an untestable
+  change to the busiest form in the app for no behaviour that is not already
+  guaranteed. If a future reader wants it anyway, it is defence in depth, not a
+  fix.
+  ONE CASE REMAINS UNRESOLVABLE and is not worth pretending otherwise: somebody
+  sitting on a clamped 28 February who OPENS the picker and deliberately
+  chooses 28 February meaning "bill me on the 28th from now on" keeps the
+  anchor of 31. Nothing in the payload distinguishes that from not touching the
+  field, and no client-side dirty flag fixes it either, since both produce the
+  same date. Preserving is the safer default of the two. Changing the cycle, or
+  picking any other day, sets the anchor as expected.
+  MY OWN COMMENT IN THAT BLOCK ALREADY SAID "editing a name or a price must not
+  touch it" while the code did the opposite. That is the third time in this file
+  a comment has documented an intention rather than the behaviour, after
+  `lib/pricing.ts` and the removed entitlement fail-open. A comment describing
+  what the code SHOULD do is worth a test that checks it does.
 - THE JEST SUITES CANNOT RUN IN A SANDBOX, but the LOGIC in them can, and the
   difference is worth the twenty minutes. Node 22 strips TypeScript types
   natively (`node --experimental-strip-types`), so a scratchpad copy of a module
