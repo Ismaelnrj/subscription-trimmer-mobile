@@ -270,6 +270,27 @@ last one left off without needing a recap typed out.
   Update ID and timestamp read off the panel, and the difference is worth being
   honest about: "the owner said yes" and "these are the numbers that were read"
   are not the same evidence. Next time, write the Update ID down.
+- PUBLISHED THROUGH 189e6490 AND CONFIRMED ON A REAL DEVICE (2026-09-19), which
+  supersedes every baseline above. The owner ran `tools/typecheck.py` clean and
+  the jest suite green first. Read off the Build Info panel rather than inferred
+  from a publish that exited zero: `Embedded launch (no OTA applied): false`,
+  `Update ID: 01a0b959-30d8-7e66-882e-dd589fb2b232`, `Update published:
+  2026-09-19T11:07:05.304Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`. That pairing is the frozen
+  runtimeVersion working again: a build carrying 1.0.1 asked for updates tagged
+  1.0.1 and got one.
+  THE NUMBERS ARE WRITTEN DOWN THIS TIME, which the entry above says to do and
+  the three publishes of 2026-09-18 did not.
+  WHAT WENT OUT: `app/(tabs)/calendar.tsx`, `components/MonthCalendarGrid.tsx`
+  and both locale files, so the even day cells and the next-up list. Native check
+  across `39a58081..189e6490`: zero files under android/, assets/, app.json,
+  package.json or eas.json, so runtimeVersion correctly stayed 1.0.1 and no build
+  was needed.
+  MASTER IS AT a090cd85, ONE COMMIT AHEAD OF THAT BASELINE, and it does not
+  matter: a090cd85 untracks three compiled `.pyc` files, which never enter a JS
+  bundle. 189e6490 is the last commit carrying anything a phone runs. This is now
+  the third time the gap has looked like a missed publish and has not been one,
+  so check WHAT the gap contains before reaching for another `eas update`.
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
