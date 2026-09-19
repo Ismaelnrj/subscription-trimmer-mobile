@@ -32,3 +32,9 @@ build/
 
 # Source recordings. Large, and the cut specs reference them by path.
 raw/
+
+# Compiled Python bytecode. Never source, churns on every interpreter
+# version, and three of these were tracked for over a week before anyone
+# noticed because a .pyc never shows up in a readable diff.
+__pycache__/
+*.py[cod]
