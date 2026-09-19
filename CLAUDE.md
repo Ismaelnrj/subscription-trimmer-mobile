@@ -751,23 +751,42 @@ last one left off without needing a recap typed out.
   TOP LEFT FOR THE BUG IS NOT TASTE. The platform paints its own UI over the
   bottom 20% and the right 15%, so those are the two places a watermark cannot
   go, and top left is what remains.
-  A PROP PHONE IN A GENERATED SHOT IS THE SAME MISTAKE WEARING A DISGUISE, and
-  it cost a whole promo on 2026-09-18. A UGC render had the actor hold a phone
-  up to camera, and the icon was pasted onto the screen afterwards. At thumbnail
-  size it looked fine, which is why it was first waved through here. At full
+  A LOGO PASTED ONTO A PROP PHONE IS THE SAME MISTAKE WEARING A DISGUISE, and
+  it cost a promo on 2026-09-18. A UGC render had the actor hold a phone up to
+  camera, and the icon was pasted onto the screen afterwards. At thumbnail size
+  it looked fine, which is why it was first waved through here. At full
   resolution it was obviously a sticker: a white halo around the tile, a smeared
   grey artefact above it where the previous screen content had been half erased,
   no perspective match to a phone that is visibly tilted, and none of the warm
   window gradient the rest of the screen carries.
-  IT CANNOT BE FIXED IN POST, and reaching for that wastes an afternoon. A
-  convincing screen replacement needs per frame tracking and a homography across
-  the whole handheld take. There is no numpy, no OpenCV and no tracker in a
-  sandbox, and ffmpeg's `perspective` filter is static.
-  SO THE PROMPT MUST SAY IT: "No phone, no laptop, no tablet, no screen of any
-  kind visible anywhere in the frame, and nothing held up to camera." The last
-  clause is the one that was missing. If the app genuinely has to be seen, the
-  product half comes from a REAL screen recording cut in as its own beat through
-  make-cut's `reframe`, never from a prop in a generated frame.
+  THAT PARTICULAR SHOT CANNOT BE FIXED IN POST, and reaching for it wastes an
+  afternoon. Repairing a pasted screen needs per frame tracking and a homography
+  across the whole handheld take. There is no numpy, no OpenCV and no tracker in
+  a sandbox, and ffmpeg's `perspective` filter is static.
+  BUT A PHONE IN FRAME IS NOT ITSELF THE PROBLEM, and this note used to say it
+  was. It told the next reader to put "nothing held up to camera" in every
+  prompt, which is wrong and would throw away the most natural shot this product
+  has: it is an app, and a person holding a phone is the honest picture of using
+  one. The 2026-09-19 render proves it. The owner fed Zeely a REAL screenshot of
+  the dashboard and the result is genuinely their app, checked against the source
+  rather than eyeballed: `dashboard.goodAfternoon`, the budget card with its
+  percentage badge, `of {budgetGoal}`, `"{{amount}} remaining"`, and a green bar
+  that is the real `success: #1F7A62` shown under 70%. Even the pink cast is
+  honest, being `#F7F6F1` warm white under warm room light.
+  THE REAL LINE IS BETWEEN SUPPLYING THE SCREEN AND LETTING THE MODEL INVENT IT.
+  Supply a real screenshot and the screen is true. Ask for "an app" and you get
+  "Trlmio" and a green dashboard that is not Trimio's.
+  WHAT A GENERATIVE MODEL STILL COSTS YOU, even with a real screenshot, is
+  SHARPNESS. It re-renders everything in frame, so the headline and the big total
+  survive and the label lines under them go soft. That is a quality tradeoff to
+  accept or avoid deliberately, not a reason to remove the phone. If a specific
+  UI detail has to be legible, that beat comes from a real screen recording
+  through make-cut's `reframe`, which uses actual pixels.
+  AND THE LESSON UNDERNEATH, which is the one worth keeping: this file's own
+  codebase answers questions like "is that really our UI" in about thirty
+  seconds. Grepping `locales/en.json` and `app/(tabs)/index.tsx` would have
+  settled it before a single claim was made, and was not done. Measure, including
+  when the thing being measured is your own product.
 - VIDEO CAPTION CONSTRAINTS, the reasons the old cut needs redoing and the
   traps in redoing it: no Apple App Store badge (Android only, the Play link
   is `play.google.com/store/apps/details?id=com.trimio.app`); TikTok and
