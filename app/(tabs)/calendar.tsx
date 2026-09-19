@@ -17,6 +17,13 @@ import { getOccurrencesInMonth, getUpcomingOccurrences } from "../../lib/recurre
 import { getCategoryIcon } from "../../lib/categories";
 
 const TIMELINE_WINDOW_DAYS = 30;
+/* Three rows, not one and not the whole list. One is thin enough to feel like
+   an afterthought; a full list turns the empty state into a second timeline and
+   buries the calendar it belongs to. The window is wide enough that a quiet
+   stretch still finds something: at 30 days an empty January would have shown
+   nothing, which is the case this exists for. */
+const NEXT_UP_COUNT = 3;
+const NEXT_UP_WINDOW_DAYS = 120;
 
 function dayKey(d: Date) {
   return format(d, "yyyy-MM-dd");
@@ -109,6 +116,26 @@ export default function CalendarScreen() {
   const upcoming = useMemo(
     () => getUpcomingOccurrences(subscriptions as any[], new Date(), TIMELINE_WINDOW_DAYS),
     [subscriptions]
+  );
+
+  /* What is due AFTER the day being looked at, for the days that have nothing
+     on them. Most days do: a typical month has renewals on four or five of
+     thirty, so "No renewals on this day" was what the bottom third of this
+     screen said almost every time it was opened, and it answered a question
+     nobody had while leaving the real one unanswered.
+
+     Counted from the SELECTED day rather than from today, which is the whole
+     point. Browsing forward to November and tapping an empty 8th should say
+     what is next in November, not what is next this week. Selecting a past day
+     still lands on genuinely future occurrences, because getUpcomingOccurrences
+     never projects one earlier than the subscription's own next billing date. */
+  const nextUp = useMemo(
+    () =>
+      selectedDate
+        ? getUpcomingOccurrences(subscriptions as any[], selectedDate, NEXT_UP_WINDOW_DAYS)
+            .slice(0, NEXT_UP_COUNT)
+        : [],
+    [subscriptions, selectedDate]
   );
 
   const monthSummary = useMemo(() => {
@@ -222,10 +249,34 @@ export default function CalendarScreen() {
               </View>
 
               {selectedDaySubs.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <MaterialCommunityIcons name="calendar-blank-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
-                  <Text style={styles.emptyStateText}>{t("calendar.noRenewals")}</Text>
-                </View>
+                <>
+                  {/* Tighter than the standalone empty state, because it is no
+                      longer the last thing on the screen. At 32 it pushed the
+                      rows below it out of the first glance. */}
+                  <View style={[styles.emptyState, nextUp.length > 0 && styles.emptyStateCompact]}>
+                    <MaterialCommunityIcons name="calendar-blank-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
+                    <Text style={styles.emptyStateText}>{t("calendar.noRenewals")}</Text>
+                  </View>
+                  {nextUp.length > 0 && (
+                    <>
+                      <Text style={styles.sectionTitle}>{t("calendar.nextUp")}</Text>
+                      {nextUp.map(({ sub, date }, i) => (
+                        <TouchableOpacity
+                          key={`next-${sub.id}-${date.toISOString()}-${i}`}
+                          style={styles.subCard}
+                          onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                        >
+                          <LogoImage name={sub.name} category={sub.category} />
+                          <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={styles.subName}>{sub.name}</Text>
+                            <Text style={styles.subMeta}>{dueLabel(date)}</Text>
+                          </View>
+                          <Text style={styles.subPrice}>{fmtC(sub.price)}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </>
+                  )}
+                </>
               ) : (
                 selectedDaySubs.map((sub: any, i: number) => (
                   <TouchableOpacity
@@ -309,6 +360,7 @@ function makeStyles(c: AppColors) {
        in their head. */
     dayHeaderTotal: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginTop: 20, marginBottom: 10 },
     emptyState: { alignItems: "center", paddingVertical: 32 },
+    emptyStateCompact: { paddingVertical: 20 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
     subCard: {
       flexDirection: "row", alignItems: "center",

@@ -689,6 +689,27 @@ last one left off without needing a recap typed out.
   contains `width: \`${100 / 7}%\``, so a `[^}]*` regex stops at the template
   literal's closing brace and silently reports a cell 8dp shorter than it is.
   The test matches braces instead.
+- AN EMPTY DAY NOW SAYS WHEN THE NEXT ONE IS, added 2026-09-19. A typical month
+  carries renewals on four or five days of thirty, so "No renewals on this day"
+  was what the bottom third of the calendar said almost every time it was
+  opened: it answered a question nobody had, in the largest block of space on
+  the screen, and left the real one unanswered. That space now holds up to three
+  upcoming rows, reusing the timeline's own row markup.
+  IT COUNTS FROM THE SELECTED DAY, NOT FROM TODAY, and that is the whole value
+  rather than a detail. Browsing forward to November and tapping an empty 8th
+  should say what is next in November. Swapping `selectedDate` for `new Date()`
+  would look identical whenever somebody is on the current month, which is most
+  of the time, and be wrong exactly when they are planning ahead, so it is a
+  regression that survives a manual check. `__tests__/calendar-next-up.test.js`
+  pins it and reports `"new Date()" !== "selectedDate"` when it breaks.
+  THE WINDOW IS 120 DAYS, NOT THE TIMELINE'S 30. Thirty is right for "what is
+  coming up" and wrong here: tapping an empty day in a quiet January would find
+  nothing and show the same dead end this replaces.
+  VERIFIED AGAINST THE REAL `getUpcomingOccurrences` before the test was
+  written, since a source-reading test cannot prove the dates are right: from
+  19 September it correctly skips a 16th and a 17th as already past and returns
+  3 October, 16 October, 17 October; from 2 November it returns 3 November.
+  Different answers, which is the point.
 - `assets/play-store-icon.png` is the 512 square listing icon, a
   SEPARATE asset from the launcher icon. Play Console requires exactly
   512 and rejects an alpha channel.

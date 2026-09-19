@@ -191,6 +191,7 @@
   "calendar": {
     "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
     "noRenewals": "Keine Verlängerungen an diesem Tag",
+    "nextUp": "Als Nächstes",
     "timeline": "Zeitleiste",
     "calendarView": "Kalender",
     "month": "Monat",

@@ -191,6 +191,7 @@
   "calendar": {
     "selectDay": "Select a day to see what's due",
     "noRenewals": "No renewals on this day",
+    "nextUp": "Next up",
     "timeline": "Timeline",
     "calendarView": "Calendar",
     "month": "Month",
