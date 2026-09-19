@@ -163,22 +163,34 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
               }
             >
               {today && !selected && !reduceMotion ? <TodayPulse>{circle}</TodayPulse> : circle}
-              {dotColors.length > 0 && (
+              {/* The dots and the amount live in a slot that is ALWAYS there,
+                  even on a day with neither. Rendering them conditionally made
+                  a cell 23px taller when it had renewals, so week rows changed
+                  height according to their contents and the grid visibly
+                  wobbled from one row to the next.
+
+                  Reserving it also fixes something less visible and worse: an
+                  empty cell was 4 + 32 + 4 = 40dp tall, under Android's 48dp
+                  minimum touch target, while a busy one cleared it at 63dp. So
+                  the days that were hardest to hit were the empty ones, which
+                  are exactly the days somebody taps to ask "is anything due
+                  here?". Every cell is now 63dp. */}
+              <View style={styles.dayMeta}>
                 <View style={styles.dotRow}>
                   {dotColors.slice(0, 3).map((color, i) => (
                     <View key={i} style={[styles.dot, { backgroundColor: color }]} />
                   ))}
                   {extraDots > 0 && <Text style={styles.dotOverflow}>+{extraDots}</Text>}
                 </View>
-              )}
-              {total > 0 && formatDayTotal && (
-                <Text
-                  style={[styles.dayTotal, selected && styles.dayTotalSelected]}
-                  numberOfLines={1}
-                >
-                  {formatDayTotal(total)}
-                </Text>
-              )}
+                {total > 0 && formatDayTotal ? (
+                  <Text
+                    style={[styles.dayTotal, selected && styles.dayTotalSelected]}
+                    numberOfLines={1}
+                  >
+                    {formatDayTotal(total)}
+                  </Text>
+                ) : null}
+              </View>
             </TouchableOpacity>
           );
         })}
@@ -203,6 +215,12 @@ function makeStyles(c: AppColors) {
     dayText: { fontSize: 13, color: c.text },
     dayTextMuted: { color: c.textMuted },
     dayTextSelected: { color: "#FFFFFF", fontWeight: "700" },
+    /* 23 = the dot row's 3 margin and 8 height, plus the amount's 1 margin and
+       11 line height. Fixed rather than derived so an amount with no dots, or
+       dots with no amount, still sit at the same y as everywhere else in the
+       grid: a number that drifts up half a row on one cell is more distracting
+       than one that is simply absent. */
+    dayMeta: { height: 23, alignItems: "center" },
     dotRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3, height: 8 },
     dot: { width: 5, height: 5, borderRadius: 2.5 },
     /* Both of these are c.text, and the obvious choices were all measured and

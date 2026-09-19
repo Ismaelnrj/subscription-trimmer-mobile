@@ -667,6 +667,28 @@ last one left off without needing a recap typed out.
   render it must reserve `FAB_SCROLL_CLEARANCE`, exported from
   `components/GlobalFab.tsx`. Subscriptions is exempt, GlobalFab returns
   null there.
+- A CONDITIONALLY RENDERED ROW CHANGES THE HEIGHT OF WHAT CONTAINS IT, and in a
+  grid that is two bugs, not one. `MonthCalendarGrid` drew its dot row and day
+  amount only when a day had renewals, so a busy cell was 23dp taller than an
+  empty one and the week rows visibly wobbled against each other. Fixed
+  2026-09-19 by reserving the slot in a fixed height `dayMeta` view.
+  THE SECOND BUG IS THE ONE NOBODY SEES. An empty cell measured
+  `4 + 32 + 4 = 40dp`, under Android's 48dp minimum touch target, while a busy
+  one cleared it at 63dp purely because its contents padded it out. So the days
+  that were hardest to tap were the EMPTY ones, which are exactly the days
+  somebody taps to ask whether anything is due. Every cell is 63dp now.
+  THE GENERALISATION WORTH CARRYING TO OTHER SCREENS: whenever a tappable row
+  sizes itself from optional content, its smallest state is the one to measure,
+  and the smallest state is usually the one nobody screenshots.
+  `__tests__/calendar-grid-geometry.test.js` READS THE NUMBERS OUT OF THE
+  STYLESHEET rather than hardcoding them, so the arithmetic survives a type
+  size change, and it pins the relationships instead: the reserved slot equals
+  what it reserves, and every cell clears 48dp. All five assertions fail against
+  the previous code, one of them reporting "40 not >= 48" in as many words.
+  ONE TRAP IN MEASURING IT, which cost a wrong number first time round: `cell`
+  contains `width: \`${100 / 7}%\``, so a `[^}]*` regex stops at the template
+  literal's closing brace and silently reports a cell 8dp shorter than it is.
+  The test matches braces instead.
 - `assets/play-store-icon.png` is the 512 square listing icon, a
   SEPARATE asset from the launcher icon. Play Console requires exactly
   512 and rejects an alpha channel.
