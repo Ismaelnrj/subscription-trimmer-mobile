@@ -58,6 +58,19 @@ resets between sessions and can lose detail even within one long session
   or force pushing anything, and any change whose failure mode is a broken
   production deploy that the owner has not already been told about. Pushing
   finished green work to master is NOT on that list any more.
+  ONE STEP THAT IS EASY TO DROP, and it is what keeps the above working on the
+  NEXT session rather than only this one: after the merge, push master back to
+  the working branch as well, `git push origin master:claude/<branch>`. Without
+  it the branch falls behind the moment anything else lands, and the session
+  after you inherits a stale one. Not hypothetical: on 2026-09-20 a session was
+  handed a branch 44 commits behind master with nothing of its own on it.
+  INHERITING A STALE BRANCH IS CHEAP TO FIX AND EASY TO GET WRONG. `git checkout
+  -B claude/<branch> origin/master` recreates it, and that is safe ONLY when the
+  branch carries nothing unmerged. Measure before assuming, with `git rev-list
+  --left-right --count origin/master...HEAD`, and if the right hand number is
+  not zero those commits are yours alone: rebase them, never discard them. Note
+  that this is an ancestry question, so the shallow clone entry below applies
+  and the count LIES until you have unshallowed.
 - CHATGPT ALSO WORKS ON TRIMIO. The owner has given it access to read and
   review this codebase, so it is a second assistant on the same repo, not a
   bystander. Practical consequences: changes may arrive that this session
