@@ -208,7 +208,8 @@
     "a11yDayRenewals_one": "{{date}}, {{count}} renewal",
     "a11yDayRenewals_other": "{{date}}, {{count}} renewals",
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} renewal, {{total}}",
-    "a11yDayRenewalsTotal_other": "{{date}}, {{count}} renewals, {{total}} total"
+    "a11yDayRenewalsTotal_other": "{{date}}, {{count}} renewals, {{total}} total",
+    "a11yLegend": "Dot colours this month: {{categories}}"
   },
   "review": {
     "title": "Enjoying Trimio?",
@@ -657,5 +658,18 @@
     "notifications": "Notifications",
     "cancelGuide": "How to Cancel",
     "subscriptionDetails": "Subscription Details"
+  },
+  "categoryNames": {
+    "entertainment": "Entertainment",
+    "streaming": "Streaming",
+    "software": "Software",
+    "health": "Health",
+    "fitness": "Fitness",
+    "food": "Food",
+    "education": "Education",
+    "utilities": "Utilities",
+    "insurance": "Insurance",
+    "memberships": "Memberships",
+    "other": "Other"
   }
 }

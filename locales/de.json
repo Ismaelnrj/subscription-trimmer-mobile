@@ -208,7 +208,8 @@
     "a11yDayRenewals_one": "{{date}}, {{count}} Verlängerung",
     "a11yDayRenewals_other": "{{date}}, {{count}} Verlängerungen",
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} Verlängerung, {{total}}",
-    "a11yDayRenewalsTotal_other": "{{date}}, {{count}} Verlängerungen, {{total}} insgesamt"
+    "a11yDayRenewalsTotal_other": "{{date}}, {{count}} Verlängerungen, {{total}} insgesamt",
+    "a11yLegend": "Punktfarben in diesem Monat: {{categories}}"
   },
   "review": {
     "title": "Gefällt dir Trimio?",
@@ -657,5 +658,18 @@
     "notifications": "Benachrichtigungen",
     "cancelGuide": "Kündigen",
     "subscriptionDetails": "Abo-Details"
+  },
+  "categoryNames": {
+    "entertainment": "Unterhaltung",
+    "streaming": "Streaming",
+    "software": "Software",
+    "health": "Gesundheit",
+    "fitness": "Fitness",
+    "food": "Essen",
+    "education": "Bildung",
+    "utilities": "Versorgung",
+    "insurance": "Versicherung",
+    "memberships": "Mitgliedschaften",
+    "other": "Sonstiges"
   }
 }

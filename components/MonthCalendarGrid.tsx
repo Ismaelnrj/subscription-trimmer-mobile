@@ -41,6 +41,12 @@ interface Props {
   formatDayTotal?: (amount: number) => string;
   /** Honours the reader's reduce-motion setting; the pulse is off when true. */
   reduceMotion?: boolean;
+  /* Decodes the dots: one entry per colour actually drawn this month, with the
+     name already resolved and translated by the caller. The grid stays ignorant
+     of what a category IS, which is the whole reason it can be handed a colour
+     list in the first place. Absent or empty renders nothing at all: a rule and
+     a gap under a month with no renewals is furniture. */
+  legend?: { color: string; name: string }[];
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   onChangeMonth: (month: Date) => void;
@@ -70,7 +76,7 @@ function TodayPulse({ children }: { children: React.ReactNode }) {
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 }
 
-export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals, formatDayTotal, reduceMotion, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
+export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals, formatDayTotal, reduceMotion, legend, selectedDate, onSelectDate, onChangeMonth, c }: Props) {
   const styles = makeStyles(c);
   const { t, i18n } = useTranslation();
   const fmtD = useDateFormat();
@@ -195,6 +201,44 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
           );
         })}
       </View>
+
+      {/* WHAT THE DOTS MEAN, which nothing said until now. The grid draws up to
+          three category colours per day and the colours are the only carrier of
+          that meaning anywhere on the screen: tapping a day lists its
+          subscriptions but never names the colour it just drew, so the mapping
+          could only ever be inferred, one day at a time, by somebody who
+          thought to try.
+
+          Only the colours actually present this month, so the legend stays a
+          key to what is on screen rather than a fixed table of eleven
+          categories, most of them absent. It changes as you page through
+          months, which is correct: it describes this grid, not the catalogue.
+
+          It also repairs something the palette cannot. Two of the category
+          colours fall under the 3:1 non-text floor on the dark card
+          (entertainment 2.79:1, insurance 2.82:1) and `other` falls under it on
+          the light one (2.98:1), because the palette was validated for the
+          Stats donut, which sits on the warm white ground and carries a legend
+          of its own. A name beside the swatch means identity is no longer
+          colour alone, which is the accessibility requirement the contrast
+          number stands in for. */}
+      {legend && legend.length > 0 && (
+        <View
+          style={styles.legend}
+          accessible
+          accessibilityRole="text"
+          accessibilityLabel={t("calendar.a11yLegend", {
+            categories: legend.map((entry) => entry.name).join(", "),
+          })}
+        >
+          {legend.map((entry) => (
+            <View key={entry.color} style={styles.legendItem} importantForAccessibility="no-hide-descendants">
+              <View style={[styles.legendDot, { backgroundColor: entry.color }]} />
+              <Text style={styles.legendName} numberOfLines={1}>{entry.name}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -235,5 +279,29 @@ function makeStyles(c: AppColors) {
     dotOverflow: { fontSize: 8, lineHeight: 8, fontWeight: "700", color: c.text },
     dayTotal: { fontSize: 9, lineHeight: 11, marginTop: 1, color: c.text, fontWeight: "600" },
     dayTotalSelected: { fontWeight: "800" },
+    /* Sits inside the calendar card under a hairline rule, because a legend in
+       a card of its own reads as a second thing to look at rather than as a
+       footnote to the grid above it. */
+    legend: {
+      flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 6,
+      marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border,
+    },
+    /* maxWidth and the shrink below are for a CUSTOM category, which is
+       whatever the user typed. A built-in name is one short word, but an item
+       wider than the card does not wrap, it overflows, so the name ellipsizes
+       instead of pushing its own dot off the edge. */
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 5, maxWidth: "100%" },
+    /* 8, where the grid's own dot is 5. They are not the same mark and do not
+       need to be the same size: the colour is what carries the match, and seven
+       columns is the only reason the grid dot is as small as it is. A 5dp dot
+       beside 11px type reads as a full stop. */
+    legendDot: { width: 8, height: 8, borderRadius: 4 },
+    /* capitalize, like every other category surface in the app. It is a no-op
+       for these, since each translated name is a single capitalised noun in
+       both languages, and it is there for a CUSTOM category, which arrives
+       exactly as the user typed it and would otherwise sit lowercase beside
+       eleven capitalised ones. c.text rather than textMuted for the same reason
+       the day amount is: at 11px, 2.98:1 is not a legible label. */
+    legendName: { fontSize: 11, color: c.text, textTransform: "capitalize", flexShrink: 1 },
   });
 }

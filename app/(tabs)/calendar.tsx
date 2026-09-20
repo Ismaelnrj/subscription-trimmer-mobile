@@ -15,6 +15,7 @@ import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
 import { LogoImage } from "../../components/LogoImage";
 import { getOccurrencesInMonth, getUpcomingOccurrences } from "../../lib/recurrence";
 import { getCategoryIcon } from "../../lib/categories";
+import { useCategoryLabel, canonicalCategory } from "../../lib/category-label";
 
 const TIMELINE_WINDOW_DAYS = 30;
 /* Three rows, not one and not the whole list. One is thin enough to feel like
@@ -45,6 +46,7 @@ export default function CalendarScreen() {
   const fmtCompact = (amount: number) => `${currency.symbol}${Math.round(convert(amount))}`;
   const fmtD = useDateFormat();
   const cycleLabel = useCycleLabel();
+  const categoryLabel = useCategoryLabel();
   const [view, setView] = useState<ViewMode>("timeline");
   const [month, setMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => new Date());
@@ -109,6 +111,38 @@ export default function CalendarScreen() {
     }
     return map;
   }, [occurrencesByDay]);
+
+  /* The key to the dots. Built from occurrencesByDay for the same reason
+     renewalCounts and dayTotals are, and keyed by the CANONICAL category rather
+     than the raw one: getCategoryIcon resolves every unrecognised name to the
+     same grey, so listing "gaming" and "books" separately would name two things
+     the grid draws as one dot. Deriving from what is drawn is the rule this
+     screen already follows everywhere else.
+
+     Ordered by how many renewals each category has this month, so the colour a
+     reader sees most often is the first one they read. Ties break on the
+     displayed name, which keeps the order stable rather than leaving it to Map
+     insertion, and therefore stable across a re-render.
+
+     Names come out of the locale files here rather than in the grid, which is
+     handed finished strings and never learns what a category is. */
+  const legend = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const subs of occurrencesByDay.values()) {
+      for (const sub of subs) {
+        const cat = canonicalCategory(sub.category);
+        counts.set(cat, (counts.get(cat) ?? 0) + 1);
+      }
+    }
+    return [...counts.entries()]
+      .map(([category, count]) => ({
+        count,
+        color: getCategoryIcon(category).color,
+        name: categoryLabel(category),
+      }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+      .map(({ color, name }) => ({ color, name }));
+  }, [occurrencesByDay, categoryLabel]);
 
   const selectedDaySubs = selectedDate ? occurrencesByDay.get(dayKey(selectedDate)) ?? [] : [];
   const selectedDayTotal = selectedDaySubs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0);
@@ -218,6 +252,7 @@ export default function CalendarScreen() {
                 dayTotals={dayTotals}
                 formatDayTotal={fmtCompact}
                 reduceMotion={reduceMotion}
+                legend={legend}
                 selectedDate={selectedDate}
                 onSelectDate={setSelectedDate}
                 onChangeMonth={setMonth}

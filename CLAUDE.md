@@ -731,6 +731,53 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- THE CALENDAR DOTS NOW HAVE A LEGEND, added 2026-09-20. The grid draws up to
+  three category colours per day, and the colour was the only carrier of that
+  meaning anywhere on the screen: tapping a day lists its subscriptions and
+  never names the colour it just drew, so the mapping could be inferred one day
+  at a time by somebody who thought to try. Eleven categories, five-pixel dots,
+  no key.
+  IT IS KEYED BY THE CANONICAL CATEGORY, NOT THE RAW ONE, which is the same
+  shape as the renewalCounts bug already on record above. `getCategoryIcon`
+  resolves every unrecognised name to one grey, so a legend built from raw
+  names lists "gaming" and "books" as two entries against a single dot, naming
+  a distinction the grid does not draw. `canonicalCategory` in
+  `lib/category-label.ts` is that rule, and it is the one to reuse: derive from
+  what is DRAWN, never from what the data happens to say.
+  Only the colours present in the month being viewed, so it is a key to this
+  grid rather than a fixed table of eleven rows most of which are absent, and
+  it renders nothing at all in a month with no renewals.
+  IT ALSO REPAIRS SOMETHING THE PALETTE CANNOT, and this is the part worth
+  keeping. Measured against the real card grounds: `entertainment` #8E4F94 is
+  2.79:1 and `insurance` #5A5FB5 is 2.82:1 on the DARK card (#16242E), and
+  `other` #8B949C is 2.98:1 on the light one (#FCFBF8). All three are under the
+  3:1 non-text floor. Nothing is wrong with the palette: it was validated for
+  the Stats donut, which sits on warm white and carries a legend of its own.
+  The calendar reused it on a dark card at 5dp with no key, which is the one
+  place colour was the whole signal. A name beside the swatch is the fix that
+  matters, since it retires colour-alone identity rather than trading one
+  marginal contrast ratio for another.
+  CATEGORY NAMES WERE NEVER LOCALISED ANYWHERE, and this is what forced the
+  issue. Every surface renders the raw lowercase API string through a
+  `textTransform: "capitalize"`, which reads acceptably in English by accident.
+  `categoryNames` in both locale files now holds all eleven, and
+  `useCategoryLabel` resolves them, falling through unchanged for a CUSTOM
+  category, which is the user's own word. Each translated name is a single
+  capitalised noun in both languages on purpose, so the capitalize transform
+  stays a no-op: the trial-toggle lesson above is what happens when a string in
+  a shared transform turns into a sentence.
+  `app/(tabs)/analytics.tsx` STILL SHOWS RAW CATEGORY NAMES in the donut
+  legend, deliberately left alone as out of scope. The helper now exists, so
+  fixing it is a one line change per call site rather than a translation job.
+  `__tests__/calendar-legend.test.js` pins all of it, 18 assertions, and every
+  guard was negative tested against the defect it exists to catch: keying on
+  the raw category, copying the English name into the German file, rendering
+  the legend unconditionally, putting the name on textMuted, and letting the
+  grid resolve categories itself each produce exactly one failure.
+  NOT TYPECHECKED. `tools/typecheck.py` exits 2 here as designed, and three of
+  the five files are TypeScript, so this one genuinely needs the owner's
+  machine before it ships.
+
 - `assets/play-store-icon.png` is the 512 square listing icon, a
   SEPARATE asset from the launcher icon. Play Console requires exactly
   512 and rejects an alpha channel.
