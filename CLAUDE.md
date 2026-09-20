@@ -1104,7 +1104,9 @@ last one left off without needing a recap typed out.
   line `expect` shim runs all 121 of those assertions here.
 - A FULL SECURITY AUDIT WAS RUN 2026-09-20, against OWASP Mobile Top 10,
   hardcoded secrets, local storage and the network and backend layers. NO HIGH
-  SEVERITY FINDINGS.
+  SEVERITY FINDINGS. Everything touching money or authentication was already
+  correct, and the value of the entry is mostly the list of what is now KNOWN
+  clean, so the next session does not repeat it.
   IT IS ON MASTER, PUSHED, AND THE RAILWAY DEPLOY IS GREEN (2026-09-20, owner
   confirmed). Two commits, `9601d38b` and `1c3cbdca`.
   WHAT A GREEN DEPLOY PROVES HERE, and it is worth being precise because this
@@ -1128,9 +1130,7 @@ last one left off without needing a recap typed out.
   so there is no TypeScript for `tsc` to have an opinion about. What DID run:
   `node --check` on server.js, all 133 existing assertions in the source-reading
   suites, the 28 new ones, plus check-legal-sync and check-language-store.
-  `notification-race.test.js` still needs real jest and was not executed here. Everything touching money or authentication was already
-  correct, and the value of the entry is mostly the list of what is now KNOWN
-  clean, so the next session does not repeat it.
+  `notification-race.test.js` still needs real jest and was not executed here.
   WHAT WAS CHECKED AND IS FINE, with the evidence rather than the verdict: no
   `.env`, `.pem`, `.key`, `.p12` or keystore is tracked, and `.gitignore:24-28`
   covers signing material. The three keys that ARE in the client are all public
