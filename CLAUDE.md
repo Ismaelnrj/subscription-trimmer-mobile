@@ -366,12 +366,21 @@ last one left off without needing a recap typed out.
 
 - PUBLISHED THROUGH cbcc9802 (2026-09-20, second publish of the day), which
   supersedes the baseline above.
-  NOT YET CONFIRMED ON A DEVICE. The owner ran `eas update` and said
-  "published", which means EAS accepted it and nothing more. The entry above
-  spent a few hours in exactly this state before the numbers were read off the
-  Build Info panel, and that is the order to keep: read `Embedded launch (no OTA
-  applied): false` and a real `Update ID`, then fill them in here. Do not
-  quietly upgrade "published" into "confirmed".
+  CONFIRMED ON A REAL DEVICE, read off the Build Info panel rather than inferred
+  from a publish that exited zero: `Embedded launch (no OTA applied): false`,
+  `Update ID: 01a0bf98-7859-79b5-bd10-02e49a783e9f`, `Update published:
+  2026-09-20T16:13:55.673Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  THE UPDATE ID IS WHAT MAKES THIS A SECOND PUBLISH RATHER THAN THE FIRST ONE
+  SEEN AGAIN, and it is the check worth copying, because two publishes on the
+  same day otherwise look identical on that panel: the 09ffa716 update was
+  `01a0bf83-...` at `15:50:52.165Z` and this one is `01a0bf98-...` at
+  `16:13:55.673Z`. Different id, later timestamp, so the phone really did pick
+  up the newer bundle. Reading only `Embedded launch: false` would have been
+  satisfied by the OLDER update still being applied.
+  THIS ENTRY SPENT ABOUT TWENTY MINUTES SAYING NOT YET CONFIRMED before those
+  numbers existed, which is the order to keep. A publish exiting zero means EAS
+  accepted it and nothing more.
   WHAT WENT OUT, exactly two client files: `app/(tabs)/calendar.tsx` and
   `lib/recurrence.ts`, so the phantom dot fix and nothing else. Verified with
   `git diff --name-only 09ffa716..cbcc9802` over app/, lib/, components/ and
