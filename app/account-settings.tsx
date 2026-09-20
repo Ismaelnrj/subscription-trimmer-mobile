@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore, CURRENCIES, useFmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
-import { isPasswordValid } from "../components/PasswordStrength";
+import { isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 import { sanitiseAmountInput } from "../lib/utils";
@@ -139,6 +139,10 @@ export default function AccountSettingsScreen() {
     if (newPassword !== confirmPassword) { Alert.alert(t("common.error"), t("accountSettings.errPasswordMatch")); return; }
     if (!isPasswordValid(newPassword)) {
       Alert.alert(t("common.error"), t("accountSettings.errWeakPassword"));
+      return;
+    }
+    if (isPasswordTooLong(newPassword)) {
+      Alert.alert(t("common.error"), t("common.errPasswordTooLong"));
       return;
     }
     passwordMutation.mutate({ currentPassword, newPassword });

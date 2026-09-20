@@ -1,5 +1,6 @@
 {
   "common": {
+    "errPasswordTooLong": "That password is too long. Please choose a shorter one, up to about 70 characters.",
     "error": "Error",
     "somethingWentWrong": "Something went wrong",
     "cancel": "Cancel",

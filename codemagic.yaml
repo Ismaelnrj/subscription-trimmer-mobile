@@ -4,7 +4,7 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      node: 20
+      node: 22
       java: 17
       groups:
         - expo_credentials
@@ -12,7 +12,7 @@ workflows:
       - name: Install dependencies
         script: |
           corepack disable || true
-          npm install -g pnpm@9
+          npm install -g pnpm@9.15.0
           pnpm install
       - name: Prebuild native Android
         script: |
@@ -20,44 +20,62 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
+      # FAILS CLOSED. This step used to generate a brand new release keystore
+      # when CM_KEYSTORE was missing and then print `base64 $KEYSTORE_PATH`,
+      # the private key itself, into the build log, under a heading telling
+      # whoever read it to save that value as CM_KEYSTORE for future builds.
+      #
+      # Two separate problems, and the second is the one that lasts. A build
+      # signed with a fresh key can never be uploaded to Play anyway, because
+      # Play only accepts the upload key it already knows, so the fallback
+      # could not produce a usable artifact under any circumstances. But
+      # following its instruction would adopt, as Trimio's permanent signing
+      # key, a key whose private half is sitting in a CI log for as long as
+      # that log is retained and for everyone who can read it.
+      #
+      # An absent keystore is a configuration error. The only correct response
+      # is to stop.
       - name: Set up Android signing
         script: |
+          set -e
+          KEYSTORE_PATH=/tmp/release.keystore
+          # Presence only. Never the values, and never the decoded keystore.
           echo "CM_KEYSTORE set: $([ -n "$CM_KEYSTORE" ] && echo yes || echo no)"
           echo "CM_KEYSTORE_PASSWORD set: $([ -n "$CM_KEYSTORE_PASSWORD" ] && echo yes || echo no)"
           echo "CM_KEY_ALIAS: ${CM_KEY_ALIAS:-trimio}"
           echo "CM_KEY_PASSWORD set: $([ -n "$CM_KEY_PASSWORD" ] && echo yes || echo no)"
-          KEYSTORE_PATH=/tmp/release.keystore
-          if [ -n "$CM_KEYSTORE" ]; then
-            printf '%s' "$CM_KEYSTORE" | tr -d ' \n\r\t' | base64 --decode > $KEYSTORE_PATH
-            echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
-            echo "=== ALL ALIASES IN KEYSTORE ==="
-            keytool -list -keystore $KEYSTORE_PATH \
-              -storepass "$CM_KEYSTORE_PASSWORD" \
-              -noprompt
-            echo "================================"
-            ACTUAL_ALIAS="${CM_KEY_ALIAS:-trimio}"
-            echo "Verifying alias: $ACTUAL_ALIAS"
-            keytool -list -keystore $KEYSTORE_PATH \
-              -storepass "$CM_KEYSTORE_PASSWORD" \
-              -alias "$ACTUAL_ALIAS" \
-              -noprompt && echo "Keystore verified OK" || echo "WARNING: alias mismatch or wrong password"
-          elif [ -n "$CM_KEYSTORE_PASSWORD" ]; then
-            echo "Generating new release keystore..."
-            keytool -genkey -v \
-              -keystore $KEYSTORE_PATH \
-              -alias ${CM_KEY_ALIAS:-trimio} \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass "$CM_KEYSTORE_PASSWORD" \
-              -keypass "$CM_KEY_PASSWORD" \
-              -dname "CN=Trimio, OU=Mobile, O=Trimio, L=Unknown, ST=Unknown, C=US" \
-              -noprompt
-            echo "=== COPY THIS AND SAVE AS CM_KEYSTORE ENV VAR FOR FUTURE BUILDS ==="
-            base64 $KEYSTORE_PATH
-            echo "==================================================================="
+
+          missing=""
+          [ -n "$CM_KEYSTORE" ] || missing="$missing CM_KEYSTORE"
+          [ -n "$CM_KEYSTORE_PASSWORD" ] || missing="$missing CM_KEYSTORE_PASSWORD"
+          [ -n "$CM_KEY_PASSWORD" ] || missing="$missing CM_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "ERROR: missing signing credentials:$missing"
+            echo "A release build cannot be signed without them, and this workflow will NOT"
+            echo "generate a keystore: Play only accepts Trimio's existing upload key, so a"
+            echo "generated one produces an artifact that cannot be shipped."
+            echo "Set them in the Codemagic environment group and re-run."
+            exit 1
+          fi
+
+          printf '%s' "$CM_KEYSTORE" | tr -d ' \n\r\t' | base64 --decode > $KEYSTORE_PATH
+          if [ ! -s $KEYSTORE_PATH ]; then
+            echo "ERROR: CM_KEYSTORE did not decode to a keystore file."
+            exit 1
+          fi
+          echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
+
+          # The alias check now DECIDES the build instead of printing a warning
+          # and letting Gradle fail later with a less obvious message. Output
+          # goes to /dev/null: keytool -list prints certificate details, which
+          # are public, but there is no reason for the log to carry them.
+          ACTUAL_ALIAS="${CM_KEY_ALIAS:-trimio}"
+          if keytool -list -keystore $KEYSTORE_PATH -storepass "$CM_KEYSTORE_PASSWORD" \
+               -alias "$ACTUAL_ALIAS" -noprompt > /dev/null 2>&1; then
+            echo "Keystore verified: alias $ACTUAL_ALIAS present and store password accepted."
           else
-            echo "ERROR: CM_KEYSTORE_PASSWORD is not set."
+            echo "ERROR: could not read alias '$ACTUAL_ALIAS' from the keystore."
+            echo "Either CM_KEY_ALIAS is wrong or CM_KEYSTORE_PASSWORD does not match this keystore."
             exit 1
           fi
       - name: Build Android AAB with Gradle
@@ -85,7 +103,7 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      node: 20
+      node: 22
       java: 17
       groups:
         - expo_credentials
@@ -93,7 +111,7 @@ workflows:
       - name: Install dependencies
         script: |
           corepack disable || true
-          npm install -g pnpm@9
+          npm install -g pnpm@9.15.0
           pnpm install
       - name: Prebuild native Android
         script: |
@@ -101,16 +119,27 @@ workflows:
       - name: Apply Gradle compatibility fixes
         script: |
           bash fix-gradle.sh
+      # Already failed closed on CM_KEYSTORE. The two passwords were used
+      # unchecked further down, so an absent one reached Gradle as an empty
+      # string and failed there instead of here.
       - name: Set up Android signing
         script: |
+          set -e
           KEYSTORE_PATH=/tmp/release.keystore
-          if [ -n "$CM_KEYSTORE" ]; then
-            printf '%s' "$CM_KEYSTORE" | tr -d ' \n\r\t' | base64 --decode > $KEYSTORE_PATH
-            echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
-          else
-            echo "ERROR: CM_KEYSTORE is not set."
+          missing=""
+          [ -n "$CM_KEYSTORE" ] || missing="$missing CM_KEYSTORE"
+          [ -n "$CM_KEYSTORE_PASSWORD" ] || missing="$missing CM_KEYSTORE_PASSWORD"
+          [ -n "$CM_KEY_PASSWORD" ] || missing="$missing CM_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "ERROR: missing signing credentials:$missing"
             exit 1
           fi
+          printf '%s' "$CM_KEYSTORE" | tr -d ' \n\r\t' | base64 --decode > $KEYSTORE_PATH
+          if [ ! -s $KEYSTORE_PATH ]; then
+            echo "ERROR: CM_KEYSTORE did not decode to a keystore file."
+            exit 1
+          fi
+          echo "Keystore size: $(wc -c < $KEYSTORE_PATH) bytes"
       - name: Build signed APK with Gradle
         script: |
           KEYSTORE_PATH=/tmp/release.keystore

@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
-import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
+import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
 import { useTheme, AppColors } from "../lib/theme";
 
 export default function ForgotPasswordScreen() {
@@ -36,6 +36,10 @@ export default function ForgotPasswordScreen() {
     if (code.length !== 6) { Alert.alert(t("common.error"), t("forgotPassword.errCode")); return; }
     if (!isPasswordValid(newPassword)) {
       Alert.alert(t("common.error"), t("forgotPassword.errWeakPassword"));
+      return;
+    }
+    if (isPasswordTooLong(newPassword)) {
+      Alert.alert(t("common.error"), t("common.errPasswordTooLong"));
       return;
     }
     setLoading(true);

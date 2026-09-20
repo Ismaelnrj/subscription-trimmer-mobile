@@ -4,7 +4,37 @@ import Constants from "expo-constants";
 import { Alert } from "react-native";
 import i18n from "./i18n";
 
-const API_URL = Constants.expoConfig?.extra?.apiUrl || "http://localhost:3000";
+/* The API base URL, and what happens when it is not configured.
+ *
+ * This used to be `extra?.apiUrl || "http://localhost:3000"`, which meant a
+ * release build that had somehow lost `extra.apiUrl` would quietly point every
+ * request at cleartext HTTP on the device itself. Nothing would warn: requests
+ * would simply fail, and the app would look like a network problem.
+ *
+ * localhost stays available in development, where it is the whole point of
+ * having a fallback. In a release build a missing or non-HTTPS endpoint is a
+ * configuration error, so it is loud instead: every request fails immediately
+ * with a message naming the cause, rather than a plain HTTP request being made.
+ *
+ * A thrown error at import was the other option and is worse. It would replace
+ * the app with a crash screen at launch for a mistake in one string, and the
+ * thing that actually prevents this shipping is the assertion over app.json in
+ * __tests__/api-base-url.test.js, which fails in CI before a build exists. */
+const configuredApiUrl = Constants.expoConfig?.extra?.apiUrl as string | undefined;
+const API_URL =
+  configuredApiUrl && /^https:\/\//.test(configuredApiUrl)
+    ? configuredApiUrl
+    : __DEV__
+      ? configuredApiUrl || "http://localhost:3000"
+      : "";
+
+if (!API_URL) {
+  console.error(
+    "FATAL CONFIG: expo.extra.apiUrl is missing or is not HTTPS in a release build. " +
+      `Got ${JSON.stringify(configuredApiUrl)}. Every request will fail rather than ` +
+      "fall back to cleartext HTTP."
+  );
+}
 
 const apiClient = axios.create({
   baseURL: `${API_URL}/api`,
@@ -16,6 +46,15 @@ const apiClient = axios.create({
 
 // Add token to requests
 apiClient.interceptors.request.use(async (config) => {
+  /* With no base URL, axios would resolve "/api/..." against whatever origin it
+     thinks it has and produce an error that looks like the server is down. This
+     says what is actually wrong, once, at the point of use. */
+  if (!API_URL) {
+    throw new Error(
+      "Trimio is not configured with an API endpoint. This build is missing expo.extra.apiUrl."
+    );
+  }
+
   /* Accept-Language is the ONLY language signal the backend has. There is no
      language column on the user, and anything the server sends by email or
      renders as a page would otherwise be English for everyone, including the

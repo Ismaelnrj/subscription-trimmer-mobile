@@ -22,12 +22,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
+      # v4 with no version input reads packageManager (pnpm@9.15.0) from
+      # package.json. It was pinned to pnpm 8, which cannot read this repo's
+      # lockfileVersion 9.0 lockfile, so `pnpm install` below was re-resolving
+      # dependencies rather than installing the locked tree.
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 8
+        uses: pnpm/action-setup@v4
 
       - name: Setup Java (JDK 17)
         uses: actions/setup-java@v4

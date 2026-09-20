@@ -11,20 +11,54 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # pnpm is the authoritative package manager for this repo
+      # (packageManager: pnpm@9.15.0). This job used to run `npm install
+      # --legacy-peer-deps`, which ignores pnpm-lock.yaml completely and
+      # re-resolves every range from scratch, so CI was testing a dependency
+      # tree nobody had on their machine and could go green or red for reasons
+      # unrelated to the commit.
+      #
+      # No version pinned here on purpose: action-setup v4 reads
+      # packageManager out of package.json, so the version cannot drift away
+      # from the one the repo declares.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
+          cache: pnpm
 
+      # --frozen-lockfile makes a lockfile that no longer matches package.json
+      # a CI failure instead of something CI silently works around. If this
+      # step fails, the fix is `pnpm install` locally and committing the
+      # updated pnpm-lock.yaml, never removing the flag.
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: pnpm install --frozen-lockfile
 
+      # tools/typecheck.py rather than `npx tsc --noEmit`. npx falls through to
+      # whatever tsc is on PATH when the local one is missing, and a TS version
+      # that rejects this tsconfig exits before checking a single file, which
+      # reads as a clean run. The script insists on the pinned compiler in
+      # node_modules and treats a TS5xxx config error as a failure, not an
+      # empty pass.
       - name: Type check
-        run: npx tsc --noEmit
+        run: python3 tools/typecheck.py
+
+      # Both of these exist to catch a defect that breaks no build and fails no
+      # test: a legal document drifting between its app copy and its served
+      # copy, and the language store re-enabling notifications somebody turned
+      # off. CLAUDE.md lists them as pre-ship checks, so CI is where they
+      # belong rather than in a habit.
+      - name: Legal document sync
+        run: python3 tools/check-legal-sync.py
+
+      - name: Language store reminder guard
+        run: python3 tools/check-language-store.py
 
       - name: Lint
-        run: npm run lint
+        run: pnpm lint
 
       - name: Test
-        run: npm test
+        run: pnpm test

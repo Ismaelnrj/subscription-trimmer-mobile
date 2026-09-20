@@ -6,7 +6,7 @@ import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
-import { PasswordStrengthMeter, isPasswordValid } from "../components/PasswordStrength";
+import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
 import { useTheme, AppColors } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
@@ -52,6 +52,10 @@ export default function RegisterScreen() {
     }
     if (!isPasswordValid(password)) {
       Alert.alert(t("common.error"), t("register.errWeakPassword"));
+      return;
+    }
+    if (isPasswordTooLong(password)) {
+      Alert.alert(t("common.error"), t("common.errPasswordTooLong"));
       return;
     }
     setEmailError("");

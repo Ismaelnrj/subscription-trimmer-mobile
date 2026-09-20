@@ -731,6 +731,188 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- A SECOND AUDIT PASS, 2026-09-20, from a nine point review by Codex. SEVEN
+  findings were real and fixed, ONE was real and deliberately left alone with
+  its threat model written down, and ONE was overstated. None of the first
+  audit's fixes were touched.
+  THE ONE THAT MATTERED, and it is worse than the entry above implies: the JWT
+  fallback. `JWT_SECRET` defaulted to the string
+  `subtrimmer-dev-secret-change-in-production` and refused to boot on it ONLY
+  when `process.env.NODE_ENV === 'production'`. NOTHING IN THIS DEPLOYMENT SETS
+  NODE_ENV: `backend/Dockerfile` did not, and Railway does not set it for a
+  Dockerfile build. So the branch written to protect production was the one
+  branch production never took. With `JWT_SECRET` unset in Railway the real
+  service would boot signing tokens with a key that is committed to this
+  repository, and forging a token for any user id is then one line.
+  The first audit entry above says "the server refuses to boot on a default
+  JWT_SECRET in production" and that claim was WRONG for this deployment. It was
+  read off the code without asking whether the condition could ever be true
+  here. A guard conditioned on an environment variable is only as real as the
+  thing that sets the variable.
+  WHETHER IT WAS EVER LIVE IS STILL UNKNOWN from a sandbox, and it is a ten
+  second check in the Railway deploy log: the old build printed
+  `WARNING: JWT_SECRET is using the default dev value` at boot if the variable
+  was unset. If that line is there, tokens signed before the fix are forgeable
+  by anyone who can read this repo and the fix is urgent rather than tidy.
+  IT IS NOW REQUIRED UNCONDITIONALLY, with no fallback and no reference to
+  NODE_ENV, and it exits before `app.listen`. The old default is ALSO refused by
+  value: removing the fallback alone would leave a deployment that had copied
+  that string into its environment running on a published key and looking
+  configured. A secret in git history cannot be un-published. Short secrets warn
+  rather than refuse, because absent and publicly-known are facts while "shorter
+  than I would like" is a judgement, and a boot-time refusal on a threshold
+  picked in a source file takes a working service down over one.
+  DEPLOYING THIS CAN TAKE THE BACKEND DOWN, which is the point but must not be a
+  surprise: `JWT_SECRET` must exist in Railway before the deploy, or the service
+  will refuse to start. CHANGING it signs out nobody permanently: access tokens
+  are JWTs and become invalid, refresh tokens are 40 opaque random bytes in the
+  database and still work, so clients recover on their next refresh. It DOES
+  invalidate unsubscribe links in already-sent email, because
+  `unsubscribeToken` HMACs with the same secret.
+  `NODE_ENV=production` IS NOW IN THE DOCKERFILE as defence in depth for the
+  libraries that read it, and deliberately not what makes any security check
+  fire. Both halves are pinned by tests.
+  THE CODEMAGIC KEYSTORE FALLBACK IS GONE. When `CM_KEYSTORE` was absent but
+  `CM_KEYSTORE_PASSWORD` was set, the signing step generated a fresh release
+  keystore and ran `base64 $KEYSTORE_PATH`, printing the private key into the
+  build log under a heading telling the reader to save that value as CM_KEYSTORE
+  for future builds. Two problems, and the lasting one is the second: a build
+  signed with a new key can never be uploaded to Play, which only accepts the
+  upload key it already knows, so that path could not produce a usable artifact
+  under any circumstances, while following its instruction would adopt as
+  Trimio's permanent signing key one whose private half sits in a CI log for as
+  long as the log is retained. Both workflows now require CM_KEYSTORE,
+  CM_KEYSTORE_PASSWORD and CM_KEY_PASSWORD and exit 1 naming what is missing,
+  the decode flow is unchanged, and an alias mismatch now FAILS the build
+  instead of printing a warning and letting Gradle fail later for a less obvious
+  reason. `__tests__/ci-secrets.test.js` asserts that every `base64` in that
+  file is a decode, never an encode.
+  THE PASSWORD RULE NOW COVERS ALL THREE PATHS. `PATCH /api/auth/profile` hashed
+  whatever `newPassword` it was handed, so the one path that requires proving you
+  know the current password was the one path with no rules at all. Severity is
+  lower than it sounds and worth being accurate about: all three SCREENS already
+  called `isPasswordValid`, so the app never sent a weak password and only a
+  modified or non-Trimio client could reach it. It is still a server that trusted
+  its client.
+  IT ALSO NOW REFUSES OVER 72 BYTES, which is a correctness fix rather than a
+  policy one: bcrypt hashes at most 72 bytes and silently ignores the rest, so
+  two passphrases sharing that prefix both authenticate. BYTES, not characters,
+  because this is UTF-8: an umlaut is two and an emoji is four, so 40 umlauts is
+  80 bytes while `.length` reads 40.
+  THE CLIENT GOT THE SAME LIMIT, or the server fix would have created a
+  mismatch: the app validated the three requirements with no upper bound, so a
+  long passphrase would have been accepted locally and refused by the backend in
+  English. `isPasswordTooLong` in `components/PasswordStrength.tsx` is
+  DELIBERATELY SEPARATE from `isPasswordValid`, which mirrors the three
+  requirements the meter draws and whose false answer all three screens report
+  as "at least 8 characters, one uppercase, one number": folding length into it
+  would show that sentence to somebody whose password is 120 characters.
+  IT COUNTS BYTES BY HAND, and the reason is worth keeping. `Buffer` is Node and
+  does not exist on a phone; `TextEncoder` is NOT in Hermes and nothing in this
+  app polyfills it, so `new TextEncoder()` would have thrown a ReferenceError
+  inside the press handler and turned a validation message into a crash. The
+  first draft of this used it. `for...of` over a string iterates by code point,
+  so an emoji counts as one four byte step rather than two surrogate halves, and
+  the arithmetic is checked against Node's own encoder in the test.
+  LOGIN IS DELIBERATELY NOT VALIDATED and there is a test saying so. An existing
+  user's password may predate any rule here and is still their correct password;
+  validating at login would sign out real people with no way back. Existing
+  accounts whose password exceeds 72 bytes keep working, because bcrypt truncates
+  identically on both sides of this change.
+  NODE 22 EVERYWHERE, replacing Node 18 in `backend/Dockerfile` (end of life
+  April 2025, so no runtime or OpenSSL patches) and Node 20 in both GitHub
+  workflows and both Codemagic workflows. Nothing blocks it: every backend
+  dependency is pure JavaScript, so there is no native addon compiled against an
+  ABI. `backend/package.json` engines is `>=22`.
+  CI NOW USES PNPM, which is the whole point of `packageManager: pnpm@9.15.0`.
+  `.github/workflows/checks.yml` ran `npm install --legacy-peer-deps`, which
+  ignores `pnpm-lock.yaml` completely and re-resolves every range, so CI tested
+  a dependency tree nobody had locally. It now uses `pnpm/action-setup@v4` with
+  NO version pinned, which reads packageManager from package.json so the two
+  cannot drift, plus `pnpm install --frozen-lockfile`, `tools/typecheck.py`
+  instead of a bare `npx tsc`, and `pnpm lint` and `pnpm test`.
+  `build-android.yml` was pinned to pnpm 8, WHICH CANNOT READ THIS REPO'S
+  LOCKFILE: `pnpm-lock.yaml` is lockfileVersion 9.0, so that `pnpm install` was
+  re-resolving rather than installing the locked tree. Also v4 now.
+  THE LOCKFILE IS IN SYNC, verified offline before adding `--frozen-lockfile`,
+  since that flag turns a stale lockfile into a CI failure: all 52 specifiers in
+  `pnpm-lock.yaml` match `package.json` exactly. That rules out the usual cause
+  of a frozen install failing, not every cause, since the full resolution graph
+  cannot be checked without running pnpm.
+  CI ALSO RUNS check-legal-sync.py AND check-language-store.py NOW. Both exist to
+  catch a defect that breaks no build and fails no test, and both were a habit
+  rather than a gate. This file listing them as pre-ship checks was the only
+  thing making them run.
+  SECURITY HEADERS ADDED, by hand rather than by adding helmet: four headers do
+  not justify a dependency, and helmet's defaults include a CSP this page cannot
+  take. `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: strict-origin-when-cross-origin`, and HSTS
+  (`max-age=31536000`) ONLY on a request that already arrived over TLS, which
+  `req.secure` reports correctly because `trust proxy` is set. No `preload` and
+  no `includeSubDomains`: the apex is forwarded by Squarespace rather than served
+  here, so this service is not in a position to promise anything about it.
+  NO CSP, AND NOT OUT OF CAUTION ALONE. Inventoried first: `backend/landing.html`
+  carries FOUR inline `<script>` blocks and TWO inline `<style>` blocks and loads
+  the PostHog snippet from `eu-assets.i.posthog.com`, sending to
+  `eu.i.posthog.com`. A useful policy therefore needs nonces, which means
+  `tools/build-landing.py` emitting them and the pages being served through a
+  template instead of as static files. A policy loose enough to avoid that work
+  (`unsafe-inline`) would buy almost nothing. Worth doing as its own change with
+  the page tested in a browser; not worth breaking analytics or the signup form
+  to look thorough.
+  POSTGRES `rejectUnauthorized: false` IS UNCHANGED, ON PURPOSE, and this is the
+  finding that was real and correctly left alone. Railway's Postgres image
+  generates its OWN private CA and signs the server certificate with it, so no
+  public root signs it and verification against the system trust store fails the
+  handshake outright; the public TCP proxy additionally presents a certificate
+  for a name that is not the host you dialled. There is no configuration of
+  "verify against the public CAs" that both works and means anything.
+  THE HONEST THREAT MODEL: the connection is ENCRYPTED but UNAUTHENTICATED.
+  Passive eavesdropping on the path is covered, active man in the middle is not,
+  and what limits that is the PATH rather than the TLS, since app and database
+  are in one Railway project on its private network.
+  `DATABASE_CA_CERT` IS THE WAY TO CLOSE THE REST. Railway's CA is available from
+  the Postgres service itself; paste its PEM into that Railway variable and the
+  pool verifies properly with no code change. Unset, behaviour is byte for byte
+  what it was, so nothing about the running deployment changed today. The boot
+  log now states which of the two it is doing.
+  THE CLIENT API URL WAS THE OVERSTATED ONE. `lib/api.ts` did fall back to
+  `http://localhost:3000`, but `app.json` sets `extra.apiUrl` to the HTTPS
+  Railway host, so the fallback could only fire if that key went missing, and on
+  a phone it would have produced failed requests rather than a cleartext leak to
+  anybody. Closed anyway because of how it FAILS: it looked like a network
+  problem rather than a broken build. A release build now refuses a missing or
+  non-HTTPS endpoint and fails every request with a named cause. NOT a throw at
+  import, which would replace the app with the crash screen for a mistake in one
+  string; the real guard is the assertion over app.json in
+  `__tests__/api-base-url.test.js`, which fails in CI before a build exists.
+  `.gitignore` NOW COVERS `.env` and `.env.*` with `!.env.example`, and nothing
+  of the sort was tracked before or after, confirmed with `git ls-files`.
+  `google-services.json` STAYS TRACKED and is not an exception to that: the
+  Firebase Android key in it is public by design, restricted by package name plus
+  signing certificate.
+  WHAT RAN, so the next session does not repeat it: 254 assertions across the 17
+  runnable JS suites, the 18 in `calendar-legend.test.js` against the real
+  modules, `node --check backend/server.js`, `bash -n` over all twelve
+  codemagic.yaml script blocks, YAML parse of all three CI files,
+  check-legal-sync.py, check-language-store.py, and a locale parity plus
+  interpolation token check (614 keys each side, no drift, no dashes).
+  NEGATIVE TESTED, all four new suites against the pre-change files: 37 failures,
+  0 against the fixed ones. The ones worth naming are the authenticated password
+  path, the byte counting, and the entire JWT block.
+  WHAT DID NOT RUN, and must not be reported as passing: `tools/typecheck.py`
+  (exits 2 here, and four TypeScript files changed, so this genuinely needs the
+  owner's machine), `notification-race.test.js` (needs real jest), and the nine
+  `.test.ts` suites. Nothing was deployed, published or pushed to master.
+  THE REGEX LESSON, FOR THE FOURTH TIME IN THIS FILE: `jwt.verify\([^)]*JWT_SECRET`
+  reports correct code as missing, because the real call is
+  `jwt.verify(header.split(' ')[1], JWT_SECRET)` and the negated class stops at
+  the `)` inside `split()`. A second one joined it: `/npm install/` matches
+  `pnpm install`, so the assertion that CI no longer uses npm flagged the very
+  line that fixed it. And a third: stripping `//` comments deletes from the `//`
+  in `http://localhost` to end of line, which silently removed the strings an
+  assertion was looking for and reported working code as broken.
+
 - THE CALENDAR DOTS NOW HAVE A LEGEND, added 2026-09-20. The grid draws up to
   three category colours per day, and the colour was the only carrier of that
   meaning anywhere on the screen: tapping a day lists its subscriptions and
@@ -1232,9 +1414,16 @@ last one left off without needing a recap typed out.
   Railway environment itself. A sandbox cannot read it (see "Network limits"), so
   whether `JWT_SECRET`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET` and
   `REVENUECAT_SECRET_API_KEY` are actually set is unknown to this audit. Every
-  one of them fails SAFE when absent: the server refuses to boot on a default
-  JWT_SECRET in production, verify-premium answers 503, and the webhook and both
-  cron routes reject every caller.
+  one of them fails SAFE when absent: verify-premium answers 503, and the webhook
+  and both cron routes reject every caller.
+  THAT SENTENCE USED TO INCLUDE JWT_SECRET, claiming the server refused to boot
+  on the default one in production. IT WAS WRONG, corrected 2026-09-20 in the
+  second audit entry below: the refusal was conditioned on
+  `NODE_ENV === 'production'` and nothing in this deployment set NODE_ENV, so an
+  unset JWT_SECRET did NOT fail safe, it booted on a key committed to this repo.
+  It is genuinely required now, with no NODE_ENV condition. Left here as a
+  correction rather than deleted, because the mistake was reading a guard without
+  asking whether its condition could ever be true.
   FAILING SAFE IS NOT THE SAME AS WORKING, which is the thing to actually check.
   An unset `CRON_SECRET` means the renewal reminder emails stop going out, and
   nothing about that is visible from the app: it looks like quiet, not like an

@@ -38,3 +38,14 @@ raw/
 # noticed because a .pyc never shows up in a readable diff.
 __pycache__/
 *.py[cod]
+
+# Environment files. Nothing of the sort is tracked today and nothing should
+# be: every secret this project has lives in Railway, Codemagic or GitHub
+# Actions. .env.example is exempt so a checked in template stays possible.
+# google-services.json IS tracked on purpose and is not an exception to this:
+# the Firebase Android key in it is public by design, restricted by package
+# name plus signing certificate, and moving it out would break the build for
+# no security gain.
+.env
+.env.*
+!.env.example

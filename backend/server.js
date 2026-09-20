@@ -11,13 +11,43 @@ const { OAuth2Client } = require('google-auth-library');
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'subtrimmer-dev-secret-change-in-production';
-if (JWT_SECRET === 'subtrimmer-dev-secret-change-in-production') {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('FATAL: JWT_SECRET is not set. Refusing to run in production with the default dev secret — anyone could forge auth tokens.');
-    process.exit(1);
-  }
-  console.warn('WARNING: JWT_SECRET is using the default dev value. Set a strong secret in your environment variables before going to production.');
+/* JWT_SECRET is REQUIRED, with no fallback and no reference to NODE_ENV.
+ *
+ * It used to default to a hardcoded dev string and only refuse to boot when
+ * NODE_ENV === 'production'. That guard could not do its job here, because
+ * nothing in this deployment sets NODE_ENV: the Dockerfile did not, and Railway
+ * does not set it for a Dockerfile build. So the one configuration the check
+ * existed for was the one configuration it never ran in, and an unset
+ * JWT_SECRET in Railway would have booted the real service on a signing key
+ * that is committed to this repository. Anyone able to read the repo could then
+ * mint a token for any user id.
+ *
+ * A secret in git history cannot be un-published, so the old default is
+ * refused BY VALUE as well. Removing the fallback alone would leave a
+ * deployment that had copied that string into its environment running on a key
+ * everybody can read, and it would look configured.
+ *
+ * No NODE_ENV condition at all, deliberately. An environment variable is a
+ * statement about which log level you want, not about whether auth tokens need
+ * to be forgeable. The Dockerfile now also sets NODE_ENV=production, but that
+ * is defence in depth for the libraries that read it, never what makes this
+ * check fire. */
+const LEAKED_DEV_SECRET = 'subtrimmer-dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || JWT_SECRET.trim().length === 0) {
+  console.error('FATAL: JWT_SECRET is not set. Refusing to start: without it there is no safe key to sign auth tokens with, and a default would be one anybody could read in the source.');
+  process.exit(1);
+}
+if (JWT_SECRET === LEAKED_DEV_SECRET) {
+  console.error('FATAL: JWT_SECRET is set to the old hardcoded development value, which is published in this repository. Refusing to start. Generate a new one, for example `node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"`.');
+  process.exit(1);
+}
+/* A warning rather than a refusal, and the asymmetry is on purpose. Absent and
+   publicly-known are binary facts about a key being unsafe. "Shorter than I
+   would like" is a judgement, and a boot-time refusal on a threshold picked
+   here would take a working service down over one. */
+if (JWT_SECRET.length < 32) {
+  console.warn(`WARNING: JWT_SECRET is only ${JWT_SECRET.length} characters. 32 or more is recommended; 48 random bytes base64url encoded is a good default.`);
 }
 
 console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
@@ -52,6 +82,36 @@ const ALLOWED_ORIGINS = [
   'https://www.subtrimio.com',
   'https://subscription-trimmer-mobile-production.up.railway.app',
 ];
+/* Response headers the browser half of this service was missing entirely. The
+ * API is consumed by a native app, which ignores all of these, but the same
+ * Express app also serves the landing pages, the legal documents and
+ * /delete-account, and those are ordinary web pages.
+ *
+ * HSTS only on a request that already arrived over TLS, which is what
+ * `req.secure` reports now that trust proxy is set. Sending it over plain HTTP
+ * is meaningless, and sending it from a context that might not have TLS is how
+ * a domain locks itself out. No `preload`, and no includeSubDomains beyond this
+ * host: the apex is forwarded by Squarespace rather than served here, so this
+ * service is not in a position to make promises about it.
+ *
+ * NO CSP HERE, deliberately, and not from caution alone: the landing page
+ * carries four inline <script> blocks and two inline <style> blocks and loads
+ * the PostHog snippet from eu-assets.i.posthog.com, sending to eu.i.posthog.com.
+ * A useful policy means nonces, which means tools/build-landing.py emitting them
+ * and the pages being served through a template rather than as static files. A
+ * policy loose enough to avoid that work ('unsafe-inline') would buy almost
+ * nothing. Worth doing as its own change, with the page tested; not worth
+ * breaking analytics or the signup form to look thorough. */
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (req.secure) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+  }
+  next();
+});
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true);
@@ -461,9 +521,37 @@ app.use('/api/auth/reset-password', codeLimiter);
 app.use('/api/auth/account', authLimiter);
 app.use('/api/trpc', apiLimiter);
 
+/* POSTGRES TLS, and why verification is off by default here.
+ *
+ * Railway's Postgres image generates its OWN private CA and signs the server
+ * certificate with it. No public root signs it, so `rejectUnauthorized: true`
+ * with the system trust store fails the handshake outright, and the public TCP
+ * proxy additionally presents a certificate for a name that is not the host you
+ * dialled. There is therefore no configuration of "verify against the public
+ * CAs" that both works and means anything.
+ *
+ * So the connection is ENCRYPTED but UNAUTHENTICATED, and the honest threat
+ * model is: passive eavesdropping on the path is covered, active
+ * man-in-the-middle is not. What limits that is the path, not the TLS. App and
+ * database are in one Railway project and the URL Railway injects resolves on
+ * its private network, so an attacker needs to already be inside it.
+ *
+ * DATABASE_CA_CERT is the way to close the rest, and the reason this is not
+ * simply left as a comment. Railway's CA is available from the Postgres service
+ * itself; paste its PEM into that variable and this verifies properly, with no
+ * code change. Unset, behaviour is exactly what it was, so nothing about the
+ * running deployment changes today. */
+const DATABASE_CA_CERT = process.env.DATABASE_CA_CERT;
+if (process.env.DATABASE_URL) {
+  console.log('Postgres TLS:', DATABASE_CA_CERT
+    ? 'verifying the server certificate against DATABASE_CA_CERT'
+    : 'encrypted, certificate NOT verified (set DATABASE_CA_CERT to verify)');
+}
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_URL
+    ? (DATABASE_CA_CERT ? { ca: DATABASE_CA_CERT, rejectUnauthorized: true } : { rejectUnauthorized: false })
+    : false,
   // Recycle idle clients well before Railway's Postgres (or a proxy in
   // between) silently closes them -- otherwise the pool hands out a
   // connection it thinks is fine but the far end has already dropped,
@@ -1267,8 +1355,34 @@ function formatNotification(n) {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
+/* THE single server side password rule. Registration, password reset and the
+ * authenticated password change all call this, and the point of the comment is
+ * that they did not: /api/auth/profile hashed whatever newPassword it was
+ * handed, so the one path that requires proving you know the current password
+ * was also the one path with no rules at all. Somebody could satisfy the
+ * strength rules at registration and immediately replace the password with "a".
+ * Nothing errored, nothing logged, and the account was left weaker than the
+ * signup form allows.
+ *
+ * ANY NEW CALLER GOES THROUGH HERE. A second copy of these rules is how the
+ * three paths drifted in the first place.
+ *
+ * NOT called on login, deliberately, and this is the one place where adding the
+ * check would be a bug: it would lock out every existing user whose password
+ * predates a rule, and their password is correct. Validation belongs where a
+ * password is CREATED. */
 function validatePassword(password) {
   if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  /* bcrypt hashes at most 72 BYTES and silently ignores the rest, so without
+     this a 200 character passphrase is really its first 72 bytes and two
+     different passphrases sharing that prefix both authenticate. Bytes, not
+     characters: this is UTF-8, so an emoji is four bytes and an umlaut two, and
+     `password.length` would let a 40 character German or emoji password through
+     while bcrypt quietly truncated it. Rejecting is better than truncating
+     silently, because the user believes they chose the longer one. */
+  if (Buffer.byteLength(password, 'utf8') > 72) {
+    return 'Password must be 72 bytes or fewer. Accented characters and emoji count as more than one byte each.';
+  }
   if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter.';
   if (!/[0-9]/.test(password)) return 'Password must contain at least one number.';
   return null;
@@ -1438,6 +1552,13 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
       if (!currentPassword) return res.status(400).json({ error: 'Current password required' });
       const valid = user.password_hash && (await bcrypt.compare(currentPassword, user.password_hash));
       if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+      /* The same rule registration and reset use. This call is the fix: the
+         strength check was missing here and nowhere else, which made the
+         authenticated path the weakest of the three. Checked AFTER the current
+         password, so a wrong current password cannot be told apart from a weak
+         new one by the error it returns. */
+      const pwError = validatePassword(newPassword);
+      if (pwError) return res.status(400).json({ error: pwError });
       const hash = await bcrypt.hash(newPassword, 10);
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.userId]);
     }
