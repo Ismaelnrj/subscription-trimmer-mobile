@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { format, differenceInCalendarDays, addMonths, subMonths } from "date-fns";
+import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import apiClient from "../../lib/api";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useDateFormat } from "../../lib/date-locale";
@@ -13,7 +13,7 @@ import { useTheme, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
 import { LogoImage } from "../../components/LogoImage";
-import { getOccurrencesInMonth, getUpcomingOccurrences } from "../../lib/recurrence";
+import { getOccurrencesInMonth, getUpcomingOccurrences, isPhantomOccurrence } from "../../lib/recurrence";
 import { getCategoryIcon } from "../../lib/categories";
 import { useCategoryLabel, canonicalCategory } from "../../lib/category-label";
 
@@ -56,18 +56,35 @@ export default function CalendarScreen() {
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
 
+  /* Fixed once per mount rather than read per render, so the memo below does
+     not recompute on every pass. A calendar left open across midnight keeps
+     yesterday's answer until the screen remounts, which is a day boundary
+     nobody is watching and not worth a timer for. */
+  const today = useMemo(() => startOfDay(new Date()), []);
+
   const occurrencesByDay = useMemo(() => {
     const map = new Map<string, any[]>();
     for (const sub of subscriptions as any[]) {
       const dates = getOccurrencesInMonth(sub, month);
       for (const date of dates) {
+        /* Drops the impossible band, `[today, anchor)`. Without this the grid
+           drew a dot on a FUTURE day of the current month for a charge that
+           never happens, and the Next up list beneath it correctly named the
+           real date in the next month, so the two halves of this screen
+           disagreed and the half with the dot was the wrong one.
+
+           Filtered HERE rather than inside getOccurrencesInMonth because this
+           one map feeds all of it: the dots, the spoken renewal counts, the
+           day totals, the legend and the list you get when you tap a day. One
+           filter, and none of them can drift apart. */
+        if (isPhantomOccurrence(sub, date, today)) continue;
         const key = dayKey(date);
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(sub);
       }
     }
     return map;
-  }, [subscriptions, month]);
+  }, [subscriptions, month, today]);
 
   // markedDates deduplicates by colour because that is what the dots draw.
   // The spoken label needs the real number, so it is derived separately from

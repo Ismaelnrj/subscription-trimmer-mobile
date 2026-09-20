@@ -95,6 +95,34 @@ export interface UpcomingOccurrence<T extends RecurringSub> {
  * later (inclusive), sorted chronologically — the data source for a
  * "what's coming up" timeline view, as opposed to a single month's grid.
  */
+/** True when a projected occurrence is one that CANNOT happen.
+ *
+ *  getOccurrencesInMonth projects a cycle indefinitely in both directions from
+ *  `nextBillingDate`, which the calendar grid needs so you can browse back
+ *  through months that really were billed. Backwards, that is right up to a
+ *  point, and past it invents charges.
+ *
+ *  THE IMPOSSIBLE BAND is `[today, anchor)`. Take a monthly subscription whose
+ *  next billing date is 24 October, on the 20th of September. The last charge
+ *  was 24 August and the next is 24 October, so nothing happens on 24
+ *  September: the row says so. The projection drew it anyway, which put a dot
+ *  on a FUTURE day of the current month for money that will never move, while
+ *  the Next up list underneath correctly pointed at 24 October. One screen,
+ *  two answers, and the wrong one was the one with the dot on it.
+ *
+ *  Either side of that band is real and must stay: on or after the anchor is
+ *  scheduled, and before today is a charge that already happened, which is the
+ *  whole point of being able to look at last month.
+ *
+ *  `today` is a parameter rather than `new Date()` so this stays pure and a
+ *  test can ask it about any day. */
+export function isPhantomOccurrence(sub: RecurringSub, date: Date, today: Date): boolean {
+  const anchor = parseApiDate(sub.nextBillingDate);
+  if (!anchor || isNaN(anchor.getTime())) return false;
+  const d = startOfDay(date);
+  return d >= startOfDay(today) && d < startOfDay(anchor);
+}
+
 export function getUpcomingOccurrences<T extends RecurringSub>(
   subs: T[],
   fromDate: Date,

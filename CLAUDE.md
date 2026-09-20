@@ -319,16 +319,15 @@ last one left off without needing a recap typed out.
   bundle. 189e6490 is the last commit carrying anything a phone runs. This is now
   the third time the gap has looked like a missed publish and has not been one,
   so check WHAT the gap contains before reaching for another `eas update`.
-- PUBLISHED THROUGH 09ffa716 (2026-09-20), which supersedes every baseline above.
-  NOT YET CONFIRMED ON A DEVICE. The owner ran `eas update --channel production`
-  and reported it a success, and that is ALL that is known: the publish was
-  accepted by EAS. This file's own rule applies and is not a formality, because
-  the three publishes of 2026-09-18 went in on exactly this evidence and the
-  entry above says plainly that "the owner said yes" and "these are the numbers
-  that were read" are different things. Read `Embedded launch (no OTA applied):
-  false` and a real `Update ID` off the Build Info panel in Help & Support, then
-  fill those in here, or delete this sentence and say it was never checked. Do
-  not quietly upgrade "published" into "confirmed".
+- PUBLISHED THROUGH 09ffa716 AND CONFIRMED ON A REAL DEVICE (2026-09-20), which
+  supersedes every baseline above. Read off the Build Info panel rather than
+  inferred from a publish that exited zero: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a0bf83-5c05-76fd-9a5b-7fcc552a721e`, `Update published:
+  2026-09-20T15:50:52.165Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  THE NUMBERS ARE WRITTEN DOWN, and the entry spent a few hours saying NOT YET
+  CONFIRMED before they were read, which is the right order. A publish exiting
+  zero means EAS accepted it and nothing more.
   WHAT WENT OUT, thirteen client files and the largest client range since the
   baseline: the calendar dot legend (`app/(tabs)/calendar.tsx`,
   `components/MonthCalendarGrid.tsx`), the category and cycle localisation
@@ -792,6 +791,55 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- THE CALENDAR DREW DOTS FOR CHARGES THAT NEVER HAPPEN, fixed 2026-09-20. The
+  owner reported it as "tapping an empty day shows next month's renewals instead
+  of this month's". The cause is the other way round from how it looks: the LIST
+  was right and the DOTS were wrong.
+  THE IMPOSSIBLE BAND IS `[today, anchor)`. `getOccurrencesInMonth` projects a
+  cycle indefinitely in BOTH directions from `nextBillingDate`, which the grid
+  needs so you can browse back through months that really were billed. Backwards
+  that is right up to a point, and past it invents charges. A monthly
+  subscription whose next billing date is 24 October, seen on 20 September: the
+  last charge was 24 August, the next is 24 October, and NOTHING happens on 24
+  September. The projection drew it anyway, so a FUTURE day of the current month
+  carried a dot for money that will never move, while Next up underneath
+  correctly said 24 October. One screen, two answers, and the wrong one was the
+  one with the dot on it.
+  THE OBVIOUS FIX WAS THE WRONG ONE, and measuring is the only reason it was not
+  shipped. The tempting move is to drop the per-subscription anchor clamp in
+  `getUpcomingOccurrences` so the list agrees with the dots. Measured across
+  1380 timeline cases BEFORE writing anything: that changes 452 of them, and
+  what it inserts is the phantom. The timeline would have announced a charge on
+  24 September. Making the list agree with the dots spreads the bug rather than
+  fixing it, and on an app whose promise is about money that is the worst
+  possible direction to be wrong in.
+  `isPhantomOccurrence(sub, date, today)` IN `lib/recurrence.ts` IS THE RULE:
+  real iff `date >= anchor` (scheduled) OR `date < today` (already charged).
+  Either side of the band must stay, and the second half is exactly why
+  backward projection exists.
+  IT IS APPLIED IN ONE PLACE, `occurrencesByDay` in `app/(tabs)/calendar.tsx`,
+  because that single map feeds the dots, the spoken renewal counts, the day
+  totals, the legend and the list you get when you tap a day. One filter and
+  none of them can drift apart. `today` is held in a `useMemo` with no
+  dependencies rather than read inline, or the memo takes a new dependency
+  every render.
+  MEASURED, not reasoned about: across 18,862 projected occurrences spanning
+  three cycles, thirteen months and anchors from 400 days behind to 400 ahead,
+  the filter drops 3,381 phantoms and ZERO real occurrences. History still
+  shows (June, July and August all keep their dots) and the scheduled months
+  still show. An ordinary subscription, whose anchor is one cycle ahead so the
+  backward projection lands before today and is a real past charge, is byte for
+  byte unchanged.
+  `__tests__/calendar-phantom.test.js` pins it, ten assertions, NINE of which
+  fail against the previous code. The tenth passes both ways on purpose: it
+  asserts `earliestAllowedBySub` still exists, so nobody "simplifies" away the
+  clamp that the 452 measurement says to keep.
+  STILL UNFILTERED ON PURPOSE: `app/(tabs)/analytics.tsx` calls
+  `getOccurrencesInMonth` directly for the month spend figure, so a phantom can
+  still be counted there. Left alone because changing what a month COSTS is a
+  product decision rather than a bug fix, and it wants an answer before an edit.
+  The helper is exported, so adopting it there is a one line change.
+
 - THE LOCALISATION IS NOW ACTUALLY COMPLETE, 2026-09-20, and the calendar legend
   entry below is what exposed how much of it was not. Four surfaces still
   rendered raw lowercase API identifiers through a `textTransform:
