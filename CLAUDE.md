@@ -759,6 +759,47 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- THE LOCALISATION IS NOW ACTUALLY COMPLETE, 2026-09-20, and the calendar legend
+  entry below is what exposed how much of it was not. Four surfaces still
+  rendered raw lowercase API identifiers through a `textTransform:
+  "capitalize"`, which reads acceptably in English by accident. The words that
+  are the SAME in both languages are what hid the ones that are not.
+  WHAT A GERMAN USER SAW: "Entertainment" and "Insurance" in the Stats donut
+  legend (`analytics.tsx`) and on the category badge of EVERY subscription card
+  (`subscriptions.tsx`), and "Monthly", "Yearly", "Weekly" on the chips you tap
+  to choose a billing cycle, which is in the busiest form in the app.
+  THE CATEGORY HALF was a one line change per site, because `useCategoryLabel`
+  already existed from the legend work. The legend entry below predicted exactly
+  this and said the helper made it cheap; that turned out to be true.
+  THE CYCLE HALF NEEDED ONE NEW THING, and the reason is worth keeping.
+  `lib/cycle-label.ts` returns NOUNS on purpose, because "pro Monat" wants
+  "Monat", and its own comment warns that reusing an adjective there is
+  grammatical nonsense. A chip you TAP wants the opposite: "Monatlich", not
+  "Monat". So `useCycleAdjective` now sits beside it, with three
+  `common.cycleAdj*` keys beside the noun forms they pair with. Using either
+  form in the other's place is the same bug in mirror image, and there is a test
+  asserting the two are not the same string, since if they ever were, one of the
+  two call sites is reading the wrong one.
+  A CUSTOM CATEGORY STILL COMES BACK AS THE USER TYPED IT. Both the badge and
+  the chips show custom categories, and `useCategoryLabel` falls through
+  unchanged for anything it does not recognise. That is what makes it safe to
+  put on a surface that mixes built-ins with the user's own words.
+  EIGHT ASSERTIONS went into `__tests__/display-localization.test.js`, which is
+  where this class already lives. SIX of them fail against the previous code and
+  none after. They also pin that every label stays a SINGLE WORD, so the
+  `capitalize` transform on `chipText` and `categoryBadgeText` stays a no-op:
+  the trial-toggle lesson above is what that transform does to a sentence.
+  VERIFIED BY CI ON A REAL RUNNER, run 339 on `7dde72df`, every step green
+  including the TYPECHECK, which matters because three of the five changed files
+  are TypeScript and no sandbox can typecheck this project. 262 assertions ran
+  in the shim here plus the 18 in calendar-legend, 617 locale keys each side
+  with parity, tokens and the no dash rule clean.
+  WHAT IS LEFT, and it is a product decision rather than a gap: `BILLING_CYCLES`
+  in `subscriptions.tsx` is still `["monthly", "yearly", "weekly"]` as STORED
+  values, which is correct, since those are API identifiers and not display
+  text. Nothing else in app/, components/ or lib/ renders a bare category or
+  cycle string any more.
+
 - THE SANDBOX CLONE IS SHALLOW, AND THAT MAKES `git merge-base` LIE. Learned
   2026-09-20, the hard way, one command short of reporting lost work that was
   never lost.
