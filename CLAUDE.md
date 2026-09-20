@@ -22,14 +22,42 @@ resets between sessions and can lose detail even within one long session
   resolves to an empty ref and lists the ENTIRE history as "not merged",
   which reads like catastrophic divergence and is an artefact. Compare
   against `origin/master`.
-- THE OWNER WANTS EVERYTHING ON `master` (stated 2026-09-11: "everything
-  should be always on master"). Cloud sessions are handed a
-  `claude/<something>` working branch as a guardrail so a sandbox cannot
-  write to master unreviewed, so work lands there first. When it is done,
-  ASK, then fast-forward master onto it and push. `git merge --ff-only` is
-  the right verb while the branch is a strict descendant, it keeps history
-  linear and fails loudly if it is not actually a fast-forward. Never push
-  to master without asking first.
+- EVERYTHING GOES ON `master`. ALWAYS. This is a STANDING INSTRUCTION from the
+  owner, given 2026-09-11 ("everything should be always on master") and
+  restated in stronger terms on 2026-09-20 ("it needs to be everything on
+  master always", "lock this in"). It is not a preference to weigh against
+  tidiness, and it is not re-negotiated per session.
+  THIS ENTRY USED TO END "Never push to master without asking first." THAT
+  LINE IS REVOKED, by the owner, on 2026-09-20. It was causing the exact
+  failure it was written to prevent: finished, verified work sitting on a
+  `claude/` branch across sessions while a fresh session read master and
+  believed that was the state of the project. Asking every time also trained
+  the answer, which makes the question theatre.
+  WHAT TO DO NOW, as a cloud session: work still lands on the
+  `claude/<something>` branch you were handed, because a sandbox writing
+  straight to master is how an unreviewed mistake reaches a production deploy.
+  When the work is DONE AND GREEN, fast-forward master onto it and push,
+  WITHOUT ASKING. Do not leave it on the branch. Do not wait to be prompted.
+  `git merge --ff-only` is the verb: it keeps history linear and FAILS LOUDLY
+  if the branch is not a strict descendant, which is exactly what you want,
+  since a merge commit or a force push to master is never the answer here.
+  THE THREE CONDITIONS, and they are not negotiable either, because they are
+  what makes standing authorisation safe rather than reckless:
+    1. The Checks workflow is GREEN on the exact head commit you are merging.
+       Not on an earlier commit of the branch, not "it was green before the
+       last push". Read the run for that SHA.
+    2. `git merge --ff-only` succeeds. If it refuses, master has moved:
+       rebase onto it, let CI go green again, then merge. Never `--force`,
+       never `-X ours`, never a merge commit to "get around" it.
+    3. You have said out loud, in your report, what the push will DEPLOY.
+       Master is wired to the Railway deploy, so a backend change goes live
+       the moment you push. That is the point of the rule and also its one
+       real hazard.
+  WHAT STILL NEEDS ASKING, and this is a short list: running `eas update`,
+  anything that changes `runtimeVersion` or triggers a native build, deleting
+  or force pushing anything, and any change whose failure mode is a broken
+  production deploy that the owner has not already been told about. Pushing
+  finished green work to master is NOT on that list any more.
 - CHATGPT ALSO WORKS ON TRIMIO. The owner has given it access to read and
   review this codebase, so it is a second assistant on the same repo, not a
   bystander. Practical consequences: changes may arrive that this session
