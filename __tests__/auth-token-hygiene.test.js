@@ -1,5 +1,5 @@
 /* The generators and comparisons that guard accounts, from the 2026-09-20
- * security audit. Four small things, none of which was an open hole, all of
+ * security audit. Five small things, none of which was an open hole, all of
  * which were a bad default sitting next to a comment explaining why not to.
  *
  * WHAT IT RUNS. The real functions are lifted out of backend/server.js by text
@@ -7,7 +7,7 @@
  * is what these assertions measure. Requiring the module is not an option: it
  * opens a database pool at import and would need a live DATABASE_URL to load.
  *
- * WHY THAT MATTERS more than usual in this file. Three of the four changes are
+ * WHY THAT MATTERS more than usual in this file. Four of the five changes are
  * invisible from the outside: a referral code from crypto.randomInt looks
  * exactly like one from Math.random, and a constant time compare returns the
  * same booleans as `!==`. A test that only checked the visible behaviour would
@@ -15,9 +15,10 @@
  * against the previous implementation, which is the only honest way to show
  * the change did anything at all.
  *
- * It also fails loudly rather than silently if a function is renamed or moved,
- * because a harness that quietly stops finding the code it tests is the exact
- * failure mode this project keeps recording.
+ * It also reports, rather than throws, when a function is renamed or moved: a
+ * harness that quietly stops finding the code it tests is the exact failure
+ * mode this project keeps recording, and one that dies at module load reports
+ * "0 passed, 0 failed", which looks survivable and is not.
  */
 
 const fs = require("fs");
@@ -50,7 +51,7 @@ function lift(name) {
   return "";
 }
 
-const NAMES = ["hashToken", "tokenMatches", "generateOpenId",
+const NAMES = ["hashToken", "tokenMatches", "secretMatches", "generateOpenId",
                "generateReferralCode", "generateCode"];
 const MISSING = NAMES.filter((n) => lift(n) === "");
 
@@ -63,7 +64,7 @@ const lifted = MISSING.length
   : new Function("crypto", "Buffer",
       `${NAMES.map(lift).join("\n")}; return {${NAMES.join(",")}};`)(crypto, Buffer);
 
-const { hashToken, tokenMatches, generateOpenId, generateReferralCode, generateCode } = lifted;
+const { hashToken, tokenMatches, secretMatches, generateOpenId, generateReferralCode, generateCode } = lifted;
 
 describe("the harness is actually pointed at the code", () => {
   /* FIRST, deliberately. If backend/server.js has been restructured, every
@@ -216,6 +217,58 @@ describe("tokenMatches", () => {
     // so a truncated column must be handled before it is reached.
     expect(tokenMatches("deadbeef", "123456")).toBe(false);
     expect(tokenMatches(stored + "ff", "123456")).toBe(false);
+  });
+});
+
+describe("secretMatches, the cron shared secret", () => {
+  /* The two reminder cron routes compared the RAW secret with `!==`. That is
+     the same class as tokenMatches and MORE deserving of it: tokenMatches
+     compares two hashes, so an early exit leaks a hash prefix and there is no
+     path back to the code, while these leak the secret's own prefix. Network
+     jitter swamps it in practice and it was never the weak point, but the
+     cheaper of the two comparisons should not be the careful one. */
+
+  it("accepts the right secret and rejects a wrong one", () => {
+    expect(secretMatches("s3cret", "s3cret")).toBe(true);
+    expect(secretMatches("s3cres", "s3cret")).toBe(false);
+    expect(secretMatches("s3cret-longer", "s3cret")).toBe(false);
+  });
+
+  it("REFUSES EVERYTHING when the secret is not configured", () => {
+    /* The behaviour that must not change, and the reason the old guard read
+       `!process.env.CRON_SECRET || ...`. With nothing configured the route has
+       to reject every caller. Treating absent as a match would turn an unset
+       Railway variable into an open endpoint that sends email to every user. */
+    for (const unset of [undefined, null, ""])
+      for (const attempt of ["", "anything", undefined, null])
+        expect(secretMatches(attempt, unset)).toBe(false);
+  });
+
+  it("refuses a missing header even when the secret IS configured", () => {
+    for (const absent of [undefined, null, ""])
+      expect(secretMatches(absent, "s3cret")).toBe(false);
+  });
+
+  it("does not throw on a non-string header", () => {
+    // req.headers can hand back an array when a header is sent twice.
+    expect(secretMatches(["a", "b"], "s3cret")).toBe(false);
+    expect(secretMatches({}, "s3cret")).toBe(false);
+  });
+
+  it("is what both cron routes actually call", () => {
+    /* Same gap the openId assertion covers: testing the helper proves nothing
+       if the routes still compare inline. Both must go through it, and no
+       `!== process.env.CRON_SECRET` may survive. */
+    const calls = SRC.match(/secretMatches\(secret, process\.env\.CRON_SECRET\)/g) || [];
+    expect(calls.length).toBe(2);
+    expect(SRC).not.toMatch(/secret\s*!==\s*process\.env\.CRON_SECRET/);
+  });
+
+  it("leaves the RevenueCat webhook's own compare alone", () => {
+    /* Deliberately NOT refactored to use this helper. It is already correct,
+       it is the path that grants premium, and a diff on the revenue path buys
+       nothing here. Pinned so a later tidy is a conscious decision. */
+    expect(SRC).toMatch(/timingSafeEqual\(provided, expected\)/);
   });
 });
 

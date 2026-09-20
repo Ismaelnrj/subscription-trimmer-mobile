@@ -752,6 +752,28 @@ function hashToken(token) {
  * Coerces the supplied value because it arrives from req.body and does not
  * have to be a string. `{"code": {}}` used to reach crypto.update(), which
  * throws a TypeError and answers 500 where the honest reply is "invalid". */
+/* Constant time compare for a raw shared secret, used by the two cron routes.
+ *
+ * SEPARATE FROM tokenMatches AND MORE DESERVING OF IT. tokenMatches compares
+ * two SHA-256 hashes, so what an early exit leaks is a hash prefix and there is
+ * no path back to the code. These routes compare the SECRET ITSELF, so an early
+ * exit leaks the secret's own prefix. Network jitter swamps the difference in
+ * practice and this was never the weak point, but the cheaper of the two
+ * comparisons should not be the careful one.
+ *
+ * Refuses outright when the expected value is unset rather than treating absent
+ * as a match, which is what `!process.env.CRON_SECRET ||` did before and is
+ * preserved deliberately: with no secret configured the route must reject
+ * everything, never accept everything. */
+function secretMatches(supplied, expected) {
+  if (typeof expected !== 'string' || expected.length === 0) return false;
+  if (typeof supplied !== 'string' || supplied.length === 0) return false;
+  const a = Buffer.from(supplied);
+  const b = Buffer.from(expected);
+  // Length alone is not secret here, and timingSafeEqual throws without this.
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 function tokenMatches(storedHash, suppliedCode) {
   if (typeof storedHash !== 'string' || storedHash.length === 0) return false;
   if (suppliedCode == null) return false;
@@ -2345,7 +2367,7 @@ app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req
 app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
   // Simple shared secret to prevent unauthorised triggering
   const secret = req.headers['x-cron-secret'];
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!secretMatches(secret, process.env.CRON_SECRET)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {
@@ -2449,7 +2471,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
 // Call this daily via the same cron job/scheduler as sendEmailReminders.
 app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
   const secret = req.headers['x-cron-secret'];
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  if (!secretMatches(secret, process.env.CRON_SECRET)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   try {

@@ -1102,6 +1102,78 @@ last one left off without needing a recap typed out.
   checked against BOTH the old and the new code before being committed, rather
   than reasoned about. The pure source-reading suites need even less: a thirty
   line `expect` shim runs all 121 of those assertions here.
+- A FULL SECURITY AUDIT WAS RUN 2026-09-20, against OWASP Mobile Top 10,
+  hardcoded secrets, local storage and the network and backend layers. NO HIGH
+  SEVERITY FINDINGS. Everything touching money or authentication was already
+  correct, and the value of the entry is mostly the list of what is now KNOWN
+  clean, so the next session does not repeat it.
+  WHAT WAS CHECKED AND IS FINE, with the evidence rather than the verdict: no
+  `.env`, `.pem`, `.key`, `.p12` or keystore is tracked, and `.gitignore:24-28`
+  covers signing material. The three keys that ARE in the client are all public
+  by design and must not be "fixed": the PostHog project key
+  (`lib/analytics.ts`), the RevenueCat PUBLIC sdk key (`lib/iap.ts`, the `goog_`
+  prefix is the giveaway) and the Firebase Android key (`google-services.json`,
+  restricted by package plus SHA). No JWT secret, Brevo key or DATABASE_URL is
+  anywhere a phone can reach. Every piece of auth material goes through
+  `expo-secure-store`, which is Android Keystore backed, never AsyncStorage.
+  Refresh tokens are 40 random bytes, stored HASHED, and rotated every refresh.
+  Zero interpolated SQL, every query parameterised, and every user facing row
+  query scoped by `user_id`, so there is no IDOR. Google id tokens go through
+  google-auth-library with the audience pinned. The RevenueCat webhook uses
+  timingSafeEqual and drops SANDBOX events. `handleError` leaks no stack.
+  THE MONEY PATHS ARE SERVER ENFORCED, which was the question worth answering:
+  the free tier subscription cap is in `subscriptions.create`, and premium email
+  reminders are gated inside the reminder cron's own SQL. The `isPaid` checks in
+  `insights.tsx` and `notification-preferences.tsx` are cosmetic, but everything
+  they hide is either derived locally from the user's own data or separately
+  enforced. A tampered client cannot obtain anything billable.
+  FIVE THINGS WERE CHANGED, all backend, none of them an open hole: the two
+  unauthenticated token endpoints got a ceiling, referral codes and `open_id`
+  moved off `Math.random`, and both the verification/reset code comparison and
+  the cron shared secret comparison became constant time. See the commit for the
+  reasoning on each.
+  THE CRON ONE WAS FOUND BY CHECKING A CLAIM THIS FILE WAS ABOUT TO MAKE, which
+  is the habit worth copying. Writing "unset CRON_SECRET means the route
+  refuses" sent me back to read the guard, and the guard turned out to compare
+  the RAW secret with `!==`. That is the same class as the code comparison and
+  MORE deserving of the fix: `tokenMatches` compares two SHA-256 hashes, so an
+  early exit leaks a hash prefix with no path back to the secret, while this
+  leaked the secret's own prefix. `secretMatches` refuses when the expected
+  value is unset rather than treating absent as a match, which preserves exactly
+  what `!process.env.CRON_SECRET ||` did. Inverting that one line turns an unset
+  Railway variable into an open endpoint that emails every user, so it is the
+  single most dangerous line in the change and has its own named test.
+  THE ONE THAT COULD HAVE BROKEN THE APP, and the reason it did not: the obvious
+  fix for the missing rate limit is to reuse `authLimiter`, 10 per 15 minutes.
+  That is correct for login and WRONG for `/api/auth/refresh`, because the access
+  token lives an hour so every active user refreshes hourly, and express-rate-limit
+  keys on IP while mobile carriers put many subscribers behind one CGNAT address.
+  Ordinary traffic from a single carrier would have spent the budget and signed
+  real people out. `tokenLimiter` is deliberately loose (240 per 15 minutes): the
+  ceiling is the point, not its height. If a future reader tightens it to match
+  the others, that is a regression, and the test says so in as many words.
+  STILL TRUE AND DELIBERATELY NOT CHANGED: an access token stays valid for up to
+  an hour after logout, because logout clears the refresh token hash and a JWT is
+  stateless. Closing it needs a token version column and a database read on EVERY
+  authenticated request. For an app where using a stolen access token already
+  means having got inside SecureStore on the device, that trade is not worth it.
+  WHAT COULD NOT BE CHECKED FROM HERE, and must not be reported as verified: the
+  Railway environment itself. A sandbox cannot read it (see "Network limits"), so
+  whether `JWT_SECRET`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET` and
+  `REVENUECAT_SECRET_API_KEY` are actually set is unknown to this audit. Every
+  one of them fails SAFE when absent: the server refuses to boot on a default
+  JWT_SECRET in production, verify-premium answers 503, and the webhook and both
+  cron routes reject every caller.
+  FAILING SAFE IS NOT THE SAME AS WORKING, which is the thing to actually check.
+  An unset `CRON_SECRET` means the renewal reminder emails stop going out, and
+  nothing about that is visible from the app: it looks like quiet, not like an
+  outage. `server.js` warns at boot for both `CRON_SECRET` and
+  `REVENUECAT_WEBHOOK_SECRET`, so the Railway DEPLOY LOG answers this in about
+  ten seconds and no sandbox is needed. Read it there rather than guessing.
+  `ALLOWED_ORIGINS` IS NOT AN ENVIRONMENT VARIABLE, it is a hardcoded array near
+  the top of `server.js`. This entry said otherwise in its first draft. Changing
+  the allowed origins means editing the file and deploying, not setting a
+  variable in Railway.
 - THE UPGRADE SCREEN SHOWED A PRICE GOOGLE PLAY WAS NOT GOING TO CHARGE, until
   2026-09-18. It fetched the RevenueCat offerings and used them ONLY to make the
   purchase: every price it DISPLAYED came from `PREMIUM_PRICES` in
