@@ -417,8 +417,43 @@ const codeLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/* For the two unauthenticated token endpoints, /api/auth/google and
+   /api/auth/refresh. They were the only routes left with no ceiling at all,
+   which is easy to miss because neither is a password endpoint and the mount
+   list below reads complete without them.
+
+   DELIBERATELY MUCH LOOSER THAN authLimiter, and that is the whole design of
+   it. authLimiter's 10 per 15 minutes is right for logging in, which one
+   person does rarely. A refresh is different: the access token lives an hour,
+   so EVERY active user refreshes roughly hourly, and mobile carriers put large
+   numbers of subscribers behind a single CGNAT address. express-rate-limit
+   keys on IP, so a tight ceiling here would be spent by ordinary traffic from
+   one carrier and would sign real people out. That is a worse outcome than the
+   abuse it would prevent.
+
+   240 per 15 minutes is far above anything a shared address produces at this
+   scale and still bounds an attacker to something that cannot exhaust the
+   service. The ceiling is the point, not its exact height: raise it if real
+   traffic ever approaches it, do not remove it.
+
+   Neither endpoint is an auth bypass, the token checks themselves are sound
+   (/api/auth/google verifies through google-auth-library with the audience
+   pinned, /api/auth/refresh matches a hashed 40 byte random token). This is
+   about not lending the service out: google verification makes an OUTBOUND
+   call to Google before anything can reject it, so an unlimited caller gets
+   this server doing paid network work on demand. */
+const tokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 240,
+  message: { error: 'Too many requests. Please try again shortly.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/google', tokenLimiter);
+app.use('/api/auth/refresh', tokenLimiter);
 app.use('/api/auth/forgot-password', emailLimiter);
 app.use('/api/auth/resend-verification', emailLimiter);
 app.use('/api/auth/verify-email', codeLimiter);
@@ -583,6 +618,23 @@ function generateCode() {
   return String(crypto.randomInt(100000, 1000000));
 }
 
+/* The public account identifier, and the app_user_id RevenueCat knows a
+ * subscriber by.
+ *
+ * It is not a secret and nothing authorises on it: the webhook that can grant
+ * premium is guarded by REVENUECAT_WEBHOOK_SECRET, and verify-premium reads
+ * the open_id off the authenticated user's own row rather than from a request.
+ * So this is a hardening of a bad default rather than a hole being closed. It
+ * used to be Date.now() plus Math.random(), which is guessable in both halves.
+ *
+ * ONLY NEW ACCOUNTS ARE AFFECTED. Existing open_id values stay exactly as they
+ * are, which matters because they are the key RevenueCat already has for every
+ * current subscriber: regenerating one would detach a paying customer from
+ * their entitlement. Nothing here rewrites a stored value. */
+function generateOpenId() {
+  return 'u_' + crypto.randomBytes(16).toString('hex');
+}
+
 // Brevo contact attribute sync (PLAN, SUB_COUNT) — best-effort marketing
 // enrichment, never awaited by callers and never allowed to fail a request.
 async function updateBrevoContact(email, attributes) {
@@ -684,6 +736,30 @@ function syncNextRenewalToBrevo(userId, email) {
 // so a database leak alone can't be used to take over accounts.
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/* Compares a stored token hash against a code somebody supplied, in constant
+ * time. The two callers are email verification and password reset.
+ *
+ * HONEST ABOUT THE SIZE OF THIS: it is consistency rather than a hole being
+ * closed. What `!==` compared was two SHA-256 hashes, not the secret itself,
+ * so leaking where they diverge tells an attacker which hash prefix they hit
+ * and there is no way to walk backwards from that to a code. codeLimiter caps
+ * the endpoint at 10 tries per 15 minutes on top. The reason to change it is
+ * that applyUnsubscribe already does this properly and a reader comparing the
+ * three should not have to work out why one of them is different.
+ *
+ * Coerces the supplied value because it arrives from req.body and does not
+ * have to be a string. `{"code": {}}` used to reach crypto.update(), which
+ * throws a TypeError and answers 500 where the honest reply is "invalid". */
+function tokenMatches(storedHash, suppliedCode) {
+  if (typeof storedHash !== 'string' || storedHash.length === 0) return false;
+  if (suppliedCode == null) return false;
+  const a = Buffer.from(storedHash);
+  const b = Buffer.from(hashToken(String(suppliedCode)));
+  // Both are sha256 hex so the lengths always agree, but timingSafeEqual
+  // THROWS on a mismatch rather than returning false, so it is checked.
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
 const ACCESS_TOKEN_EXPIRY = '1h';
@@ -1047,11 +1123,23 @@ function formatUser(u) {
   };
 }
 
-// Referral codes avoid visually ambiguous characters (0/O, 1/I/L).
+/* Referral codes avoid visually ambiguous characters (0/O, 1/I/L).
+ *
+ * crypto.randomInt for the same reason generateCode above gives, and it was
+ * using Math.random while that comment sat two screens away saying why not to.
+ * A referral code is worth a free month, and Math.random's PRNG state is
+ * recoverable from enough observed outputs, so somebody who can mint codes of
+ * their own could narrow what other codes look like. Brute force was never the
+ * exposure here (31^6 is about 887 million against a 60 per minute ceiling),
+ * predictability was.
+ *
+ * randomInt is also unbiased, which Math.floor(Math.random() * n) is not once
+ * n does not divide the range evenly. That part is cosmetic at this size and
+ * comes free. */
 function generateReferralCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   let code = '';
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < 6; i++) code += chars[crypto.randomInt(0, chars.length)];
   return code;
 }
 
@@ -1179,7 +1267,7 @@ app.post('/api/auth/register', async (req, res) => {
     if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already registered' });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const openId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    const openId = generateOpenId();
 
     const result = await pool.query(
       'INSERT INTO users (open_id, email, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -1257,7 +1345,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 
     if (!user) {
-      const openId = 'u_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const openId = generateOpenId();
       const insertResult = await pool.query(
         'INSERT INTO users (open_id, email, name, password_hash, google_id, is_verified) VALUES ($1, $2, $3, NULL, $4, TRUE) RETURNING *',
         [openId, email, payload.name || null, googleId]
@@ -1351,7 +1439,7 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.is_verified) return res.json({ success: true, user: formatUser(user) });
-    if (!user.verification_token || user.verification_token !== hashToken(code)) return res.status(400).json({ error: 'Invalid code' });
+    if (!tokenMatches(user.verification_token, code)) return res.status(400).json({ error: 'Invalid code' });
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
 
@@ -1459,7 +1547,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (pwError) return res.status(400).json({ error: pwError });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user || !user.reset_token || user.reset_token !== hashToken(code)) return res.status(400).json({ error: 'Invalid or expired code' });
+    if (!user || !tokenMatches(user.reset_token, code)) return res.status(400).json({ error: 'Invalid or expired code' });
     if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
     const hash = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2', [hash, user.id]);
