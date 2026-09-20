@@ -1105,9 +1105,17 @@ last one left off without needing a recap typed out.
 - A FULL SECURITY AUDIT WAS RUN 2026-09-20, against OWASP Mobile Top 10,
   hardcoded secrets, local storage and the network and backend layers. NO HIGH
   SEVERITY FINDINGS.
-  IT IS ON MASTER AND PUSHED (2026-09-20), so the Railway auto-deploy is the
-  thing to look at next. NOT VERIFIED FROM HERE and not claimed to be: a sandbox
-  cannot reach Railway. Two commits, `9601d38b` and `1c3cbdca`.
+  IT IS ON MASTER, PUSHED, AND THE RAILWAY DEPLOY IS GREEN (2026-09-20, owner
+  confirmed). Two commits, `9601d38b` and `1c3cbdca`.
+  WHAT A GREEN DEPLOY PROVES HERE, and it is worth being precise because this
+  file keeps making the distinction: the service booted, so there is no syntax
+  or startup error, and `initDB` ran. That covers the real risk of this change,
+  since every edit was to code that loads at import time.
+  WHAT IT DOES NOT PROVE: that `CRON_SECRET` and `REVENUECAT_WEBHOOK_SECRET` are
+  set. Both are WARNINGS at boot, not fatals, so the service starts green either
+  way. Unset, the cron routes reject every caller and the renewal reminder
+  emails stop going out, which looks like quiet rather than an outage. Still
+  worth reading those two lines in the deploy log once.
   NO `eas update` IS NEEDED AND NONE SHOULD BE RUN FOR THIS. Backend and tests
   only: zero files under app/, lib/, components/, locales/, android/, assets/,
   app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
