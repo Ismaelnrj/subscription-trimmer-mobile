@@ -22,6 +22,13 @@ const helpers = SERVER.slice(SERVER.indexOf("function addMonthsUTC"), SERVER.ind
 // eslint-disable-next-line no-eval
 eval(helpers);
 
+/* Declared for ESLint because `eval(helpers)` above defines them at runtime,
+   which no static analysis can see. They are the four functions in that slice
+   of server.js, checked rather than assumed: addMonthsUTC, advanceBillingDate,
+   startOfUtcDay and nextBillingDate. Declaring them keeps no-undef ON for the
+   rest of the file rather than disabling a real rule across the test suite. */
+/* global addMonthsUTC, advanceBillingDate, startOfUtcDay, nextBillingDate */
+
 const day = (d) => d.toISOString().slice(0, 10);
 const utc = (s) => new Date(s + "T00:00:00.000Z");
 

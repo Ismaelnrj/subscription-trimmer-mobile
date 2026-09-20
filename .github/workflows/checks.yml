@@ -57,8 +57,12 @@ jobs:
       - name: Language store reminder guard
         run: python3 tools/check-language-store.py
 
-      - name: Lint
-        run: pnpm lint
-
+      # TEST BEFORE LINT, deliberately. With lint first, its failure marked the
+      # Test step "skipped" and the suite never ran at all, for months, while
+      # the run simply showed a red X that read as a style complaint. A broken
+      # test must never be hidden behind a formatting opinion again.
       - name: Test
         run: pnpm test
+
+      - name: Lint
+        run: pnpm lint

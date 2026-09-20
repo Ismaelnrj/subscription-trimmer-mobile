@@ -19,6 +19,21 @@ module.exports = defineConfig([
     },
   },
   {
+    /* The test files had NO globals configured, so every `describe`, `it`,
+       `expect`, `require`, `__dirname` and `Buffer` in __tests__ was a
+       no-undef error. 885 of them, which is why `pnpm lint` has been failing
+       and, because Lint ran before Test, why `pnpm test` had never once
+       executed in CI. Zero of the 885 were in app code.
+
+       Worth stating plainly: this was not a new problem. Every Checks run on
+       master was red, the failure was always this, and it looked like a lint
+       opinion rather than a test suite that was not running. */
+    files: ["__tests__/**/*.{js,jsx,ts,tsx}", "**/*.test.{js,jsx,ts,tsx}"],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.jest },
+    },
+  },
+  {
     // These are React Compiler-readiness rules (this project doesn't use the
     // compiler). They flag existing, working patterns (Date.now() in render,
     // syncing local state from a query in an effect) throughout the app that
