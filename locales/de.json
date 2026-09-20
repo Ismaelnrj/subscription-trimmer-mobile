@@ -353,7 +353,12 @@
     "noPurchaseTitle": "Kein Kauf gefunden",
     "noPurchaseMsg": "Für dieses Konto wurde kein früherer Kauf gefunden.",
     "errRestoreTitle": "Fehler",
-    "errRestoreMsg": "Käufe konnten nicht wiederhergestellt werden. Bitte erneut versuchen."
+    "errRestoreMsg": "Käufe konnten nicht wiederhergestellt werden. Bitte erneut versuchen.",
+    "priceLoading": "Lädt...",
+    "priceUnavailable": "Preis nicht verfügbar",
+    "premium_unlimited": "Unbegrenzt",
+    "premium_fullBreakdown": "Vollständige Übersicht",
+    "premium_allInsights": "Alle Empfehlungen"
   },
   "accountSettings": {
     "currency": "Währung",

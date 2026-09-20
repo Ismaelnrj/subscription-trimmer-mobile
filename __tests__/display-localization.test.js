@@ -90,13 +90,53 @@ describe("the purchase screen shows the price Play will charge", () => {
     expect(UPGRADE).toMatch(/priceString/);
   });
 
-  it("keeps the hardcoded prices as a fallback, not as the answer", () => {
-    expect(UPGRADE).toMatch(/priceString\s*\?\?\s*fallback/);
-    expect(UPGRADE).toMatch(/PREMIUM_PRICES/);
+  it("names no price the store did not supply, not even while loading", () => {
+    /* This used to assert PREMIUM_PRICES was KEPT here as a fallback, which
+       was the wrong destination for the same reason the banners were: it is
+       hardcoded USD, so an Austrian read "$2.99" until RevenueCat answered and
+       forever if it never did. A fallback that shows the wrong currency is a
+       wrong answer with a timer on it. Hardcoding EUR would only move the lie,
+       so the screen shows a placeholder instead of an amount. */
+    const CODE = UPGRADE.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}/g, "");
+    expect(CODE.includes("PREMIUM_PRICES")).toBe(false);
+    expect(CODE).toMatch(/priceString/);
   });
 
-  it("does not pass PREMIUM_PRICES straight to a plan's price field", () => {
-    expect(/price:\s*PREMIUM_PRICES\./.test(UPGRADE)).toBe(false);
+  it("tells loading apart from unavailable", () => {
+    /* An empty packages array is two different situations. Conflating them is
+       how a screen sits on a placeholder forever, or claims a price is missing
+       while it is still in flight. */
+    const CODE = UPGRADE.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}/g, "");
+    expect(CODE).toMatch(/offeringsLoaded/);
+    expect(CODE).toMatch(/t\("upgrade\.priceLoading"\)/);
+    expect(CODE).toMatch(/t\("upgrade\.priceUnavailable"\)/);
+  });
+
+  it("cannot offer to charge an amount it could not name", () => {
+    const CODE = UPGRADE.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}/g, "");
+    expect(CODE).toMatch(/disabled=\{loading \|\| !selectedPlanInfo\.price\.real\}/);
+  });
+
+  it("has no hardcoded English left in the premium column", () => {
+    /* Three values sat in English in the German purchase screen, which is the
+       worst place in the app for it. */
+    for (const literal of ['premium: "Unlimited"', 'premium: "Full breakdown"', 'premium: "All insights"']) {
+      expect(UPGRADE.includes(literal)).toBe(false);
+    }
+    for (const key of ["premium_unlimited", "premium_fullBreakdown", "premium_allInsights"]) {
+      expect(UPGRADE).toMatch(new RegExp(`t\\("upgrade\\.${key}"\\)`));
+    }
+  });
+
+  it("the new upgrade strings are translated, not copied across", () => {
+    const en = JSON.parse(read("locales/en.json")).upgrade;
+    const de = JSON.parse(read("locales/de.json")).upgrade;
+    for (const key of ["priceLoading", "priceUnavailable", "premium_unlimited",
+                       "premium_fullBreakdown", "premium_allInsights"]) {
+      expect(typeof en[key]).toBe("string");
+      expect(typeof de[key]).toBe("string");
+      expect(de[key]).not.toBe(en[key]);
+    }
   });
 });
 

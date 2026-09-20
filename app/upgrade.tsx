@@ -13,7 +13,6 @@ import {
 } from "../lib/iap";
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
-import { PREMIUM_PRICES } from "../lib/pricing";
 import { track } from "../lib/analytics";
 
 type PlanKey = "monthly" | "yearly" | "lifetime";
@@ -27,14 +26,20 @@ export default function UpgradeScreen() {
   const [isPremium, setIsPremium] = useState(user?.isPaid ?? false);
   const [iapReady, setIapReady] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  /* Separate from `packages.length > 0`, because an empty array is two
+     different situations: the offerings have not come back yet, or they came
+     back with nothing. The first must show a placeholder and the second must
+     say the price is unavailable, and conflating them is how a wrong currency
+     gets shown indefinitely. */
+  const [offeringsLoaded, setOfferingsLoaded] = useState(false);
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
   const FEATURES = [
-    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions"), premium: "Unlimited" },
-    { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: "Full breakdown" },
-    { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: "All insights" },
+    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions"), premium: t("upgrade.premium_unlimited") },
+    { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: t("upgrade.premium_fullBreakdown") },
+    { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: t("upgrade.premium_allInsights") },
     { icon: "target",              label: t("upgrade.feat_budget"),         free: "—",                             premium: "✓" },
     { icon: "clock-alert-outline", label: t("upgrade.feat_trial"),          free: "—",                             premium: "✓" },
     { icon: "tag-multiple",        label: t("upgrade.feat_customCat"),      free: "—",                             premium: "✓" },
@@ -43,26 +48,39 @@ export default function UpgradeScreen() {
     { icon: "headset",             label: t("upgrade.feat_support"),        free: "—",                             premium: "✓" },
   ];
 
-  /* The price shown must be the price Google Play will actually charge.
+  /* THIS SCREEN NEVER NAMES A PRICE GOOGLE PLAY DID NOT GIVE IT.
 
-     This screen already fetched the offerings, and used them ONLY to make the
-     purchase: every price on it came from PREMIUM_PRICES, which is hardcoded
-     USD. So a subscriber in Austria read "$2.99" on the screen where they
-     decide to pay, and then Google Play charged them in euros at Play's own
-     local price. lib/pricing.ts even described itself as a fallback "shown
-     before RevenueCat's localized priceString loads", which was true of the tip
-     jar and had never been true here: nothing ever replaced it.
+     It used to fall back to PREMIUM_PRICES, which is hardcoded USD. That was
+     sold as "a fallback for the moment before the offerings resolve", and the
+     moment is the problem: an Austrian opening this screen read "$2.99" until
+     RevenueCat answered, and read it FOREVER if RevenueCat never did. A
+     fallback that shows the wrong currency is not a fallback, it is a wrong
+     answer with a timer on it.
 
-     PREMIUM_PRICES stays as the fallback it claims to be, for the moment before
-     the offerings resolve and for a device where IAP is unavailable. Copied
-     from priceFor in app/tip-jar.tsx, which had this right already. */
-  const priceFor = (plan: PlanKey, fallback: string) =>
-    packages.find((p) => p.product.identifier === PRODUCT_IDS[plan])?.product.priceString ?? fallback;
+     Hardcoding EUR instead would just move the lie. There are only three
+     honest states, so the price is a tagged value rather than a string:
+       loading      the offerings are still in flight, show a placeholder
+       real         a priceString from Play, the only thing allowed to look
+                    like money
+       unavailable  offerings failed or this package is missing, say so and
+                    refuse the purchase
 
-  const PLANS: { key: PlanKey; label: string; price: string; sub: string; badge?: string }[] = [
-    { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly", PREMIUM_PRICES.monthly), sub: t("upgrade.perMonth") },
-    { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly", PREMIUM_PRICES.yearly),  sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
-    { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime", PREMIUM_PRICES.lifetime), sub: t("upgrade.oneTime"), badge: t("upgrade.bestValue") },
+     `real` is what the buy button reads to decide whether it can be pressed,
+     so the UI cannot offer to charge somebody an amount it could not name. */
+  type PlanPrice = { text: string; real: boolean };
+
+  const priceFor = (plan: PlanKey): PlanPrice => {
+    if (!offeringsLoaded) return { text: t("upgrade.priceLoading"), real: false };
+    const pkg = packages.find((p) => p.product.identifier === PRODUCT_IDS[plan]);
+    return pkg
+      ? { text: pkg.product.priceString, real: true }
+      : { text: t("upgrade.priceUnavailable"), real: false };
+  };
+
+  const PLANS: { key: PlanKey; label: string; price: PlanPrice; sub: string; badge?: string }[] = [
+    { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly"),  sub: t("upgrade.perMonth") },
+    { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly"),   sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
+    { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime"), sub: t("upgrade.oneTime"),   badge: t("upgrade.bestValue") },
   ];
 
   useEffect(() => {
@@ -73,10 +91,18 @@ export default function UpgradeScreen() {
     (async () => {
       const ready = await setupIAP(user?.openId);
       setIapReady(ready);
-      if (ready) {
-        const [pkgs, premium] = await Promise.all([getOfferings(), checkIsPremium()]);
-        setPackages(pkgs);
-        setIsPremium(premium);
+      try {
+        if (ready) {
+          const [pkgs, premium] = await Promise.all([getOfferings(), checkIsPremium()]);
+          setPackages(pkgs);
+          setIsPremium(premium);
+        }
+      } finally {
+        /* In a finally, and set even when setupIAP said not ready, or the
+           screen sits on the loading placeholder forever on a device where
+           IAP is unavailable. Resolved-with-nothing is a real answer here:
+           it renders as "price unavailable", which is true. */
+        setOfferingsLoaded(true);
       }
     })();
   }, []);
@@ -183,7 +209,16 @@ export default function UpgradeScreen() {
                       </View>
                     )}
                     <Text style={[styles.planLabel, active && styles.planLabelActive]}>{plan.label}</Text>
-                    <Text style={[styles.planPrice, active && styles.planPriceActive]}>{plan.price}</Text>
+                    <Text
+                      style={[
+                        styles.planPrice,
+                        plan.price.real
+                          ? active && styles.planPriceActive
+                          : styles.planPriceUnset,
+                      ]}
+                    >
+                      {plan.price.text}
+                    </Text>
                     <Text style={[styles.planSub, active && styles.planSubActive]}>{plan.sub}</Text>
                   </TouchableOpacity>
                 );
@@ -209,11 +244,24 @@ export default function UpgradeScreen() {
               ))}
             </View>
 
-            <TouchableOpacity style={styles.buyButton} onPress={handleBuy} disabled={loading}>
+            {/* Disabled until there is a real price. handleBuy already refuses a
+                missing package with an alert, but a button that offers to charge
+                you an amount the screen could not name should not be pressable in
+                the first place. The label drops the price rather than
+                interpolating the placeholder into "Unlock Premium, Loading". */}
+            <TouchableOpacity
+              style={[styles.buyButton, !selectedPlanInfo.price.real && styles.buyButtonDisabled]}
+              onPress={handleBuy}
+              disabled={loading || !selectedPlanInfo.price.real}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: loading || !selectedPlanInfo.price.real }}
+            >
               {loading ? <ActivityIndicator color="#FFFFFF" /> : (
                 <View style={{ alignItems: "center" }}>
                   <Text style={styles.buyButtonText}>
-                    {t("upgrade.unlockButton", { price: selectedPlanInfo.price })}
+                    {selectedPlanInfo.price.real
+                      ? t("upgrade.unlockButton", { price: selectedPlanInfo.price.text })
+                      : selectedPlanInfo.price.text}
                   </Text>
                   <Text style={styles.buyButtonSub}>{selectedPlanInfo.sub}</Text>
                 </View>
@@ -262,6 +310,10 @@ function makeStyles(c: AppColors) {
     planLabel: { fontSize: 11, fontWeight: "600", color: c.textSecondary, marginBottom: 4, textTransform: "uppercase" },
     planLabelActive: { color: c.primary },
     planPrice: { fontSize: 18, fontWeight: "800", color: c.text },
+    /* Smaller and muted, because "Nicht verfügbar" is far longer than any
+       price string and would otherwise wrap at 18/800 into a heading that
+       shouts a non-price. Muted also reads as "not the number you want". */
+    planPriceUnset: { fontSize: 13, fontWeight: "600", color: c.textMuted },
     planPriceActive: { color: c.primary },
     planSub: { fontSize: 9, color: c.textMuted, textAlign: "center", marginTop: 2 },
     planSubActive: { color: c.primary },
@@ -276,6 +328,7 @@ function makeStyles(c: AppColors) {
     premiumColText: { color: c.primary },
     freeText: { color: c.textMuted, textAlign: "center", fontSize: 12 },
     premiumText: { fontWeight: "700", textAlign: "center", fontSize: 12 },
+    buyButtonDisabled: { opacity: 0.5 },
     buyButton: {
       backgroundColor: c.primary, borderRadius: 14, paddingVertical: 18,
       alignItems: "center", marginBottom: 14,

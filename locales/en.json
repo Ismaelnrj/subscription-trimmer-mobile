@@ -353,7 +353,12 @@
     "noPurchaseTitle": "No purchase found",
     "noPurchaseMsg": "No previous purchase was found for this account.",
     "errRestoreTitle": "Error",
-    "errRestoreMsg": "Could not restore purchases. Please try again."
+    "errRestoreMsg": "Could not restore purchases. Please try again.",
+    "priceLoading": "Loading...",
+    "priceUnavailable": "Price unavailable",
+    "premium_unlimited": "Unlimited",
+    "premium_fullBreakdown": "Full breakdown",
+    "premium_allInsights": "All insights"
   },
   "accountSettings": {
     "currency": "Currency",

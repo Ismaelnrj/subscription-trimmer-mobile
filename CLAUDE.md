@@ -937,6 +937,28 @@ last one left off without needing a recap typed out.
   so a boundary change moves two screens to chase a case the data cannot
   identify anyway.
 
+- THE HEADING BELOW SAYS THE LOCALISATION IS "NOW ACTUALLY COMPLETE". IT WAS
+  NOT, AND THE HEADING IS THE PROBLEM. Codex found three more English strings on
+  2026-09-20 AFTER that entry was written, sitting in the premium comparison
+  table in `app/upgrade.tsx` as bare object literals: `premium: "Unlimited"`,
+  `premium: "Full breakdown"` and `premium: "All insights"`. A German user
+  reading the PURCHASE screen, the one place in the app where trust matters
+  most, read three English words in the column describing what they are buying.
+  WHY EVERY SWEEP MISSED THEM: they are not `t()` calls, not locale keys and not
+  JSX text nodes. They are values in a plain array, so a locale parity check
+  cannot see them, a key scan cannot see them, and the JSX text node check the
+  dash rule uses cannot see them either. The one thing that finds this class is
+  reading the screen in German.
+  `__tests__/display-localization.test.js` NOW PINS THE THREE LITERALS BY NAME
+  and requires the matching `t("upgrade.premium_*")` calls, so these three
+  cannot come back. It does not generalise to a fourth, which is worth being
+  honest about: there is no cheap check for an English string in an arbitrary
+  object literal.
+  THE RULE THIS FILE KEEPS RELEARNING, now for the third time: a completeness
+  claim is the most dangerous kind of entry here, because it tells the next
+  session not to look. The entry below already carried that lesson about the
+  previous completeness claim, and then made the same claim in its own title.
+
 - THE LOCALISATION IS NOW ACTUALLY COMPLETE, 2026-09-20, and the calendar legend
   entry below is what exposed how much of it was not. Four surfaces still
   rendered raw lowercase API identifiers through a `textTransform:
@@ -1860,6 +1882,37 @@ last one left off without needing a recap typed out.
   fetching offerings from each would be four extra round trips for a line of
   marketing copy. If that ever bothers somebody, the fix is a shared offerings
   store, not four more fetches.
+- THE PURCHASE SCREEN SHOWED HARDCODED USD WHILE REVENUECAT LOADED, fixed
+  2026-09-20 on Codex's recheck, and it is the same defect as the banner entry
+  below wearing a disguise that made it look deliberate.
+  `priceFor` took a `fallback` argument and every caller passed a PREMIUM_PRICES
+  value, which is hardcoded USD. The comment above it called that "the fallback
+  it claims to be, for the moment before the offerings resolve". THE MOMENT IS
+  THE DEFECT: an Austrian opening the screen read "$2.99" until RevenueCat
+  answered, and read it FOREVER if RevenueCat never answered, because nothing
+  distinguished "not loaded yet" from "loaded and empty". A fallback that shows
+  the wrong currency is not a fallback, it is a wrong answer with a timer on it.
+  HARDCODING EUR WOULD ONLY MOVE THE LIE, which is why the fix is a tagged value
+  rather than a better default. Three honest states: `loading` shows a
+  placeholder, `real` shows Play's own priceString and is the only thing allowed
+  to look like money, `unavailable` says so. `offeringsLoaded` is a SEPARATE
+  flag from `packages.length`, because an empty array is those last two states
+  at once and conflating them is exactly how the old bug persisted.
+  IT IS SET IN A `finally` AND EVEN WHEN setupIAP SAID NOT READY. Otherwise a
+  device where IAP is unavailable sits on the loading placeholder forever.
+  Resolved-with-nothing is a real answer: it renders as "price unavailable",
+  which is true.
+  THE BUY BUTTON READS `real` AND IS DISABLED WITHOUT IT. `handleBuy` already
+  refused a missing package with an alert, so this is not the only guard, but a
+  button that offers to charge you an amount the screen could not name should
+  not be pressable. The label drops the price rather than interpolating the
+  placeholder into "Unlock Premium, Loading...".
+  PREMIUM_PRICES IS GONE FROM THIS SCREEN ENTIRELY. It still exists for
+  `app/tip-jar.tsx`, which genuinely uses it as a fallback. A test now asserts
+  the purchase screen does not reference it at all, having previously asserted
+  the OPPOSITE, that it was kept here as a fallback. That assertion was written
+  to fix the inline "$2.99" string and aimed at the wrong destination.
+
 - THE PREMIUM BANNERS QUOTED A PRICE GOOGLE PLAY WAS NOT GOING TO CHARGE, fixed
   2026-09-20 on Codex's recommendation. `components/PremiumGate.tsx` and
   `app/(tabs)/profile.tsx` both rendered `profile.unlockPremium` with
