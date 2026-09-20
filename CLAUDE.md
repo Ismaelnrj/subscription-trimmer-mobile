@@ -562,12 +562,31 @@ last one left off without needing a recap typed out.
   the leading YYYY-MM-DD digits, which is what makes it offset-proof: those
   digits are the day and no reader's timezone can change what they say. Never go
   back to `new Date(sub.nextBillingDate)` for anything that asks WHICH DAY.
-  STILL UNFIXED ON PURPOSE, eight sites in `insights.tsx`, `(tabs)/index.tsx` and
-  `notification-preferences.tsx` that do `Math.ceil((new Date(x) - now) / 86400000)`.
-  Same root cause, much milder: a few hours out only changes a rounding. Moving
-  them would shift what the "3 days left" badges say, which is a product decision
-  about whether that counts CALENDAR days or 24 hour periods, so it wants an
-  answer before an edit.
+  THAT PARAGRAPH USED TO SAY EIGHT `Math.ceil((new Date(x) - now) / 86400000)`
+  SITES WERE STILL UNFIXED ON PURPOSE, pending a product decision about whether
+  a badge counts CALENDAR days or 24 hour periods. THE DECISION WAS TAKEN AND
+  THE SITES ARE FIXED, in `ca10a413`, across `insights.tsx`, `(tabs)/index.tsx`,
+  `(tabs)/subscriptions.tsx` and `notification-preferences.tsx`. Calendar days
+  won, because "renews in 3 days" is a statement about which day it lands on and
+  this app never knows or shows a time of day.
+  `daysUntil` IN `lib/utils.ts` IS THE HELPER, and it parses with parseApiDate,
+  so it inherits the offset-proof reading rather than repeating the original bug.
+  It ROUNDS rather than floors, because a DST transition makes one of the two
+  days 23 or 25 hours long.
+  IT RETURNS null FOR AN UNREADABLE DATE AND EVERY CALLER MUST CHECK, which its
+  own comment says and is the part worth repeating here: `null >= 0` is TRUE in
+  JavaScript, so a nullable number compared against a threshold is a silent pass
+  rather than a type error.
+  DO NOT GO HUNTING FOR `86400000` AND REPLACE IT, which is how this note could
+  cause the next bug. Three uses remain and all three are legitimate DURATION
+  offsets rather than day counts: a notification lead time in
+  `notification-preferences.tsx`, two banner dismissal expiries in
+  `(tabs)/index.tsx`, and the arithmetic inside `daysUntil` itself. The number
+  being the same does not make the question the same.
+  VERIFIED ON MASTER 2026-09-20 by grepping rather than by trusting this entry:
+  zero `Math.ceil` day-difference sites remain anywhere in app/, components/ or
+  lib/. The only `Math.ceil` left in the tree is inside the comment in
+  `lib/utils.ts` that explains what the call sites used to do.
 - TWO HELPERS CAME OUT OF THAT and should be used rather than reinvented.
   `lib/date-locale.ts` exposes `useDateFormat` and `weekdayInitials`, picking
   the date-fns locale from i18n. Never localise the `"yyyy-MM-dd"` calls: those
@@ -889,16 +908,34 @@ last one left off without needing a recap typed out.
   against the REAL recurrence module on date-fns stubs that were themselves
   checked against this repo's own recurrence test expectations first, because a
   stub that is subtly wrong produces a confident wrong number.
-  ONE BOUNDARY CASE IS WORTH KNOWING AND WAS DELIBERATELY NOT CHANGED. At
-  exactly `date == today` with `today < anchor`, the filter drops the
-  occurrence. If nextBillingDate is 20 October and today is 20 September on a
-  monthly cycle, today's charge is the one that MOVED the anchor, so it is
-  real and is being dropped. The data cannot distinguish that from a
-  subscription created today with its first charge a month out. `isPhantomOccurrence`
-  is shipped, pinned by ten assertions and confirmed on a device, and the
-  calendar dots already behave this way, so changing the boundary would move
-  two screens to chase one ambiguous day. Left as is, and the two screens now
-  agree, which is the property that was actually missing.
+  THE BOUNDARY AT `date == today` IS CORRECT, AND AN EARLIER DRAFT OF THIS
+  ENTRY GOT IT WRONG. It claimed a real charge due today was being dropped,
+  reasoning that today's charge is what MOVED the anchor forward. That is not
+  how this backend behaves, and Codex caught it on review.
+  WHY A REAL CHARGE DUE TODAY IS KEPT: the backend deliberately does NOT
+  advance a renewal that is due today. `advanceBillingDate` loops
+  `while (d < notBefore)` and the caller passes `startOfUtcDay(now)`, so a date
+  stored at midnight UTC today is not less than the bound and never advances.
+  `startOfUtcDay`'s own comment says why it exists: comparing against the
+  current instant instead advanced the date on the MORNING of the billing day,
+  so the alert vanished before the day it was warning about had started. A real
+  charge today therefore still has `nextBillingDate == today`, which makes
+  `anchor == today`, which satisfies `date >= anchor`. It is KEPT.
+  MEASURED, not reasoned about, on 2026-09-20 against the real module: anchor
+  == today is kept, anchor one month out drops the projection inside the band,
+  and an anchor in the past keeps its already-charged occurrence.
+  THE GENUINELY AMBIGUOUS CASE IS NARROWER than the wrong version claimed: a
+  same-day MANUAL advance of nextBillingDate after the charge, or data advanced
+  by something outside the app. Nothing in the schema can distinguish that from
+  a subscription created today with its first charge next month. `subscriptions`
+  has no last_billing_date, no paid_at and no start date; `users.paid_at` is
+  Trimio's OWN premium subscription and nothing to do with a tracked one, and
+  `created_at` is when the ROW was made, so somebody adding a service they have
+  had for three years gets today's date. It cannot stand in for a start date.
+  DO NOT CHANGE `isPhantomOccurrence` TO CHASE THAT CASE. It is shipped, pinned
+  by ten assertions, confirmed on a device, and the calendar dots depend on it,
+  so a boundary change moves two screens to chase a case the data cannot
+  identify anyway.
 
 - THE LOCALISATION IS NOW ACTUALLY COMPLETE, 2026-09-20, and the calendar legend
   entry below is what exposed how much of it was not. Four surfaces still
@@ -1823,6 +1860,33 @@ last one left off without needing a recap typed out.
   fetching offerings from each would be four extra round trips for a line of
   marketing copy. If that ever bothers somebody, the fix is a shared offerings
   store, not four more fetches.
+- THE PREMIUM BANNERS QUOTED A PRICE GOOGLE PLAY WAS NOT GOING TO CHARGE, fixed
+  2026-09-20 on Codex's recommendation. `components/PremiumGate.tsx` and
+  `app/(tabs)/profile.tsx` both rendered `profile.unlockPremium` with
+  `PREMIUM_PRICES.monthly`, which is hardcoded USD, so an Austrian reader was
+  quoted dollars for a purchase that bills in euros.
+  THIS IS THE SAME DEFECT THE UPGRADE SCREEN WAS FIXED FOR IN SEPTEMBER,
+  surviving on the two banners that lead to it. The entry above closes with
+  "still showing the USD fallback on purpose", which was a defensible call about
+  round trips and a wrong one about correctness: a number next to a currency
+  symbol is a claim about money whatever surface it sits on.
+  THE FIX IS TO NAME NO PRICE, not to fetch offerings from every gate. Four
+  extra RevenueCat round trips for one line of marketing copy is what the
+  earlier note rightly refused; quoting a figure that is wrong for half the
+  audience is not the only alternative. The key now reads "Unlock Premium" and
+  "Premium freischalten", with the `{{price}}` token removed from both locale
+  files since nothing passes one any more.
+  `app/upgrade.tsx` IS UNCHANGED AND IS NOW THE ONLY SURFACE THAT NAMES A
+  PRICE, reading RevenueCat's localized priceString with PREMIUM_PRICES as the
+  fallback it actually claims to be. That is the property to preserve: one
+  surface, one source.
+  A TEST ASSERTED THE OLD BEHAVIOUR and had to be inverted rather than deleted.
+  `display-localization.test.js` required the banner to read its figure FROM
+  PREMIUM_PRICES, which was the right fix for the inline "$2.99" string and the
+  wrong destination. It now asserts the banner names no price at all, and that
+  neither locale still carries a `{{price}}` placeholder, since a leftover token
+  renders as itself once nothing supplies a value.
+
 - DATES NOW FOLLOW THE APP LANGUAGE EVERYWHERE, fixed 2026-09-18. Four call sites
   ignored it: a bare `toLocaleDateString()` in `subscriptions.tsx`,
   `refer-a-friend.tsx` and `notifications.tsx`, which uses the DEVICE locale, so

@@ -6,7 +6,6 @@ import { useAuthStore } from "../../lib/auth-store";
 import { useTheme, AppColors } from "../../lib/theme";
 import { useLanguageStore } from "../../lib/language-store";
 import { useThemeStore, ThemeMode } from "../../lib/theme-store";
-import { PREMIUM_PRICES } from "../../lib/pricing";
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -72,7 +71,7 @@ export default function ProfileScreen() {
             <View style={styles.menuItemLeft}>
               <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
               <Text style={[styles.menuItemLabel, { color: c.primary }]}>
-                {t("profile.unlockPremium", { price: PREMIUM_PRICES.monthly })}
+                {t("profile.unlockPremium")}
               </Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />

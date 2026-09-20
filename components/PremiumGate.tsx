@@ -3,7 +3,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useTheme, AppColors } from "../lib/theme";
-import { PREMIUM_PRICES } from "../lib/pricing";
 
 type Props = {
   title: string;
@@ -26,18 +25,22 @@ export function PremiumGate({ title, description }: Props) {
       <Text style={styles.desc}>{description}</Text>
       <View style={styles.button}>
         <MaterialCommunityIcons name="lock-open-outline" size={15} color="#fff" />
-        {/* Was the string "Unlock Premium — from $2.99/mo", hardcoded three
-            ways at once: untranslated, so German users read English on six
-            surfaces across four screens; with an em dash, which this project's
-            copy rule forbids as clause punctuation; and with the price written
-            inline instead of taken from lib/pricing.ts, so it could drift from
-            every other price in the app without anything noticing.
+        {/* NO PRICE ON THIS BANNER, deliberately. It used to read
+            "Unlock Premium, from $2.99/mo" with the figure coming from
+            PREMIUM_PRICES, which is hardcoded USD. Google Play charges each
+            market its own localised price, so an Austrian reader was quoted
+            dollars for a purchase that bills in euros: the same defect the
+            upgrade screen was fixed for, surviving on the banner that leads
+            to it.
 
-            profile.unlockPremium already said exactly this, in both languages,
-            with a comma rather than a dash. No new key was needed. */}
-        <Text style={styles.buttonText}>
-          {t("profile.unlockPremium", { price: PREMIUM_PRICES.monthly })}
-        </Text>
+            The banner is not where anybody decides to pay, so the cheapest
+            correct fix is to stop quoting a price here rather than to fetch
+            RevenueCat offerings from every gate, which would be four extra
+            round trips for one line of marketing copy. app/upgrade.tsx stays
+            the single surface responsible for a price, and it already reads
+            RevenueCat's localized priceString with PREMIUM_PRICES as the
+            fallback it claims to be. */}
+        <Text style={styles.buttonText}>{t("profile.unlockPremium")}</Text>
       </View>
     </TouchableOpacity>
   );

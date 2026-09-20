@@ -112,9 +112,26 @@ describe("the premium banner is translated and priced from one source", () => {
     expect(GATE.includes("Unlock Premium")).toBe(false);
   });
 
-  it("has no price written inline", () => {
+  it("quotes no price at all, inline or from the hardcoded table", () => {
+    /* This used to assert the OPPOSITE of the second line, that the banner
+       read its figure from PREMIUM_PRICES rather than writing "$2.99" inline.
+       That was the right fix for the inline string and the wrong destination:
+       PREMIUM_PRICES is hardcoded USD, so an Austrian reader was still quoted
+       dollars for a purchase Google Play bills in euros.
+       A banner is not a purchase screen, so it names no price. app/upgrade.tsx
+       is the one surface that does, from RevenueCat's localized priceString,
+       and the assertions above still hold it to that. */
     expect(GATE.includes("$2.99")).toBe(false);
-    expect(GATE).toMatch(/PREMIUM_PRICES\.monthly/);
+    expect(GATE.includes("PREMIUM_PRICES")).toBe(false);
+  });
+
+  it("the banner key carries no price placeholder in either language", () => {
+    // A leftover {{price}} would render the token itself once nothing passes one.
+    const en = JSON.parse(read("locales/en.json")).profile.unlockPremium;
+    const de = JSON.parse(read("locales/de.json")).profile.unlockPremium;
+    expect(en.includes("{{")).toBe(false);
+    expect(de.includes("{{")).toBe(false);
+    expect(de).not.toBe(en);
   });
 
   it("reuses the key that already said this in both languages", () => {
