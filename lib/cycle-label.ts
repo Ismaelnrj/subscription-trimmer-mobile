@@ -27,3 +27,31 @@ export function useCycleLabel() {
     return key ? t(key) : String(cycle);
   };
 }
+
+/* THE ADJECTIVE FORM, and it exists because the noun form above is wrong for a
+   standalone label. "pro Monat" needs the noun ("Monat"); a chip in the add
+   subscription form that you TAP to choose a cycle needs the adjective
+   ("Monatlich"). Using either one in the other's place is the grammatical
+   nonsense the comment above already warns about, in the opposite direction.
+
+   The cycle chips rendered the raw API string, so a German user picking a
+   billing cycle read "Monthly", "Yearly" and "Weekly" in the busiest form in
+   the app. `textTransform: "capitalize"` on the chip made that look deliberate
+   rather than untranslated. */
+const ADJECTIVE_KEYS: Record<string, string> = {
+  monthly: "common.cycleAdjMonthly",
+  yearly: "common.cycleAdjYearly",
+  annual: "common.cycleAdjYearly",
+  weekly: "common.cycleAdjWeekly",
+};
+
+export function useCycleAdjective() {
+  const { t } = useTranslation();
+  return (cycle?: string | null) => {
+    if (!cycle) return "";
+    const key = ADJECTIVE_KEYS[String(cycle).toLowerCase()];
+    // Same fallback rule as useCycleLabel: an unrecognised cycle degrades to
+    // whatever the API said rather than rendering an empty chip.
+    return key ? t(key) : String(cycle);
+  };
+}

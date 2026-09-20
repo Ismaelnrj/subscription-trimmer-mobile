@@ -11,7 +11,8 @@ import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
-import { useCycleLabel } from "../../lib/cycle-label";
+import { useCycleLabel, useCycleAdjective } from "../../lib/cycle-label";
+import { useCategoryLabel } from "../../lib/category-label";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput, sanitiseAmountInput, daysUntil, parseApiDate } from "../../lib/utils";
@@ -63,6 +64,8 @@ export default function SubscriptionsScreen() {
   const isPremium = user?.isPaid ?? false;
   const fmtC = useFmt();
   const cycleLabel = useCycleLabel();
+  const cycleAdjective = useCycleAdjective();
+  const categoryLabel = useCategoryLabel();
   const { currency, baseCurrencyCode, convert } = useCurrencyStore();
   const queryClient = useQueryClient();
   const c = useTheme();
@@ -845,7 +848,7 @@ export default function SubscriptionsScreen() {
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
                       <View style={[styles.categoryBadge, isCustomCat && styles.customCategoryBadge]}>
                         <Text style={[styles.categoryBadgeText, isCustomCat && styles.customCategoryBadgeText]}>
-                          {sub.category}
+                          {categoryLabel(sub.category)}
                         </Text>
                       </View>
                       {sub.isActive === false && (
@@ -1105,7 +1108,7 @@ export default function SubscriptionsScreen() {
                     onPress={() => setFormData({ ...formData, billingCycle: cycle })}
                   >
                     <Text style={[styles.chipText, formData.billingCycle === cycle && styles.chipTextActive]}>
-                      {cycle}
+                      {cycleAdjective(cycle)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -1165,7 +1168,7 @@ export default function SubscriptionsScreen() {
                       onPress={() => setFormData({ ...formData, category: cat })}
                     >
                       <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
-                        {cat}
+                        {categoryLabel(cat)}
                       </Text>
                     </TouchableOpacity>
                   );

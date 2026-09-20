@@ -13,6 +13,7 @@ import { WeeklyBarChart } from "../../components/WeeklyBarChart";
 import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { getCategoryIcon } from "../../lib/categories";
+import { useCategoryLabel } from "../../lib/category-label";
 import { getOccurrencesInMonth } from "../../lib/recurrence";
 
 // 4, not 5 - a 5th bucket would only ever cover 0-3 leftover days (0 in a
@@ -31,6 +32,7 @@ export default function AnalyticsScreen() {
   const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
+  const categoryLabel = useCategoryLabel();
 
   const { data: summary, isLoading, isError, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
@@ -168,7 +170,7 @@ export default function AnalyticsScreen() {
                   <View key={cat.category} style={styles.legendRow}>
                     <View style={[styles.legendDot, { backgroundColor: getCategoryIcon(cat.category).color }]} />
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.legendName} numberOfLines={1}>{cat.category}</Text>
+                      <Text style={styles.legendName} numberOfLines={1}>{categoryLabel(cat.category)}</Text>
                       <Text style={styles.legendAmount}>{fmtC(cat.amount)}/mo</Text>
                     </View>
                   </View>

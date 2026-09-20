@@ -17,7 +17,10 @@
     "upgrade": "Upgrade",
     "cycleMonthly": "month",
     "cycleYearly": "year",
-    "cycleWeekly": "week"
+    "cycleWeekly": "week",
+    "cycleAdjMonthly": "Monthly",
+    "cycleAdjYearly": "Yearly",
+    "cycleAdjWeekly": "Weekly"
   },
   "tabs": {
     "dashboard": "Dashboard",

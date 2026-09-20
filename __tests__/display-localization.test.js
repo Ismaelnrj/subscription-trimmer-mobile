@@ -147,6 +147,92 @@ describe("no screen overrides its localised header with English", () => {
   });
 });
 
+describe("no screen renders a raw category or billing cycle string", () => {
+  /* Both arrive from the API as lowercase English identifiers ("streaming",
+     "monthly") and four surfaces rendered them straight into the UI through a
+     `textTransform: "capitalize"`. In English that reads acceptably by
+     accident, which is exactly why it survived: the words that ARE the same in
+     both languages hide the ones that are not.
+
+     What it cost a German user: "Entertainment" and "Insurance" in the Stats
+     donut legend and on every subscription card, and "Monthly", "Yearly",
+     "Weekly" on the chips you tap to choose a billing cycle, in the busiest
+     form in the app.
+
+     Both helpers already existed. lib/cycle-label.ts now carries the ADJECTIVE
+     form beside its noun form, because "pro Monat" wants the noun and a chip
+     wants the adjective, and swapping them is the grammatical nonsense that
+     file's own comment warns about. */
+
+  const strip = (src) =>
+    src.replace(/\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}/g, "")
+      .split("\n").filter((l) => !/^\s*\/\//.test(l)).join("\n");
+
+  const SUBS = strip(read("app/(tabs)/subscriptions.tsx"));
+  const ANALYTICS = strip(read("app/(tabs)/analytics.tsx"));
+
+  it("the subscription card badge goes through the helper", () => {
+    expect(SUBS).toMatch(/\{categoryLabel\(sub\.category\)\}/);
+    expect(SUBS).not.toMatch(/>\s*\{sub\.category\}\s*</);
+  });
+
+  it("the category chips in the form go through the helper", () => {
+    expect(SUBS).toMatch(/\{categoryLabel\(cat\)\}/);
+    expect(SUBS).not.toMatch(/>\s*\{cat\}\s*</);
+  });
+
+  it("the billing cycle chips go through the ADJECTIVE helper, not the noun one", () => {
+    /* cycleLabel would render "9,99 € / Monat" correctly and a chip reading
+       "Monat", which is the wrong part of speech for a thing you tap. */
+    expect(SUBS).toMatch(/\{cycleAdjective\(cycle\)\}/);
+    expect(SUBS).not.toMatch(/>\s*\{cycle\}\s*</);
+  });
+
+  it("the Stats donut legend goes through the helper", () => {
+    expect(ANALYTICS).toMatch(/\{categoryLabel\(cat\.category\)\}/);
+    expect(ANALYTICS).not.toMatch(/>\{cat\.category\}</);
+  });
+
+  it("the adjective forms exist in both languages and differ where they must", () => {
+    const en = JSON.parse(read("locales/en.json")).common;
+    const de = JSON.parse(read("locales/de.json")).common;
+    for (const k of ["cycleAdjMonthly", "cycleAdjYearly", "cycleAdjWeekly"]) {
+      expect(typeof en[k]).toBe("string");
+      expect(typeof de[k]).toBe("string");
+      // Monatlich vs Monthly: if these matched, the translation was not done.
+      expect(de[k]).not.toBe(en[k]);
+    }
+  });
+
+  it("the adjective and noun forms are not the same string", () => {
+    // If they were, one of the two call sites is reading the wrong one.
+    const de = JSON.parse(read("locales/de.json")).common;
+    expect(de.cycleAdjMonthly).not.toBe(de.cycleMonthly);
+    expect(de.cycleAdjYearly).not.toBe(de.cycleYearly);
+    expect(de.cycleAdjWeekly).not.toBe(de.cycleWeekly);
+  });
+
+  it("every name stays a single word, so the capitalize transform is a no-op", () => {
+    /* chipText and categoryBadgeText both carry textTransform: "capitalize".
+       That is safe only while no label is a phrase: "This Is A Free Trial" is
+       already on record here as what the transform does to a sentence. */
+    const en = JSON.parse(read("locales/en.json"));
+    const de = JSON.parse(read("locales/de.json"));
+    const labels = [
+      ...Object.values(en.categoryNames), ...Object.values(de.categoryNames),
+      en.common.cycleAdjMonthly, en.common.cycleAdjYearly, en.common.cycleAdjWeekly,
+      de.common.cycleAdjMonthly, de.common.cycleAdjYearly, de.common.cycleAdjWeekly,
+    ];
+    for (const label of labels) expect(label).toMatch(/^[A-ZÄÖÜ][^\s]*$/);
+  });
+
+  it("a custom category still comes back as the user typed it", () => {
+    // Only the built-ins are translated. The chips and the badge both show
+    // custom categories, which are the user's own words.
+    expect(strip(read("lib/category-label.ts"))).toMatch(/return key \? t\(key\) : raw;/);
+  });
+});
+
 describe("no dash as clause punctuation in any user-facing text", () => {
   it("not in the locale files", () => {
     for (const f of ["locales/en.json", "locales/de.json"]) {
