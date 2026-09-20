@@ -14,7 +14,7 @@ import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { getCategoryIcon } from "../../lib/categories";
 import { useCategoryLabel } from "../../lib/category-label";
-import { getOccurrencesInMonth } from "../../lib/recurrence";
+import { getOccurrencesInMonth, isPhantomOccurrence } from "../../lib/recurrence";
 
 // 4, not 5 - a 5th bucket would only ever cover 0-3 leftover days (0 in a
 // 28-day February, up to 3 in a 31-day month) but render with the same
@@ -49,17 +49,32 @@ export default function AnalyticsScreen() {
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
 
+  /* Held in a useMemo with no dependencies rather than read inline, or the
+     bucket memo below takes a new dependency on every render. Same reason the
+     calendar screen holds its own `today` this way. */
+  const today = useMemo(() => new Date(), []);
+
   const weeklyBuckets = useMemo(() => {
     const buckets = new Array(WEEK_COUNT).fill(0);
-    const now = new Date();
     for (const sub of subscriptions as any[]) {
-      for (const date of getOccurrencesInMonth(sub, now)) {
+      for (const date of getOccurrencesInMonth(sub, today)) {
+        /* getOccurrencesInMonth projects a cycle indefinitely in both
+           directions from nextBillingDate, and backwards past a point it
+           invents charges: the band [today, anchor) cannot hold one, because
+           the anchor IS the next charge by definition, so nothing bills
+           between now and it. The calendar stopped drawing dots for those in
+           September; this chart kept counting them, so the same month's money
+           had two different answers on two screens.
+           It matters more here than a dot does, because this panel promises
+           to show "which weeks your subscriptions hit hardest" and was
+           drawing a bar for a week where nothing hits. */
+        if (isPhantomOccurrence(sub, date, today)) continue;
         const weekIndex = Math.min(Math.floor((date.getDate() - 1) / 7), WEEK_COUNT - 1);
         buckets[weekIndex] += sub.price;
       }
     }
     return buckets;
-  }, [subscriptions]);
+  }, [subscriptions, today]);
 
   const onRefresh = async () => {
     setRefreshing(true);

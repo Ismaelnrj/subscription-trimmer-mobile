@@ -16,6 +16,7 @@ import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
 import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
+import { useCycleLabel } from "../../lib/cycle-label";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
 import { track } from "../../lib/analytics";
@@ -44,6 +45,7 @@ export default function DashboardScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
+  const cycleLabel = useCycleLabel();
   const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
@@ -281,7 +283,7 @@ export default function DashboardScreen() {
                 {estimateBanner.actual !== 1 ? "s" : ""}.
               </Text>
             </View>
-            <TouchableOpacity onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
               <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -298,7 +300,7 @@ export default function DashboardScreen() {
                 {t("dashboard.seeRecommendations")} →
               </Text>
             </View>
-            <TouchableOpacity onPress={dismissRecoBanner} style={{ padding: 4 }}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={dismissRecoBanner} style={{ padding: 4 }}>
               <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -359,7 +361,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.trialName}>{sub.name}</Text>
                     <Text style={styles.trialCharge}>
-                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: sub.billingCycle })}
+                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: cycleLabel(sub.billingCycle) })}
                     </Text>
                   </View>
                   <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
@@ -450,7 +452,7 @@ export default function DashboardScreen() {
               <Text style={styles.inviteBannerText}>{t("dashboard.inviteBannerText")}</Text>
               <Text style={styles.inviteBannerCta}>{t("dashboard.inviteBannerCta")} →</Text>
             </View>
-            <TouchableOpacity onPress={(e) => { e.stopPropagation(); dismissInviteBanner(); }} style={{ padding: 4 }}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={(e) => { e.stopPropagation(); dismissInviteBanner(); }} style={{ padding: 4 }}>
               <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
             </TouchableOpacity>
           </TouchableOpacity>

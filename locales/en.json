@@ -20,7 +20,12 @@
     "cycleWeekly": "week",
     "cycleAdjMonthly": "Monthly",
     "cycleAdjYearly": "Yearly",
-    "cycleAdjWeekly": "Weekly"
+    "cycleAdjWeekly": "Weekly",
+    "a11yShowPassword": "Show password",
+    "a11yHidePassword": "Hide password",
+    "a11yDismiss": "Dismiss",
+    "a11yBack": "Go back",
+    "a11yPremiumLocked": "Premium required"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -166,7 +171,15 @@
     "noBillingDatesBody": "None of your subscriptions have billing dates yet.",
     "noDataTitle": "No data",
     "noDataBody": "Add some subscriptions first.",
-    "couldntLoad": "Couldn't load your subscriptions."
+    "couldntLoad": "Couldn't load your subscriptions.",
+    "a11yPause": "Pause {{name}}",
+    "a11yResume": "Resume {{name}}",
+    "a11yEdit": "Edit {{name}}",
+    "a11yDelete": "Delete {{name}}",
+    "a11yExportReport": "Export spending report",
+    "a11yExportCalendar": "Export renewals to calendar",
+    "a11yRateStars_one": "Rate {{count}} star",
+    "a11yRateStars_other": "Rate {{count}} stars"
   },
   "profile": {
     "upgrade": "Upgrade",

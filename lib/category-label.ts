@@ -33,24 +33,52 @@ const KEYS: Record<string, string> = {
   other: "categoryNames.other",
 };
 
+/* THE PLAIN FUNCTION, not a hook, because the one remaining surface that shows
+   a raw category is `buildTips` in app/insights.tsx, which is an ordinary
+   exported function and cannot call a hook.
+
+   It takes `t` rather than reaching for one, and that is the whole point:
+   buildTips is ALREADY handed a `t`, so localising its two category strings
+   needs no new parameter. This file's own history is the reason that matters.
+   buildTips gained a `t` in third position once, a second call site kept
+   passing a number into that slot, and every user hit
+   "TypeError: 50 is not a function" on the dashboard. A fix that changes an
+   exported signature to translate two strings would be trading a cosmetic bug
+   for a crash. */
+export function localiseCategory(
+  category: string | null | undefined,
+  /* This exact signature, not a narrower one, because app/insights.tsx:82
+     already declares it for buildTips and both of its call sites hand it
+     i18next's own `t`. Under `strict` that assignment is the part a sandbox
+     cannot verify, so reusing a shape the project has already typechecked on
+     a real compiler is cheaper than inventing one and hoping. */
+  t: (key: string, opts?: Record<string, unknown>) => string
+) {
+  if (!category) return "";
+  const raw = String(category);
+  /* Custom categories are typed by the user and come back exactly as typed.
+     Only the built-ins have a translation, and an unrecognised one falls
+     back to the raw value rather than rendering an empty string, so a
+     category added server side degrades to the old behaviour instead of
+     blanking the row. */
+  const key = KEYS[raw];
+  return key ? t(key) : raw;
+}
+
 /* useCallback, unlike the sibling helpers, because the calendar screen builds
    its legend inside a useMemo and lists this function in the deps. An identity
    that changed every render would recompute the legend every render, which is
    not expensive here but makes the memo a lie. Keyed on `t`, so switching
-   language still re-derives the names. */
+   language still re-derives the names.
+
+   Delegates to localiseCategory rather than repeating the lookup, so the hook
+   and the plain function cannot drift into disagreeing about one category. */
 export function useCategoryLabel() {
   const { t } = useTranslation();
-  return useCallback((category?: string | null) => {
-    if (!category) return "";
-    const raw = String(category);
-    /* Custom categories are typed by the user and come back exactly as typed.
-       Only the built-ins have a translation, and an unrecognised one falls
-       back to the raw value rather than rendering an empty string, so a
-       category added server side degrades to the old behaviour instead of
-       blanking the row. */
-    const key = KEYS[raw];
-    return key ? t(key) : raw;
-  }, [t]);
+  return useCallback(
+    (category?: string | null) => localiseCategory(category, t),
+    [t]
+  );
 }
 
 /* The category whose COLOUR a subscription actually draws.

@@ -681,6 +681,9 @@ export default function SubscriptionsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
+              accessibilityRole="button"
+              accessibilityLabel={t("subscriptions.a11yExportReport")}
+              accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
               onPress={exportReport}
             >
               <MaterialCommunityIcons
@@ -691,6 +694,9 @@ export default function SubscriptionsScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
+              accessibilityRole="button"
+              accessibilityLabel={t("subscriptions.a11yExportCalendar")}
+              accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
               onPress={exportCalendar}
             >
               <MaterialCommunityIcons
@@ -811,6 +817,16 @@ export default function SubscriptionsScreen() {
           ) : (
             filtered.map((sub: any) => {
               const equiv = monthlyEquiv(sub.price, sub.billingCycle);
+              /* parseApiDate, never new Date(). The API sends next_billing_date
+                 as TIMESTAMPTZ at midnight UTC, so new Date() on it resolves to
+                 the PREVIOUS local day at any negative offset: a 16 October
+                 renewal read "15 Oct" in New York, Los Angeles, Sao Paulo and
+                 Mexico City, all four of which the currency picker offers. The
+                 calendar was fixed for this in September and this card was not,
+                 so the same subscription named two different days on two
+                 screens. It also returns null for an unreadable value, which
+                 renders as "no date" rather than "Invalid Date". */
+              const nextDate = parseApiDate(sub.nextBillingDate);
               const trialDate = parseApiDate(sub.trialEndDate);
               const trialDaysLeft = daysUntil(sub.trialEndDate);
               const isCustomCat = !(DEFAULT_CATEGORIES as readonly string[]).includes(sub.category);
@@ -841,8 +857,8 @@ export default function SubscriptionsScreen() {
                     <Text style={styles.cardPrice}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
-                      {sub.nextBillingDate
-                        ? t("subscriptions.next", { date: fmtD(new Date(sub.nextBillingDate), "P") })
+                      {nextDate
+                        ? t("subscriptions.next", { date: fmtD(nextDate, "P") })
                         : t("subscriptions.noDate")}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
@@ -885,6 +901,11 @@ export default function SubscriptionsScreen() {
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
                       style={styles.iconButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t(
+                        sub.isActive === false ? "subscriptions.a11yResume" : "subscriptions.a11yPause",
+                        { name: sub.name }
+                      )}
                       onPress={() => setActiveMutation.mutate({ id: sub.id, isActive: sub.isActive === false })}
                     >
                       <MaterialCommunityIcons
@@ -893,10 +914,20 @@ export default function SubscriptionsScreen() {
                         color={c.textSecondary}
                       />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => openEdit(sub)}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("subscriptions.a11yEdit", { name: sub.name })}
+                      onPress={() => openEdit(sub)}
+                    >
                       <MaterialCommunityIcons name="pencil" size={18} color={c.primary} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconButton} onPress={() => confirmDelete(sub)}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("subscriptions.a11yDelete", { name: sub.name })}
+                      onPress={() => confirmDelete(sub)}
+                    >
                       <MaterialCommunityIcons name="trash-can" size={18} color={c.danger} />
                     </TouchableOpacity>
                   </View>
@@ -919,6 +950,8 @@ export default function SubscriptionsScreen() {
                 <TouchableOpacity
                   key={n}
                   testID={`review-star-${n}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("subscriptions.a11yRateStars", { count: n })}
                   onPress={handleStarTap}
                   hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 >

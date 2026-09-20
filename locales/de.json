@@ -20,7 +20,12 @@
     "cycleWeekly": "Woche",
     "cycleAdjMonthly": "Monatlich",
     "cycleAdjYearly": "Jährlich",
-    "cycleAdjWeekly": "Wöchentlich"
+    "cycleAdjWeekly": "Wöchentlich",
+    "a11yShowPassword": "Passwort anzeigen",
+    "a11yHidePassword": "Passwort verbergen",
+    "a11yDismiss": "Ausblenden",
+    "a11yBack": "Zurück",
+    "a11yPremiumLocked": "Premium erforderlich"
   },
   "tabs": {
     "dashboard": "Übersicht",
@@ -166,7 +171,15 @@
     "noBillingDatesBody": "Noch keines deiner Abos hat ein Abrechnungsdatum.",
     "noDataTitle": "Keine Daten",
     "noDataBody": "Füge zuerst einige Abos hinzu.",
-    "couldntLoad": "Deine Abos konnten nicht geladen werden."
+    "couldntLoad": "Deine Abos konnten nicht geladen werden.",
+    "a11yPause": "{{name}} pausieren",
+    "a11yResume": "{{name}} fortsetzen",
+    "a11yEdit": "{{name}} bearbeiten",
+    "a11yDelete": "{{name}} löschen",
+    "a11yExportReport": "Ausgabenbericht exportieren",
+    "a11yExportCalendar": "Verlängerungen in den Kalender exportieren",
+    "a11yRateStars_one": "{{count}} Stern geben",
+    "a11yRateStars_other": "{{count}} Sterne geben"
   },
   "profile": {
     "upgrade": "Upgrade",

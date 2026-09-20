@@ -12,6 +12,7 @@ import { useTheme, AppColors } from "../lib/theme";
 import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
 import { findTemplateByExactName, isPriceFresh } from "../lib/service-templates";
 import { daysUntil } from "../lib/utils";
+import { localiseCategory } from "../lib/category-label";
 
 export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
@@ -131,12 +132,12 @@ export function buildTips(
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
-        title: t("insights.catManyTitle", { count: list.length, category: cat }),
+        title: t("insights.catManyTitle", { count: list.length, category: localiseCategory(cat, t) }),
         detail: t("insights.catManyDetail", { names: list.map(s => s.name).join(", "), total: fmtC(catTotal) }),
         priority: "high", savingsHint: t("insights.catManyHint", { amount: fmtC(catTotal * 0.5) }), savingsValue: catTotal * 0.5 });
     } else if (list.length === 2) {
       tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#96631B",
-        title: t("insights.catTwoTitle", { category: cat }),
+        title: t("insights.catTwoTitle", { category: localiseCategory(cat, t) }),
         detail: t("insights.catTwoDetail", { first: list[0].name, second: list[1].name }),
         priority: "medium" });
     }

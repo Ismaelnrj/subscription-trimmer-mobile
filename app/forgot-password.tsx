@@ -57,7 +57,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => step === 2 ? setStep(1) : router.back()}>
+      <TouchableOpacity style={styles.back} accessibilityRole="button" accessibilityLabel={t("common.a11yBack")} onPress={() => step === 2 ? setStep(1) : router.back()}>
         <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
       </TouchableOpacity>
 
@@ -114,7 +114,7 @@ export default function ForgotPasswordScreen() {
               value={newPassword}
               onChangeText={setNewPassword}
             />
-            <TouchableOpacity style={styles.eyeButton} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
             </TouchableOpacity>
           </View>
