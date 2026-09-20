@@ -172,6 +172,26 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
 - Native Android CI is Codemagic, separate from the GitHub Actions
   `build-android.yml` workflow (plain Gradle + keystore secret, not the EAS
   build service).
+- THE OWNER'S ACTUAL RULE, stated 2026-09-20: OTA FIRST, CODEMAGIC ONLY WHEN
+  OTA CANNOT DO IT. "I do codemagic as well but just if the build cannot be
+  done with an Eas update." So a native build is an exception that
+  `needs_native_build.py` has to justify, not a routine step, and that script
+  is the thing that decides.
+- `build-android.yml` IS THEREFORE DEAD WEIGHT AND IT IS RED. It has never been
+  the path Trimio ships on, and on 2026-09-20 it failed on every push: run 509
+  on `dc500210` died in 10 seconds at `Setup Android SDK`, with
+  `sdkmanager` exiting 1 under `android-actions/setup-android@v3`, and all
+  eleven build steps after it SKIPPED. Nothing compiled. GitHub has also
+  force-migrated that workflow to Node 24, which is a plausible trigger and was
+  not confirmed.
+  WHAT MAKES IT WORSE THAN AN UNUSED FILE: it triggers on `push` to master, so
+  every commit puts a red X on the repo for a path nobody ships on. That is
+  exactly the shape of the CI-was-decorative entry below, where a check stayed
+  red long enough that people stopped reading any red check at all. The
+  `Checks` workflow is the one that matters and it is green.
+  THE DECISION IS THE OWNER'S and has not been taken: fix it, or delete it.
+  Deleting is the honest default given the rule above, since Codemagic already
+  covers the rare native build. Do not delete it unasked.
 
 ## Backend API convention
 
