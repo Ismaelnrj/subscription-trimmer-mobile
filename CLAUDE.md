@@ -319,6 +319,39 @@ last one left off without needing a recap typed out.
   bundle. 189e6490 is the last commit carrying anything a phone runs. This is now
   the third time the gap has looked like a missed publish and has not been one,
   so check WHAT the gap contains before reaching for another `eas update`.
+- PUBLISHED THROUGH 09ffa716 (2026-09-20), which supersedes every baseline above.
+  NOT YET CONFIRMED ON A DEVICE. The owner ran `eas update --channel production`
+  and reported it a success, and that is ALL that is known: the publish was
+  accepted by EAS. This file's own rule applies and is not a formality, because
+  the three publishes of 2026-09-18 went in on exactly this evidence and the
+  entry above says plainly that "the owner said yes" and "these are the numbers
+  that were read" are different things. Read `Embedded launch (no OTA applied):
+  false` and a real `Update ID` off the Build Info panel in Help & Support, then
+  fill those in here, or delete this sentence and say it was never checked. Do
+  not quietly upgrade "published" into "confirmed".
+  WHAT WENT OUT, thirteen client files and the largest client range since the
+  baseline: the calendar dot legend (`app/(tabs)/calendar.tsx`,
+  `components/MonthCalendarGrid.tsx`), the category and cycle localisation
+  (`app/(tabs)/analytics.tsx`, `app/(tabs)/subscriptions.tsx`,
+  `lib/category-label.ts`, `lib/cycle-label.ts`), the password byte limit
+  (`components/PasswordStrength.tsx`, `app/register.tsx`,
+  `app/forgot-password.tsx`, `app/account-settings.tsx`), the API base URL guard
+  (`lib/api.ts`) and both locale files.
+  NATIVE CHECK ACROSS `189e6490..09ffa716`: zero files under android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and no build was needed. That is the frozen runtimeVersion doing its job for
+  the sixth recorded time: a build carrying 1.0.1 asks for updates tagged 1.0.1.
+  THE BACKEND HALF WAS ALREADY LIVE before this publish, via the Railway deploy
+  on `c42c6216`, and the owner confirmed the Railway variables are set. What was
+  NOT separately confirmed is that the deploy which made `JWT_SECRET` a hard
+  startup requirement actually booted; "the variables are set" and "the service
+  is running" are different claims and a sandbox can check neither.
+  UNLIKE EVERY EARLIER PUBLISH IN THIS FILE, this one went out behind a GREEN CI
+  RUN on the exact commit: run 340 on 09ffa716, with the typecheck on the pinned
+  compiler, the full jest suite and lint all passing on a real runner. Before
+  today the typecheck only ever ran on the owner's machine and the jest suite had
+  never run in CI at all.
+
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
