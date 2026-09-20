@@ -364,6 +364,27 @@ last one left off without needing a recap typed out.
   today the typecheck only ever ran on the owner's machine and the jest suite had
   never run in CI at all.
 
+- PUBLISHED THROUGH cbcc9802 (2026-09-20, second publish of the day), which
+  supersedes the baseline above.
+  NOT YET CONFIRMED ON A DEVICE. The owner ran `eas update` and said
+  "published", which means EAS accepted it and nothing more. The entry above
+  spent a few hours in exactly this state before the numbers were read off the
+  Build Info panel, and that is the order to keep: read `Embedded launch (no OTA
+  applied): false` and a real `Update ID`, then fill them in here. Do not
+  quietly upgrade "published" into "confirmed".
+  WHAT WENT OUT, exactly two client files: `app/(tabs)/calendar.tsx` and
+  `lib/recurrence.ts`, so the phantom dot fix and nothing else. Verified with
+  `git diff --name-only 09ffa716..cbcc9802` over app/, lib/, components/ and
+  locales/ rather than assumed from the commit message.
+  NATIVE CHECK ACROSS `09ffa716..cbcc9802`: zero files under android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and no build was needed. Seventh recorded time.
+  NOTHING DEPLOYED WITH IT: zero backend files in that range, so Railway had
+  nothing to redeploy and the running service is still the one from `c42c6216`.
+  CI WAS GREEN ON THE EXACT PUBLISHED COMMIT, run 344 on cbcc9802, all ten steps
+  including the typecheck on the pinned compiler. That is now the second publish
+  in a row to go out behind a real CI run rather than a laptop.
+
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
