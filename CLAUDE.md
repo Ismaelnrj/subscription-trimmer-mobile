@@ -731,6 +731,52 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- CI WAS DECORATIVE, AND `pnpm test` HAD NEVER RUN IN IT. Found 2026-09-20 by
+  reading the Actions log rather than the config. The `Checks` workflow was red
+  on the ten most recent runs on master, back through 2026-09-18 and including
+  `189e6490` and `fb579477` (I did not check all 180 runs, so "always" is a
+  claim I am not making). Every one failed on the same thing.
+  THE CAUSE WAS NOT A STYLE OPINION. `eslint.config.js` configured NO globals
+  for `__tests__`, so every `describe`, `it`, `expect`, `require`, `__dirname`
+  and `Buffer` in the suite was a `no-undef` error: 885 of them, and ZERO in app
+  code. Measured from the log, not guessed.
+  THE PART THAT ACTUALLY COST SOMETHING: `Lint` ran BEFORE `Test`, so that
+  failure marked the Test step `skipped`. The suite never executed on any
+  commit, while the run showed a red X that read as a formatting complaint.
+  Every "the tests pass" in this file was therefore true only of somebody's
+  laptop. A red CI that has been red long enough stops being read at all, which
+  is the same silent-pass shape this file keeps recording, one level up.
+  THE FIX IS TWO LINES OF CONFIG. `__tests__` gets `globals.node` and
+  `globals.jest`, and `billing-advance.test.js` declares the four functions its
+  `eval(helpers)` defines at runtime, which no static analysis can see:
+  addMonthsUTC, advanceBillingDate, startOfUtcDay, nextBillingDate. Checked
+  against the real slice of server.js rather than assumed. Declaring them keeps
+  `no-undef` ON for the rest of the suite instead of disabling a real rule.
+  TEST NOW RUNS BEFORE LINT, so a formatting failure can never again hide a
+  broken test.
+  THE FIRST GREEN RUN IS `76b5c4cc`, on `claude/calendar-dot-4riizs`, run 333,
+  and this is the strongest verification this project has had. Read off the
+  step list rather than inferred: Install (pnpm, frozen lockfile) success, Type
+  check via tools/typecheck.py success, legal sync success, language store
+  success, **Test success**, Lint success at `0 errors, 66 warnings`.
+  WHAT THAT GREEN TEST STEP IS WORTH: `pnpm test` is `jest --watchAll=false`,
+  which EXITS 1 when it finds no tests, so exit 0 means the suite really ran.
+  It covers the nine `.test.ts` suites and `notification-race.test.js`, none of
+  which a sandbox can execute. The Type check step is also the first CI
+  typecheck this repo has had on the pinned compiler, since the old workflow's
+  bare `npx tsc` was the silent-pass trap recorded above.
+  I DID NOT READ THE PER-SUITE COUNTS out of the log, so "23 suites, N tests" is
+  not recorded here. The step exited 0; that is the claim.
+  THE 66 WARNINGS ARE PRE-EXISTING AND NOT MINE TO SILENCE: react-hooks/refs on
+  `components/SkeletonCard.tsx:11` (the React Compiler readiness rules this
+  config deliberately sets to warn), two import/no-named-as-default-member, and
+  an unused `matchesWholeWord` in `lib/parse-subscription.ts`. Warnings do not
+  fail `eslint .`, and turning them into work is a separate decision.
+  THE LESSON, WHICH IS THE POINT: the fix was two lines and it sat there for
+  months because the failure LOOKED like an opinion. Read the log, not the
+  config, and check what a red check is actually red about before treating it
+  as noise.
+
 - A SECOND AUDIT PASS, 2026-09-20, from a nine point review by Codex. SEVEN
   findings were real and fixed, ONE was real and deliberately left alone with
   its threat model written down, and ONE was overstated. None of the first
