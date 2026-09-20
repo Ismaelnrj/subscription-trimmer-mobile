@@ -1104,7 +1104,23 @@ last one left off without needing a recap typed out.
   line `expect` shim runs all 121 of those assertions here.
 - A FULL SECURITY AUDIT WAS RUN 2026-09-20, against OWASP Mobile Top 10,
   hardcoded secrets, local storage and the network and backend layers. NO HIGH
-  SEVERITY FINDINGS. Everything touching money or authentication was already
+  SEVERITY FINDINGS.
+  IT IS ON MASTER AND PUSHED (2026-09-20), so the Railway auto-deploy is the
+  thing to look at next. NOT VERIFIED FROM HERE and not claimed to be: a sandbox
+  cannot reach Railway. Two commits, `9601d38b` and `1c3cbdca`.
+  NO `eas update` IS NEEDED AND NONE SHOULD BE RUN FOR THIS. Backend and tests
+  only: zero files under app/, lib/, components/, locales/, android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and there is nothing here for a phone to download. The publish baseline is
+  still `189e6490`, unchanged by this work. This is the fourth time master has
+  sat ahead of the publish baseline without a publish being owed, so check WHAT
+  the gap holds before reaching for `eas update`.
+  THE TYPECHECK WAS NOT RUN ON A REAL COMPILER for this change, and that is a
+  smaller gap than usual rather than no gap: every file touched is JavaScript,
+  so there is no TypeScript for `tsc` to have an opinion about. What DID run:
+  `node --check` on server.js, all 133 existing assertions in the source-reading
+  suites, the 28 new ones, plus check-legal-sync and check-language-store.
+  `notification-race.test.js` still needs real jest and was not executed here. Everything touching money or authentication was already
   correct, and the value of the entry is mostly the list of what is now KNOWN
   clean, so the next session does not repeat it.
   WHAT WAS CHECKED AND IS FINE, with the evidence rather than the verdict: no
