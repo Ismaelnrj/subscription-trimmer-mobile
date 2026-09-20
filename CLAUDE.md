@@ -877,11 +877,28 @@ last one left off without needing a recap typed out.
   fail against the previous code. The tenth passes both ways on purpose: it
   asserts `earliestAllowedBySub` still exists, so nobody "simplifies" away the
   clamp that the 452 measurement says to keep.
-  STILL UNFILTERED ON PURPOSE: `app/(tabs)/analytics.tsx` calls
-  `getOccurrencesInMonth` directly for the month spend figure, so a phantom can
-  still be counted there. Left alone because changing what a month COSTS is a
-  product decision rather than a bug fix, and it wants an answer before an edit.
-  The helper is exported, so adopting it there is a one line change.
+  THAT PARAGRAPH USED TO SAY `app/(tabs)/analytics.tsx` WAS STILL UNFILTERED ON
+  PURPOSE, pending a product decision about what a month COSTS. IT IS FILTERED
+  NOW, 2026-09-20, and the deciding argument was not the money, it was that the
+  panel's own description promises to show "which weeks your subscriptions hit
+  hardest" while drawing a bar for a week where nothing hits. A feature that
+  contradicts its own marketing copy is a bug, not a decision.
+  MEASURED BEFORE THE EDIT, across 2,403 subscriptions spanning three cycles
+  and anchors 400 days either side of today: 548 weekly charts change, 770
+  phantom occurrences drop, and ZERO real past charges drop. The sweep ran
+  against the REAL recurrence module on date-fns stubs that were themselves
+  checked against this repo's own recurrence test expectations first, because a
+  stub that is subtly wrong produces a confident wrong number.
+  ONE BOUNDARY CASE IS WORTH KNOWING AND WAS DELIBERATELY NOT CHANGED. At
+  exactly `date == today` with `today < anchor`, the filter drops the
+  occurrence. If nextBillingDate is 20 October and today is 20 September on a
+  monthly cycle, today's charge is the one that MOVED the anchor, so it is
+  real and is being dropped. The data cannot distinguish that from a
+  subscription created today with its first charge a month out. `isPhantomOccurrence`
+  is shipped, pinned by ten assertions and confirmed on a device, and the
+  calendar dots already behave this way, so changing the boundary would move
+  two screens to chase one ambiguous day. Left as is, and the two screens now
+  agree, which is the property that was actually missing.
 
 - THE LOCALISATION IS NOW ACTUALLY COMPLETE, 2026-09-20, and the calendar legend
   entry below is what exposed how much of it was not. Four surfaces still
@@ -921,8 +938,20 @@ last one left off without needing a recap typed out.
   WHAT IS LEFT, and it is a product decision rather than a gap: `BILLING_CYCLES`
   in `subscriptions.tsx` is still `["monthly", "yearly", "weekly"]` as STORED
   values, which is correct, since those are API identifiers and not display
-  text. Nothing else in app/, components/ or lib/ renders a bare category or
-  cycle string any more.
+  text.
+  THIS ENTRY THEN CLAIMED "nothing else in app/, components/ or lib/ renders a
+  bare category or cycle string any more". THAT WAS FALSE, found 2026-09-20 by
+  grepping for it rather than believing it. THREE surfaces still did:
+  `app/insights.tsx` twice, where the duplicate-category tips interpolate the
+  raw `cat` into their titles, so a German reader got `Abos in "entertainment"`;
+  and `app/(tabs)/index.tsx`, where the trial card's `chargedOnExpiry` passed
+  `sub.billingCycle` straight in, printing `10,00 EUR/monthly` on the FIRST
+  screen of the app.
+  ALL THREE ARE FIXED. The cycle takes the NOUN form, since that string reads
+  as a rate. The two in insights needed something new, see the buildTips note
+  below, and the general lesson is the one this file keeps recording about
+  itself: a completeness claim is the single most dangerous kind of entry here,
+  because it tells the next session not to look.
 
 - THE SANDBOX CLONE IS SHALLOW, AND THAT MAKES `git merge-base` LIE. Learned
   2026-09-20, the hard way, one command short of reporting lost work that was
@@ -1233,6 +1262,74 @@ last one left off without needing a recap typed out.
   NOT TYPECHECKED. `tools/typecheck.py` exits 2 here as designed, and three of
   the five files are TypeScript, so this one genuinely needs the owner's
   machine before it ships.
+
+- AN AUDIT PASS, 2026-09-20, FOUND FOUR DEFECTS AND ALL FOUR WERE INVISIBLE,
+  which is the only thing they had in common. A date rendered, a word rendered,
+  a bar rendered, a button responded to a tap. On master at `ba477140`, behind
+  a green CI run 351 on that exact commit with the typecheck, the full jest
+  suite and lint all passing on a real runner.
+  THE ONE THAT MATTERED MOST: the subscription card named the WRONG DAY west of
+  UTC. `app/(tabs)/subscriptions.tsx` still did `fmtD(new Date(sub.nextBillingDate))`,
+  the exact call this file's own parseApiDate entry says never to make again.
+  MEASURED across eight zones: a 16 October renewal read "15 Oct" in New York,
+  Los Angeles, Sao Paulo and Mexico City, and 16 Oct in Vienna, Tokyo, Auckland
+  and UTC. The currency picker offers USD, CAD, BRL and MXN, so those users are
+  real rather than hypothetical.
+  WHAT MAKES IT WORSE THAN THE ORIGINAL 2026-09-18 BUG: the calendar was fixed
+  and this was not, so the SAME subscription named two different days on two
+  screens, and the card was the wrong one. `parseApiDate` was already imported
+  in that file and already used on `trialEndDate` thirty lines above the defect.
+  A fix applied to the screen that was REPORTED is not a fix applied to the
+  class, and the way to tell the difference is to grep for the bad call, which
+  takes one command: `grep -rn "new Date(sub\." app/ components/`.
+  IT ALSO NOW GUARDS ON THE PARSED DATE rather than the raw field, so an
+  unreadable value renders the "no date" string instead of "Invalid Date".
+  THE OTHER THREE, each with its own entry above or below: three surfaces still
+  rendering raw API identifiers, the weekly spending chart counting charges that
+  never happen, and thirteen icon-only buttons that told a screen reader nothing.
+  HOW `buildTips` WAS LOCALISED WITHOUT REPEATING ITS OWN CRASH. It is an
+  exported function, so it cannot call `useCategoryLabel`. The obvious move is a
+  new parameter, and that is EXACTLY what shipped `TypeError: 50 is not a
+  function` to every dashboard in September 2026. Instead `lib/category-label.ts`
+  now exports a plain `localiseCategory(category, t)`, and buildTips passes the
+  `t` it is ALREADY handed, so the signature does not change at all. The hook
+  delegates to the same function so the two cannot drift.
+  ITS `t` PARAMETER DELIBERATELY REUSES THE EXACT SIGNATURE `app/insights.tsx`
+  ALREADY DECLARES, `(key: string, opts?: Record<string, unknown>) => string`,
+  rather than a narrower one. Under `strict` the assignment from i18next's own
+  TFunction is the part a sandbox cannot check, and that shape is already proven
+  against a real compiler by buildTips' two call sites. Reusing a proven type is
+  cheaper than inventing one and hoping. CI then confirmed it.
+  A TEST NOW PINS THE buildTips SIGNATURE against what its call sites pass, so
+  the next person tempted to add a parameter there fails before shipping.
+
+- THIRTEEN ICON-ONLY BUTTONS SAID NOTHING TO A SCREEN READER, fixed 2026-09-20.
+  A TouchableOpacity whose only child is an icon carries no text, so TalkBack
+  announces "button" and stops. Zero accessibility props existed on
+  `subscriptions.tsx` (30 touchables), `(tabs)/profile.tsx` (13) or
+  `(tabs)/index.tsx` (12), while the calendar, the tab bar and the FAB all had
+  them, which is what made it look handled.
+  THE THREE THAT ACTUALLY COST SOMETHING. The subscription card carries pause,
+  edit and DELETE as three identical unlabelled icons per row, so with ten
+  subscriptions that is thirty anonymous buttons and one of them destroys data.
+  The five review stars were indistinguishable from each other, which makes
+  rating not awkward but IMPOSSIBLE. And the password visibility toggle on all
+  three auth screens gave no way to know whether your password was currently on
+  screen, which is the one thing that control exists to tell you.
+  THIRTEEN LOCALE KEYS, both languages, following the `<section>.a11y<Name>`
+  convention the calendar already established. The export buttons use
+  `accessibilityHint` for the premium requirement rather than a second label
+  variant, since a hint is exactly what that is.
+  THE GUARD IS THE SCAN, NOT THE LIST. `__tests__/audit-fixes.test.js` walks
+  every tsx file in app/ and components/, finds every touchable whose content is
+  icons with no `<Text>`, and fails printing any that carry no
+  accessibilityLabel. That covers buttons nobody has written yet, which a
+  hardcoded list of thirteen call sites would not. It reported all thirteen
+  against the previous code.
+  THE SHAPE, WHICH THIS FILE HAS NOW RECORDED THREE TIMES: accessibility defects
+  fail precisely where nobody is looking. The renewalCounts bug was invisible to
+  anyone who could see the dots, this was invisible to anyone who could see the
+  icons, and neither breaks a build, fails a test or draws a support email.
 
 - `assets/play-store-icon.png` is the 512 square listing icon, a
   SEPARATE asset from the launcher icon. Play Console requires exactly
