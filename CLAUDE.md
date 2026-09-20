@@ -759,6 +759,41 @@ last one left off without needing a recap typed out.
   19 September it correctly skips a 16th and a 17th as already past and returns
   3 October, 16 October, 17 October; from 2 November it returns 3 November.
   Different answers, which is the point.
+- THE SANDBOX CLONE IS SHALLOW, AND THAT MAKES `git merge-base` LIE. Learned
+  2026-09-20, the hard way, one command short of reporting lost work that was
+  never lost.
+  WHAT IT LOOKS LIKE. `git checkout master` in a cloud session lands on a LOCAL
+  master ref left at whatever the clone's cutoff was, `git branch -vv` reports
+  something like "ahead 50, behind 51", `git merge --ff-only` answers **refusing
+  to merge unrelated histories**, and `git merge-base --is-ancestor <commit>
+  origin/master` answers NO for commits that are plainly in it. Every one of
+  those readings is FALSE. The clone is created with `--depth 50`, so both
+  histories are truncated before their common ancestor and git genuinely cannot
+  see that they meet.
+  HOW TO TELL IN ONE COMMAND: `git rev-parse --is-shallow-repository`. If it says
+  true, `.git/shallow` lists the graft points and NO ancestry answer from that
+  repository can be trusted, in either direction. `git fetch --unshallow origin`
+  fixes it permanently for the session, and afterwards the same four commits that
+  reported NO reported YES, and the merge base of local master and origin/master
+  turned out to be local master itself, meaning it was simply BEHIND.
+  WHY THIS ONE MATTERS MORE THAN MOST. This file already tells every session to
+  verify publish claims with `git merge-base --is-ancestor`, which is correct
+  advice, and that check is exactly the one a shallow clone silently breaks. It
+  is also the second entry in this section about a ref comparison producing a
+  terrifying artefact: the `origin/main` note at the top of the branching section
+  is the same shape. ONE ANSWER COVERS BOTH: before trusting ANY ancestry or
+  divergence answer in a sandbox, unshallow first, and never conclude anything
+  from `refusing to merge unrelated histories` until you have.
+  IT ALSO FAKES A FORCE PUSH. The first `git fetch origin master` of the session
+  printed `+ 2eedf13...a6ab6bd master -> origin/master (forced update)`, which
+  reads as somebody having rewritten master. Nobody had. That is what a grafted
+  remote-tracking ref looks like being reconciled, and reporting it as a force
+  push would have sent the owner hunting for six commits of posting-plan work
+  that was sitting safely in the history the whole time.
+  NOTHING WAS FORCED AND NOTHING WAS LOST, verified after unshallowing:
+  `2eedf134` is an ancestor of `origin/master`, so the entire "Week 1 posting"
+  range is in master's history exactly where it should be.
+
 - CI WAS DECORATIVE, AND `pnpm test` HAD NEVER RUN IN IT. Found 2026-09-20 by
   reading the Actions log rather than the config. The `Checks` workflow was red
   on the ten most recent runs on master, back through 2026-09-18 and including
