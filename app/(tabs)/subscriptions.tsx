@@ -530,10 +530,23 @@ export default function SubscriptionsScreen() {
     }
 
     const fmtIcsDate = (iso: string) => iso.slice(0, 10).replace(/-/g, "");
+    /* DTEND for a VALUE=DATE event is EXCLUSIVE, so it must be strictly after
+       DTSTART or the event is invalid per RFC 5545 and calendars drop it.
+
+       This used to be `new Date(iso)` then `setDate(getDate() + 1)`, which is
+       LOCAL arithmetic on an instant stored at midnight UTC. That lands on the
+       right day 364 times a year and fails on the one day the local clock
+       springs forward: the local day is 23 hours long, so the instant advances
+       23 hours, back to 23:00 of the SAME UTC day, and DTEND comes out equal to
+       DTSTART. Measured: Vienna 2026-03-29, New York and Los Angeles
+       2026-03-08 all produced DTEND == DTSTART.
+
+       Reading the YYYY-MM-DD digits and stepping them in UTC is offset-proof
+       for the same reason parseApiDate is: those digits ARE the day, and no
+       reader's timezone or DST rule can change what they say. */
     const nextDay = (iso: string) => {
-      const d = new Date(iso);
-      d.setDate(d.getDate() + 1);
-      return d.toISOString().slice(0, 10).replace(/-/g, "");
+      const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+      return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10).replace(/-/g, "");
     };
     const icsEscape = (s: string) =>
       s.replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");

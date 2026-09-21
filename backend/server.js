@@ -1082,6 +1082,21 @@ async function initDB() {
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read)`);
+  /* A FOREIGN KEY DOES NOT CREATE AN INDEX on the referencing side in Postgres,
+     which is the easiest performance hole in this schema to miss: the three
+     indexes above were added by hand and price_history was left with none.
+     subscription_id is the one that costs: subscriptions.list, the most loaded
+     query in the app, runs a LEFT JOIN LATERAL over price_history ONCE PER
+     SUBSCRIPTION ROW, so unindexed that is a sequential scan of the whole table
+     per subscription per load. user_id matters for the same table's own reads
+     and for account deletion, which cascades into price_history from BOTH
+     columns and would otherwise scan it twice.
+     Invisible today because the table is nearly empty, which is exactly why it
+     is cheap to fix now rather than after it starts to hurt.
+     notification_preferences.user_id and user_settings.user_id need nothing:
+     both are PRIMARY KEY, which Postgres indexes. */
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_price_history_subscription_id ON price_history(subscription_id)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_price_history_user_id ON price_history(user_id)`);
 }
 
 function authMiddleware(req, res, next) {
