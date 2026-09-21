@@ -489,7 +489,10 @@ last one left off without needing a recap typed out.
   `fetchPremiumEntitlementFromRevenueCat` looks the subscriber up by the same
   value. A mismatch would make the webhook's UPDATE match zero rows and still
   answer 200.
-  WHAT IS STILL NOT VERIFIED, and it is the one honest gap: that RevenueCat is
+  THAT GAP IS NOW CLOSED, see the entry below: the webhook IS registered and IS
+  delivering. The paragraph is kept because the reasoning still holds, but read
+  it as history rather than as an open question.
+  WHAT WAS NOT VERIFIED WHEN THIS WAS WRITTEN: that RevenueCat is
   actually CALLING the webhook. The secret being set means our endpoint would
   ACCEPT a correctly signed call; it does not mean anything is making one, since
   the webhook URL is registered in the RevenueCat dashboard rather than in
@@ -637,6 +640,75 @@ last one left off without needing a recap typed out.
   CANCELLATION at all, so nothing reaches this handler and the customer keeps
   Premium. That is a process rule for whoever issues refunds, not something any
   branch here can catch.
+
+- THE WEBHOOK IS REGISTERED AND DELIVERING, CONFIRMED 2026-09-21, which closes
+  the one honest gap the purchase-path entry above had been carrying. Read off
+  the RevenueCat dashboard rather than inferred: Integrations shows Webhooks
+  Active with one connection named Trimio, pointing at
+  `https://subscription-trimmer-mobile-production.up.railway.app/api/webhooks/revenuecat`,
+  and the Webhook Events table lists 30 deliveries ALL with status `Sent` and
+  ZERO failed events. Sent means our server answered 200, so the URL is right,
+  the `Authorization` header matches `REVENUECAT_WEBHOOK_SECRET` in Railway, and
+  road two is real rather than merely configured.
+  WHERE TO LOOK AGAIN, because it is not obvious: the events table is at the
+  BOTTOM of the webhook's own page (Integrations > Webhooks > Edit webhook), with
+  a dropdown that filters to failed events only, a View Details per event showing
+  the request and response bodies, and a Retry button that redelivers. Retry is
+  the useful one after fixing a handler bug: a delivery that used to fail can be
+  replayed against the fixed code.
+  EVERY ONE OF THOSE 30 EVENTS IS SANDBOX, confirmed by reading a payload rather
+  than by guessing: `"environment": "SANDBOX"`. They were spotted first by their
+  CADENCE, which is the tell worth remembering: they land every ~30 minutes all
+  day on 18 June and every ~8 minutes on 8 July, and real subscribers do not
+  renew on a metronome. Google Play's license tester table maps a 1 year
+  subscription to a 30 minute test renewal, which fits exactly.
+  SO THEY PROVE DELIVERY AND NOTHING ELSE. Every one hit the
+  `event.environment === 'SANDBOX'` guard, was acknowledged and correctly wrote
+  nothing.
+  NO PRODUCTION EVENT HAS EVER BEEN OBSERVED, and the last delivery of any kind
+  was 2026-07-08. That is not a retention artefact: the table is newest first and
+  still shows 17 June, so the ten week silence is real. It is a fact about the
+  business rather than a defect, and it has one useful consequence: the TRANSFER
+  and refund bugs fixed today were closed BEFORE they could cost a real person
+  anything.
+  THE OWNER CONFIRMED THERE ARE NO ACTIVE SUBSCRIPTIONS YET (2026-09-21), which
+  closes the reading rather than leaving it open: zero subscribers is exactly why
+  there are zero production events, so the silence is expected and nothing is
+  broken. Do not read the empty table as a fault.
+  WHEN THAT CHANGES, THIS BECOMES THE FIRST THING TO CHECK. A monthly subscriber
+  produces a RENEWAL every month, so a paying customer with no event arriving IS
+  a fault. `SELECT count(*) FROM users WHERE is_paid = TRUE;` against the live
+  database, compared against the Webhook Events table, is the whole diagnostic.
+
+- THE REAL PAYLOAD CONFIRMED FOUR THINGS THE CODE HAD ONLY ASSUMED, and they are
+  worth recording because each one would have failed silently.
+  `"entitlement_ids": ["Trimio Premium"]` matches the three constants in the
+  codebase EXACTLY (`ENTITLEMENT_ID` in `lib/iap.ts`,
+  `REVENUECAT_PREMIUM_ENTITLEMENT` and the webhook's `PREMIUM_ENTITLEMENT` in
+  `server.js`). That magic string is now verified against real data. A typo in
+  any of the three would have made `affectsPremium` false and granted nobody,
+  with a 200 in the dashboard either way.
+  `"entitlement_id": null` IS ALSO IN THE PAYLOAD, the deprecated singular field
+  beside the array. The handler reads only `entitlement_ids`, which is correct.
+  Reading the singular instead would match nothing on every event.
+  `"app_user_id": "u_1783481970508_fe1sxflkd87"` is the `users.open_id` shape, so
+  the identity mapping is the right shape as well as the right column.
+  `"product_id": "trimio_premium_monthly:monthly-2-99"` CARRIES PLAY'S BASE PLAN
+  SUFFIX, `<subscriptionId>:<basePlanId>`, NOT the bare id. Both consumers
+  already handle it and neither is an accident worth breaking:
+  `getPlanTierFromProductId` matches with `.includes()` rather than equality, so
+  the suffix passes through on all three tiers; and `PRODUCT_IDS` in `lib/iap.ts`
+  already stores the SUFFIXED form, which is what
+  `packages.find(p => p.product.identifier === PRODUCT_IDS[plan])` in
+  `app/upgrade.tsx` compares against.
+  DO NOT "TIDY" EITHER OF THOSE TO THE BARE ID. `lib/iap.ts`'s own header comment
+  lists the bare Play Console subscription ids (`trimio_premium_monthly`), which
+  reads like the constants below it are wrong and they are not. Shortening
+  `PRODUCT_IDS` to match that comment would make the find return undefined, and
+  the 2026-09-20 pricing work then renders "price unavailable" with the buy
+  button DISABLED, so nobody could purchase at all. Changing
+  `getPlanTierFromProductId` to an equality check would send every plan to the
+  `'premium'` fallback instead.
 
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
