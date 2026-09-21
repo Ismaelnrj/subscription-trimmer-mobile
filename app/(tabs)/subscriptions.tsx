@@ -905,9 +905,11 @@ export default function SubscriptionsScreen() {
                     </View>
                     <TouchableOpacity
                       style={styles.cancelGuideLink}
+                      accessibilityRole="button"
+                      hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
                       onPress={() => router.push(`/cancel-guide?name=${encodeURIComponent(sub.name)}`)}
                     >
-                      <MaterialCommunityIcons name="format-list-numbered" size={11} color={c.textMuted} />
+                      <MaterialCommunityIcons name="format-list-numbered" size={14} color={c.textSecondary} />
                       <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
@@ -1493,11 +1495,36 @@ function makeStyles(c: AppColors) {
       paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,
     },
     examplesButtonText: { color: c.textSecondary, fontSize: 13 },
+    /* THIS IS A CONTROL, NOT A CAPTION, and it did not read as one. It used to
+       be an 11px icon beside 11px text with NO padding and no hitSlop, so the
+       tappable strip was roughly 14dp, against Android's 48dp minimum, sitting
+       INSIDE the card's own TouchableOpacity. A tap that missed it by a few
+       pixels opened subscription details instead, so the failure looked like
+       the button doing nothing rather than like a mis-hit. Same shape as the
+       2026-09-19 calendar cell: measure the smallest state.
+       36dp of pill plus the 6dp of hitSlop top and bottom at the call site is
+       48dp of touch target, and the hitSlop keeps the layout unchanged. It
+       overlaps nothing but the card's own tap: the action buttons are top
+       right (the card is a row with alignItems flex-start) and this sits
+       bottom left.
+       minHeight RATHER THAN PADDING ALONE, because line height varies with the
+       font, so padding makes the height approximate and minHeight makes it
+       provable. __tests__/cancel-guide-target.test.js reads these numbers out
+       of this stylesheet rather than restating them.
+       textSecondary, NOT textMuted, and that is a contrast fix rather than a
+       taste one: #8B949C on the light card measures 2.98:1, under the 4.5:1
+       floor for text at this size. #52616B is 6.19:1 and the dark theme's
+       #93A3AD is 6.10:1, so both themes pass.
+       NOT the primary token, which is the obvious choice for something that
+       should read as a link and is wrong here: dark primary #2F8E71 on the
+       dark card is 3.94:1 and fails the same floor. Measured, not eyeballed. */
     cancelGuideLink: {
-      flexDirection: "row", alignItems: "center", gap: 4,
-      marginTop: 8, alignSelf: "flex-start",
+      flexDirection: "row", alignItems: "center", gap: 6,
+      marginTop: 10, alignSelf: "flex-start",
+      minHeight: 36, paddingHorizontal: 12,
+      borderWidth: 1, borderColor: c.border, borderRadius: 18,
     },
-    cancelGuideLinkText: { fontSize: 11, color: c.textMuted, fontWeight: "500", fontFamily: "Montserrat-Medium" },
+    cancelGuideLinkText: { fontSize: 13, color: c.textSecondary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     reviewOverlay: {
       flex: 1, backgroundColor: c.overlay,
       justifyContent: "center", alignItems: "center", padding: 32,
