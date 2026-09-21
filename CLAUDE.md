@@ -169,9 +169,10 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   compiler will crash `compileReleaseKotlin` with "Module was compiled with
   an incompatible version of Kotlin", check this first if a Codemagic/native
   build fails there.
-- Native Android CI is Codemagic, separate from the GitHub Actions
-  `build-android.yml` workflow (plain Gradle + keystore secret, not the EAS
-  build service).
+- Native Android CI is Codemagic. It is not the EAS build service, and as of
+  2026-09-21 it is the ONLY native build path: the GitHub Actions
+  `build-android.yml` workflow that used to sit beside it is deleted, see below.
+  `codemagic.yaml` runs `expo prebuild`, then `fix-gradle.sh`, then Gradle.
 - THE OWNER'S ACTUAL RULE, stated 2026-09-20: OTA FIRST, CODEMAGIC ONLY WHEN
   OTA CANNOT DO IT. "I do codemagic as well but just if the build cannot be
   done with an Eas update." So a native build is an exception that
@@ -455,6 +456,55 @@ last one left off without needing a recap typed out.
   carrying anything a phone runs. This is the fifth time the gap has looked
   like a missed publish and has not been one, so check WHAT the gap contains
   before reaching for another `eas update`.
+
+- CAN A PAYING CUSTOMER ACTUALLY GET WHAT THEY PAID FOR? Traced end to end on
+  2026-09-21 because the owner asked, and the answer is YES, with the reasoning
+  worth keeping because it is not obvious from any single file.
+  GOOGLE PLAY CHARGING THEM IS NEVER THE RISK. That is Play plus RevenueCat and
+  nothing in this repo can break it. The risk is entirely whether the purchase
+  reaches OUR database, because every premium feature in the app gates on
+  `user?.isPaid`, which comes from Postgres and NOT from RevenueCat directly.
+  Nine call sites, checked: insights, notification-preferences, upgrade,
+  account-settings, analytics, subscriptions, index, profile and auth-store. So
+  a purchase that never reaches the database means somebody paid and sees a free
+  account.
+  THERE ARE EXACTLY TWO ROADS IN, and both are gated on a Railway variable:
+  `POST /api/auth/verify-premium`, called by the app right after paying, needs
+  `REVENUECAT_SECRET_API_KEY` or it answers 503 and writes nothing; and the
+  RevenueCat webhook needs `REVENUECAT_WEBHOOK_SECRET` or it answers 503 and
+  rejects every caller. BOTH ARE SET (see the audit entry below), so the
+  catastrophic case, charged and never recorded, is off the table.
+  THE CLIENT IS HONEST ABOUT FAILURE, which is the part worth not breaking.
+  `purchasePackage` returns `active` and `synced` SEPARATELY and the app only
+  writes isPaid locally when BOTH are true, so it never claims a success it has
+  not confirmed. A failed sync writes the intent to SecureStore and
+  `retryPendingPremiumSync` retries on EVERY launch, wired at
+  `app/_layout.tsx:121`. Restore Purchase is a third, manual path, and since
+  RevenueCat holds the real entitlement it would find it. The message shown on a
+  failed sync says the payment went through and Premium may take a minute, which
+  is accurate rather than reassuring-and-wrong.
+  THE IDENTITY MAPPING IS CORRECT and is the thing that would fail silently if
+  it were not: `setupIAP(user?.openId)` passes `users.open_id` as RevenueCat's
+  `app_user_id`, the webhook updates `WHERE open_id = $1`, and
+  `fetchPremiumEntitlementFromRevenueCat` looks the subscriber up by the same
+  value. A mismatch would make the webhook's UPDATE match zero rows and still
+  answer 200.
+  WHAT IS STILL NOT VERIFIED, and it is the one honest gap: that RevenueCat is
+  actually CALLING the webhook. The secret being set means our endpoint would
+  ACCEPT a correctly signed call; it does not mean anything is making one, since
+  the webhook URL is registered in the RevenueCat dashboard rather than in
+  Railway. If it was never registered, road two is dead and everything rests on
+  road one, which is configured and is the one that fires in the normal case.
+  RevenueCat > Project Settings > Integrations > Webhooks shows both the URL and
+  recent delivery attempts with response codes: 401 there means the two secrets
+  have drifted apart, 200 means both roads are live.
+  A WRONG VALUE IN `REVENUECAT_SECRET_API_KEY` FAILS BETTER THAN AN ABSENT ONE,
+  which is worth knowing before anybody "fixes" it:
+  `fetchPremiumEntitlementFromRevenueCat` THROWS on a non-ok response rather
+  than returning false, so the handler answers 500 BEFORE the UPDATE. A bad key
+  or a RevenueCat outage therefore cannot cancel an existing paying customer, it
+  can only fail to confirm a new one, and the webhook picks that up. That is the
+  entry below working as designed.
 
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
@@ -1902,12 +1952,23 @@ last one left off without needing a recap typed out.
   stateless. Closing it needs a token version column and a database read on EVERY
   authenticated request. For an app where using a stolen access token already
   means having got inside SecureStore on the device, that trade is not worth it.
-  WHAT COULD NOT BE CHECKED FROM HERE, and must not be reported as verified: the
-  Railway environment itself. A sandbox cannot read it (see "Network limits"), so
-  whether `JWT_SECRET`, `REVENUECAT_WEBHOOK_SECRET`, `CRON_SECRET` and
-  `REVENUECAT_SECRET_API_KEY` are actually set is unknown to this audit. Every
-  one of them fails SAFE when absent: verify-premium answers 503, and the webhook
-  and both cron routes reject every caller.
+  THE RAILWAY ENVIRONMENT USED TO BE UNKNOWN TO THIS AUDIT, because a sandbox
+  cannot read it (see "Network limits"). IT IS NO LONGER UNKNOWN: the owner sent
+  a screenshot of the Variables panel on 2026-09-21 and ALL of them are set,
+  `JWT_SECRET`, `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_WEBHOOK_SECRET`,
+  `CRON_SECRET`, `GOOGLE_CLIENT_IDS`, `DATABASE_URL`, `BREVO_API_KEY`,
+  `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID` and `SMTP_FROM`.
+  So the failure modes below are the shape of the guards rather than a live
+  worry: every one of them fails SAFE when absent, verify-premium answers 503
+  and the webhook and both cron routes reject every caller, but none of them is
+  currently absent.
+  THREE ARE ABSENT AND ALL THREE ARE OPTIONAL WITH CORRECT DEFAULTS, checked
+  against every `process.env` read in server.js rather than guessed: `PUBLIC_URL`
+  defaults to `https://www.subtrimio.com`, `REFERRAL_MAX_BONUS_MONTHS` defaults
+  to 12, and `MIN_ANDROID_VERSION_CODE` is a soft gate. `DATABASE_CA_CERT` is
+  also unset, which is the documented and unchanged state described above.
+  ONE ODDITY, HARMLESS: `FROM_EMAIL` is set in Railway and the code reads
+  `SMTP_FROM`, which is also set. That entry does nothing. Not worth touching.
   THAT SENTENCE USED TO INCLUDE JWT_SECRET, claiming the server refused to boot
   on the default one in production. IT WAS WRONG, corrected 2026-09-20 in the
   second audit entry below: the refusal was conditioned on

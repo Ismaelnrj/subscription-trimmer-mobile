@@ -134,8 +134,13 @@ grep -rn "<name>" --include=*.ts --include=*.tsx .
 ## Native builds run on Codemagic
 
 Not EAS Build. `codemagic.yaml` runs `expo prebuild`, then `fix-gradle.sh`,
-then Gradle. The GitHub Actions `build-android.yml` workflow is a separate,
-older path.
+then Gradle, and since 2026-09-21 it is the only native path: the GitHub
+Actions `build-android.yml` workflow was deleted, having never produced a
+usable artifact and having failed on every push.
+
+Codemagic is also the exception rather than the routine. The owner's rule is
+OTA first, Codemagic only when an OTA cannot do the job, so
+`needs_native_build.py` is what decides whether a build is owed.
 
 If a build dies at `compileReleaseKotlin` with "Module was compiled with an
 incompatible version of Kotlin", look there first: `fix-gradle.sh` pins Kotlin
