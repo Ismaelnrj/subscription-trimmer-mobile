@@ -1124,6 +1124,45 @@ async function fetchPremiumEntitlementFromRevenueCat(openId) {
   return !entitlement.expires_date || new Date(entitlement.expires_date) > new Date();
 }
 
+/* Writes the VERIFIED entitlement for a set of RevenueCat appUserIDs.
+
+   This exists for TRANSFER, whose payload says who was involved in a transfer
+   and nothing at all about who ends up entitled. Deciding that from the
+   direction of transferred_from/transferred_to would mean writing is_paid from
+   a guess about an array whose order RevenueCat explicitly does not guarantee,
+   and the wrong guess cancels somebody who is paying. So each id is looked up
+   instead, through the same authoritative read verify-premium uses.
+
+   Ids we do not know are skipped without an API call. That is the normal case
+   rather than an error: a transfer routinely involves RevenueCat's own
+   anonymous ids ($RCAnonymousID:...), created before a user signs in, which
+   name no account here.
+
+   It THROWS on a RevenueCat failure, for the same reason the lookup does: the
+   handler's catch answers 500, RevenueCat retries the delivery, and nothing is
+   written in the meantime. Swallowing it would write nothing AND report
+   success, which is the shape of a bug nobody ever finds. */
+async function reconcileEntitlementsFromRevenueCat(openIds) {
+  const known = await pool.query(
+    'SELECT open_id, email FROM users WHERE open_id = ANY($1::text[])',
+    [openIds]
+  );
+  for (const row of known.rows) {
+    const isPremium = await fetchPremiumEntitlementFromRevenueCat(row.open_id);
+    await pool.query(
+      `UPDATE users SET is_paid = $1,
+         paid_at = CASE WHEN $1 AND paid_at IS NULL THEN NOW() ELSE paid_at END,
+         cancelled_at = CASE WHEN $1 THEN NULL ELSE cancelled_at END,
+         win_back_sent_at = CASE WHEN $1 THEN NULL ELSE win_back_sent_at END
+       WHERE open_id = $2`,
+      [isPremium, row.open_id]
+    );
+    syncBrevoPlan(row.email, isPremium ? 'premium' : 'free');
+    console.log(`[revenuecat] TRANSFER reconciled ${row.open_id}: is_paid=${isPremium}`);
+  }
+  return { checked: known.rows.length, skipped: openIds.length - known.rows.length };
+}
+
 // Logs the full error server-side but never leaks internals (DB schema, stack
 // traces, etc.) to the client — callers should still send specific 400s for
 // validation failures before reaching this.
@@ -1879,12 +1918,21 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     }
 
     const event = req.body && req.body.event;
-    const appUserId = event && event.app_user_id;
-    if (!appUserId) {
-      return res.status(400).json({ error: 'Missing event.app_user_id' });
+    if (!event) {
+      return res.status(400).json({ error: 'Missing event' });
     }
 
-    const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE', 'TRANSFER'];
+    // Sandbox/test purchases have a compressed billing cycle (RevenueCat/Play
+    // simulate a "month" in minutes), so they expire almost immediately. This
+    // backend only serves the live app, so sandbox events must never touch
+    // real premium status regardless of how NODE_ENV happens to be set.
+    // Checked FIRST, before any identity guard, because a sandbox TRANSFER has
+    // no app_user_id either and must be ignored rather than answered 400.
+    if (event.environment === 'SANDBOX') {
+      return res.json({ success: true });
+    }
+
+    const GRANT_EVENTS = ['INITIAL_PURCHASE', 'RENEWAL', 'PRODUCT_CHANGE', 'UNCANCELLATION', 'NON_RENEWING_PURCHASE'];
     // CANCELLATION only means auto-renew was turned off — RevenueCat's own semantics
     // keep the entitlement active until the paid period actually ends (EXPIRATION).
     // Revoking access immediately on CANCELLATION would cut off users who already
@@ -1892,12 +1940,43 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     const REVOKE_EVENTS = ['EXPIRATION'];
     const PREMIUM_ENTITLEMENT = 'Trimio Premium';
 
-    // Sandbox/test purchases have a compressed billing cycle (RevenueCat/Play
-    // simulate a "month" in minutes), so they expire almost immediately. This
-    // backend only serves the live app, so sandbox events must never touch
-    // real premium status regardless of how NODE_ENV happens to be set.
-    if (event.environment === 'SANDBOX') {
+    /* TRANSFER IS SHAPED UNLIKE EVERY OTHER EVENT and has to be handled before
+       the app_user_id guard below. Its payload carries NO app_user_id, no
+       entitlement_ids and no product_id: identity lives in transferred_from and
+       transferred_to. It used to be listed in GRANT_EVENTS, which could never
+       fire, because the guard answered 400 and returned first.
+
+       WHAT THAT COST: a transfer is what happens when the entitlement moves to
+       a different account on the same device, so the person who ends up owning
+       the purchase was never granted premium here, and the person who no longer
+       owns it kept it. RevenueCat also saw a 400 and retried a delivery that
+       could never succeed. */
+    if (event.type === 'TRANSFER') {
+      const affected = [
+        ...(Array.isArray(event.transferred_from) ? event.transferred_from : []),
+        ...(Array.isArray(event.transferred_to) ? event.transferred_to : []),
+      ].filter((id) => typeof id === 'string' && id.length > 0);
+
+      if (affected.length === 0) {
+        console.warn('[revenuecat] TRANSFER carried no transferred_from/transferred_to: nothing to reconcile');
+        return res.json({ success: true });
+      }
+      /* Refusing rather than guessing, and 503 rather than 200 so the failure
+         shows up red in RevenueCat's own delivery list. An unset key is not a
+         transient condition, and answering success here would drop transfers
+         silently while every dashboard said it was fine. */
+      if (!REVENUECAT_SECRET_API_KEY) {
+        console.error('[revenuecat] TRANSFER received with no REVENUECAT_SECRET_API_KEY: cannot verify, refusing to guess');
+        return res.status(503).json({ error: 'PREMIUM_VERIFICATION_UNAVAILABLE' });
+      }
+      const { checked, skipped } = await reconcileEntitlementsFromRevenueCat(affected);
+      console.log(`[revenuecat] TRANSFER: ${checked} known account(s) reconciled, ${skipped} unknown id(s) skipped`);
       return res.json({ success: true });
+    }
+
+    const appUserId = event.app_user_id;
+    if (!appUserId) {
+      return res.status(400).json({ error: 'Missing event.app_user_id' });
     }
 
     // Only act on events for the Premium entitlement specifically — RevenueCat
@@ -1906,12 +1985,23 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
     const entitlementIds = event.entitlement_ids || [];
     const affectsPremium = entitlementIds.includes(PREMIUM_ENTITLEMENT);
 
+    /* EVERY BRANCH BELOW SAYS WHAT IT DID, and that is not decoration. A grant
+       whose UPDATE matches no row is the single worst thing this endpoint can
+       do: somebody has paid, nothing was written, and a 200 tells RevenueCat it
+       went fine. Silent, that is unfindable. It is also the only way to answer
+       "is RevenueCat calling us at all", since the handler used to log nothing
+       on any successful path. */
     if (affectsPremium && GRANT_EVENTS.includes(event.type)) {
       // Resubscribing (e.g. UNCANCELLATION) clears any pending win-back state.
       const result = await pool.query(
         "UPDATE users SET is_paid = true, paid_at = CASE WHEN paid_at IS NULL THEN NOW() ELSE paid_at END, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
         [appUserId]
       );
+      if (result.rowCount === 0) {
+        console.error(`[revenuecat] ${event.type} matched NO user for app_user_id ${appUserId}: premium was NOT granted`);
+      } else {
+        console.log(`[revenuecat] ${event.type} granted premium to ${appUserId}`);
+      }
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
     } else if (affectsPremium && event.type === 'CANCELLATION') {
       // Access continues until EXPIRATION — only record the cancellation so our
@@ -1923,13 +2013,30 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
         "UPDATE users SET cancelled_at = COALESCE(cancelled_at, NOW()), last_plan = $1 WHERE open_id = $2 RETURNING email",
         [lastPlan, appUserId]
       );
+      if (result.rowCount === 0) {
+        console.error(`[revenuecat] CANCELLATION matched NO user for app_user_id ${appUserId}`);
+      } else {
+        console.log(`[revenuecat] CANCELLATION recorded for ${appUserId} (access runs to EXPIRATION)`);
+      }
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       const result = await pool.query(
         "UPDATE users SET is_paid = false, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
         [appUserId]
       );
+      if (result.rowCount === 0) {
+        console.error(`[revenuecat] ${event.type} matched NO user for app_user_id ${appUserId}`);
+      } else {
+        console.log(`[revenuecat] ${event.type} revoked premium for ${appUserId}`);
+      }
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
+    } else {
+      /* Deliberately no action, and deliberately logged. BILLING_ISSUE is a
+         grace period rather than a loss of access, SUBSCRIPTION_PAUSED runs to
+         the end of the period already paid for, and an event carrying a
+         different entitlement is none of our business. Naming it is what makes
+         an event type that SHOULD have acted visible instead of invisible. */
+      console.log(`[revenuecat] ${event.type} ignored (affectsPremium=${affectsPremium})`);
     }
 
     res.json({ success: true });

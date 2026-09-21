@@ -506,6 +506,83 @@ last one left off without needing a recap typed out.
   can only fail to confirm a new one, and the webhook picks that up. That is the
   entry below working as designed.
 
+- THE WEBHOOK REJECTED EVERY REAL TRANSFER EVENT, found and fixed 2026-09-21
+  while looking for a reason to add a log line rather than assuming there was
+  none. The entry above closes by saying "the webhook picks that up"; for a
+  transfer it did not, and that is the one road-two case that was broken.
+  A TRANSFER IS SHAPED UNLIKE EVERY OTHER REVENUECAT EVENT. Its payload carries
+  NO `app_user_id`, no `entitlement_ids` and no `product_id`: identity lives in
+  `transferred_from` and `transferred_to`, two arrays whose ORDER RevenueCat
+  explicitly does not guarantee. The handler read `event.app_user_id`, found
+  nothing, and answered 400 and returned, several lines BEFORE the `TRANSFER`
+  that was sitting in `GRANT_EVENTS` could ever be reached. So that list entry
+  was unreachable code that read as coverage.
+  WHAT IT COST A REAL PERSON: a transfer is what fires when the purchase moves
+  to a different Trimio account on the same device (Play's own behaviour, and
+  also the ordinary anonymous-to-signed-in case). The account that now OWNS the
+  purchase was never granted premium, and the account that no longer owns it
+  kept it. That is the "charged and sees a free account" case this file said was
+  off the table, surviving in the one event type nobody had fed the handler.
+  Road one does not rescue it either: `verify-premium` is only ever called from
+  `purchasePackage` and `restorePremium`, so the new account gets nothing until
+  somebody thinks to tap Restore Purchase. RevenueCat also saw a 400 and retried
+  a delivery that could never succeed.
+  THE FIX DOES NOT READ THE ARRAYS AS AN ANSWER, and that is the part worth
+  keeping. Inferring "transferred_to gets it" means writing `is_paid` from a
+  guess about an array order RevenueCat disclaims, and the wrong guess cancels
+  somebody who is paying. `reconcileEntitlementsFromRevenueCat` instead LOOKS
+  EACH ID UP through `fetchPremiumEntitlementFromRevenueCat`, the same
+  authoritative read `verify-premium` uses, and writes what comes back. There is
+  a test feeding the exact same payload with the opposite truth on RevenueCat's
+  side and asserting the opposite result, which is what proves the direction is
+  not being inferred.
+  IDS WE DO NOT KNOW ARE SKIPPED WITHOUT AN API CALL, by one `WHERE open_id =
+  ANY($1::text[])` first. That is the NORMAL case rather than an error: a
+  transfer routinely involves RevenueCat's own `$RCAnonymousID:...` ids, created
+  before anyone signs in, which name no account here.
+  IT ANSWERS 503 WHEN `REVENUECAT_SECRET_API_KEY` IS UNSET, not 200. A 200 would
+  drop transfers silently while RevenueCat's delivery list stayed green, which
+  is the green-while-broken shape this file keeps recording. An unset key is not
+  transient, so the failure belongs where the owner will see it.
+  THE SANDBOX CHECK MOVED ABOVE THE IDENTITY GUARD, because a sandbox TRANSFER
+  has no `app_user_id` either and was being answered 400 rather than ignored.
+  MEASURED AGAINST BOTH VERSIONS, not reasoned about.
+  `__tests__/revenuecat-webhook.test.js` drives the REAL handler out of
+  `server.js` with `eval` against a stub pool and a stub RevenueCat, on
+  RevenueCat's own documented TRANSFER sample. 29 assertions, 14 of which fail
+  against the previous code, including the 400 itself. The 15 that pass both
+  ways are there on purpose: the 401, the other-entitlement case, EXPIRATION and
+  CANCELLATION were already right and must stay right.
+  IT IS BEHAVIOURAL RATHER THAN SOURCE-READING, unlike `verify-premium.test.js`,
+  and the defect is exactly why: reading the source shows `'TRANSFER'` in
+  `GRANT_EVENTS` and concludes it is handled. Only the real payload shows that
+  the branch is unreachable. WHEN THE BUG IS A PAYLOAD SHAPE, A SOURCE-READING
+  TEST CANNOT SEE IT.
+
+- THE WEBHOOK USED TO LOG NOTHING AT ALL, on any successful path, which is why
+  "is RevenueCat actually calling us?" could not be answered from Railway. Every
+  branch now names what it did, and one of those lines is not observability but
+  a defect report: a grant whose UPDATE matches NO row is the single worst thing
+  this endpoint can do, since somebody has paid, nothing was written, and the
+  200 tells RevenueCat it went fine. It now logs `matched NO user ... premium
+  was NOT granted` at error level. Silent, that is unfindable.
+  THE NO-OP BRANCH IS LOGGED TOO, deliberately. An event that affects Premium
+  but matches no branch prints `<TYPE> ignored`, which is how an event type that
+  SHOULD have acted becomes visible instead of invisible.
+  `SUBSCRIPTION_PAUSED` IS THE ONE THAT DESERVES A LOOK and was deliberately NOT
+  changed. Play lets a subscriber pause for one to three months, and the pause
+  takes effect at the END of the period already paid for, so revoking on the
+  PAUSED event would cut off somebody who has paid: the exact mistake the
+  CANCELLATION comment already warns against. Falling through is therefore the
+  conservative and probably correct behaviour. THE OPEN QUESTION is only whether
+  an EXPIRATION actually arrives when the pause begins. If it does, nothing is
+  wrong. If it does not, a paused subscriber keeps Premium free for up to three
+  months. A sandbox cannot settle that; the RevenueCat dashboard's event history
+  for a paused subscriber can.
+  NOTHING WAS CHANGED FOR REFUNDS EITHER, for the same reason: RevenueCat routes
+  a refund through CANCELLATION and then EXPIRATION, so the existing branches
+  should cover it, and that ordering was not verified from here.
+
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
   to `req.body.isPremium` whenever REVENUECAT_SECRET_API_KEY was unset, so any
