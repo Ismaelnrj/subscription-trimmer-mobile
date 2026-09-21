@@ -189,9 +189,27 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   exactly the shape of the CI-was-decorative entry below, where a check stayed
   red long enough that people stopped reading any red check at all. The
   `Checks` workflow is the one that matters and it is green.
+  IT CANNOT AFFECT THE APP, and that is the question the owner asked on
+  2026-09-21. A GitHub Actions workflow runs on GitHub's servers when you push;
+  it is not in the APK, not in the JS bundle, and not on any phone. Verified by
+  grep: `app.json` and `eas.json` reference it ZERO times, and nothing under
+  app/, lib/ or components/ mentions it at all. Deleting it cannot crash or
+  degrade Trimio for anybody.
+  BUT IT IS NOT A ONE LINE DELETE, which an earlier draft of this entry implied.
+  `__tests__/ci-secrets.test.js` READS the file at line 28 and asserts three
+  things about it, so removing the file alone makes that suite throw ENOENT and
+  turns the Checks workflow red: the exact problem the deletion is meant to
+  solve, moved one file over. A clean delete removes the file AND those three
+  assertions together.
+  WHAT THOSE ASSERTIONS GUARD, so nobody deletes them thinking they are noise:
+  that the workflow exits 1 on a missing `KEYSTORE_BASE64`, that it contains no
+  `keytool -genkey` (the fallback that once printed a private signing key into a
+  build log), and a Node version check shared with the other two CI files.
+  Removing the workflow removes the thing they guard, so dropping them with it
+  is correct rather than a loss. codemagic.yaml keeps its own copies of the same
+  two guards, which is what actually matters, since Codemagic is the real build.
   THE DECISION IS THE OWNER'S and has not been taken: fix it, or delete it.
-  Deleting is the honest default given the rule above, since Codemagic already
-  covers the rare native build. Do not delete it unasked.
+  Deleting is the honest default given the rule above. Do not delete it unasked.
 
 ## Backend API convention
 
@@ -413,6 +431,32 @@ last one left off without needing a recap typed out.
   CI WAS GREEN ON THE EXACT PUBLISHED COMMIT, run 344 on cbcc9802, all ten steps
   including the typecheck on the pinned compiler. That is now the second publish
   in a row to go out behind a real CI run rather than a laptop.
+
+- PUBLISHED THROUGH e76cc0f5 AND CONFIRMED ON A REAL DEVICE (2026-09-21), which
+  supersedes every baseline above. Read off the Build Info panel rather than
+  inferred from a publish that exited zero: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a0c237-2b2e-70a3-b279-e575abd0cbe1`, `Update published:
+  2026-09-21T04:26:30.574Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than the 2026-09-20 update
+  (`01a0bf98-...` at `16:13:55.673Z`), which is the check that distinguishes a
+  new update from the previous one still being applied. Reading only
+  `Embedded launch: false` proves an OTA landed, never WHICH one.
+  WHAT WENT OUT, three client files: `app/upgrade.tsx` and both locale files.
+  The purchase screen no longer names a price Google Play did not supply, and
+  the three English strings in the premium comparison table are localised.
+  NATIVE CHECK ACROSS `dc500210..e76cc0f5`: zero files under android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and no build was needed. Eighth recorded time.
+  NOTHING DEPLOYED WITH IT: zero backend files, so Railway had nothing to
+  redeploy and the running service is still the one from `c42c6216`.
+  CI WAS GREEN ON THE EXACT PUBLISHED COMMIT, run 357 on e76cc0f5, with the
+  typecheck on the pinned compiler, the full jest suite and lint all passing.
+  MASTER IS AT `ee1cfb60`, ONE COMMIT AHEAD OF THIS BASELINE, and it does not
+  matter: that commit touches CLAUDE.md alone. `e76cc0f5` is the last commit
+  carrying anything a phone runs. This is the fifth time the gap has looked
+  like a missed publish and has not been one, so check WHAT the gap contains
+  before reaching for another `eas update`.
 
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
