@@ -457,27 +457,34 @@ last one left off without needing a recap typed out.
   like a missed publish and has not been one, so check WHAT the gap contains
   before reaching for another `eas update`.
 
-- PUBLISHED THROUGH d63c07ba (2026-09-21, second publish of the day), which
-  supersedes every baseline above.
-  NOT YET CONFIRMED ON A DEVICE. The owner reported the command went fine and
-  that is ALL that is known: a publish exiting zero means EAS accepted it and
-  nothing more. This file's own rule applies, so read `Embedded launch (no OTA
-  applied): false` and a real `Update ID` off the Build Info panel before
-  calling it landed, and write the numbers down here. The ID must DIFFER from
-  `01a0c237-2b2e-70a3-b279-e575abd0cbe1`, which is this morning's update:
-  reading only `Embedded launch: false` would be satisfied by the older one
-  still being applied. Fill this in when it is read, or replace this sentence
-  with the honest statement that it was never checked.
+- PUBLISHED THROUGH 01e1a18e AND CONFIRMED ON A REAL DEVICE (2026-09-21, second
+  publish of the day), which supersedes every baseline above. Read off the Build
+  Info panel rather than inferred from a publish that exited zero: `Embedded
+  launch (no OTA applied): false`, `Update ID:
+  01a0c3f0-5f6c-78b9-ab99-79ee01b25208`, `Update published:
+  2026-09-21T12:28:25.324Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than this morning's update
+  (`01a0c237-...` at `04:26:30.574Z`), which is the check that distinguishes a
+  new update from the previous one still being applied. Two publishes on the
+  same day are otherwise identical on that panel.
+  THE BASELINE IS `01e1a18e` AND NOT `d63c07ba`, WHICH THE TIMESTAMP CAUGHT.
+  This entry first said d63c07ba because that was master when the owner
+  reported publishing. The panel says the update was published at 12:28:25Z and
+  d63c07ba was not pushed until 12:30:31Z, so the tree that went up was
+  01e1a18e. It changes nothing about what a phone runs, since d63c07ba touches
+  the trimio-release skill alone, but a baseline is a claim about WHICH COMMIT
+  and it should be the right one. `eas update` uploads the working tree, so the
+  publish timestamp bounds what can possibly have been in it: that is a free
+  cross-check and worth doing every time.
   WHAT WENT OUT, exactly ONE client file: `app/(tabs)/subscriptions.tsx`, the
   ICS export fix and nothing else. Verified with
-  `git diff --name-only e76cc0f5 d63c07ba` over app/, lib/, components/ and
+  `git diff --name-only e76cc0f5 01e1a18e` over app/, lib/, components/ and
   locales/ rather than assumed from the commit messages.
-  THE LAST COMMIT CARRYING ANYTHING A PHONE RUNS IS `01e1a18e`. `d63c07ba`
-  touches the trimio-release skill alone, which never enters a JS bundle, so a
-  future session finding master ahead of the baseline should check WHAT the gap
-  holds first. Sixth time that gap has looked like a missed publish and has not
-  been one.
-  NATIVE CHECK ACROSS `e76cc0f5..d63c07ba`: zero files under android/, assets/,
+  MASTER IS NOW AHEAD OF THIS BASELINE BY DOCUMENTATION ONLY, `d63c07ba` and
+  `89ad1ecf`, the release skill and this file. Seventh time that gap has looked
+  like a missed publish and has not been one.
+  NATIVE CHECK ACROSS `e76cc0f5..01e1a18e`: zero files under android/, assets/,
   app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
   and no build was needed. Ninth recorded time. This one was decided by
   `needs_native_build.py` pointed at the publish baseline rather than by reading
