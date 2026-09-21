@@ -30,6 +30,60 @@ for large text and UI boundaries. `--image` finds the dominant text-like
 colours in a screenshot or video frame and checks them against their
 background, which is how you review a promo video or a store screenshot.
 
+## Before you approve any screen, sweep it
+
+Contrast is one of three things that only measurement finds. The other two are
+touch targets and type size, and all three have shipped defects that survived
+months of looking at the app.
+
+```bash
+python3 .claude/skills/trimio-design/scripts/check_screens.py app/ components/
+python3 .claude/skills/trimio-design/scripts/check_screens.py --targets app/
+python3 .claude/skills/trimio-design/scripts/check_screens.py --type app/
+python3 .claude/skills/trimio-design/scripts/check_screens.py --hex app/
+```
+
+Note the FULL path. Releases are run from the repo root, where a bare
+`scripts/...` fails: the release skill already made exactly that mistake.
+
+**targets** flags a touchable whose resolved style sets no minHeight, height or
+vertical padding and whose tag carries no hitSlop. Such a control is exactly as
+tall as its contents, so an icon beside small text lands around 14dp against a
+48dp floor. Deliberately conservative: it reports only the provably wrong case,
+so a control that sets padding is left alone even though it may still be short.
+When fixing one, prefer `minHeight` over padding, because padding leaves the
+height at the mercy of the font's line metrics and minHeight makes it provable.
+
+**type** flags `fontSize` under 12, Material's floor for body text.
+
+**hex** inventories colours written into a screen rather than taken from
+lib/theme.ts. This is the noisy one: roughly half of what it finds is
+deliberate. A hex that MATCHES a palette token is the more suspicious case, not
+the less, because a hardcoded `#142B3A` means dark mode renders ink navy where
+the theme would have sent something else.
+
+None of the three exits non-zero. A report that fails the build gets disabled,
+and this repo already has a workflow that was red on every push until nobody
+read red any more.
+
+## The theme's own contrast is a CI gate, not a habit
+
+`__tests__/theme-contrast.test.js` computes the WCAG ratio of every
+text-bearing token against the ground it actually renders on, in both themes,
+from `lib/theme.ts`. It is the reason the quiet grey cannot fail again: three
+tokens shared one hex per theme and all six pairings were under 4.5:1, with the
+light one at 2.85:1, under even the 3:1 floor.
+
+Do not duplicate that here. Use `check_contrast.py` for a pairing that is not
+yet in the theme, and `check_screens.py` for what the gate cannot see.
+
+ONE GAP IS OPEN AND NAMED RATHER THAN HIDDEN: white on dark `primary` #2F8E71
+is 4.02:1, under the 4.5:1 text floor and over the 3:1 large-text one. It was
+chosen to balance both directions the way the old violet did, and 36 call sites
+put white on a primary fill, so raising it is a product decision. The test
+asserts it at 3:1 AND asserts it is still under 4.5, so closing the gap means
+tightening that assertion in the same commit.
+
 ## The palette
 
 | Role | Hex | Notes |
@@ -42,7 +96,7 @@ background, which is how you review a promo video or a store screenshot.
 | Soft Mint | `#55C6A3` | **Marks things. Never carries them.** See below |
 | Deepened Mint | `#1F7A62` | Use when type must read as mint. 4.8:1 on warm white |
 | Warm Amber | `#E6A34A` | Text version `#96631B` |
-| Muted Coral | `#D96B62` | Text version `#C4544A` |
+| Muted Coral | `#D96B62` | Text version `#B8473D`. **Not `#C4544A`**, which this table claimed for months: measured it is 4.12:1 on the ground and 3.93:1 on `dangerLight`, where an error message actually sits |
 
 Intended weighting is roughly 60% warm white, 25% navy, 10% mint, 5% the rest.
 The restraint is the point. When a design feels flat, the fix is hierarchy and

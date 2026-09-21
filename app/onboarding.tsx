@@ -55,7 +55,19 @@ export default function OnboardingScreen() {
       await SecureStore.setItemAsync(USER_ESTIMATE_KEY, String(estimate));
     }
     await SecureStore.setItemAsync("onboarding_done", "true");
-    router.replace("/login");
+    /* REGISTER, NOT LOGIN. Somebody who has just finished onboarding has no
+       account, by definition: `onboarding_done` was unset a moment ago, which
+       is the only reason this screen ran at all. Sending them to the sign-in
+       form made them read the wrong form, notice a link, and tap again before
+       reaching the one they needed.
+       This matters more than one tap because it is the FIRST screen after an
+       install, and the app is a hard wall: `app/_layout.tsx` bounces every
+       unauthenticated user here, so nothing about the product is visible until
+       an account exists. Paid installs land on a form, and a form for returning
+       users was the worst version of that.
+       `_layout.tsx` still sends people to /login when `onboarding_done` is
+       already true, which is correct: that IS a returning user. */
+    router.replace("/register");
   };
 
   const next = () => {
