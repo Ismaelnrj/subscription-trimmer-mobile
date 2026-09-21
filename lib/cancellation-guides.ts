@@ -626,12 +626,31 @@ const GENERIC_GUIDE: LocalizedGuide = {
   },
 };
 
-export function getCancellationGuide(name: string, lang: Lang = "en"): CancellationGuide {
+/* The single matching rule, so the lookup and the "did we have one" question
+   cannot drift apart. Both functions below delegate here rather than repeating
+   the loop: two copies of a match rule is how one of them quietly stops
+   agreeing with the other. */
+function matchGuideKey(name: string): string | null {
   const n = name.toLowerCase().trim();
-  for (const [key, guide] of Object.entries(GUIDES)) {
-    if (n.includes(key)) {
-      return { steps: guide.steps[lang], url: guide.url, note: guide.note?.[lang] };
-    }
+  for (const key of Object.keys(GUIDES)) {
+    if (n.includes(key)) return key;
+  }
+  return null;
+}
+
+/* Whether a SPECIFIC guide exists for this service, as opposed to the generic
+   fallback. getCancellationGuide always returns something, so from the outside
+   a real guide and the generic one are indistinguishable, and the screen needs
+   to tell them apart to report which it showed. */
+export function hasCancellationGuide(name: string): boolean {
+  return matchGuideKey(name) !== null;
+}
+
+export function getCancellationGuide(name: string, lang: Lang = "en"): CancellationGuide {
+  const key = matchGuideKey(name);
+  if (key) {
+    const guide = GUIDES[key];
+    return { steps: guide.steps[lang], url: guide.url, note: guide.note?.[lang] };
   }
   return { steps: GENERIC_GUIDE.steps[lang], url: GENERIC_GUIDE.url, note: GENERIC_GUIDE.note?.[lang] };
 }

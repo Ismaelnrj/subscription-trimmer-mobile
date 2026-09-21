@@ -14,7 +14,7 @@ import { useCurrencyStore } from "../lib/currency-store";
 import { useThemeStore } from "../lib/theme-store";
 import { requestNotificationPermission } from "../lib/notification-scheduler";
 import { retryPendingPremiumSync } from "../lib/iap";
-import { initAnalytics } from "../lib/analytics";
+import { initAnalytics, track } from "../lib/analytics";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
@@ -122,6 +122,22 @@ export default function RootLayout() {
         }
       } catch {
         setOnboardingDone(false);
+      } finally {
+        /* THE RETENTION EVENT, and the only one this app has. Nothing else
+           fires on a plain launch, so without it acquisition and conversion are
+           measurable and coming BACK is not, which for a renewal reminder app
+           is the half that matters.
+           IN `finally` ON PURPOSE: the app opened whether or not the restore
+           above threw, and a failed restore is exactly the session worth
+           seeing.
+           AFTER the awaits rather than at the top of the effect, because
+           `restoreToken` is what calls `identifyUser`, so firing earlier would
+           attribute a returning user's launch to an anonymous device id.
+           IT COUNTS COLD STARTS, not resumes: this effect runs once per JS
+           context, and a warm resume from the background does not remount. That
+           is the honest definition, and it is the one to remember before
+           reading these numbers as "opens". */
+        track("app_opened", { authenticated: useAuthStore.getState().isAuthenticated });
       }
     };
     init();

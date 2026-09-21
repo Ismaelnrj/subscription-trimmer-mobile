@@ -1,8 +1,10 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, Alert } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useEffect } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getCancellationGuide } from "../lib/cancellation-guides";
+import { getCancellationGuide, hasCancellationGuide } from "../lib/cancellation-guides";
+import { track } from "../lib/analytics";
 import { useTheme, AppColors } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 
@@ -13,6 +15,22 @@ export default function CancelGuideScreen() {
   const { t } = useTranslation();
   const { language } = useLanguageStore();
   const guide = getCancellationGuide(name ?? "", language);
+
+  /* DELIBERATELY SENDS NO SERVICE NAME. `subscription_added` already sets the
+     rule for this app: billing cycle, category and is_first_subscription, never
+     the name or the price. A subscription name is the user's own data and the
+     product's whole claim is that we do not see it, so "viewed the Netflix
+     guide" cannot go to PostHog either.
+     `matched` is what the question actually needs: whether a specific guide was
+     shown or the generic fallback was. That gives both the usage rate and the
+     coverage rate across the 41 guides.
+     WHICH MISSING GUIDE TO WRITE NEXT is answerable WITHOUT any telemetry, and
+     better: every subscription name is already in Postgres, so one query over
+     `subscriptions.name` against the guide keys ranks the gaps by real demand.
+     Do that rather than widening this event. */
+  useEffect(() => {
+    track("cancel_guide_viewed", { matched: hasCancellationGuide(name ?? "") });
+  }, [name]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
