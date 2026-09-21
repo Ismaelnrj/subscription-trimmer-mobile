@@ -26,6 +26,7 @@ function slice(startMarker, endMarker) {
 }
 
 const helperSrc = slice("async function reconcileEntitlementsFromRevenueCat", "\n}\n");
+const WIN_BACK_QUERY = slice("app.post('/api/trpc/reminders.sendWinBackEmails'", "`);");
 const handlerSrc = slice("app.post('/api/webhooks/revenuecat'", "\n});\n");
 
 // ── stubs the evaluated handler closes over ──────────────────────────────────
@@ -249,6 +250,141 @@ describe("every path says what it did", () => {
   });
 });
 
+describe("CANCELLATION tells a refund apart from an unsubscribe", () => {
+  /* One event type, two opposite meanings. RevenueCat sends CANCELLATION for
+     both a voluntary unsubscribe (cancel_reason UNSUBSCRIBE, entitlement runs
+     to the end of the paid period) and a refund (cancel_reason
+     CUSTOMER_SUPPORT, entitlement revoked at once). The handler used to assume
+     the first for both, so a refunded customer kept Premium. */
+  const cancellation = (cancel_reason) => ({
+    type: "CANCELLATION",
+    environment: "PRODUCTION",
+    app_user_id: "user-A",
+    entitlement_ids: ["Trimio Premium"],
+    product_id: "trimio_premium_monthly",
+    cancel_reason,
+  });
+
+  it("keeps access on an ordinary unsubscribe, exactly as before", async () => {
+    /* The property that makes the change safe. RevenueCat still reports the
+       entitlement active, so nothing about this path moves. */
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": true };
+
+    const r = await post(cancellation("UNSUBSCRIBE"));
+
+    expect(rows[0].is_paid).toBe(true);
+    expect(rows[0].cancelled_at).toBe("set");
+    expect(r.brevo).toEqual([["a@example.com", "cancelling"]]);
+  });
+
+  it("removes premium when the entitlement has already been revoked", async () => {
+    /* A Google Play refund with revoke. Against the previous code is_paid
+       stayed true and somebody with their money back kept the product. */
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": false };
+
+    const r = await post(cancellation("CUSTOMER_SUPPORT"));
+
+    expect(rows[0].is_paid).toBe(false);
+    expect(r.brevo).toEqual([["a@example.com", "free"]]);
+  });
+
+  it("does not branch on cancel_reason", async () => {
+    /* Enumerating the reasons is the same guess the TRANSFER branch refuses to
+       make, and a reason RevenueCat adds later would land in whichever half the
+       last reader assumed. An unrecognised reason with a live entitlement must
+       still keep access; the same reason with a dead one must still revoke. */
+    const src = handlerSrc.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
+    expect(src).not.toMatch(/CUSTOMER_SUPPORT/);
+    expect(src).not.toMatch(/UNSUBSCRIBE/);
+
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": true };
+    await post(cancellation("SOME_REASON_INVENTED_IN_2027"));
+    expect(rows[0].is_paid).toBe(true);
+
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": false };
+    await post(cancellation("SOME_REASON_INVENTED_IN_2027"));
+    expect(rows[0].is_paid).toBe(false);
+  });
+
+  it("leaves cancelled_at set on a refund, so the win-back cron skips them", async () => {
+    /* sendWinBackEmails is gated on `is_paid = TRUE`, so clearing is_paid is
+       what excludes them. That matters because the email says "You'll keep
+       Premium access until your current period ends", which is untrue for
+       somebody who has just been refunded. */
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": false };
+
+    await post(cancellation("CUSTOMER_SUPPORT"));
+
+    expect(rows[0].is_paid).toBe(false);
+    expect(rows[0].cancelled_at).toBe("set");
+    expect(WIN_BACK_QUERY).toMatch(/is_paid = TRUE/);
+  });
+
+  it("answers 500 and guesses nothing when RevenueCat cannot be reached", async () => {
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": "THROW" };
+
+    const r = await post(cancellation("UNSUBSCRIBE"));
+
+    expect(r.status).toBe(500);
+    expect(rows[0].is_paid).toBe(true);
+  });
+
+  it("falls back to the older, customer-favouring behaviour with no lookup key", async () => {
+    const saved = REVENUECAT_SECRET_API_KEY;
+    REVENUECAT_SECRET_API_KEY = undefined;
+    try {
+      rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+      rcEntitlement = { "user-A": false };
+      const r = await post(cancellation("CUSTOMER_SUPPORT"));
+      expect(r.status).toBe(200);
+      expect(rows[0].is_paid).toBe(true);
+      expect(r.brevo).toEqual([["a@example.com", "cancelling"]]);
+    } finally {
+      REVENUECAT_SECRET_API_KEY = saved;
+    }
+  });
+});
+
+describe("SUBSCRIPTION_PAUSED is left alone on purpose", () => {
+  it("does not revoke, because a Play pause runs to the end of the paid period", async () => {
+    /* RevenueCat's own instruction: do not revoke on SUBSCRIPTION_PAUSED,
+       revoke on the EXPIRATION that follows carrying expiration_reason
+       SUBSCRIPTION_PAUSED. Revoking here cuts off somebody mid-period who has
+       paid for it. This test exists so nobody "fixes" the fall-through. */
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+
+    const r = await post({
+      type: "SUBSCRIPTION_PAUSED",
+      environment: "PRODUCTION",
+      app_user_id: "user-A",
+      entitlement_ids: ["Trimio Premium"],
+    });
+
+    expect(rows[0].is_paid).toBe(true);
+    expect(r.logs).toMatch(/SUBSCRIPTION_PAUSED ignored/);
+  });
+
+  it("the EXPIRATION that ends a pause does revoke", async () => {
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+
+    await post({
+      type: "EXPIRATION",
+      environment: "PRODUCTION",
+      app_user_id: "user-A",
+      entitlement_ids: ["Trimio Premium"],
+      expiration_reason: "SUBSCRIPTION_PAUSED",
+    });
+
+    expect(rows[0].is_paid).toBe(false);
+  });
+});
+
 describe("the guards that were already right stay right", () => {
   it("rejects a wrong bearer token", async () => {
     const r = await post(TRANSFER_EVENT, "Bearer wrong-secret");
@@ -282,18 +418,9 @@ describe("the guards that were already right stay right", () => {
     expect(rows[0].is_paid).toBe(false);
   });
 
-  it("keeps access on CANCELLATION, which only turns auto-renew off", async () => {
-    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
-
-    await post({
-      type: "CANCELLATION",
-      environment: "PRODUCTION",
-      app_user_id: "user-A",
-      entitlement_ids: ["Trimio Premium"],
-      product_id: "trimio_premium_monthly",
-    });
-
-    expect(rows[0].is_paid).toBe(true);
-    expect(rows[0].cancelled_at).toBe("set");
-  });
+  /* A test asserting "CANCELLATION only turns auto-renew off" used to sit here.
+     It was removed rather than fixed, because that sentence is the assumption
+     that WAS the defect: it is true of an unsubscribe and false of a refund.
+     The CANCELLATION describe block above replaces it with both directions, so
+     this is a strictly stronger guard under an honest name. */
 });

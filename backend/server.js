@@ -2004,8 +2004,24 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       }
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
     } else if (affectsPremium && event.type === 'CANCELLATION') {
-      // Access continues until EXPIRATION — only record the cancellation so our
-      // own win-back cron (sendWinBackEmails) can email them after a delay.
+      /* CANCELLATION IS TWO DIFFERENT EVENTS WEARING ONE NAME, and the
+         difference is worth money in both directions.
+         `cancel_reason: UNSUBSCRIBE` (or PRICE_INCREASE) means auto-renew was
+         switched off and the entitlement RUNS TO THE END of the period already
+         paid for, so revoking would cut off somebody who has paid.
+         `cancel_reason: CUSTOMER_SUPPORT` is a REFUND, and RevenueCat revokes
+         the entitlement AT ONCE, so keeping is_paid true hands the product to
+         somebody who has their money back. This branch used to assume the first
+         reading for both, because its comment described an unsubscribe.
+         IT DOES NOT BRANCH ON cancel_reason, deliberately. Enumerating the
+         reasons is the same guess the TRANSFER branch refuses to make, and a
+         reason RevenueCat adds later would land in whichever half the last
+         reader assumed. It ASKS instead: the entitlement is still active for an
+         unsubscribe and already revoked for a refund, so ONE authoritative read
+         answers every reason, including the ones that do not exist yet.
+         AN ORDINARY UNSUBSCRIBE IS THEREFORE UNCHANGED, which is the property
+         that makes this safe: the lookup returns true, is_paid stays true, and
+         cancelled_at still feeds the win-back cron exactly as before. */
       // Don't overwrite cancelled_at if already set, so duplicate webhook
       // deliveries don't keep pushing the win-back email out.
       const lastPlan = getPlanTierFromProductId(event.product_id);
@@ -2013,12 +2029,29 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
         "UPDATE users SET cancelled_at = COALESCE(cancelled_at, NOW()), last_plan = $1 WHERE open_id = $2 RETURNING email",
         [lastPlan, appUserId]
       );
+      const reason = event.cancel_reason || 'no reason given';
       if (result.rowCount === 0) {
         console.error(`[revenuecat] CANCELLATION matched NO user for app_user_id ${appUserId}`);
+      } else if (!REVENUECAT_SECRET_API_KEY) {
+        /* Nothing here can tell a refund from an unsubscribe, so keep the
+           older behaviour, which errs towards the customer. Same as this
+           branch always did, so an unset key is no worse than before. */
+        console.error(`[revenuecat] CANCELLATION (${reason}) for ${appUserId} with no REVENUECAT_SECRET_API_KEY: cannot tell a refund from an unsubscribe, leaving access in place`);
+        if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
       } else {
-        console.log(`[revenuecat] CANCELLATION recorded for ${appUserId} (access runs to EXPIRATION)`);
+        const stillEntitled = await fetchPremiumEntitlementFromRevenueCat(appUserId);
+        if (!stillEntitled) {
+          /* cancelled_at is deliberately LEFT SET rather than cleared: they did
+             cancel, and the win-back cron is gated on `is_paid = TRUE`, so
+             clearing is_paid alone already excludes them. That matters here,
+             because the win-back email says "You'll keep Premium access until
+             your current period ends", which is flatly untrue for somebody who
+             has just been refunded. */
+          await pool.query("UPDATE users SET is_paid = false WHERE open_id = $1", [appUserId]);
+        }
+        console.log(`[revenuecat] CANCELLATION (${reason}) for ${appUserId}: entitlement ${stillEntitled ? 'still active, access kept to period end' : 'ALREADY REVOKED, premium removed'}`);
+        if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, stillEntitled ? 'cancelling' : 'free');
       }
-      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       const result = await pool.query(
         "UPDATE users SET is_paid = false, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
@@ -2032,10 +2065,15 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
     } else {
       /* Deliberately no action, and deliberately logged. BILLING_ISSUE is a
-         grace period rather than a loss of access, SUBSCRIPTION_PAUSED runs to
-         the end of the period already paid for, and an event carrying a
+         grace period rather than a loss of access, and an event carrying a
          different entitlement is none of our business. Naming it is what makes
-         an event type that SHOULD have acted visible instead of invisible. */
+         an event type that SHOULD have acted visible instead of invisible.
+         SUBSCRIPTION_PAUSED BELONGS HERE AND IS NOT AN OVERSIGHT: a Play pause
+         takes effect at the END of the period already paid for, and RevenueCat
+         states plainly that you should not revoke on it, but on the EXPIRATION
+         that follows carrying `expiration_reason: SUBSCRIPTION_PAUSED`. That
+         EXPIRATION is handled by REVOKE_EVENTS above. Revoking here would cut
+         off somebody mid-period who has paid for it. */
       console.log(`[revenuecat] ${event.type} ignored (affectsPremium=${affectsPremium})`);
     }
 

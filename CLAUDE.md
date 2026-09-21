@@ -569,19 +569,74 @@ last one left off without needing a recap typed out.
   THE NO-OP BRANCH IS LOGGED TOO, deliberately. An event that affects Premium
   but matches no branch prints `<TYPE> ignored`, which is how an event type that
   SHOULD have acted becomes visible instead of invisible.
-  `SUBSCRIPTION_PAUSED` IS THE ONE THAT DESERVES A LOOK and was deliberately NOT
-  changed. Play lets a subscriber pause for one to three months, and the pause
-  takes effect at the END of the period already paid for, so revoking on the
-  PAUSED event would cut off somebody who has paid: the exact mistake the
-  CANCELLATION comment already warns against. Falling through is therefore the
-  conservative and probably correct behaviour. THE OPEN QUESTION is only whether
-  an EXPIRATION actually arrives when the pause begins. If it does, nothing is
-  wrong. If it does not, a paused subscriber keeps Premium free for up to three
-  months. A sandbox cannot settle that; the RevenueCat dashboard's event history
-  for a paused subscriber can.
-  NOTHING WAS CHANGED FOR REFUNDS EITHER, for the same reason: RevenueCat routes
-  a refund through CANCELLATION and then EXPIRATION, so the existing branches
-  should cover it, and that ordering was not verified from here.
+  `SUBSCRIPTION_PAUSED` IS SETTLED AND THE FALL-THROUGH IS CORRECT. This entry
+  spent an hour saying it was "probably correct" with an open question attached,
+  and the owner rightly refused the hedge. The answer, from RevenueCat's own
+  guidance: do NOT revoke on SUBSCRIPTION_PAUSED, revoke on the EXPIRATION that
+  follows at the end of the billing period carrying
+  `expiration_reason: SUBSCRIPTION_PAUSED`. So the paused event genuinely
+  belongs in the no-action branch and the EXPIRATION that ends the pause is
+  already handled by REVOKE_EVENTS. Revoking on PAUSED would cut off somebody
+  mid-period who has paid for it. There is a test asserting the fall-through, so
+  nobody "fixes" it.
+  A HISTORICAL CAVEAT WORTH KNOWING: RevenueCat had bugs where that EXPIRATION
+  did not fire after a pause. They are reported fixed. If a paused subscriber
+  ever turns up still holding Premium, that is where to look, and it is a
+  RevenueCat-side failure rather than anything in this handler.
+
+- A REFUNDED CUSTOMER KEPT PREMIUM, found and fixed 2026-09-21 in the same pass,
+  and it is the more expensive of the two because it needs no third party bug to
+  happen. The entry above used to close by saying refunds "should" be covered by
+  the existing branches and that the ordering was not verified. Verifying it is
+  what found this.
+  CANCELLATION IS TWO DIFFERENT EVENTS WEARING ONE NAME. RevenueCat sends it for
+  a voluntary unsubscribe (`cancel_reason: UNSUBSCRIBE`), where the entitlement
+  RUNS TO THE END of the period already paid for, and ALSO for a refund
+  (`cancel_reason: CUSTOMER_SUPPORT`), where RevenueCat revokes the entitlement
+  AT ONCE. This handler's branch assumed the first reading for both, and its own
+  comment said so in as many words: "CANCELLATION only means auto-renew was
+  turned off". True of an unsubscribe. False of a refund.
+  WHAT IT COST: somebody who got their money back kept `is_paid = true`. Nothing
+  in this app reconciles, so if the refund voids the transaction rather than
+  letting it lapse, they keep Premium indefinitely, and at best they keep it for
+  the remainder of a period they were refunded for. It also set `cancelled_at`,
+  which queues the win-back email, so a refunded customer was in line to be told
+  "You'll keep Premium access until your current period ends".
+  THE FIX DOES NOT BRANCH ON `cancel_reason`, which is the same discipline as
+  the TRANSFER branch and for the same reason: enumerating the reasons is a
+  guess, and a reason RevenueCat adds later lands in whichever half the last
+  reader assumed. It ASKS instead, through
+  `fetchPremiumEntitlementFromRevenueCat`. The entitlement is still active for
+  an unsubscribe and already revoked for a refund, so ONE authoritative read
+  answers every reason including the ones that do not exist yet. There is a test
+  asserting the handler source contains neither `UNSUBSCRIBE` nor
+  `CUSTOMER_SUPPORT`, so the tempting version cannot come back.
+  AN ORDINARY UNSUBSCRIBE IS BYTE FOR BYTE UNCHANGED, and that is the property
+  that makes this safe to ship rather than a rewrite of the money path. Measured
+  against the real handler: entitlement active, `is_paid` stays true,
+  `cancelled_at` set, Brevo told `cancelling`, exactly as before. That test
+  passes against BOTH versions on purpose.
+  `cancelled_at` IS DELIBERATELY LEFT SET ON A REFUND rather than cleared. The
+  win-back cron is gated on `is_paid = TRUE`, so clearing is_paid is already
+  what excludes them, and leaving cancelled_at is the truthful record. The test
+  reads that `is_paid = TRUE` out of the cron's own SQL rather than restating
+  it, so removing that filter fails here.
+  WITH THE KEY UNSET IT FALLS BACK TO THE OLD BEHAVIOUR, access left in place,
+  which errs towards the customer and is no worse than before. With RevenueCat
+  unreachable it answers 500 and writes nothing, so the delivery is retried and
+  nothing is guessed.
+  FIVE ASSERTIONS FAIL AGAINST THE PREVIOUS CODE, the refund itself reporting
+  `expected true to be false` on is_paid.
+  ONE TEST WAS REMOVED RATHER THAN FIXED, and the reason is the point: it was
+  named "keeps access on CANCELLATION, which only turns auto-renew off", and
+  that sentence IS the defect. A test whose name asserts the wrong premise is
+  worse than no test, because it tells the next reader the question is closed.
+  The two-sided block replaces it.
+  NOT VERIFIED FROM HERE, and it is a RevenueCat Console behaviour rather than
+  code: a Play refund issued WITHOUT ticking "revoke access" sends no
+  CANCELLATION at all, so nothing reaches this handler and the customer keeps
+  Premium. That is a process rule for whoever issues refunds, not something any
+  branch here can catch.
 
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
