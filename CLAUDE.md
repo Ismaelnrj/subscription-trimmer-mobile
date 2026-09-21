@@ -496,6 +496,52 @@ last one left off without needing a recap typed out.
   each on its own exact SHA with the typecheck on the pinned compiler, the full
   jest suite and lint.
 
+- PUBLISHED THROUGH 251242e2 (2026-09-21, third publish of the day), which
+  supersedes every baseline above.
+  NOT YET CONFIRMED, and for this one that phrase carries TWO claims rather than
+  the usual one. The owner reported the publish went through, which means EAS
+  accepted the bundle and nothing more.
+  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
+  `Update ID` DIFFERENT from `01a0c3f0-5f6c-78b9-ab99-79ee01b25208`, which is
+  the 12:28:25Z update. Same panel, same rule as every entry above.
+  CHECK TWO, AND IT IS THE ONE THAT MATTERS HERE: that the new events actually
+  REACH PostHog. This publish exists to measure an ad campaign, and a landed
+  bundle whose events go nowhere is the worst possible outcome, because the
+  money gets spent believing the data is arriving. `initAnalytics()` returns
+  early if the key is absent and `track` is `client?.capture(...)`, so EVERY
+  event is a SILENT NO-OP when the client is null. Nothing anywhere would say
+  so.
+  HOW TO CHECK IT: open the app after the update applies, then look at PostHog
+  Activity or the live events view for `app_opened`. Then tap a subscription's
+  cancel guide and look for `cancel_guide_viewed` with `matched: true`. Two taps
+  and it is settled. Do this BEFORE the ads run, not after.
+  WHAT WENT OUT, three client files: `app/_layout.tsx`, `app/cancel-guide.tsx`
+  and `lib/cancellation-guides.ts`. The two new analytics events and the
+  matchGuideKey extraction, nothing else.
+  NATIVE CHECK ACROSS `01e1a18e..251242e2`: zero files under android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and no build was needed. Tenth recorded time, and decided by
+  `needs_native_build.py 01e1a18e` rather than by reading the diff by hand.
+  CI WAS GREEN ON THE EXACT COMMIT, run 380 on 251242e2, all ten steps with the
+  typecheck on the pinned compiler, which mattered because three TypeScript
+  files changed.
+  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read. That
+  trick caught a one commit error earlier today: `eas update` uploads the
+  working tree, so the publish time bounds what can possibly have been in it.
+
+- ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
+  PUBLISH, and this is the durable lesson rather than a note about one release.
+  For a UI or logic change, the Build Info panel plus opening the screen is
+  enough: you can SEE whether it worked. An analytics event has no visible
+  effect at all, and `lib/analytics.ts` is deliberately built to fail silently,
+  since `track` is `client?.capture(...)` and a null client swallows everything
+  rather than crashing the app. That is the right design for a phone and it is
+  also the thing that makes "published" and "working" fully independent here.
+  SO THE EVIDENCE IS THE EVENT ARRIVING IN POSTHOG, never the publish exiting
+  zero and never the bundle landing. Same shape as the PostHog erasure entry
+  below, which records the same trap: a call that swallows every error can only
+  be verified by looking at the far end.
+
 - CAN A PAYING CUSTOMER ACTUALLY GET WHAT THEY PAID FOR? Traced end to end on
   2026-09-21 because the owner asked, and the answer is YES, with the reasoning
   worth keeping because it is not obvious from any single file.
