@@ -20,14 +20,32 @@ is why the two scripts exist rather than a list to remember at 11pm.
 
 ## Start here, always
 
+Both scripts live inside this skill, so run them with their full path from the
+REPO ROOT. Writing them as `scripts/preflight.py` is correct relative to this
+folder and fails the moment anybody pastes it into a shell at the top of the
+repo, which is where releases are actually run from.
+
 ```bash
-python3 scripts/needs_native_build.py      # build, or is an OTA enough?
-python3 scripts/preflight.py               # the four checks that must pass
+python3 .claude/skills/trimio-release/scripts/needs_native_build.py <baseline>
+python3 .claude/skills/trimio-release/scripts/preflight.py
 ```
 
 `needs_native_build.py` diffs against the last versionCode bump (or a commit
 you name), classifies every changed file, and exits non-zero if a native build
 is required while `runtimeVersion` or `versionCode` has not moved with it.
+
+**PASS IT THE RIGHT BASELINE, or it answers a different question than the one
+you asked.** Run bare it compares against the last versionCode BUMP, so it
+reports everything native that has changed since the last BUILD. That is the
+right question before a build and the wrong one before a publish: on
+2026-09-21 it said NATIVE BUILD REQUIRED because `codemagic.yaml` had moved
+since build 40, while the actual publish carried one client file and no native
+input at all. Pointed at the publish baseline the same script said OTA IS
+ENOUGH.
+
+So: before a BUILD, run it bare. Before a PUBLISH, give it the last published
+commit, which CLAUDE.md records. Taking the bare answer as a reason to build
+sends you to Codemagic for nothing, against the owner's own OTA first rule.
 
 ## Native or over the air
 
@@ -108,7 +126,7 @@ so force close and reopen before concluding anything is wrong.
 ## Before any native build
 
 ```bash
-python3 scripts/preflight.py
+python3 .claude/skills/trimio-release/scripts/preflight.py
 ```
 
 Four checks, each of which has caught something real. `preflight.py` reports a
@@ -162,7 +180,7 @@ setting it, so changes to it are policy-relevant.
 
 ## Order of operations for a native release
 
-1. `needs_native_build.py` to confirm a build is genuinely required
+1. `needs_native_build.py`, run BARE, to confirm a build is genuinely required
 2. Bump `versionCode`, and `runtimeVersion` if anything native moved
 3. `preflight.py`, on a machine where the typecheck can actually run
 4. Codemagic build
