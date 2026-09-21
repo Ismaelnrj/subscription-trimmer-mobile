@@ -457,6 +457,38 @@ last one left off without needing a recap typed out.
   like a missed publish and has not been one, so check WHAT the gap contains
   before reaching for another `eas update`.
 
+- PUBLISHED THROUGH d63c07ba (2026-09-21, second publish of the day), which
+  supersedes every baseline above.
+  NOT YET CONFIRMED ON A DEVICE. The owner reported the command went fine and
+  that is ALL that is known: a publish exiting zero means EAS accepted it and
+  nothing more. This file's own rule applies, so read `Embedded launch (no OTA
+  applied): false` and a real `Update ID` off the Build Info panel before
+  calling it landed, and write the numbers down here. The ID must DIFFER from
+  `01a0c237-2b2e-70a3-b279-e575abd0cbe1`, which is this morning's update:
+  reading only `Embedded launch: false` would be satisfied by the older one
+  still being applied. Fill this in when it is read, or replace this sentence
+  with the honest statement that it was never checked.
+  WHAT WENT OUT, exactly ONE client file: `app/(tabs)/subscriptions.tsx`, the
+  ICS export fix and nothing else. Verified with
+  `git diff --name-only e76cc0f5 d63c07ba` over app/, lib/, components/ and
+  locales/ rather than assumed from the commit messages.
+  THE LAST COMMIT CARRYING ANYTHING A PHONE RUNS IS `01e1a18e`. `d63c07ba`
+  touches the trimio-release skill alone, which never enters a JS bundle, so a
+  future session finding master ahead of the baseline should check WHAT the gap
+  holds first. Sixth time that gap has looked like a missed publish and has not
+  been one.
+  NATIVE CHECK ACROSS `e76cc0f5..d63c07ba`: zero files under android/, assets/,
+  app.json, package.json or eas.json, so runtimeVersion correctly stayed 1.0.1
+  and no build was needed. Ninth recorded time. This one was decided by
+  `needs_native_build.py` pointed at the publish baseline rather than by reading
+  the diff by hand, which is the habit to keep.
+  THE BACKEND HALF WENT LIVE SEPARATELY via the Railway deploys on `f952104e`,
+  `3ab5bd10` and `01e1a18e`: the TRANSFER fix, the refund fix and the
+  price_history indexes.
+  CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 366, 368, 370, 372 and 374,
+  each on its own exact SHA with the typecheck on the pinned compiler, the full
+  jest suite and lint.
+
 - CAN A PAYING CUSTOMER ACTUALLY GET WHAT THEY PAID FOR? Traced end to end on
   2026-09-21 because the owner asked, and the answer is YES, with the reasoning
   worth keeping because it is not obvious from any single file.
@@ -709,6 +741,72 @@ last one left off without needing a recap typed out.
   button DISABLED, so nobody could purchase at all. Changing
   `getPlanTierFromProductId` to an equality check would send every plan to the
   `'premium'` fallback instead.
+
+- AN AUDIT OF THE WHOLE CODEBASE, 2026-09-21, FOUND TWO THINGS. That is fewer
+  than the earlier passes and about what a fourth pass should find.
+  THE ICS CALENDAR EXPORT PRODUCED AN INVALID EVENT ONE DAY A YEAR. `DTEND` for
+  a `VALUE=DATE` event is EXCLUSIVE, so it must be strictly after `DTSTART` or
+  the event is invalid per RFC 5545 and calendars drop it. `nextDay()` did
+  `new Date(iso)` then `setDate(getDate() + 1)`, which is LOCAL arithmetic on an
+  instant stored at midnight UTC. That lands correctly 364 days a year and fails
+  on the day the local clock SPRINGS FORWARD: the local day is 23 hours long, so
+  the instant advances 23 hours, back to 23:00 of the SAME UTC day, and DTEND
+  comes out equal to DTSTART.
+  MEASURED, not reasoned about: Vienna 2026-03-29, New York and Los Angeles
+  2026-03-08 all produced `DTSTART == DTEND`. Ordinary days and BOTH autumn
+  transitions were fine, which is exactly why it survived.
+  IT IS THE parseApiDate CLASS AGAIN, in the one place nobody had swept.
+  `fmtIcsDate` sliced the YYYY-MM-DD digits and was already offset-proof, and
+  `nextDay` sat DIRECTLY BENEATH IT doing the opposite. A correct helper beside
+  a wrong one is what made the wrong one read as fine.
+  `__tests__/ics-export.test.js` pins it, 30 assertions across nine timezone and
+  date pairs including the spring-forward day in both hemispheres, NINE of which
+  fail against the previous code. It lifts the real helpers out of the screen by
+  COUNTING BRACKETS to the terminating semicolon rather than matching a pattern,
+  because a one-liner sits beside a multi-line arrow there and a lazy regex
+  reads one of them wrong. That is the regex lesson for the fifth time.
+  `price_history` HAD NO INDEXES. A FOREIGN KEY DOES NOT CREATE ONE on the
+  referencing side in Postgres, and this schema's three indexes were all added
+  by hand, so the table added later got none. `subscription_id` is the one that
+  costs: `subscriptions.list`, the most loaded query in the app, runs a
+  `LEFT JOIN LATERAL` over price_history ONCE PER SUBSCRIPTION ROW, so unindexed
+  that is a sequential scan of the whole table per subscription per load.
+  `user_id` matters for that table's own reads and for account deletion, which
+  cascades into price_history from BOTH columns and would otherwise scan it
+  twice. Invisible today because the table is nearly empty, which is precisely
+  why it was cheap to fix now.
+  I GOT THAT FINDING WRONG FIRST AND CORRECTED IT MID-AUDIT.
+  `notification_preferences.user_id` and `user_settings.user_id` also read as
+  unindexed, and both are PRIMARY KEY, which Postgres indexes. The first check
+  only looked for the word UNIQUE. Two of four were false positives, so verify
+  what a scan claims before writing it down.
+  WHAT WAS SWEPT AND CAME BACK CLEAN, so the next pass does not repeat it: every
+  other `new Date()` on an API date field (the two that remain are SORTS, where
+  a constant offset cannot change the order, so do NOT "fix" them), zero
+  `setInterval` anywhere, no listener registrations without cleanup, `isError`
+  handled on every screen that runs a query, and the free tier cap of 5 read
+  from the server's own `FREE_LIMIT_REACHED` code rather than duplicated client
+  side, so the two cannot drift.
+
+- THE RELEASE SKILL'S OWN COMMANDS DID NOT RUN, fixed 2026-09-21, and it had
+  gone unnoticed because nobody had pasted them where they are actually used.
+  `needs_native_build.py` and `preflight.py` live inside
+  `.claude/skills/trimio-release/scripts/`, and SKILL.md wrote them as
+  `scripts/preflight.py`. That is correct relative to the skill folder and fails
+  the moment it is pasted into a shell at the REPO ROOT, which is where releases
+  are run from. `video-rerecord-brief.md` already used the full path, so the two
+  documents disagreed with each other.
+  THE SECOND HALF COST REAL CONFUSION AND IS THE ONE WORTH REMEMBERING. Run with
+  NO ARGUMENT, `needs_native_build.py` compares against the last versionCode
+  BUMP, so it reports everything native that has moved since the last BUILD. It
+  duly announced NATIVE BUILD REQUIRED because `codemagic.yaml` has changed
+  since build 40, while the publish actually on the table carried one client
+  file and no native input whatever. Pointed at the publish baseline the SAME
+  script said OTA IS ENOUGH.
+  SO PASS IT THE RIGHT BASELINE: bare before a BUILD, the last published commit
+  before a PUBLISH. Taking the bare answer as a reason to build sends you to
+  Codemagic for nothing, which is the opposite of the owner's own OTA first
+  rule. The skill now says which baseline answers which question.
 
 - THE FAIL-OPEN ON ENTITLEMENT IS CLOSED, and it is the reason 9abf5c2c mattered
   more than the other four findings. `/api/auth/verify-premium` used to fall back
@@ -2290,6 +2388,52 @@ last one left off without needing a recap typed out.
   exists from the owner's own circle, but wait for Android traction/signal
   first). The primary-colour rebrand was deferred for a while and then
   done, see BRAND PALETTE below.
+- THE COMPETITION WAS RESEARCHED 2026-09-21, and the finding is uncomfortable:
+  THE PRODUCT IS STRONGER THAN THE COMPETITION AND THE PRICING IS WEAKER.
+  WHO IS ACTUALLY IN THIS MARKET, from a web search rather than assumption.
+  `Rocket Money`, both platforms, unlimited but BANK LINKED through Plaid, up to
+  $14/month. `Subby`, Android, unlimited FREE with ads. `Tilla`, Android,
+  manual, privacy first, free tier of FIVE, and **$2.99 LIFETIME**. `Bobby`,
+  iOS only, free tier of five, $1.99 ONE TIME. `AboTracker`, the DACH native
+  one, web first, no bank link, 168 pre-loaded DACH providers. `ReSubs` and
+  `TrackAllSubs` also exist and are cross platform.
+  TILLA IS THE PROBLEM. Same platform, same manual approach, same privacy
+  stance, same free tier of five, same headline number, and it charges $2.99
+  ONCE where Trimio charges $2.99 EVERY MONTH. Over two years that is $2.99
+  against roughly $72. There is also an irony a reviewer finds in one sentence:
+  an app for cutting subscriptions that is itself a subscription, in a category
+  where the two closest rivals are one-time purchases.
+  WHAT IS NOT KNOWN, and it matters more than the above: whether price is WHY
+  there are zero subscribers. Zero traffic produces zero conversions just as
+  reliably as a bad price does, and Phase 2 posting is still in progress. Nobody
+  should record that the price is proven wrong. What IS true is that it is
+  uncompetitive on its face against a same-store rival, and that is worth
+  settling BEFORE the €200/month goes anywhere near it.
+  WHERE TRIMIO GENUINELY WINS, checked against the code rather than the
+  marketing: 41 CANCELLATION GUIDES, fully bilingual with steps and URLs, which
+  nothing else in that list advertises and which Rocket Money charges $14/month
+  partly to provide; GERMAN DEPTH nobody outside DACH has, across app, Play
+  listing, legal documents, website and notifications; REGIONAL PRICING with
+  `isPriceFresh` gating the overpaying claim on a verified date, so the app
+  refuses to speak from a stale number; the EMAIL PASTE PARSER, which detects
+  the receipt's CURRENCY and flags a mismatch rather than silently converting;
+  and NOTIFICATIONS THAT WORK, which is worth more than it sounds because
+  Bobby's most cited user complaint is that its notifications do not.
+  THE RECOMMENDATION, which is the owner's call and not taken: move to one time
+  or lifetime pricing and lead on cancellation guides plus German.
+  `trimio_premium_lifetime` already exists in `lib/iap.ts`. $9.99 lifetime would
+  still undercut Tilla's two year story while covering Railway, where $2.99
+  lifetime would not. With zero subscribers there is nothing to migrate, so this
+  is the cheapest this decision will ever be, and it gets more expensive every
+  week.
+  THE OPPORTUNITY COST IS REAL: lifetime gives up recurring revenue and makes
+  the win-back email machinery pointless. The cheapest way to test the
+  POSITIONING without touching price at all is to change the store listing and
+  one landing headline to lead with the cancellation guides and the German, and
+  watch installs. Positioning is reversible in an afternoon. Pricing is not.
+  SUCCESS CRITERION BEFORE SPENDING ON UAC: one paying customer from organic.
+  Until that exists, paid traffic buys a more expensive version of zero.
+
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
