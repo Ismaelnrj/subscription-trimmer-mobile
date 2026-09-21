@@ -177,39 +177,37 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   done with an Eas update." So a native build is an exception that
   `needs_native_build.py` has to justify, not a routine step, and that script
   is the thing that decides.
-- `build-android.yml` IS THEREFORE DEAD WEIGHT AND IT IS RED. It has never been
-  the path Trimio ships on, and on 2026-09-20 it failed on every push: run 509
-  on `dc500210` died in 10 seconds at `Setup Android SDK`, with
-  `sdkmanager` exiting 1 under `android-actions/setup-android@v3`, and all
-  eleven build steps after it SKIPPED. Nothing compiled. GitHub has also
-  force-migrated that workflow to Node 24, which is a plausible trigger and was
-  not confirmed.
-  WHAT MAKES IT WORSE THAN AN UNUSED FILE: it triggers on `push` to master, so
-  every commit puts a red X on the repo for a path nobody ships on. That is
-  exactly the shape of the CI-was-decorative entry below, where a check stayed
-  red long enough that people stopped reading any red check at all. The
-  `Checks` workflow is the one that matters and it is green.
-  IT CANNOT AFFECT THE APP, and that is the question the owner asked on
-  2026-09-21. A GitHub Actions workflow runs on GitHub's servers when you push;
-  it is not in the APK, not in the JS bundle, and not on any phone. Verified by
-  grep: `app.json` and `eas.json` reference it ZERO times, and nothing under
-  app/, lib/ or components/ mentions it at all. Deleting it cannot crash or
-  degrade Trimio for anybody.
-  BUT IT IS NOT A ONE LINE DELETE, which an earlier draft of this entry implied.
-  `__tests__/ci-secrets.test.js` READS the file at line 28 and asserts three
-  things about it, so removing the file alone makes that suite throw ENOENT and
-  turns the Checks workflow red: the exact problem the deletion is meant to
-  solve, moved one file over. A clean delete removes the file AND those three
-  assertions together.
-  WHAT THOSE ASSERTIONS GUARD, so nobody deletes them thinking they are noise:
-  that the workflow exits 1 on a missing `KEYSTORE_BASE64`, that it contains no
+- `build-android.yml` IS DELETED, 2026-09-21, with the owner's explicit
+  authorisation and on the condition that it could not take the app down. It
+  could not, and that was verified rather than asserted: a GitHub Actions
+  workflow runs on GitHub's servers when you push, so it is not in the APK, not
+  in the JS bundle and not on any phone. `app.json` and `eas.json` referenced it
+  ZERO times and nothing under app/, lib/ or components/ mentioned it at all.
+  WHY IT WENT. It was never the path Trimio ships on (Codemagic is), and it
+  failed on EVERY push: run 509 on `dc500210` died in 10 seconds at
+  `Setup Android SDK` with `sdkmanager` exiting 1 under
+  `android-actions/setup-android@v3`, and all eleven build steps after it
+  SKIPPED, so nothing ever compiled. Because it triggered on `push` to master,
+  every commit put a red X on the repo for a path nobody uses. That is the
+  CI-was-decorative entry below happening a second time: a check that is always
+  red trains everybody to stop reading red checks, and that habit is what let a
+  two line eslint bug hide the entire test suite for months.
+  IT WAS NOT A ONE LINE DELETE, which is the part worth remembering.
+  `__tests__/ci-secrets.test.js` READ the file and asserted three things about
+  it, so removing the workflow alone would have made that suite throw ENOENT and
+  turned `Checks` red: the exact problem the deletion was meant to solve, moved
+  one file over. Both halves went together, the file and the three references.
+  WHAT THOSE ASSERTIONS GUARDED, and why dropping them cost nothing: that the
+  workflow exited 1 on a missing `KEYSTORE_BASE64`, that it contained no
   `keytool -genkey` (the fallback that once printed a private signing key into a
-  build log), and a Node version check shared with the other two CI files.
-  Removing the workflow removes the thing they guard, so dropping them with it
-  is correct rather than a loss. codemagic.yaml keeps its own copies of the same
-  two guards, which is what actually matters, since Codemagic is the real build.
-  THE DECISION IS THE OWNER'S and has not been taken: fix it, or delete it.
-  Deleting is the honest default given the rule above. Do not delete it unasked.
+  build log), and a Node version floor shared with the other CI files. All three
+  guarded a file that no longer exists. `codemagic.yaml` keeps its own copies,
+  measured at the time of deletion: 17 `CM_KEYSTORE` references and ZERO
+  `keytool -genkey`. The real build path is unchanged.
+  THE SUITE WENT 255 TO 254 PASSING, which is the one deleted test and nothing
+  else: the 35 shim-limited failures were identical before and after with no
+  per-file delta. `.github/workflows/checks.yml` is now the only GitHub
+  workflow, and it is the one that matters.
 
 ## Backend API convention
 

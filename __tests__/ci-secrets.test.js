@@ -25,7 +25,6 @@ const read = (p) => fs.readFileSync(path.join(__dirname, "..", p), "utf8");
 
 const CODEMAGIC = read("codemagic.yaml");
 const CHECKS = read(".github/workflows/checks.yml");
-const ANDROID = read(".github/workflows/build-android.yml");
 const GITIGNORE = read(".gitignore");
 const PKG = JSON.parse(read("package.json"));
 
@@ -102,11 +101,6 @@ describe("release signing fails closed", () => {
     expect(code(CODEMAGIC)).not.toMatch(/WARNING: alias mismatch/);
   });
 
-  it("the GitHub android workflow still fails closed on its own secret", () => {
-    // This one was already correct. Asserted so it stays that way.
-    expect(ANDROID).toMatch(/KEYSTORE_BASE64[\s\S]{0,400}exit 1/);
-    expect(code(ANDROID)).not.toMatch(/keytool\s+-genkey/);
-  });
 });
 
 describe("CI uses the package manager and runtime the repo declares", () => {
@@ -147,7 +141,7 @@ describe("CI uses the package manager and runtime the repo declares", () => {
   it("no workflow or CI file still pins an end of life Node", () => {
     /* Node 18 went end of life in April 2025 and 20 in 2026, so neither gets
        runtime or OpenSSL patches. */
-    for (const [name, src] of [["checks", CHECKS], ["android", ANDROID], ["codemagic", CODEMAGIC]]) {
+    for (const [name, src] of [["checks", CHECKS], ["codemagic", CODEMAGIC]]) {
       const versions = [...code(src).matchAll(/node(?:-version)?:\s*'?(\d+)'?/g)].map((m) => Number(m[1]));
       expect(versions.length).toBeGreaterThan(0);
       for (const v of versions) {
