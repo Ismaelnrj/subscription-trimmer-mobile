@@ -1511,10 +1511,15 @@ function makeStyles(c: AppColors) {
        font, so padding makes the height approximate and minHeight makes it
        provable. __tests__/cancel-guide-target.test.js reads these numbers out
        of this stylesheet rather than restating them.
-       textSecondary, NOT textMuted, and that is a contrast fix rather than a
-       taste one: #8B949C on the light card measures 2.98:1, under the 4.5:1
-       floor for text at this size. #52616B is 6.19:1 and the dark theme's
-       #93A3AD is 6.10:1, so both themes pass.
+       textSecondary, NOT textMuted. WHEN THIS WAS WRITTEN that was a contrast
+       fix: textMuted was #8B949C, which measures 2.98:1 on the light card,
+       under the 4.5:1 floor for text at this size. The TOKEN has since been
+       fixed (#67717A, 4.81:1), so that argument no longer holds and the
+       choice stands on a different one: a control's label should be more
+       prominent than the muted metadata beside it, and textSecondary is
+       6.19:1 light and 6.10:1 dark. Recorded rather than left stale, because
+       a comment that still gives the old reason is how the next reader
+       concludes the decision was arbitrary.
        NOT the primary token, which is the obvious choice for something that
        should read as a link and is wrong here: dark primary #2F8E71 on the
        dark card is 3.94:1 and fails the same floor. Measured, not eyeballed. */

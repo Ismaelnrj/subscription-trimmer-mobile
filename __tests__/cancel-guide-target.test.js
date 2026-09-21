@@ -101,9 +101,12 @@ describe("the cancel guide link is a control, not a caption", () => {
     expect(hitSlop).not.toBe("");
   });
 
-  it("does not use textMuted, which fails the contrast floor in both themes", () => {
-    // 2.98:1 on the light card, 3.77:1 on the dark one, against 4.5:1 for
-    // text this size. Measured with the design skill's checker, not eyeballed.
+  it("does not use textMuted, which is for metadata rather than controls", () => {
+    // THIS ASSERTION'S REASON CHANGED and the wording follows it. textMuted was
+    // #8B949C, 2.98:1 on the light card, so this began as a contrast guard. The
+    // token is now #67717A at 4.81:1 and passes, so what is pinned here is the
+    // hierarchy instead: a control's label outranks the muted text beside it.
+    // theme-contrast.test.js owns the contrast floors now.
     expect(linkText).not.toMatch(/c\.textMuted/);
     expect(SRC).not.toMatch(/format-list-numbered"\s+size=\{\d+\}\s+color=\{c\.textMuted\}/);
   });
