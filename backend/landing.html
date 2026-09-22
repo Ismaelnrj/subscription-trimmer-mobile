@@ -107,11 +107,11 @@ img { display: block; max-width: 100%; }
   padding-top: 74px;
   padding-bottom: 92px;
 }
-.eyebrow, .kicker { color: #3F9F83; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 800; }
+.eyebrow, .kicker { color: #1F7A62; text-transform: uppercase; letter-spacing: .14em; font-size: 12px; font-weight: 800; }
 .eyebrow { display: inline-flex; align-items: center; gap: 10px; background: rgba(85,198,163,.12); padding: 9px 13px; border-radius: 999px; }
 .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 6px rgba(85,198,163,.12); }
 .hero h1 { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif, sans-serif; font-size: clamp(58px, 6vw, 90px); line-height: .98; letter-spacing: -.055em; margin: 24px 0 26px; max-width: 760px; }
-.hero h1 span { color: #3F9F83; }
+.hero h1 span { color: #1F7A62; }
 .hero-lead { max-width: 640px; font-size: 20px; line-height: 1.6; color: var(--slate); }
 .hero-actions { display: flex; align-items: center; gap: 26px; margin-top: 36px; }
 .text-link { font-weight: 700; }
@@ -159,7 +159,7 @@ img { display: block; max-width: 100%; }
 .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .step-card, .feature-card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 30px; }
 .step-card { min-height: 390px; display: flex; flex-direction: column; }
-.step-no { color: #3F9F83; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+.step-no { color: #1F7A62; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
 .step-card h3, .feature-card h3 { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 23px; letter-spacing: -.025em; margin: 24px 0 10px; }
 .step-card p, .feature-card p { color: var(--slate); line-height: 1.65; margin: 0; }
 .mini-visual { height: 125px; margin-top: 26px; border-radius: 22px; background: var(--mint-soft); position: relative; overflow: hidden; }
@@ -407,18 +407,18 @@ img { display: block; max-width: 100%; }
 .field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .check-row { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; color: var(--slate); line-height: 1.45; }
 .check-row input { margin-top: 2px; accent-color: var(--mint); }
-.link-button { border: 0; background: none; padding: 0; color: #2E8E74; font: inherit; font-weight: 800; cursor: pointer; }
+.link-button { border: 0; background: none; padding: 0; color: #1F7A62; font: inherit; font-weight: 800; cursor: pointer; }
 .auth-submit { border: 0; width: 100%; cursor: pointer; }
 .auth-message { min-height: 20px; font-size: 12px; margin-top: 4px; }
 .auth-message.error { color: #BA4F47; }
-.auth-message.success { color: #2E8E74; }
+.auth-message.success { color: #1F7A62; }
 .auth-foot { text-align: center; margin-top: 19px; color: var(--slate); font-size: 13px; }
 .pw-wrap { position: relative; display: block; }
 .pw-wrap input { padding-right: 48px; }
 .pw-toggle {
   position: absolute; top: 50%; right: 7px; transform: translateY(-50%);
   display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
-  border: 0; border-radius: 10px; background: transparent; color: #7B888F; cursor: pointer;
+  border: 0; border-radius: 10px; background: transparent; color: #52616B; cursor: pointer;
   transition: color .15s ease, background .15s ease;
 }
 .pw-toggle:hover { color: var(--navy); background: rgba(20,43,58,.06); }
@@ -428,9 +428,9 @@ img { display: block; max-width: 100%; }
 .check-row a { color: var(--navy); text-decoration: underline; text-underline-offset: 2px; }
 .footer div a { display: inline-block; padding: 14px 2px; }
 .auth-hint { margin-top: 7px; color: var(--slate); font-size: 12px; font-weight: 500; line-height: 1.5; }
-.password-note { font-size: 11px; color: #7B888F; margin-top: 2px; }
+.password-note { font-size: 11px; color: #52616B; margin-top: 2px; }
 .auth-success { text-align: center; padding: 28px 8px 12px; }
-.success-mark { width: 66px; height: 66px; margin: 0 auto 18px; border-radius: 50%; background: var(--mint-soft); color: #2E8E74; display: grid; place-items: center; font-size: 30px; font-weight: 900; }
+.success-mark { width: 66px; height: 66px; margin: 0 auto 18px; border-radius: 50%; background: var(--mint-soft); color: #1F7A62; display: grid; place-items: center; font-size: 30px; font-weight: 900; }
 .auth-success h2 { margin-bottom: 10px; }
 .auth-success p { color: var(--slate); line-height: 1.55; }
 .auth-success .button { margin-top: 12px; width: 100%; }
@@ -849,10 +849,35 @@ demoButtons.forEach((button) => {
 
   // mirrors validatePassword in backend/server.js, so the rule is enforced
   // before a round trip rather than coming back as a server error
+  // bcrypt hashes at most 72 BYTES and silently ignores the rest, so two
+  // passphrases sharing a 72 byte prefix would both authenticate. The backend
+  // refuses rather than truncating, and until this existed the form accepted a
+  // password the server was about to reject: a password manager passphrase
+  // submitted fine and came back as "Password must be 72 bytes or fewer",
+  // which is developer language on a signup form.
+  // BYTES, not characters, because this is UTF-8: an umlaut is two and an
+  // emoji four, so 40 umlauts is 80 bytes while .length reads 40. TextEncoder
+  // is the right tool HERE because this is a browser. The app counts by hand
+  // instead, since Hermes has no TextEncoder and calling it there threw.
+  var pwEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+  function passwordBytes(pw) {
+    if (pwEncoder) return pwEncoder.encode(pw).length;
+    var n = 0;
+    for (const ch of pw) {
+      const c = ch.codePointAt(0);
+      n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
+    }
+    return n;
+  }
+
   function passwordProblem(pw) {
     if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
     if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter.';
     if (!/[0-9]/.test(pw)) return 'Password must contain at least one number.';
+    // Deliberately AFTER the three requirements and phrased separately, the
+    // same split the app makes: folding length into the "at least 8" sentence
+    // would show it to somebody whose password is 120 characters.
+    if (passwordBytes(pw) > 72) return 'Password must be 72 characters or fewer. Accented characters and emoji count as more than one.';
     return null;
   }
 

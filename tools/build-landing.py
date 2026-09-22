@@ -159,10 +159,35 @@ s = s.replace('placeholder="At least 8 characters"',
 s = s.replace("""  function setMode(mode) {""",
 """  // mirrors validatePassword in backend/server.js, so the rule is enforced
   // before a round trip rather than coming back as a server error
+  // bcrypt hashes at most 72 BYTES and silently ignores the rest, so two
+  // passphrases sharing a 72 byte prefix would both authenticate. The backend
+  // refuses rather than truncating, and until this existed the form accepted a
+  // password the server was about to reject: a password manager passphrase
+  // submitted fine and came back as "Password must be 72 bytes or fewer",
+  // which is developer language on a signup form.
+  // BYTES, not characters, because this is UTF-8: an umlaut is two and an
+  // emoji four, so 40 umlauts is 80 bytes while .length reads 40. TextEncoder
+  // is the right tool HERE because this is a browser. The app counts by hand
+  // instead, since Hermes has no TextEncoder and calling it there threw.
+  var pwEncoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null;
+  function passwordBytes(pw) {
+    if (pwEncoder) return pwEncoder.encode(pw).length;
+    var n = 0;
+    for (const ch of pw) {
+      const c = ch.codePointAt(0);
+      n += c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4;
+    }
+    return n;
+  }
+
   function passwordProblem(pw) {
     if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
     if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter.';
     if (!/[0-9]/.test(pw)) return 'Password must contain at least one number.';
+    // Deliberately AFTER the three requirements and phrased separately, the
+    // same split the app makes: folding length into the "at least 8" sentence
+    // would show it to somebody whose password is 120 characters.
+    if (passwordBytes(pw) > 72) return 'Password must be 72 characters or fewer. Accented characters and emoji count as more than one.';
     return null;
   }
 
@@ -467,6 +492,40 @@ def germanise(page, table):
     return page, hits
 
 
+# 17. the handoff's greens and its quiet grey fail the contrast floor, every
+#     one of them measured rather than eyeballed. This is the same defect the
+#     APP carried in lib/theme.ts until 2026-09-21, on the page that sells the
+#     app, and it was never caught because contrast is not intuitable: these
+#     look perfectly fine on a good screen in good light.
+#
+#       #3F9F83  2.99:1 on the warm ground. .eyebrow and .kicker (12px caps),
+#                .hero h1 span (the highlighted words in the headline, which
+#                miss even the 3:1 LARGE text floor) and .step-no.
+#       #2E8E74  3.71:1. .link-button, which is interactive, and
+#                .auth-message.success. Also .success-mark, whose ground is
+#                --mint-soft rather than the page, where it measures 3.48:1.
+#       #7B888F  3.52:1 on the card. .password-note, the line telling somebody
+#                what their password needs, and .pw-toggle.
+#
+#     #1F7A62 is the palette's answer and the design skill names it: 4.83:1 on
+#     the warm ground, 5.05:1 on card, 5.23:1 on white and 4.54:1 on mint-soft,
+#     so ONE value clears every ground these sit on. It is close enough that
+#     nobody notices the substitution.
+#     #52616B is Slate, the palette's own secondary text token, at 6.19:1.
+#
+#     Done HERE rather than in tools/landing-source.html on purpose: the source
+#     is the handoff, and a fix written into it is lost the moment a fresh
+#     handoff is dropped in. This file exists for exactly the corrections the
+#     handoff could not know about, and a contrast floor is one of them.
+#     It runs LAST so it also catches the CSS this script injects itself, which
+#     is where one of the two #7B888F uses comes from.
+CONTRAST_FIXES = {"#3F9F83": "#1F7A62", "#2E8E74": "#1F7A62", "#7B888F": "#52616B"}
+for bad, good in CONTRAST_FIXES.items():
+    n = len(re.findall(re.escape(bad), s, re.I))
+    assert n, f"contrast fix for {bad} matched nothing, so the handoff changed"
+    s = re.sub(re.escape(bad), good, s, flags=re.I)
+    print(f"contrast: {bad} -> {good} ({n} rule{'s' if n != 1 else ''})")
+
 en_page = fill(s, EN_META)
 out = pathlib.Path("backend/landing.html")
 out.write_text(en_page, encoding="utf-8")
@@ -506,6 +565,14 @@ for probe in ("data:image/png", "/api/auth/signup", '<button class="auth-google"
 assert s.count("/mark.svg") >= 5
 print("checks passed: no embedded PNG, no signup route, no Google button or handler,")
 print("no /account redirect, mark referenced as a shared file")
+
+# The failing colours must not survive into what is served. Asserted rather
+# than trusted, because transform 17 is a blind replace and a renamed rule in a
+# future handoff would silently reintroduce them.
+for bad in CONTRAST_FIXES:
+    assert bad.lower() not in s.lower(), f"contrast: {bad} survived into the page"
+assert "passwordBytes(pw) > 72" in s, "the 72 byte password rule is missing"
+print("checks passed: no sub-4.5:1 text colour survives, password rule matches the backend")
 
 for probe in ("eu-assets.i.posthog.com/static/array.js",
               "landing_signup_completed",
