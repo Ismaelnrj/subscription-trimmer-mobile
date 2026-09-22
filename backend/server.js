@@ -1019,6 +1019,32 @@ async function initDB() {
     )
   `);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_end_date TIMESTAMPTZ`);
+  /* THE CURRENCY A PRICE WAS ENTERED IN, which this table could not represent
+     until 2026-09-22 and which cost real accuracy the moment anybody changed
+     their currency once.
+     `price` was a bare NUMERIC and the currency lived in ONE global
+     `baseCurrencyCode` in the client's SecureStore, tied to the display
+     currency by setCurrency. So the number stayed and its MEANING followed
+     whatever was last picked. Measured against the real store: a 15.99 EUR
+     Netflix shows as 15.99 USD after switching to dollars, where a true
+     conversion is 17.38, and a row entered in dollars then read in euros is
+     wrong in the other direction. Two currencies could not coexist at all,
+     because one global base described every row.
+     THE BACKFILL GUESSES ONCE, DELIBERATELY, AND SAYS SO. The server never saw
+     the base currency, so for existing rows it cannot be recovered. The user's
+     CURRENT settings currency is the best available answer and is exactly
+     right for anyone who never changed it, which is everyone who has not
+     switched. It is applied once, only where the column is NULL, so it can
+     never overwrite a real value later.
+     The alternative, leaving old rows NULL, is worse: a null currency has to
+     be guessed at read time by every consumer instead of once here. */
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS currency TEXT`);
+  // The BACKFILL is deliberately further down, after user_settings is created.
+  // It reads that table, and on a FRESH database this point is reached before
+  // user_settings exists, so running it here throws `relation "user_settings"
+  // does not exist` inside initDB and the service never finishes booting. It
+  // would have worked on production, where the table already exists, and
+  // broken every new environment: a landmine that only fires later.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS price_history (
       id SERIAL PRIMARY KEY,
@@ -1070,6 +1096,21 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS currency_symbol TEXT DEFAULT '$'`);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS custom_categories TEXT DEFAULT '[]'`);
+
+  /* Backfill for subscriptions.currency, placed here because it JOINS
+     user_settings, which only exists as of the statement above. See the note
+     beside the ALTER that adds the column. Both statements are idempotent and
+     touch only NULL rows, so a redeploy cannot relabel a real value. */
+  await pool.query(`
+    UPDATE subscriptions s
+       SET currency = COALESCE(us.currency, 'USD')
+      FROM user_settings us
+     WHERE us.user_id = s.user_id
+       AND s.currency IS NULL
+  `);
+  // A user with no settings row has never opened the picker, so USD is both
+  // the column default they would have had and the only honest guess.
+  await pool.query(`UPDATE subscriptions SET currency = 'USD' WHERE currency IS NULL`);
   await pool.query(`ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS alert_threshold NUMERIC DEFAULT 50`);
 
   // open_id is the stable identifier passed to RevenueCat as the appUserID, so
@@ -1375,6 +1416,22 @@ async function rewardReferral(referrerId, referredId) {
   return true;
 }
 
+/* The nine codes lib/currency-store.ts actually offers. An unknown code is a
+   CLIENT bug rather than something a user can do, so it falls back to the
+   user's settings currency instead of being stored and poisoning the row. */
+const SUPPORTED_CURRENCIES = new Set(['USD', 'EUR', 'GBP', 'BRL', 'CAD', 'AUD', 'JPY', 'MXN', 'INR']);
+
+async function resolveCurrency(userId, supplied) {
+  if (typeof supplied === 'string' && SUPPORTED_CURRENCIES.has(supplied.toUpperCase())) {
+    return supplied.toUpperCase();
+  }
+  const r = await pool.query('SELECT currency FROM user_settings WHERE user_id = $1', [userId]);
+  const fromSettings = r.rows[0]?.currency;
+  return SUPPORTED_CURRENCIES.has(String(fromSettings).toUpperCase())
+    ? String(fromSettings).toUpperCase()
+    : 'USD';
+}
+
 function formatSub(s) {
   return {
     id: s.id,
@@ -1391,6 +1448,11 @@ function formatSub(s) {
        from node-postgres, but this endpoint is not the only writer and an
        absent column must read as absent rather than as NaN. */
     billingAnchorDay: Number.isInteger(Number(s.billing_anchor_day)) ? Number(s.billing_anchor_day) : null,
+    /* The currency this price was ENTERED in, which is not necessarily the one
+       the app is currently displaying. Absent only for a row written before
+       the column existed and before initDB's backfill ran, so a reader must
+       still handle null rather than assume. */
+    currency: s.currency || null,
     created_at: s.created_at,
     isActive: s.is_active ?? true,
   };
@@ -2174,13 +2236,24 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
        it back off next_billing_date later cannot tell a chosen 28th from a
        31st that was clamped. */
     const anchorDay = new Date(billingDate).getUTCDate();
+    /* Recorded at creation for the same reason as the anchor day: this is the
+       only moment the answer is known for certain. Afterwards the number is
+       just a number, and the client's global base currency follows whatever
+       the person last picked, so it cannot be reconstructed. */
+    const currency = await resolveCurrency(req.userId, req.body.currency);
     const result = await pool.query(
-      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay]
+      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day, currency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay, currency]
     );
+    /* This used to read `($${price}/...)` with a hardcoded dollar sign, so a
+       euro subscriber got their price stamped with the wrong symbol in their
+       own notification list. Same class as the column above: a number written
+       down without the unit it was measured in. The code is used rather than a
+       symbol because this string is not localised and `EUR 15.99` is at least
+       unambiguous in every language. */
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-      [req.userId, 'Subscription Added', `${name} ($${price}/${billingCycle}) was added.`, 'info']
+      [req.userId, 'Subscription Added', `${name} (${currency} ${price}/${billingCycle}) was added.`, 'info']
     );
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
@@ -2206,6 +2279,26 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
     const existing = check.rows[0];
+    /* THE CURRENCY MOVES ONLY WHEN THE PRICE DOES, which is the same rule as
+       billing_anchor_day above and it is here for the same reason. The edit
+       form seeds every field from the stored row and posts all of them back,
+       so renaming Netflix resubmits the unchanged price. If the currency
+       followed the app's CURRENT display currency on every save, then editing
+       a name while the app happened to be in dollars would relabel a euro
+       price as dollars: a silent corruption caused by touching an unrelated
+       field, which is exactly the bug the anchor day already had once.
+       A CHANGED price is a number the person just typed, so it is in whatever
+       they are entering in now, and the supplied currency is correct for it.
+       DELIBERATELY ABOVE THE DATE LOGIC. __tests__/billing-advance.test.js
+       slices this handler from `let newBillingDate` to the UPDATE and evals
+       that slice to drive the real anchor-day rule. An `await` inside that
+       window breaks its eval, so resolving the currency here keeps their
+       extraction region pure date arithmetic. Resolve inputs, then compute. */
+    const priceChanged = roundToCents(parseFloat(existing.price)) !== price;
+    const currency = priceChanged
+      ? await resolveCurrency(req.userId, req.body.currency)
+      : (existing.currency || await resolveCurrency(req.userId, req.body.currency));
+
     let newBillingDate = billingCycle !== existing.billing_cycle
       ? nextBillingDate(billingCycle)
       : existing.next_billing_date;
@@ -2248,8 +2341,8 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     }
 
     const result = await pool.query(
-      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6, billing_anchor_day = $7 WHERE id = $8 AND user_id = $9 RETURNING *',
-      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, newAnchorDay, id, req.userId]
+      'UPDATE subscriptions SET name = $1, price = $2, billing_cycle = $3, category = $4, next_billing_date = $5, trial_end_date = $6, billing_anchor_day = $7, currency = $8 WHERE id = $9 AND user_id = $10 RETURNING *',
+      [name, price, billingCycle, category, newBillingDate, trialEndDate || null, newAnchorDay, currency, id, req.userId]
     );
 
     // Rows written before prices were rounded can hold sub-cent figures, so an

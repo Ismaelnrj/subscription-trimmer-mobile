@@ -472,10 +472,20 @@ export default function SubscriptionsScreen() {
   };
 
   const submitData = (price: number, trialEndDate: string | null, nextBillingDate: string | null, force = false) => {
+    /* THE CURRENCY THE PRICE WAS TYPED IN, sent so the server can record it on
+       the row. Without it `price` is a number with no unit, and the only thing
+       describing it was ONE global baseCurrencyCode in SecureStore that
+       follows whatever currency was last picked. Measured against the real
+       store: a 15.99 EUR subscription reads as 15.99 USD after a switch, where
+       the true conversion is 17.38, and two rows entered in different
+       currencies cannot both be right.
+       The SERVER decides what to do with it: it only moves an existing row's
+       currency when the price actually changed, so editing a name cannot
+       relabel a euro price as dollars. */
     const data = {
       name: formData.name.trim(), price, nextBillingDate: nextBillingDate || undefined,
       billingCycle: formData.billingCycle, category: formData.category,
-      trialEndDate, force,
+      trialEndDate, force, currency: baseCurrencyCode,
     };
     if (editingId !== null) { updateMutation.mutate({ id: editingId, ...data }); }
     else { createMutation.mutate(data); }
@@ -503,10 +513,14 @@ export default function SubscriptionsScreen() {
 
   const handleLoadExamples = async () => {
     setLoadingExamples(true);
+    /* These three prices are the US figures, so they are tagged USD rather than
+       the user's current currency. Sending the display currency would assert
+       that 15.99 is 15.99 in euros, which is the same class of error the
+       currency column exists to stop, committed by the sample data itself. */
     const examples = [
-      { name: "Netflix", price: 15.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null },
-      { name: "Spotify", price: 9.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null },
-      { name: "iCloud+", price: 2.99, billingCycle: "monthly", category: "software", trialEndDate: null },
+      { name: "Netflix", price: 15.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null, currency: "USD" },
+      { name: "Spotify", price: 9.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null, currency: "USD" },
+      { name: "iCloud+", price: 2.99, billingCycle: "monthly", category: "software", trialEndDate: null, currency: "USD" },
     ];
     try {
       for (const ex of examples) {
