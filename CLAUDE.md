@@ -2732,6 +2732,61 @@ last one left off without needing a recap typed out.
   a different and smaller claim than one about storage. Keep the distinction: the
   listing and the Data Safety declaration have to agree.
 
+- THE POSITIONING TEST IS LIVE ON THE SITE AND WAITING IN PLAY CONSOLE
+  (2026-09-22, `b58a0856`). The competitor entry above says the product is
+  stronger than the competition and the pricing is weaker, and names positioning
+  as the cheap half of that: reversible in an afternoon, where pricing is not.
+  This is that half.
+  WHAT MOVED, one variable: the store copy and the landing page now LEAD with
+  the cancellation guides rather than the category promise. Every tracker in
+  that market says some version of "know before you are charged", so the old
+  copy told a reader nothing about why this one. On the landing page the guides
+  were the EIGHTH feature card, described as "clear cancellation guidance",
+  which claims nothing anybody can check.
+  THE SITE HALF IS SHIPPED AND DEPLOYED: `tools/landing-source.html` and
+  `tools/landing-de.json` regenerated through `tools/build-landing.py`, so
+  Railway serves the new hero lead, the rewritten feature card, and
+  `Free for 5 subscriptions` -> `Free to start`. That last one is not cosmetic:
+  the free limit became a Railway variable the same day, so a page naming a
+  number the server can change is a page that will eventually lie.
+  THE PLAY CONSOLE HALF IS THE OWNER'S TO PASTE and sits in
+  `store-listing-positioning-test.md`: both short descriptions with measured
+  counts (EN 68/80, DE 78/80) and a replacement opening paragraph in each
+  language. Everything else in the listing stays, because the named services
+  and the privacy section are carrying the ASO.
+  BOTH TITLES ARE DELIBERATELY UNCHANGED. `Trimio: Abo Tracker & Kosten` is
+  indexed, and a title change resets signal already paid for in time. There is a
+  tempting alternative at exactly 30/30, `Trimio: Abos kündigen & Kosten`, which
+  puts the high intent German verb in the title. It is worth trying LATER, on
+  its own. A test wants one variable moved far enough to read, not three moved a
+  little.
+  READ THE BASELINE BEFORE PASTING ANYTHING. Play Console > Grow > Store
+  performance, store listing conversion rate, current 28 day figure, written
+  into that file. Without it there is no result, only a new listing.
+  WINDOW 28 DAYS OR 300 VISITORS, whichever is later; continue if conversion
+  improves at all, revert if it drops more than a fifth. It settles NOTHING
+  about pricing: zero traffic and a bad price produce the same zero, and this
+  moves only the first.
+
+- A DESIGN SWEEP OF EVERY SCREEN, 2026-09-22 (`b198c794`), 53 findings down to
+  43, and the useful part is which ten were real.
+  FIFTEEN TOUCH TARGETS UNDER 48dp, now three. The tab bar was the worst of
+  them and the reason is worth carrying: `flex: 1` stretches a child to the
+  parent's CONTENT box, so the bar's own padding and the safe area inset were
+  not tappable at all, and the tab measured from the icon outward. `minHeight:
+  48` on the tab itself, never more padding, because padding leaves the height
+  at the mercy of the font. `hitSlop` is the other tool: it expands the touch
+  area with zero layout change, which is what the small icon buttons got.
+  THE THREE THAT REMAIN ARE FALSE POSITIVES and are named here so nobody
+  "fixes" them: the scanner cannot see a hitSlop that sits on a parent, and it
+  reads a style object it cannot resolve as a missing one. Verify a scanner's
+  claim before writing it down, which this file already records costing an
+  audit two false findings.
+  THE MONTH GRID's `dayTotal` and `dayMeta` ARE COUPLED. The geometry test
+  derives the reserved slot from its parts rather than hardcoding it, so a type
+  size change stays honest; changing one without the other is what that test
+  exists to catch.
+
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
   test after that, never split the budget across both from day one.
