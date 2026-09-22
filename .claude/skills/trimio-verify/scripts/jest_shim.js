@@ -59,11 +59,39 @@ global.it.skip = name => queue.push({ suite: currentSuite, name, skip: true });
 global.test = global.it;
 global.test.each = global.it.each;
 
-const hooks = { beforeAll: [], afterAll: [] };
+const hooks = { beforeAll: [], afterAll: [], beforeEach: [], afterEach: [] };
 global.beforeAll = fn => hooks.beforeAll.push(fn);
 global.afterAll = fn => hooks.afterAll.push(fn);
-global.beforeEach = () => {};
-global.afterEach = () => {};
+
+/* beforeEach AND afterEach USED TO BE SWALLOWED, `() => {}`, and that was the
+ * FOURTH bug in this file of exactly one kind: a hook accepted and then dropped.
+ * It is the worst of the four because it fails in BOTH directions. A suite that
+ * resets shared state between tests leaks it instead, so tests fail against code
+ * that is correct (which is how it was found: two assertions in
+ * subscription-cancel.test.js reported failures caused only by the harness). And
+ * a suite whose beforeEach is what ARMS a case runs that case unarmed, so it can
+ * pass having asserted nothing, which is the silent pass this whole skill exists
+ * to prevent.
+ *
+ * SCOPED THE WAY JEST SCOPES THEM, because applying every hook to every test
+ * would be its own wrong answer: a reset belonging to one describe would run
+ * inside a sibling that deliberately builds different state. `currentSuite` is
+ * already a " > " separated path, so a hook registered at path P applies to a
+ * test whose suite is P or nested below it, and a hook registered at the top
+ * level (P === "") applies to all. */
+global.beforeEach = fn => hooks.beforeEach.push({ suite: currentSuite, fn });
+global.afterEach = fn => hooks.afterEach.push({ suite: currentSuite, fn });
+
+const appliesTo = (hookSuite, testSuite) =>
+  hookSuite === "" || testSuite === hookSuite || testSuite.startsWith(hookSuite + " > ");
+
+async function runHooks(list, testSuite) {
+  for (const h of list) {
+    if (!appliesTo(h.suite, testSuite)) continue;
+    const r = h.fn();
+    if (r && typeof r.then === "function") await r;
+  }
+}
 
 const show = v => {
   let s;
@@ -145,10 +173,14 @@ try {
     if (t.suite !== seen) { console.log("\n" + t.suite); seen = t.suite; }
     if (t.skip) { skipped++; console.log("  skip " + t.name); continue; }
     try {
+      // A beforeEach that throws must fail the test rather than the run, the
+      // same as in jest, so it sits inside this try alongside the body.
+      await runHooks(hooks.beforeEach, t.suite);
       // AWAIT. An async body returns a promise, and calling it without awaiting
       // counts a pass before a single assertion has run. See the header.
       const r = t.body();
       if (r && typeof r.then === "function") await r;
+      await runHooks(hooks.afterEach, t.suite);
       passed++;
       console.log("  ok   " + t.name);
     } catch (e) {
@@ -164,6 +196,19 @@ try {
       } else {
         failed++;
         console.log("  FAIL " + t.name + "\n       " + msg);
+      }
+    } finally {
+      /* afterEach runs whichever way the test went, as jest does. ONE DIVERGENCE,
+       * stated rather than left to be discovered: in jest a THROWING afterEach
+       * fails the test, and here it is reported as a warning, because the pass
+       * has already been counted by the time this runs. Nothing in __tests__
+       * uses afterEach today, so restructuring the counter for it would be
+       * speculative. If a suite ever relies on assertions inside an afterEach,
+       * that suite needs the real runner and this line is where to look. */
+      try {
+        await runHooks(hooks.afterEach, t.suite);
+      } catch (e) {
+        console.log("  warn afterEach threw in " + t.name + ": " + e.message.split("\n")[0]);
       }
     }
   }

@@ -766,7 +766,7 @@ const RENEWAL_DIGEST_WINDOW_DAYS = 3;
 // Brevo. Never awaited by callers so it can't slow down or fail their request.
 function syncSubCountToBrevo(userId, email) {
   if (!email) return;
-  pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [userId])
+  pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL', [userId])
     .then((result) => syncBrevoSubCount(email, parseInt(result.rows[0].c)))
     .catch((err) => console.error('[Brevo] Sub count lookup failed for user', userId, err.message));
 }
@@ -781,9 +781,9 @@ function syncNextRenewalToBrevo(userId, email) {
   Promise.all([
     pool.query(
       `SELECT MIN(d) AS next_date FROM (
-         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND next_billing_date >= NOW()
+         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL AND next_billing_date >= NOW()
          UNION ALL
-         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND trial_end_date >= NOW()
+         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL AND trial_end_date >= NOW()
        ) t`,
       [userId]
     ),
@@ -1039,6 +1039,21 @@ async function initDB() {
      The alternative, leaving old rows NULL, is worse: a null currency has to
      be guessed at read time by every consumer instead of once here. */
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS currency TEXT`);
+  /* CANCELLED IS A THIRD STATE AND IT IS A TIMESTAMP, NOT A BOOLEAN.
+     `is_active = FALSE` already means PAUSED, which is reversible and keeps the
+     row in your list. Cancelled means gone: you stopped paying for it. A second
+     boolean would give four combinations and two of them are nonsense, so any
+     query wanting live rows reads `cancelled_at IS NULL AND is_active = TRUE`
+     and cancelled wins over paused by construction.
+     IT HAS TO BE A DATE RATHER THAN A FLAG because the whole point is counting
+     the charges that would have happened SINCE. A boolean cannot answer that.
+     No backfill: absent is the correct value for every existing row, which is
+     what makes this migration free. */
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`);
+  /* Every live-row query filters on it, so the partial index is the one that
+     matters rather than an index over the whole column. */
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_cancelled
+                    ON subscriptions(user_id) WHERE cancelled_at IS NULL`);
   // The BACKFILL is deliberately further down, after user_settings is created.
   // It reads that table, and on a FRESH database this point is reached before
   // user_settings exists, so running it here throws `relation "user_settings"
@@ -1303,6 +1318,73 @@ function toMonthly(price, billingCycle) {
   return price;
 }
 
+/* WHAT A CANCELLATION ACTUALLY SAVED YOU, and the reason it is a COUNT of real
+   charges rather than a rate times a duration.
+   The tempting version is `monthlyPrice * monthsSinceCancelling`. It is wrong in
+   exactly the way the calendar's phantom dots were wrong: it invents charges
+   that never happened. A YEARLY subscription cancelled three months ago has
+   avoided NOTHING yet, because the charge was not due. Saying it saved you a
+   quarter of the annual price is a number about money that nobody could find on
+   a statement, which is the one thing this product cannot do.
+   So this counts the billing dates that WOULD have fallen in the band
+   [cancelled_at, today] and multiplies by the price that was being charged. It
+   ticks up on real billing days and it is checkable against a statement.
+   THE BAND IS CLAMPED AT BOTH ENDS AND BOTH ENDS MATTER. Without the lower
+   bound, a row whose next_billing_date was already stale when it was cancelled
+   (which a PAUSED row can be, since alerts.list never advances one) would count
+   charges from before you cancelled, crediting you for money you did pay.
+   Without the upper bound it would count into the future, which is a projection
+   dressed as a fact.
+   IT IS DELIBERATELY NOT CONVERTED. The amount comes back in the row's OWN
+   currency, per the rule in lib/currency-store.ts: a row is shown in the
+   currency it was charged in, and only a TOTAL across rows needs one unit. */
+function chargesAvoidedSince(sub, now) {
+  const cancelledAt = sub.cancelled_at ? startOfUtcDay(new Date(sub.cancelled_at)) : null;
+  const anchor = sub.next_billing_date ? startOfUtcDay(new Date(sub.next_billing_date)) : null;
+  if (!cancelledAt || !anchor || isNaN(cancelledAt.getTime()) || isNaN(anchor.getTime())) {
+    return { charges: 0, amount: 0 };
+  }
+  const today = startOfUtcDay(now);
+  if (cancelledAt > today) return { charges: 0, amount: 0 };
+
+  /* JUMP TO THE FIRST CHARGE ON OR AFTER THE CANCELLATION IN ONE CALL, rather
+     than walking there. advanceBillingDate's `notBefore` does exactly this and
+     loops internally, so it lands on the right day whatever the gap, and it
+     keeps the PHASE: starting the walk at cancelled_at instead would move which
+     day of the month the charges fall on.
+     It matters because a stale anchor is a real state, not a hypothetical: a
+     PAUSED row is never advanced by alerts.list, so a row paused for two years
+     and then cancelled has an anchor two years behind. Walking that gap a week
+     at a time could spend the whole loop ceiling before reaching the band and
+     report zero for a count that is not zero. */
+  let d = anchor;
+  if (d < cancelledAt) {
+    const jumped = advanceBillingDate(d, sub.billing_cycle, cancelledAt, sub.billing_anchor_day);
+    d = startOfUtcDay(jumped.date);
+    if (d < cancelledAt) return { charges: 0, amount: 0 };
+  }
+
+  let charges = 0;
+  /* The ceiling bounds the band alone now, so 600 is over eleven years of
+     WEEKLY charges, the densest cycle this app offers. It is not guarding
+     against an unrecognised billing_cycle: measured, advanceBillingDate treats
+     an unknown cycle as monthly, exactly as toMonthly does, so it advances
+     rather than stalling. The real guard against a stall is the break below,
+     and this is a bound on how long one request can spend counting. */
+  while (d <= today && charges < 600) {
+    charges++;
+    const { date: next, advanced } = advanceBillingDate(
+      d, sub.billing_cycle, new Date(d.getTime() + 86400000), sub.billing_anchor_day
+    );
+    /* A cycle that refuses to move would otherwise loop on the same day for as
+       long as the ceiling allows, counting one charge per iteration. */
+    if (!advanced || next <= d) break;
+    d = startOfUtcDay(next);
+  }
+  const price = Number(sub.price) || 0;
+  return { charges, amount: roundToCents(charges * price) };
+}
+
 // The price column is NUMERIC with no scale, so it will happily keep a figure
 // like 6.944 that every screen then renders as 6.94. Rounding on the way in
 // keeps the stored amount and the shown amount the same number. Clients
@@ -1455,6 +1537,10 @@ function formatSub(s) {
     currency: s.currency || null,
     created_at: s.created_at,
     isActive: s.is_active ?? true,
+    /* Null for a live row, which is every row subscriptions.list returns. It is
+       carried anyway so one shape serves both that endpoint and
+       subscriptions.cancelled, rather than a second row type to keep in step. */
+    cancelledAt: s.cancelled_at || null,
   };
 }
 
@@ -2164,6 +2250,13 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
 
 app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
   try {
+    /* CANCELLED ROWS ARE NOT IN THIS PAYLOAD, DELIBERATELY. This one query feeds
+       the dashboard total, the Stats donut, the weekly chart, the calendar dots
+       and the timeline. Returning cancelled rows would mean adding a new
+       exclusion to every one of those, and missing a single one silently
+       inflates somebody's monthly spend, which is the class of defect this
+       codebase keeps recording. Keeping them out means no existing aggregate can
+       be wrong. subscriptions.cancelled serves them instead. */
     const result = await pool.query(
       `SELECT s.*,
          ph.new_price  AS ph_new_price,
@@ -2179,7 +2272,7 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
          ORDER BY changed_at DESC
          LIMIT 1
        ) ph ON TRUE
-       WHERE s.user_id = $1
+       WHERE s.user_id = $1 AND s.cancelled_at IS NULL
        ORDER BY s.created_at DESC`,
       [req.userId]
     );
@@ -2215,7 +2308,16 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const userResult = await pool.query('SELECT is_paid, email, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
     if (!isPaid) {
-      const countResult = await pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1', [req.userId]);
+      /* CANCELLED ROWS DO NOT COUNT AGAINST THE FREE TIER, and this is the line
+         that decides whether the feature is usable at all. A bare COUNT(*) means
+         a free user who cancels five subscriptions can never add a sixth: the app
+         would punish them for doing the exact thing it exists to make them do,
+         and the history it keeps would be the thing blocking them. Cancelling
+         has to give the slot back. */
+      const countResult = await pool.query(
+        'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
+        [req.userId]
+      );
       if (parseInt(countResult.rows[0].c) >= 5) {
         return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
       }
@@ -2223,7 +2325,7 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
     if (!force) {
       const dupResult = await pool.query(
-        'SELECT id, name FROM subscriptions WHERE user_id = $1 AND LOWER(TRIM(name)) = LOWER(TRIM($2))',
+        'SELECT id, name FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL AND LOWER(TRIM(name)) = LOWER(TRIM($2))',
         [req.userId, name]
       );
       if (dupResult.rows.length > 0) {
@@ -2412,6 +2514,129 @@ app.post('/api/trpc/subscriptions.setActive', authMiddleware, async (req, res) =
   }
 });
 
+/* CANCELLING IS NOT PAUSING AND IT IS NOT DELETING, which is the whole reason
+   this endpoint exists beside the other two.
+   PAUSE (`setActive`) says "I am still subscribed, stop counting it for now".
+   DELETE throws the row away, and with it any record that you ever paid for the
+   thing, so the app can never tell you what stopping was worth.
+   CANCEL says "I stopped paying". The row stays as history, leaves every total,
+   gives its free-tier slot back, and starts accumulating the charges it is no
+   longer costing you. Before this, cancelling something was indistinguishable
+   from never having tracked it. */
+app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res) => {
+  try {
+    const { id, cancelled } = req.body;
+    if (!id || typeof cancelled !== 'boolean') {
+      return res.status(400).json({ error: 'id and cancelled required' });
+    }
+
+    const existing = await pool.query(
+      'SELECT id, cancelled_at FROM subscriptions WHERE id = $1 AND user_id = $2',
+      [id, req.userId]
+    );
+    if (existing.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
+
+    /* IDEMPOTENT ON PURPOSE, and it is the cancel direction that matters. A
+       second cancel must not overwrite cancelled_at with a later timestamp: that
+       date is what the saved figure is measured from, so re-tapping the button,
+       or a retried request on a flaky connection, would silently reset somebody's
+       total to zero. */
+    const alreadyCancelled = existing.rows[0].cancelled_at != null;
+    if (cancelled === alreadyCancelled) {
+      const unchanged = await pool.query('SELECT * FROM subscriptions WHERE id = $1', [id]);
+      return res.json(trpc(formatSub(unchanged.rows[0])));
+    }
+
+    /* RESTORING IS A NEW LIVE SUBSCRIPTION AND THE FREE CAP APPLIES, or the cap
+       has a hole in it: cancel five, restore five, and a free account holds ten
+       live rows having never been refused. The check mirrors subscriptions.create
+       rather than reimplementing the limit, and it reads the SAME code the client
+       already understands, so an old build shows the upgrade prompt it has always
+       shown for this. */
+    if (!cancelled) {
+      const userResult = await pool.query(
+        'SELECT is_paid, bonus_premium_until FROM users WHERE id = $1', [req.userId]
+      );
+      const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
+      if (!isPaid) {
+        const countResult = await pool.query(
+          'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
+          [req.userId]
+        );
+        if (parseInt(countResult.rows[0].c) >= 5) {
+          return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
+        }
+      }
+    }
+
+    /* NOW() rather than a client-supplied date. The saved figure is a claim about
+       money and a phone's clock is not authoritative, so letting the client name
+       the cancellation date would let a wrong clock, or a crafted request, invent
+       months of savings. is_active is deliberately left alone, so restoring a row
+       that was paused before it was cancelled comes back paused. */
+    /* TWO LITERAL STATEMENTS RATHER THAN ONE WITH THE VALUE INTERPOLATED IN.
+       `cancelled` is validated as a boolean above, so interpolating it could not
+       actually inject anything, and it is still not worth doing: this file has
+       zero interpolated SQL, that property is what makes an audit of it cheap,
+       and an exception that is safe today is the one a later edit widens. */
+    const result = cancelled
+      ? await pool.query(
+          'UPDATE subscriptions SET cancelled_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING *',
+          [id, req.userId]
+        )
+      : await pool.query(
+          'UPDATE subscriptions SET cancelled_at = NULL WHERE id = $1 AND user_id = $2 RETURNING *',
+          [id, req.userId]
+        );
+
+    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
+    /* Both Brevo syncs, because cancelling changes the tracked count AND may
+       remove the row that was supplying the next renewal date. */
+    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
+    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
+    res.json(trpc(formatSub(result.rows[0])));
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
+/* WHAT CANCELLING HAS BEEN WORTH. Separate from subscriptions.list on purpose,
+   see the comment there: keeping cancelled rows out of that payload is what
+   stops every existing aggregate needing a new exclusion.
+   THE AMOUNTS ARE PER ROW AND IN THE ROW'S OWN CURRENCY, matching the rule in
+   lib/currency-store.ts. `totals` groups by currency rather than summing across
+   them, because adding 15.99 EUR to 9.99 USD needs a rate this endpoint has no
+   business choosing: the client already owns conversion and knows what the user
+   is displaying. One group per currency is the honest shape, and for the normal
+   case of a user with one currency it is one entry. */
+app.get('/api/trpc/subscriptions.cancelled', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM subscriptions
+       WHERE user_id = $1 AND cancelled_at IS NOT NULL
+       ORDER BY cancelled_at DESC`,
+      [req.userId]
+    );
+    const now = new Date();
+    const rows = result.rows.map((r) => {
+      const { charges, amount } = chargesAvoidedSince(r, now);
+      return { ...formatSub(r), chargesAvoided: charges, amountAvoided: amount };
+    });
+    const totals = {};
+    for (const r of rows) {
+      const code = r.currency || null;
+      const key = code || 'UNKNOWN';
+      totals[key] = totals[key] || { currency: code, amount: 0, charges: 0, subscriptions: 0 };
+      totals[key].amount = roundToCents(totals[key].amount + r.amountAvoided);
+      totals[key].charges += r.chargesAvoided;
+      totals[key].subscriptions += 1;
+    }
+    res.json(trpc({ subscriptions: rows, totals: Object.values(totals) }));
+  } catch (err) {
+    handleError(err, res);
+  }
+});
+
 app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
   try {
     const { id } = req.body;
@@ -2433,7 +2658,7 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
 app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY name ASC',
+      'SELECT * FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL ORDER BY name ASC',
       [req.userId]
     );
     const subs = result.rows;
@@ -2530,7 +2755,7 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
   try {
-    const subsResult = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [req.userId]);
+    const subsResult = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL', [req.userId]);
     const allSubs = subsResult.rows;
     const subs = allSubs.filter(s => s.is_active);
     const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
@@ -2566,7 +2791,7 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
 app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   try {
     const [subResult, settingsResult, prefsResult] = await Promise.all([
-      pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE', [req.userId]),
+      pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL', [req.userId]),
       pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
       pool.query('SELECT renewal_alert_days FROM notification_preferences WHERE user_id = $1', [req.userId]),
     ]);
@@ -2767,6 +2992,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
         `SELECT * FROM subscriptions
          WHERE user_id = $1
            AND is_active = TRUE
+           AND cancelled_at IS NULL
            AND next_billing_date BETWEEN $2 AND $3
            -- skip anything already reminded for THIS billing date
            AND (reminder_sent_for IS NULL OR reminder_sent_for <> next_billing_date)`,
