@@ -18,6 +18,10 @@ export type Sub = {
   id: number; name: string; price: number; billingCycle: string;
   category: string; nextBillingDate: string; trialEndDate?: string | null;
   priceIncrease?: { from: number; to: number; changedAt: string } | null;
+  // The currency this row's price was ENTERED in, which is not necessarily the
+  // one it is displayed in. Optional because a row written before the column
+  // existed has none, and `fmtC` correctly falls back to the global base there.
+  currency?: string | null;
 };
 export type Tip = {
   id: string; icon: string; color: string;
@@ -78,7 +82,7 @@ const MARKET_PRICE_INCREASE_THRESHOLD = 1.05; // known price must be >5% above w
 // English, which a German user met on a screen that is otherwise translated.
 export function buildTips(
   subs: Sub[],
-  fmtC: (n: number) => string,
+  fmtC: (n: number, fromCurrency?: string | null) => string,
   t: (key: string, opts?: Record<string, unknown>) => string,
   singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD,
   currencyContext?: { baseCurrencyCode: string; rates: Record<string, number> }
