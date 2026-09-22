@@ -319,6 +319,21 @@ export default function SubscriptionsScreen() {
     onError: () => Alert.alert(t("common.error"), t("subscriptions.errUpdateSub")),
   });
 
+  /* Marking something cancelled is NOT deleting it. The row leaves every total
+     and gives its free tier slot back, and it stays as history so the app can
+     say what stopping was worth. */
+  const setCancelledMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }) =>
+      (await apiClient.post("/trpc/subscriptions.setCancelled", { id, cancelled: true })).data.result.data,
+    onSuccess: () => {
+      invalidate();
+      /* The cancelled list is a separate query, so invalidating the main list
+         alone would leave the new entry missing until a cold start. */
+      queryClient.invalidateQueries({ queryKey: ["cancelledSubscriptions"] });
+    },
+    onError: () => Alert.alert(t("common.error"), t("subscriptions.errUpdateSub")),
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     await refetch();
@@ -491,10 +506,22 @@ export default function SubscriptionsScreen() {
     else { createMutation.mutate(data); }
   };
 
+  /* THE MOMENT SOMEBODY REACHES FOR DELETE IS USUALLY THE MOMENT THEY CANCELLED
+     THE SERVICE, and until now the only thing on offer threw the row away, and
+     with it any record of what they had been paying. So this asks which of the
+     two actually happened instead of assuming the destructive one.
+     It is deliberately NOT a fourth icon on the card. That row already carries
+     three unlabelled icon buttons, one of which destroys data, and adding a
+     fourth makes a known accessibility problem worse. Both entry points, the
+     trash icon and the swipe, already route here, so one dialog covers both.
+     ORDER IS DELIBERATE ON ANDROID, where a three button Alert maps the array to
+     neutral, negative, positive in order. Keeping is LAST so it lands in the
+     positive slot: the non destructive answer should be the easy one to hit. */
   const confirmDelete = (sub: any) => {
-    Alert.alert(t("subscriptions.deleteTitle"), t("subscriptions.deleteConfirm", { name: sub.name }), [
+    Alert.alert(t("subscriptions.removeTitle"), t("subscriptions.removeConfirm", { name: sub.name }), [
       { text: t("subscriptions.cancel"), style: "cancel" },
-      { text: t("subscriptions.delete"), style: "destructive", onPress: () => deleteMutation.mutate(sub) },
+      { text: t("subscriptions.deleteForever"), style: "destructive", onPress: () => deleteMutation.mutate(sub) },
+      { text: t("subscriptions.iCancelledIt"), onPress: () => setCancelledMutation.mutate({ id: sub.id }) },
     ]);
   };
 

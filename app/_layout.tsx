@@ -193,6 +193,7 @@ export default function RootLayout() {
           <Stack.Screen name="refer-a-friend" options={{ headerShown: true, title: t("screenTitles.referAFriend") }} />
           <Stack.Screen name="verify-email" options={{ headerShown: true, title: t("screenTitles.verifyEmail") }} />
           <Stack.Screen name="insights" options={{ headerShown: true, title: t("screenTitles.insights") }} />
+          <Stack.Screen name="cancelled" options={{ headerShown: true, title: t("screenTitles.cancelled") }} />
           <Stack.Screen name="terms-of-service" options={{ headerShown: true, title: t("screenTitles.termsOfService") }} />
           <Stack.Screen name="privacy-policy" options={{ headerShown: true, title: t("screenTitles.privacyPolicy") }} />
           <Stack.Screen name="alerts" options={{ headerShown: true, title: t("screenTitles.alerts") }} />

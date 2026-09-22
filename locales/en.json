@@ -179,7 +179,11 @@
     "a11yExportReport": "Export spending report",
     "a11yExportCalendar": "Export renewals to calendar",
     "a11yRateStars_one": "Rate {{count}} star",
-    "a11yRateStars_other": "Rate {{count}} stars"
+    "a11yRateStars_other": "Rate {{count}} stars",
+    "removeTitle": "Remove this subscription?",
+    "removeConfirm": "If you cancelled {{name}}, keep it. Trimio adds up what you are no longer paying. Deleting removes it completely.",
+    "deleteForever": "Delete",
+    "iCancelledIt": "I cancelled it"
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -203,7 +207,8 @@
     "appearance": "Appearance",
     "themeSystem": "System",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "cancelled": "Cancelled subscriptions"
   },
   "calendar": {
     "selectDay": "Select a day to see what's due",
@@ -679,7 +684,8 @@
     "alerts": "Alerts",
     "notifications": "Notifications",
     "cancelGuide": "How to Cancel",
-    "subscriptionDetails": "Subscription Details"
+    "subscriptionDetails": "Subscription Details",
+    "cancelled": "Cancelled"
   },
   "categoryNames": {
     "entertainment": "Entertainment",
@@ -693,5 +699,24 @@
     "insurance": "Insurance",
     "memberships": "Memberships",
     "other": "Other"
+  },
+  "cancelled": {
+    "totalLabel": "Avoided since cancelling",
+    "totalMeta_one": "From {{count}} subscription you cancelled",
+    "totalMeta_other": "From {{count}} subscriptions you cancelled",
+    "explainer": "A charge only counts once its billing date has actually passed. A yearly subscription you cancelled last month has not avoided anything yet, so it shows nothing.",
+    "since": "cancelled {{date}}",
+    "avoided_one": "{{amount}} avoided, {{count}} charge so far",
+    "avoided_other": "{{amount}} avoided, {{count}} charges so far",
+    "nothingYet": "Nothing avoided yet",
+    "emptyTitle": "Nothing cancelled yet",
+    "emptyBody": "When you cancel a subscription, mark it here instead of deleting it. Trimio keeps it and adds up what you are no longer paying.",
+    "loadError": "Could not load your cancelled subscriptions.",
+    "restore": "Restore",
+    "restoreTitle": "Restore subscription?",
+    "restoreConfirm": "{{name}} goes back into your subscriptions and counts towards your plan again.",
+    "restoreBlockedTitle": "Limit reached",
+    "restoreBlockedBody": "You already track 5 subscriptions. Upgrade to Premium, or remove one before restoring this.",
+    "a11yRestore": "Restore {{name}}"
   }
 }

@@ -179,7 +179,11 @@
     "a11yExportReport": "Ausgabenbericht exportieren",
     "a11yExportCalendar": "Verlängerungen in den Kalender exportieren",
     "a11yRateStars_one": "{{count}} Stern geben",
-    "a11yRateStars_other": "{{count}} Sterne geben"
+    "a11yRateStars_other": "{{count}} Sterne geben",
+    "removeTitle": "Dieses Abo entfernen?",
+    "removeConfirm": "Wenn du {{name}} gekündigt hast, behalte es. Trimio rechnet zusammen, was du nicht mehr zahlst. Löschen entfernt es vollständig.",
+    "deleteForever": "Löschen",
+    "iCancelledIt": "Hab ich gekündigt"
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -203,7 +207,8 @@
     "appearance": "Erscheinungsbild",
     "themeSystem": "System",
     "themeLight": "Hell",
-    "themeDark": "Dunkel"
+    "themeDark": "Dunkel",
+    "cancelled": "Gekündigte Abos"
   },
   "calendar": {
     "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
@@ -679,7 +684,8 @@
     "alerts": "Hinweise",
     "notifications": "Benachrichtigungen",
     "cancelGuide": "Kündigen",
-    "subscriptionDetails": "Abo-Details"
+    "subscriptionDetails": "Abo-Details",
+    "cancelled": "Gekündigt"
   },
   "categoryNames": {
     "entertainment": "Unterhaltung",
@@ -693,5 +699,24 @@
     "insurance": "Versicherung",
     "memberships": "Mitgliedschaften",
     "other": "Sonstiges"
+  },
+  "cancelled": {
+    "totalLabel": "Seit der Kündigung gespart",
+    "totalMeta_one": "Aus {{count}} gekündigten Abo",
+    "totalMeta_other": "Aus {{count}} gekündigten Abos",
+    "explainer": "Eine Abbuchung zählt erst, wenn das Abrechnungsdatum wirklich vorbei ist. Ein Jahresabo, das du letzten Monat gekündigt hast, hat also noch nichts gespart.",
+    "since": "gekündigt am {{date}}",
+    "avoided_one": "{{amount}} gespart, bisher {{count}} Abbuchung",
+    "avoided_other": "{{amount}} gespart, bisher {{count}} Abbuchungen",
+    "nothingYet": "Noch nichts gespart",
+    "emptyTitle": "Noch nichts gekündigt",
+    "emptyBody": "Wenn du ein Abo kündigst, markiere es hier, statt es zu löschen. Trimio behält es und rechnet zusammen, was du nicht mehr zahlst.",
+    "loadError": "Deine gekündigten Abos konnten nicht geladen werden.",
+    "restore": "Wiederherstellen",
+    "restoreTitle": "Abo wiederherstellen?",
+    "restoreConfirm": "{{name}} kommt zurück in deine Abos und zählt wieder zu deinem Tarif.",
+    "restoreBlockedTitle": "Limit erreicht",
+    "restoreBlockedBody": "Du verfolgst bereits 5 Abos. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst.",
+    "a11yRestore": "{{name}} wiederherstellen"
   }
 }

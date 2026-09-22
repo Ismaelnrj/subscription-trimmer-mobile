@@ -77,6 +77,13 @@ export default function ProfileScreen() {
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </TouchableOpacity>
         )}
+        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/cancelled")}>
+          <View style={styles.menuItemLeft}>
+            <MaterialCommunityIcons name="archive-outline" size={20} color={c.primary} />
+            <Text style={styles.menuItemLabel}>{t("profile.cancelled")}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/refer-a-friend")}>
           <View style={styles.menuItemLeft}>
             <MaterialCommunityIcons name="account-multiple-plus-outline" size={20} color={c.primary} />
