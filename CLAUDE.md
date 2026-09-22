@@ -688,6 +688,44 @@ last one left off without needing a recap typed out.
   so it never draws a tab at all, which `components/CustomTabBar.tsx` reads
   off `tabBarItemStyle` rather than from a hardcoded route list.
 
+- PUBLISHED THROUGH a6aad8fc (2026-09-22, third publish of the day), which
+  supersedes every baseline above. The owner ran `tools/typecheck.py` and it came
+  back clean, which mattered here because the one client file is TypeScript.
+  NOT YET CONFIRMED, and for this one that phrase carries TWO claims rather than
+  the usual one, the same shape as the 251242e2 entry above. The owner reported
+  the publish went through, which means EAS accepted the bundle and nothing more.
+  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
+  `Update ID` DIFFERENT from `01a0c9b4-b48e-78c5-9a84-9060faea3ce5`, which is the
+  15:20:58.254Z update. Two publishes on the same day are otherwise identical on
+  that panel, so reading only `Embedded launch: false` proves an OTA landed,
+  never WHICH one.
+  CHECK TWO, AND IT IS THE ONE THAT MATTERS HERE: that the parser actually
+  behaves differently. A parser fix has no visible effect until somebody
+  exercises it, which puts it in the same class as an analytics change: landed
+  and working are independent claims. Paste the refurbed screenshot text again.
+  BEFORE: name "Apple", price 12.00. AFTER: no name, price 429.00, no cycle.
+  Then paste any German receipt carrying `15,99 € pro Monat` and confirm the
+  price AND the cycle both fill, since that is the case that was completely
+  broken.
+  WHAT WENT OUT, exactly ONE client file: `lib/parse-subscription.ts`. Everything
+  else in `eac1d7d3..a6aad8fc` is tests, this document, `video-rerecord-brief.md`
+  and `cuts/short-lens-paste.json`, none of which enter a JS bundle. Verified
+  with `git diff --name-only eac1d7d3..a6aad8fc` over app/, lib/, components/
+  and locales/ rather than assumed from the commit messages.
+  NATIVE CHECK ACROSS `eac1d7d3..a6aad8fc`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion correctly
+  stayed 1.0.1 and no build was needed. Thirteenth recorded time, decided by
+  `needs_native_build.py eac1d7d3` rather than by reading the diff by hand.
+  NOTHING DEPLOYED WITH IT: zero backend files in that range, so Railway had
+  nothing to redeploy and the running service is still the one from `42161a41`.
+  CI WAS GREEN ON THE EXACT COMMIT, on `a6aad8fc`, with the typecheck on the
+  pinned compiler, the full jest suite and lint.
+  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
+  `a6aad8fc` was committed 18:52:44Z and pushed a few seconds later, so any
+  publish after that could carry it and any publish before could not. `eas
+  update` uploads the WORKING TREE, so the publish time bounds what can possibly
+  have been in it. That check caught a one commit error on 2026-09-21.
+
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.
   For a UI or logic change, the Build Info panel plus opening the screen is
