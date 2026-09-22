@@ -39,6 +39,10 @@ const dateHelpers = SERVER.slice(
 const avoidedSrc = slice("function chargesAvoidedSince", "\n}\n");
 const roundSrc = slice("function roundToCents", "\n}\n");
 const bonusSrc = slice("function hasBonusPremium", "\n}\n");
+/* The REAL constant, lifted rather than stubbed with a number, so these tests
+   run against the same parsing and clamping the server does. Stubbing `= 5`
+   here would keep passing after somebody broke the env parsing. */
+const freeLimitSrc = slice("const FREE_SUBSCRIPTION_LIMIT = (() => {", "})();");
 const setCancelledSrc = slice("app.post('/api/trpc/subscriptions.setCancelled'", "\n});\n");
 const listCancelledSrc = slice("app.get('/api/trpc/subscriptions.cancelled'", "\n});\n");
 
@@ -123,7 +127,7 @@ const app = {
 const authMiddleware = null;
 
 // eslint-disable-next-line no-eval
-eval(dateHelpers + roundSrc + bonusSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
+eval(dateHelpers + roundSrc + bonusSrc + freeLimitSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
 
 function call(route, body) {
   let status = 200;

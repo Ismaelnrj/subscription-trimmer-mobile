@@ -183,7 +183,8 @@
     "removeTitle": "Dieses Abo entfernen?",
     "removeConfirm": "Wenn du {{name}} gekündigt hast, behalte es. Trimio rechnet zusammen, was du nicht mehr zahlst. Löschen entfernt es vollständig.",
     "deleteForever": "Löschen",
-    "iCancelledIt": "Hab ich gekündigt"
+    "iCancelledIt": "Hab ich gekündigt",
+    "limitCount": "{{used}} / {{limit}} Abos"
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -335,7 +336,7 @@
     "feat_export": "Bericht exportieren (CSV)",
     "feat_email": "E-Mail-Verlängerungserinnerungen",
     "feat_support": "Prioritätssupport",
-    "free_subscriptions": "Bis zu 5",
+    "free_subscriptions": "Bis zu {{count}}",
     "free_categories": "Nur Top 1",
     "free_ai": "Nur Top 2",
     "unlockButton": "Premium freischalten · {{price}}",
@@ -716,7 +717,8 @@
     "restoreTitle": "Abo wiederherstellen?",
     "restoreConfirm": "{{name}} kommt zurück in deine Abos und zählt wieder zu deinem Tarif.",
     "restoreBlockedTitle": "Limit erreicht",
-    "restoreBlockedBody": "Du verfolgst bereits 5 Abos. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst.",
-    "a11yRestore": "{{name}} wiederherstellen"
+    "a11yRestore": "{{name}} wiederherstellen",
+    "restoreBlockedBody_one": "Du verfolgst bereits {{count}} Abo. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst.",
+    "restoreBlockedBody_other": "Du verfolgst bereits {{count}} Abos. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst."
   }
 }

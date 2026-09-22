@@ -27,7 +27,19 @@ import { SkeletonCard } from "../../components/SkeletonCard";
 import { LogoImage } from "../../components/LogoImage";
 import * as SecureStore from "expo-secure-store";
 
-const FREE_LIMIT = 5;
+/* THE FALLBACK ONLY, NOT THE SOURCE. The server owns this number and sends it
+   on settings.get; this is what the meter reads for the one render before that
+   query resolves, and if it never resolves.
+   IT USED TO BE THE SOURCE, and CLAUDE.md claimed the opposite, that the cap
+   lived server side and was not duplicated here. It was duplicated here, in six
+   places, so raising the limit in Railway would have moved the server's gate
+   while every phone went on drawing "5 / 5, limit reached". A configurable limit
+   with a stale client copy is worse than a constant, because the two disagree
+   and only one of them is visible.
+   KEEP IT EQUAL TO THE SERVER'S OWN DEFAULT. A test asserts they match, since a
+   fallback that differs from the default silently changes behaviour for exactly
+   the users whose settings query failed. */
+const FREE_LIMIT_FALLBACK = 5;
 const BILLING_CYCLES = ["monthly", "yearly", "weekly"];
 
 function toMonthly(price: number, cycle: string) {
@@ -212,8 +224,16 @@ export default function SubscriptionsScreen() {
   const allCategories = [...DEFAULT_CATEGORIES, ...customCategories];
 
   const total = subscriptions.length;
-  const atLimit = !isPremium && total >= FREE_LIMIT;
-  const limitPct = isPremium ? 0 : Math.min((total / FREE_LIMIT) * 100, 100);
+  /* Number(...) rather than `?? FREE_LIMIT_FALLBACK` alone: the fallback has to
+     catch a value that is present but unusable, not only an absent one. `?? `
+     passes 0 and NaN straight through, and a limit of 0 locks the add button
+     for everybody while a NaN makes every comparison false and removes the gate
+     entirely. That is the `?? 1` lesson from the exchange rates, in a place
+     where one direction hides the button and the other hides the paywall. */
+  const serverLimit = Number(settings?.freeSubscriptionLimit);
+  const freeLimit = Number.isFinite(serverLimit) && serverLimit >= 1 ? serverLimit : FREE_LIMIT_FALLBACK;
+  const atLimit = !isPremium && total >= freeLimit;
+  const limitPct = isPremium ? 0 : Math.min((total / freeLimit) * 100, 100);
   const limitColor = limitPct >= 100 ? c.danger : limitPct >= 60 ? c.warning : c.primary;
 
   const filtered = useMemo(() => {
@@ -765,8 +785,13 @@ export default function SubscriptionsScreen() {
             <View style={styles.limitBar}>
               <View style={styles.limitRow}>
                 <Text style={styles.limitLabel}>{t("subscriptions.freePlan")}</Text>
+                {/* `{total} / {FREE_LIMIT} subscriptions` was a bare English
+                    text node here, so a German reader got "3 / 5
+                    subscriptions" on the busiest screen in the app. It is not a
+                    t() call, not a locale key and not a template literal, which
+                    is why every localisation sweep missed it. */}
                 <Text style={[styles.limitCount, { color: limitColor }]}>
-                  {total} / {FREE_LIMIT} subscriptions
+                  {t("subscriptions.limitCount", { used: total, limit: freeLimit })}
                 </Text>
               </View>
               <View style={styles.limitTrack}>
@@ -780,7 +805,7 @@ export default function SubscriptionsScreen() {
                 </TouchableOpacity>
               ) : (
                 <Text style={styles.limitHint}>
-                  {t("subscriptions.slot", { count: FREE_LIMIT - total })} ·{" "}
+                  {t("subscriptions.slot", { count: freeLimit - total })} ·{" "}
                   <Text style={{ color: c.primary }} onPress={() => router.push("/upgrade")}>
                     {t("subscriptions.goUnlimited")}
                   </Text>

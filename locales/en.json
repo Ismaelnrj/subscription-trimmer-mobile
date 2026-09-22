@@ -183,7 +183,8 @@
     "removeTitle": "Remove this subscription?",
     "removeConfirm": "If you cancelled {{name}}, keep it. Trimio adds up what you are no longer paying. Deleting removes it completely.",
     "deleteForever": "Delete",
-    "iCancelledIt": "I cancelled it"
+    "iCancelledIt": "I cancelled it",
+    "limitCount": "{{used}} / {{limit}} subscriptions"
   },
   "profile": {
     "upgrade": "Upgrade",
@@ -335,7 +336,7 @@
     "feat_export": "Export report (CSV)",
     "feat_email": "Email renewal reminders",
     "feat_support": "Priority support",
-    "free_subscriptions": "Up to 5",
+    "free_subscriptions": "Up to {{count}}",
     "free_categories": "Top 1 only",
     "free_ai": "Top 2 only",
     "unlockButton": "Unlock Premium · {{price}}",
@@ -716,7 +717,8 @@
     "restoreTitle": "Restore subscription?",
     "restoreConfirm": "{{name}} goes back into your subscriptions and counts towards your plan again.",
     "restoreBlockedTitle": "Limit reached",
-    "restoreBlockedBody": "You already track 5 subscriptions. Upgrade to Premium, or remove one before restoring this.",
-    "a11yRestore": "Restore {{name}}"
+    "a11yRestore": "Restore {{name}}",
+    "restoreBlockedBody_one": "You already track {{count}} subscription. Upgrade to Premium, or remove one before restoring this.",
+    "restoreBlockedBody_other": "You already track {{count}} subscriptions. Upgrade to Premium, or remove one before restoring this."
   }
 }

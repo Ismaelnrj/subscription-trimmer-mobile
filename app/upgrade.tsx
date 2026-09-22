@@ -14,8 +14,14 @@ import {
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
 import { track } from "../lib/analytics";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../lib/api";
 
 type PlanKey = "monthly" | "yearly" | "lifetime";
+
+/* Only for the render before settings resolve, and for a backend that does not
+   send the field. Kept equal to the server default, which a test asserts. */
+const FREE_LIMIT_FALLBACK = 5;
 
 export default function UpgradeScreen() {
   const router = useRouter();
@@ -36,8 +42,23 @@ export default function UpgradeScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
+  /* THE SAME QUERY KEY THE DASHBOARD USES, so react-query serves this from cache
+     whenever settings have already loaded, which is the normal path onto this
+     screen. Only a cold entry costs a request, and one request on a screen the
+     user opened deliberately is a better trade than a comparison table that
+     says "Up to 5" while the server allows ten.
+     `staleTime` is long because a deployment constant does not change while
+     somebody is reading a purchase screen. */
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
+    staleTime: 5 * 60 * 1000,
+  });
+  const serverLimit = Number(settings?.freeSubscriptionLimit);
+  const freeLimit = Number.isFinite(serverLimit) && serverLimit >= 1 ? serverLimit : FREE_LIMIT_FALLBACK;
+
   const FEATURES = [
-    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions"), premium: t("upgrade.premium_unlimited") },
+    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions", { count: freeLimit }), premium: t("upgrade.premium_unlimited") },
     { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: t("upgrade.premium_fullBreakdown") },
     { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: t("upgrade.premium_allInsights") },
     { icon: "target",              label: t("upgrade.feat_budget"),         free: "—",                             premium: "✓" },

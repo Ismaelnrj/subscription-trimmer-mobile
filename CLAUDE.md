@@ -569,9 +569,9 @@ last one left off without needing a recap typed out.
   THE BACKEND HALF WENT LIVE SEPARATELY via the Railway deploy on `4e35d47b`, the
   cancellation migration: `subscriptions.cancelled_at` plus a partial index on
   `(user_id) WHERE cancelled_at IS NULL`. initDB runs at boot, so a green deploy
-  proves the migration did not throw. It does NOT prove the column is there, which
-  is a different claim: `\d subscriptions` in the Railway console should show
-  `cancelled_at | timestamp with time zone`.
+  proves the migration did not throw. THE COLUMN IS CONFIRMED PRESENT in the
+  Railway database (owner, 2026-09-22), which is the separate claim a green
+  deploy never establishes on its own.
   CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 396, 398, 400, 403, 405 and 407,
   each on its own exact SHA with the typecheck on the pinned compiler, the full
   jest suite and lint. Three of those runs went red first: 395 and 401 and 402 on
@@ -926,9 +926,14 @@ last one left off without needing a recap typed out.
   other `new Date()` on an API date field (the two that remain are SORTS, where
   a constant offset cannot change the order, so do NOT "fix" them), zero
   `setInterval` anywhere, no listener registrations without cleanup, `isError`
-  handled on every screen that runs a query, and the free tier cap of 5 read
-  from the server's own `FREE_LIMIT_REACHED` code rather than duplicated client
-  side, so the two cannot drift.
+  handled on every screen that runs a query.
+  THAT LIST USED TO END "and the free tier cap of 5 read from the server's own
+  `FREE_LIMIT_REACHED` code rather than duplicated client side, so the two cannot
+  drift". THAT WAS FALSE, found 2026-09-22 by grepping for it rather than
+  believing it: `app/(tabs)/subscriptions.tsx` held `const FREE_LIMIT = 5` and
+  used it in SIX places. See the configurable limit entry below. The sweep had
+  checked that the client reads the server's error CODE, which it does, and
+  concluded the number was not duplicated, which it was.
 
 - THE RELEASE SKILL'S OWN COMMANDS DID NOT RUN, fixed 2026-09-21, and it had
   gone unnoticed because nobody had pasted them where they are actually used.
@@ -2652,6 +2657,66 @@ last one left off without needing a recap typed out.
   34 assertions, SEVEN of which fail against `7bd9c679`. The 27 that pass both
   ways are there on purpose: the stage one migration guards, the tilde on an
   aggregate, and the per-row scan all had to stay correct.
+
+- THE FREE TIER CAP IS NOW A RAILWAY VARIABLE, `FREE_SUBSCRIPTION_LIMIT`,
+  default 5, added 2026-09-22. It is a growth lever rather than a constant: the
+  closest rival on the same store also caps at five, and moving it is worth
+  trying against real signup numbers without a deploy.
+  THE REASON IT WAS NOT SAFE TO DO UNTIL NOW is the entry it corrects above.
+  `app/(tabs)/subscriptions.tsx` held `const FREE_LIMIT = 5` and used it in SIX
+  places: the meter, the percentage bar, its colour, the locked add button, the
+  slots-left line and the add handler's early return. Raising the limit in
+  Railway would have moved the SERVER's gate while every phone went on drawing
+  "5 / 5, limit reached" and refusing to open the form. A configurable limit
+  with a stale client copy is strictly WORSE than a hardcoded one, because the
+  gate and the thing drawing the gate disagree and only one of them is visible.
+  THE CLIENT IS TOLD THE NUMBER ON `settings.get`, which the subscriptions
+  screen already queries, so it costs no extra round trip. The upgrade screen
+  uses the SAME react-query key, so it is served from cache on the normal path
+  and costs one request only on a cold entry. What remains in the client is
+  `FREE_LIMIT_FALLBACK`, documented as a fallback rather than a source, and a
+  test asserts it EQUALS the server's own default: a fallback that differs
+  silently changes behaviour for exactly the users whose settings query failed,
+  which is the hardest group to observe.
+  THE REFUSAL CARRIES THE NUMBER TOO, `{ error: 'FREE_LIMIT_REACHED', limit }`,
+  because the 403 is the only place it is guaranteed current: the server decided
+  that exact refusal with it. `app/cancelled.tsx` quotes it when a restore is
+  blocked rather than a hardcoded five.
+  `?? fallback` IS NOT ENOUGH AND THE GUARD IS `Number.isFinite(n) && n >= 1`.
+  Nullish coalescing passes 0 and NaN straight through, and here the two
+  directions fail oppositely: a limit of 0 locks the add button for everybody
+  while a NaN makes every comparison false and removes the paywall entirely.
+  That is the `?? 1` exchange rate lesson in a place where one direction hides
+  the button and the other hides the revenue.
+  ZERO IS REFUSED DELIBERATELY. It is a coherent business model, free users get
+  nothing, and it is also indistinguishable from an outage from inside the app.
+  If it is ever wanted it belongs in an explicit paywall, not a limit of zero.
+  A TYPO WARNS AND FALLS BACK RATHER THAN REFUSING TO BOOT, which is deliberately
+  the OPPOSITE of the JWT_SECRET decision. The distinction is what each one
+  guards: that is access control, this is a product tier, and taking the service
+  down over a mistyped growth knob is the wrong trade.
+  IT REQUIRES ALL DIGITS RATHER THAN TRUSTING parseInt, and that was found by a
+  test written against the function rather than by reading it: `parseInt("3.5.1")`
+  is 3 and `parseInt("1e3")` is 1, so a typo becomes a SMALLER limit silently and
+  every free user quietly loses slots they already had.
+  RAISING THE LIMIT ONLY REACHES PHONES THAT HAVE THE NEW BUNDLE, which is worth
+  knowing before changing it: an older client still draws its own 5 and blocks
+  the form locally. LOWERING fails safe in the other direction, since the client
+  lets the attempt through and the server's 403 is already handled. So raise it
+  after a publish has landed, and lower it whenever.
+  TWO PIECES OF COPY STATED THE NUMBER and both now interpolate it,
+  `upgrade.free_subscriptions` and `cancelled.restoreBlockedBody`, the second
+  written earlier the same day. A configurable limit with the old number in the
+  copy is a screen contradicting its own gate.
+  AND THE METER WAS NOT LOCALISED AT ALL. `{total} / {FREE_LIMIT} subscriptions`
+  was a bare English JSX text node on the BUSIEST screen in the app, so a German
+  reader got "3 / 5 subscriptions". Not a t() call, not a locale key and not a
+  template literal, which is why every localisation sweep missed it, and it is
+  the third time this file has recorded that exact class.
+  18 assertions, MUTATION TESTED: twelve defects introduced one at a time, twelve
+  caught. Writing them hit the comment trap TWICE more, so that suite now has a
+  `codeOf()` helper that strips block and JSX comments, since an assertion that a
+  string must not appear necessarily lives beside a comment containing it.
 
 - "YOUR DATA NEVER LEAVES YOUR PHONE" IS FALSE AND MUST NEVER BE WRITTEN, and it
   was one draft away from a Play Store listing on 2026-09-22. `subscriptions.name`

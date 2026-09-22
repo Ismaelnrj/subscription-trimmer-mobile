@@ -1463,6 +1463,37 @@ async function assignReferralCode(userId) {
 // Set REFERRAL_MAX_BONUS_MONTHS in Railway to change it without a deploy.
 const REFERRAL_MAX_BONUS_MONTHS = parseInt(process.env.REFERRAL_MAX_BONUS_MONTHS, 10) || 12;
 
+/* HOW MANY SUBSCRIPTIONS A FREE ACCOUNT MAY TRACK. Tunable from Railway without
+   a code change, because it is a growth lever rather than a constant: the
+   closest rival on the same store also caps at five, and moving it is the kind
+   of thing worth trying against real signup numbers.
+   IT IS CLAMPED AT 1 RATHER THAN 0. Zero is a coherent business model, free
+   users get nothing, and it is also indistinguishable from an outage from
+   inside the app: every add refused, no explanation that fits. If that is ever
+   wanted it should be an explicit paywall rather than a limit of zero.
+   AN UNPARSEABLE VALUE WARNS AND FALLS BACK rather than refusing to boot. A
+   typo in a growth knob must not take the service down, which is the opposite
+   of the JWT_SECRET decision and deliberately so: that one guards access, this
+   one guards a product tier.
+   THE CLIENT IS TOLD THIS NUMBER, via settings.get, rather than hardcoding its
+   own copy. It used to hold `const FREE_LIMIT = 5` and this file's own notes
+   claimed it did not, which is exactly the drift that makes a configurable
+   limit dangerous instead of useful. */
+const FREE_SUBSCRIPTION_LIMIT = (() => {
+  const raw = process.env.FREE_SUBSCRIPTION_LIMIT;
+  if (raw == null || raw === '') return 5;
+  /* ALL DIGITS, rather than trusting parseInt, which is lenient in a way that
+     matters here: parseInt("3.5.1") is 3 and parseInt("1e3") is 1, so a typo
+     becomes a SMALLER limit silently and every free user loses slots they had.
+     Found by a test written against this function rather than by reading it. */
+  const n = /^\d+$/.test(raw.trim()) ? parseInt(raw, 10) : NaN;
+  if (!Number.isFinite(n) || n < 1) {
+    console.warn(`WARNING: FREE_SUBSCRIPTION_LIMIT is "${raw}", which is not a whole number >= 1. Using 5.`);
+    return 5;
+  }
+  return n;
+})();
+
 // Both sides, which is what the app has always promised and never delivered.
 // "Give a month, get a month" is the screen's own title, the description says
 // "you both get 1 month of Premium free", and the share message a friend
@@ -2318,8 +2349,8 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
         'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
         [req.userId]
       );
-      if (parseInt(countResult.rows[0].c) >= 5) {
-        return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
+      if (parseInt(countResult.rows[0].c) >= FREE_SUBSCRIPTION_LIMIT) {
+        return res.status(403).json({ error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT });
       }
     }
 
@@ -2563,8 +2594,8 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
           'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
           [req.userId]
         );
-        if (parseInt(countResult.rows[0].c) >= 5) {
-          return res.status(403).json({ error: 'FREE_LIMIT_REACHED' });
+        if (parseInt(countResult.rows[0].c) >= FREE_SUBSCRIPTION_LIMIT) {
+          return res.status(403).json({ error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT });
         }
       }
     }
@@ -2696,6 +2727,12 @@ app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {
       currencySymbol: s.currency_symbol || '$',
       customCategories: s.custom_categories ? JSON.parse(s.custom_categories) : [],
       alertThreshold: s.alert_threshold != null ? parseFloat(s.alert_threshold) : 50,
+      /* DEPLOYMENT CONFIG RATHER THAN A USER SETTING, and it rides this response
+         because the screen that draws the limit meter already makes this exact
+         request, so telling the client costs nothing rather than a round trip.
+         settings.update never writes it and there is a test saying so: it is
+         read only, and a client that tried to send it would be ignored. */
+      freeSubscriptionLimit: FREE_SUBSCRIPTION_LIMIT,
     }));
   } catch (err) {
     handleError(err, res);

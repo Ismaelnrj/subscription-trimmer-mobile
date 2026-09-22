@@ -10,6 +10,10 @@ import { useFmt } from "../lib/currency-store";
 import { useCategoryLabel } from "../lib/category-label";
 import { getCategoryIcon } from "../lib/categories";
 
+/* Only for an older backend that does not send `limit` on the refusal. Kept
+   equal to the server default, which a test asserts. */
+const FREE_LIMIT_FALLBACK = 5;
+
 type CancelledSub = {
   id: number;
   name: string;
@@ -58,7 +62,18 @@ export default function CancelledScreen() {
     onError: (err: any) => {
       const code = err?.response?.data?.error;
       if (code === "FREE_LIMIT_REACHED") {
-        Alert.alert(t("cancelled.restoreBlockedTitle"), t("cancelled.restoreBlockedBody"));
+        /* THE LIMIT COMES OFF THE REFUSAL ITSELF, which is the only place it is
+           guaranteed current: the server decided this 403 using that exact
+           number, so quoting anything else risks telling somebody they track
+           five when the cap is ten. The fallback covers an older backend that
+           does not send it yet. */
+        const limit = Number(err?.response?.data?.limit);
+        Alert.alert(
+          t("cancelled.restoreBlockedTitle"),
+          t("cancelled.restoreBlockedBody", {
+            count: Number.isFinite(limit) && limit >= 1 ? limit : FREE_LIMIT_FALLBACK,
+          })
+        );
         return;
       }
       Alert.alert(t("common.error"), t("subscriptions.errUpdateSub"));
