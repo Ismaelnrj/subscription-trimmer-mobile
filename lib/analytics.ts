@@ -25,6 +25,25 @@ export function initAnalytics() {
     // Only the funnel events explicitly captured below matter here, not
     // every tap, so autocapture stays off too.
     captureAppLifecycleEvents: false,
+    /* SEND EACH EVENT IMMEDIATELY, and the reason is this app's event volume
+       rather than a general preference.
+       PostHog batches at `flushAt: 20` by default. That is the right default
+       for an SDK expecting autocapture, where twenty events arrive in seconds.
+       Here autocapture is OFF, session replay is OFF, and there are THIRTEEN
+       track() call sites in the entire codebase, so a real session emits maybe
+       two to four events and NEVER reaches twenty. Every event therefore sat
+       waiting on the flush timer, and whether it had arrived when you looked was
+       a matter of how long you happened to wait.
+       THAT COST A REAL DIAGNOSIS. `app_opened` fires at launch and had flushed
+       by the time anyone checked; `cancel_guide_viewed` fires later and had not,
+       so one event appeared and the other did not, from correct code, which
+       reads exactly like a broken event.
+       THE BATTERY WARNING IN POSTHOG'S DOCS ASSUMES HIGH VOLUME. At four
+       requests a session it does not apply, and being able to confirm an event
+       in one second is worth far more here: these events exist to measure ad
+       spend, and `track` is `client?.capture(...)`, which no-ops in silence, so
+       the ONLY evidence a funnel works is the event arriving. */
+    flushAt: 1,
   });
 }
 

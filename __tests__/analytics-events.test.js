@@ -119,3 +119,55 @@ describe("the guide matcher cannot drift from the guide lookup", () => {
     }
   });
 });
+
+describe("events reach PostHog promptly enough to be verified", () => {
+  /* WHY THIS EXISTS. On 2026-09-22 `app_opened` appeared in PostHog and
+     `cancel_guide_viewed` did not, from code that was correct in every link:
+     both events shipped in the same commit, both were in the published bundle,
+     the route and import were right and the effect was unconditional.
+
+     The cause was batching. PostHog defaults to `flushAt: 20`, which suits an
+     SDK expecting autocapture. This app has autocapture off, session replay off
+     and thirteen track() call sites in total, so a session emits a handful of
+     events and never reaches twenty. Every event waited on the flush timer, and
+     `app_opened` fires at launch so it had flushed by the time anyone looked,
+     while an event fired a minute later had not.
+
+     That is worse than an ordinary latency problem because `track` is
+     `client?.capture(...)`, which no-ops in silence. "Not arrived yet" and
+     "never going to arrive" look identical, and these events exist to decide
+     whether ad spend is working. */
+  const SRC = read("lib", "analytics.ts");
+
+  it("sends each event immediately rather than batching", () => {
+    expect(SRC).toMatch(/flushAt:\s*1\b/);
+  });
+
+  it("the event volume that justifies it is still true", () => {
+    /* MEASURED, not asserted once and left. flushAt: 1 is defensible BECAUSE
+       this app emits very few events. If that stops being true, the trade
+       changes and this test should be the thing that says so. */
+    const dirs = ["app", "lib", "components"];
+    let sites = 0;
+    const walk = (dir) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (/\.tsx?$/.test(e.name) && !full.endsWith(path.join("lib", "analytics.ts"))) {
+          sites += [...fs.readFileSync(full, "utf8").matchAll(/\btrack\("/g)].length;
+        }
+      }
+    };
+    for (const d of dirs) walk(path.join(__dirname, "..", d));
+    expect(sites).toBeGreaterThan(0);
+    expect(sites).toBeLessThan(40);
+  });
+
+  it("keeps autocapture and session replay off, which is what makes it cheap", () => {
+    /* flushAt: 1 with autocapture ON would be a request per tap. These two
+       settings and that one are a package: changing either of them means
+       revisiting the flush decision. */
+    expect(SRC).toMatch(/captureAppLifecycleEvents:\s*false/);
+    expect(SRC).not.toMatch(/enableSessionReplay:\s*true/);
+  });
+});
