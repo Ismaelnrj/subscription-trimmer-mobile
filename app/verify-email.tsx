@@ -88,13 +88,13 @@ export default function VerifyEmailScreen() {
           }
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.resendButton} onPress={handleResend} disabled={resending}>
+        <TouchableOpacity style={styles.resendButton} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={handleResend} disabled={resending}>
           <Text style={styles.resendText}>
             {resending ? t("verifyEmail.sending") : resent ? `${t("verifyEmail.codeSent")} ✓` : t("verifyEmail.resendCode")}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.skipButton} onPress={() => router.replace("/(tabs)")}>
+        <TouchableOpacity style={styles.skipButton} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/(tabs)")}>
           <Text style={styles.skipText}>{t("verifyEmail.skipForNow")}</Text>
         </TouchableOpacity>
       </View>

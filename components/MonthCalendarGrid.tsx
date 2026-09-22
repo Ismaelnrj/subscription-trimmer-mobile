@@ -264,7 +264,7 @@ function makeStyles(c: AppColors) {
        dots with no amount, still sit at the same y as everywhere else in the
        grid: a number that drifts up half a row on one cell is more distracting
        than one that is simply absent. */
-    dayMeta: { height: 23, alignItems: "center" },
+    dayMeta: { height: 26, alignItems: "center" },
     dotRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3, height: 8 },
     dot: { width: 5, height: 5, borderRadius: 2.5 },
     /* Both of these are c.text, and the obvious choices were all measured and
@@ -277,7 +277,7 @@ function makeStyles(c: AppColors) {
        An amount is information, not decoration: if it cannot be read it may as
        well not be drawn. */
     dotOverflow: { fontSize: 8, lineHeight: 8, fontWeight: "700", color: c.text },
-    dayTotal: { fontSize: 9, lineHeight: 11, marginTop: 1, color: c.text, fontWeight: "600" },
+    dayTotal: { fontSize: 12, lineHeight: 14, marginTop: 1, color: c.text, fontWeight: "600" },
     dayTotalSelected: { fontWeight: "800" },
     /* Sits inside the calendar card under a hairline rule, because a legend in
        a card of its own reads as a second thing to look at rather than as a

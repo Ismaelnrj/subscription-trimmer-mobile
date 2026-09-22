@@ -336,7 +336,7 @@ function makeStyles(c: AppColors) {
        shouts a non-price. Muted also reads as "not the number you want". */
     planPriceUnset: { fontSize: 13, fontWeight: "600", color: c.textMuted },
     planPriceActive: { color: c.primary },
-    planSub: { fontSize: 9, color: c.textMuted, textAlign: "center", marginTop: 2 },
+    planSub: { fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 2 },
     planSubActive: { color: c.primary },
     table: { borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: c.border, marginBottom: 24 },
     tableHeader: { flexDirection: "row", backgroundColor: c.border, paddingVertical: 10, paddingHorizontal: 12 },
@@ -358,7 +358,7 @@ function makeStyles(c: AppColors) {
     buyButtonSub: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 3 },
     restoreButton: { alignItems: "center", paddingVertical: 8 },
     restoreText: { color: c.textMuted, fontSize: 13 },
-    legalNote: { fontSize: 10, color: c.textMuted, textAlign: "center", marginTop: 12, lineHeight: 15 },
+    legalNote: { fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 12, lineHeight: 17 },
     alreadyCard: {
       backgroundColor: c.card, borderRadius: 14, padding: 24,
       alignItems: "center", borderWidth: 1, borderColor: c.success,

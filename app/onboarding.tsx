@@ -81,7 +81,7 @@ export default function OnboardingScreen() {
   if (isEstimateStep) {
     return (
       <View style={styles.container}>
-        <TouchableOpacity style={styles.skip} onPress={finish}>
+        <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish}>
           <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
         </TouchableOpacity>
 
@@ -119,7 +119,7 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.skip} onPress={finish}>
+      <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish}>
         <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
       </TouchableOpacity>
 

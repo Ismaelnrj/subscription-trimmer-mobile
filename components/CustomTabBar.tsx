@@ -70,7 +70,7 @@ function makeStyles(c: AppColors) {
       borderTopColor: c.tabBarBorder,
       paddingTop: 8,
     },
-    tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2 },
+    tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, minHeight: 48 },
     label: { fontSize: 11, fontWeight: "600" },
   });
 }

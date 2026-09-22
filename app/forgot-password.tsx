@@ -57,7 +57,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.back} accessibilityRole="button" accessibilityLabel={t("common.a11yBack")} onPress={() => step === 2 ? setStep(1) : router.back()}>
+      <TouchableOpacity style={styles.back} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel={t("common.a11yBack")} onPress={() => step === 2 ? setStep(1) : router.back()}>
         <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
       </TouchableOpacity>
 
@@ -124,13 +124,13 @@ export default function ForgotPasswordScreen() {
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.resend} onPress={handleSendCode} disabled={loading}>
+          <TouchableOpacity style={styles.resend} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={handleSendCode} disabled={loading}>
             <Text style={styles.resendText}>{t("forgotPassword.resendCode")}</Text>
           </TouchableOpacity>
         </>
       )}
 
-      <TouchableOpacity style={styles.backToLogin} onPress={() => router.replace("/login")}>
+      <TouchableOpacity style={styles.backToLogin} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/login")}>
         <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
       </TouchableOpacity>
     </View>

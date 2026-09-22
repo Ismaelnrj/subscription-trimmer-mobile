@@ -200,7 +200,7 @@ function makeStyles(c: AppColors) {
     },
     redeemButton: {
       backgroundColor: c.primary, borderRadius: 10, paddingHorizontal: 18,
-      alignItems: "center", justifyContent: "center", minWidth: 80,
+      alignItems: "center", justifyContent: "center", minWidth: 80, minHeight: 48,
     },
     redeemButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
     bonusCard: {

@@ -165,3 +165,56 @@ describe("the accessibility strings are real, translated and parity-clean", () =
     for (const key of NEW) expect(toks(at(de, key))).toEqual(toks(at(en, key)));
   });
 });
+
+describe("the controls people tap most clear the 48dp floor", () => {
+  /* From a design sweep on 2026-09-22. The script that found these says in its
+     own output that it reads SOURCE, not a rendered tree, so it cannot know a
+     real dp height: of 15 findings, 12 were real and 3 were false positives (a
+     whole subscription card, a full screen modal overlay, a 60dp icon tile).
+     They were checked one at a time rather than mass-fixed.
+
+     Only the two with a real consequence are pinned here. The rest were text
+     links fixed with hitSlop, which expands the touch area without moving any
+     layout, and a hardcoded list of those would go stale the moment somebody
+     adds a link. */
+
+  it("the tab bar tab carries its own height floor", () => {
+    /* THE PRIMARY NAVIGATION OF THE WHOLE APP, and the subtlest of the set.
+       `tab` is flex:1 in a row, so it stretches to the bar's CONTENT box only:
+       the bar's paddingTop and the bottom safe-area inset are part of the BAR
+       and are not tappable. So the tab was as tall as an icon plus an 11px
+       label, under 48, while the bar LOOKED taller than that. A visual height
+       is not a touch target. */
+    const src = read("components/CustomTabBar.tsx");
+    const tab = src.slice(src.indexOf("tab: {"), src.indexOf("}", src.indexOf("tab: {")));
+    expect(tab).toMatch(/minHeight:\s*48/);
+    // minHeight rather than padding, which the design script says in as many
+    // words: padding leaves the height at the mercy of the font.
+    expect(tab).not.toMatch(/paddingVertical/);
+  });
+
+  it("the calendar day amount is readable, as its own comment demands", () => {
+    /* `dayTotal` was fontSize 9 directly under a comment reading "An amount is
+       information, not decoration: if it cannot be read it may as well not be
+       drawn." The comment was arguing against the code above it.
+       The reserved slot has to move WITH it or the amount is clipped, which is
+       why calendar-grid-geometry.test.js derives dayMeta from these parts. */
+    const src = read("components/MonthCalendarGrid.tsx");
+    const block = src.slice(src.indexOf("dayTotal: {"), src.indexOf("}", src.indexOf("dayTotal: {")));
+    const size = Number((block.match(/fontSize:\s*(\d+)/) || [])[1]);
+    expect(size).toBeGreaterThanOrEqual(12);
+  });
+
+  it("the purchase screen states its terms at a readable size", () => {
+    /* planSub sits under a price and legalNote carries the subscription terms.
+       Both were under the floor on the one screen where a misread costs money.
+       The plan BADGE is deliberately left at 9: an uppercase chip is
+       decoration, and this test does not pretend otherwise. */
+    const src = read("app/upgrade.tsx");
+    for (const name of ["planSub", "legalNote"]) {
+      const block = src.slice(src.indexOf(`${name}: {`), src.indexOf("}", src.indexOf(`${name}: {`)));
+      const size = Number((block.match(/fontSize:\s*(\d+)/) || [])[1]);
+      expect(size).toBeGreaterThanOrEqual(12);
+    }
+  });
+});
