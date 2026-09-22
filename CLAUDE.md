@@ -535,6 +535,46 @@ last one left off without needing a recap typed out.
   trick caught a one commit error earlier today: `eas update` uploads the
   working tree, so the publish time bounds what can possibly have been in it.
 
+- PUBLISHED THROUGH ad525837 (2026-09-22), which supersedes every baseline above.
+  NOT YET CONFIRMED. The owner reported the publish went through, which means EAS
+  accepted the bundle and nothing more. Read the Build Info panel before this
+  sentence is deleted: `Embedded launch (no OTA applied): false`, and an
+  `Update ID` DIFFERENT from `01a0c3f0-5f6c-78b9-ab99-79ee01b25208`, which is the
+  2026-09-21 12:28:25Z update. Reading only `Embedded launch: false` proves an OTA
+  landed, never WHICH one.
+  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
+  `eas update` uploads the WORKING TREE, so the publish time bounds what can
+  possibly have been in it, and that cross-check already caught a one commit
+  error on 2026-09-21. `ad525837` touches CLAUDE.md alone, so the last commit
+  carrying anything a phone runs is `76b738e7`.
+  WHAT WENT OUT, fourteen client files and the largest client range since the
+  baseline. The per-row currency rule (`lib/currency-store.ts`, `app/insights.tsx`
+  and four screens), the contrast tokens (`lib/theme.ts`), onboarding landing on
+  `/register` instead of `/login` (`app/onboarding.tsx`), the cancellation
+  lifecycle (`app/cancelled.tsx`, `app/(tabs)/subscriptions.tsx`,
+  `app/(tabs)/profile.tsx`, `app/_layout.tsx`), the analytics flush fix
+  (`lib/analytics.ts`) and both locale files.
+  NATIVE CHECK ACROSS `251242e2..ad525837`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion correctly
+  stayed 1.0.1 and no build was needed. Eleventh recorded time, decided by
+  `needs_native_build.py 251242e2` rather than by reading the diff by hand.
+  THE BACKEND HALF WENT LIVE SEPARATELY via the Railway deploy on `4e35d47b`, the
+  cancellation migration: `subscriptions.cancelled_at` plus a partial index on
+  `(user_id) WHERE cancelled_at IS NULL`. initDB runs at boot, so a green deploy
+  proves the migration did not throw. It does NOT prove the column is there, which
+  is a different claim: `\d subscriptions` in the Railway console should show
+  `cancelled_at | timestamp with time zone`.
+  CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 396, 398, 400, 403, 405 and 407,
+  each on its own exact SHA with the typecheck on the pinned compiler, the full
+  jest suite and lint. Three of those runs went red first: 395 and 401 and 402 on
+  the typecheck, which is the CI typecheck earning its place twice in one day on
+  errors no sandbox check could see.
+  WHAT TO ACTUALLY LOOK AT ON THE DEVICE, beyond the panel, because this range is
+  unusually visible: a subscription card should show its price in the currency it
+  was ENTERED in rather than a conversion; Profile should carry a "Cancelled
+  subscriptions" row; and the delete dialog should offer three buttons, with
+  "I cancelled it" in the rightmost, prominent slot.
+
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.
   For a UI or logic change, the Build Info panel plus opening the screen is
