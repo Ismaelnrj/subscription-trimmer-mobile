@@ -504,7 +504,13 @@ last one left off without needing a recap typed out.
   CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
   `Update ID` DIFFERENT from `01a0c3f0-5f6c-78b9-ab99-79ee01b25208`, which is
   the 12:28:25Z update. Same panel, same rule as every entry above.
-  CHECK TWO, AND IT IS THE ONE THAT MATTERS HERE: that the new events actually
+  BOTH CHECKS ARE NOW SETTLED, 2026-09-22, read off PostHog's own event list
+  rather than inferred: `cancel_guide_viewed` appears THREE times, alongside
+  `app_opened` and `subscription_added`, all against one person. So the bundle
+  landed AND the events reach PostHog, which is what check two was for. The
+  publish itself is therefore confirmed, and the ads have the measurement they
+  were waiting on.
+  CHECK TWO, AND IT IS THE ONE THAT MATTERED HERE: that the new events actually
   REACH PostHog. This publish exists to measure an ad campaign, and a landed
   bundle whose events go nowhere is the worst possible outcome, because the
   money gets spent believing the data is arriving. `initAnalytics()` returns
@@ -541,6 +547,41 @@ last one left off without needing a recap typed out.
   zero and never the bundle landing. Same shape as the PostHog erasure entry
   below, which records the same trap: a call that swallows every error can only
   be verified by looking at the far end.
+
+- A MISSING POSTHOG EVENT IS PROBABLY JUST UNFLUSHED, and this cost a full
+  diagnosis on 2026-09-22 before anybody checked the SDK's defaults. The owner
+  reported that `app_opened` appeared and `cancel_guide_viewed` did not, which
+  reads exactly like one broken event.
+  NOTHING WAS BROKEN. Every link was checked before anything was changed, and
+  that order is the point: both events shipped in the SAME commit (251242e2),
+  both were in the published bundle, `app_opened` arriving PROVED that bundle was
+  on the phone, there is one route into the screen and one file behind it, the
+  import was right, the effect was unconditional with no guard, `track` is
+  generic with no allowlist, and `hasCancellationGuide` is exported and cannot
+  throw.
+  POSTHOG BATCHES AT `flushAt: 20` BY DEFAULT, confirmed from their docs rather
+  than from memory. That suits an SDK expecting autocapture. This app has
+  autocapture OFF, session replay OFF and THIRTEEN track() call sites in total,
+  so a session emits two to four events and never reaches twenty. Every event
+  waited on the flush timer. `app_opened` fires at launch so it had flushed by
+  the time anybody looked; an event fired a minute later had not. Same queue,
+  same code, different answer purely from how long you waited.
+  IT IS NOW `flushAt: 1`, and the justification is the volume rather than a
+  preference: at roughly four requests a session PostHog's battery warning, which
+  assumes autocapture, does not apply. Three assertions pin it, and one of them
+  COUNTS the track() call sites and fails past 40, because the setting is
+  defensible only while the volume is small and that test is what will say so
+  when it stops being.
+  THE GENERAL RULE, which the entry below half stated and this completes: the
+  evidence an analytics change works is the event ARRIVING, and the absence of an
+  event is NOT evidence it failed until you have waited out the flush. Those are
+  different claims and only the first one was on record. Wait a minute, or read
+  the flush config, before diagnosing anything.
+  THE SHAPE UNDERNEATH IS ONE THIS FILE KEEPS RECORDING: `track` is
+  `client?.capture(...)`, so a null client swallows everything in silence, which
+  makes "not arrived yet" and "never going to arrive" indistinguishable from
+  outside. A call that fails silently needs its far end checked AND a known
+  latency, or the far end cannot be read at all.
 
 - CAN A PAYING CUSTOMER ACTUALLY GET WHAT THEY PAID FOR? Traced end to end on
   2026-09-21 because the owner asked, and the answer is YES, with the reasoning
