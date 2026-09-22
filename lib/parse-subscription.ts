@@ -19,12 +19,40 @@ export interface ParsedSubscription {
 const CURRENCY_SYMBOLS = ["\\$", "€", "£", "₹", "¥", "R\\$", "C\\$", "A\\$", "MX\\$"];
 const CURRENCY_PATTERN = CURRENCY_SYMBOLS.join("|");
 
-// Well-known service name hints extracted from email content
+/* Well-known service name hints extracted from email content.
+
+   FOUR KEYS USED TO BE UMBRELLA BRAND NAMES and each one named a subscription
+   that was not being bought. Measured on real pasted text rather than argued:
+   a refurbished phone listing reading "Apple iPhone 13" came back named
+   "Apple"; an Amazon book order came back "Amazon Prime"; a Surface laptop came
+   back "Microsoft 365". Those firms sell hardware and marketplaces as well as
+   subscriptions, so a bare mention is not evidence of a subscription, and the
+   app's promise is about money, which makes a confident wrong answer worse than
+   a blank field the user fills in.
+
+   The fix is to qualify them rather than to drop them: "apple music" and
+   "amazon prime" cannot be a phone or a book, and they also produce a BETTER
+   name than the umbrella did. Bare "google" additionally mapped to the useless
+   label "Google" while "google one" sat two entries below it.
+
+   FOUR KEYS THAT ARE ORDINARY WORDS ARE KNOWINGLY LEFT AS THEY ARE: bear, calm,
+   cursor and overcast. All four misfire on a contrived sentence ("Move the
+   cursor to continue" names a subscription "Cursor"), and all four are real
+   products with no qualifying second word to hang the match on. Removing them
+   would cost their actual subscribers the auto-fill; keeping them costs a name
+   that is visibly wrong and takes four seconds to correct. That trade is worth
+   revisiting with real receipts, and not worth a heuristic invented without
+   any. */
 const KNOWN_SERVICES: Record<string, string> = {
-  netflix: "Netflix", spotify: "Spotify", apple: "Apple", disney: "Disney+",
-  hulu: "Hulu", amazon: "Amazon Prime", "prime video": "Amazon Prime",
-  youtube: "YouTube Premium", "google one": "Google One", google: "Google",
-  microsoft: "Microsoft 365", dropbox: "Dropbox", adobe: "Adobe",
+  netflix: "Netflix", spotify: "Spotify", disney: "Disney+",
+  "apple music": "Apple Music", "apple one": "Apple One",
+  "apple tv": "Apple TV+", icloud: "iCloud+", applecare: "AppleCare",
+  hulu: "Hulu", "amazon prime": "Amazon Prime", "prime video": "Amazon Prime",
+  "amazon music": "Amazon Music", audible: "Audible",
+  youtube: "YouTube Premium", "google one": "Google One",
+  "microsoft 365": "Microsoft 365", "office 365": "Microsoft 365",
+  "xbox game pass": "Xbox Game Pass", onedrive: "OneDrive",
+  dropbox: "Dropbox", adobe: "Adobe",
   "adobe creative": "Adobe Creative Cloud", notion: "Notion",
   slack: "Slack", zoom: "Zoom", linkedin: "LinkedIn Premium",
   "duolingo plus": "Duolingo Plus", duolingo: "Duolingo Plus",
@@ -151,15 +179,21 @@ function extractName(text: string): string | undefined {
     return undefined;
   }
 
-  // Step 3: generic patterns for direct merchant emails
+  /* Step 3: generic patterns for direct merchant emails.
+
+     The character classes below take a literal space and tab rather than `\s`.
+     `\s` matches a newline, so "Invoice from Refurbed\nAmount: 4,99 EUR" came
+     back named "Refurbed\nAmount": the pattern ran past the end of the line it
+     was reading and swallowed the label of the next one. Measured, not
+     reasoned about. A merchant name does not continue onto the next line. */
   const patterns = [
-    /your\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30}?)\s+(?:subscription|membership|plan|account)/i,
-    /subscri(?:bed|ption)\s+to\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
-    /payment\s+(?:to|for)\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
-    /charged\s+by\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
-    /receipt\s+from\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
-    /thank\s+you\s+for\s+(?:subscribing|your\s+order)[^\n]*?(?:to|from|at)\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
-    /invoice\s+from\s+([A-Z][A-Za-z0-9\s&+.'-]{1,30})/i,
+    /your\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30}?)\s+(?:subscription|membership|plan|account)/i,
+    /subscri(?:bed|ption)\s+to\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
+    /payment\s+(?:to|for)\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
+    /charged\s+by\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
+    /receipt\s+from\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
+    /thank\s+you\s+for\s+(?:subscribing|your\s+order)[^\n]*?(?:to|from|at)\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
+    /invoice\s+from\s+([A-Z][A-Za-z0-9 \t&+.'-]{1,30})/i,
   ];
 
   for (const re of patterns) {
@@ -173,7 +207,13 @@ function extractName(text: string): string | undefined {
   return undefined;
 }
 
-const BILLING_CONTEXT_RE = /(?:per month|\/month|\/mo\b|monthly|per year|\/year|annually|per week|\/week|subscription|membership|plan|renewal|recurring|charged)/i;
+/* The window a price has to sit near to be read as the subscription figure
+   rather than a total or a one-off fee. It was English only, which on a German
+   receipt meant no candidate was contextual and the fallback picked the
+   smallest number on the page. Bare "Monat" is deliberately NOT here: "12
+   Monate Garantie" on a refurbished phone listing is a warranty, not a cycle,
+   and admitting it would turn a hardware receipt into a monthly subscription. */
+const BILLING_CONTEXT_RE = /(?:per month|\/month|\/mo\b|monthly|per year|\/year|annually|per week|\/week|subscription|membership|plan|renewal|recurring|charged|pro monat|im monat|monatlich|mtl\.|pro jahr|im jahr|j(?:ä|ae)hrlich|pro woche|w(?:ö|oe)chentlich|abo|abonnement|verl(?:ä|ae)ngerung|zahlung)/i;
 
 const SYMBOL_TO_CODE: Record<string, string> = {
   "$": "USD", "€": "EUR", "£": "GBP", "₹": "INR", "¥": "JPY",
@@ -213,13 +253,28 @@ function parseAmount(raw: string): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
+/* Whitespace that is allowed to sit between an amount and its currency, and
+   it deliberately excludes the newline. `\s*` used to be permitted here and a
+   currency symbol at the end of one line then reached across the break to
+   capture the number at the start of the next. Measured on a real pasted
+   screenshot: "429,00 €\n12 Monate Garantie" matched "€\n12" and returned a
+   price of 12.00, reading a warranty period as money. An amount and its
+   symbol are on the same line in every receipt anybody writes. */
+const GAP = "[ \\t]*";
+
 function extractPrice(text: string): { price: string; currency?: string } | undefined {
   // Symbol before the number: $9.99, €14,99, €1.234,56
-  const withSymbol = new RegExp(`(${CURRENCY_PATTERN})\\s*(${NUMBER})`, "g");
+  const withSymbol = new RegExp(`(${CURRENCY_PATTERN})${GAP}(${NUMBER})`, "g");
+  /* Symbol AFTER the number: 15,99 €. This is how German, Austrian and Swiss
+     receipts are written, and it was the one form not matched, so a DACH
+     receipt returned no price at all on a product whose German depth is the
+     reason to choose it. The symbol must not be a decimal point's neighbour,
+     so the number is captured first and the gap cannot cross a line. */
+  const symbolAfter = new RegExp(`(${NUMBER})${GAP}(${CURRENCY_PATTERN})`, "g");
   // Code on either side: 9,99 EUR and EUR 9,99 both occur in German receipts,
   // and only the first was matched before.
-  const codeAfter = new RegExp(`(${NUMBER})\\s*(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\\b`, "gi");
-  const codeBefore = new RegExp(`\\b(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\\s*(${NUMBER})`, "gi");
+  const codeAfter = new RegExp(`(${NUMBER})${GAP}(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)\\b`, "gi");
+  const codeBefore = new RegExp(`\\b(USD|EUR|GBP|BRL|CAD|AUD|JPY|MXN|INR)${GAP}(${NUMBER})`, "gi");
 
   const candidates: { value: number; index: number; currency?: string }[] = [];
   const add = (value: number | undefined, index: number, currency?: string) => {
@@ -231,6 +286,9 @@ function extractPrice(text: string): { price: string; currency?: string } | unde
   let m: RegExpExecArray | null;
   while ((m = withSymbol.exec(text)) !== null) {
     add(parseAmount(m[2]), m.index, SYMBOL_TO_CODE[m[1].replace(/\\/g, "")]);
+  }
+  while ((m = symbolAfter.exec(text)) !== null) {
+    add(parseAmount(m[1]), m.index, SYMBOL_TO_CODE[m[2].replace(/\\/g, "")]);
   }
   while ((m = codeAfter.exec(text)) !== null) {
     add(parseAmount(m[1]), m.index, m[2].toUpperCase());
@@ -270,11 +328,26 @@ function extractPrice(text: string): { price: string; currency?: string } | unde
   return { price: best.toFixed(2), currency };
 }
 
+/* German was absent entirely, so "15,99 € pro Monat" came back with no cycle at
+   all and the form defaulted. Measured before the fix: pro Monat, monatlich, im
+   Monat, jährlich, pro Jahr and wöchentlich all returned undefined, six for six.
+
+   Bare "Monat", "Jahr" and "Woche" are excluded on purpose. They appear in
+   durations that are not cycles ("12 Monate Garantie", "2 Jahre Gewährleistung")
+   and reading one as a billing cycle invents a subscription out of a warranty.
+   Only a phrase that can ONLY mean a rate is admitted.
+
+   `month` also gained its plural: "every 12 months" matched nothing, because
+   `month\b` cannot match inside "months", so the commonest way of writing a
+   yearly plan in English was read as no cycle. */
 function extractCycle(text: string): "monthly" | "yearly" | "weekly" | undefined {
   const lower = text.toLowerCase();
-  if (/\b(?:annual|yearly|per year|\/year|every year|12[\s-]?month)\b/.test(lower)) return "yearly";
-  if (/\b(?:weekly|per week|every week|\/week)\b/.test(lower)) return "weekly";
-  if (/\b(?:monthly|per month|\/month|every month|\/mo\b|mo\/)\b/.test(lower)) return "monthly";
+  if (/\b(?:annual|yearly|per year|\/year|every year|12[\s-]?months?|pro jahr|im jahr|j(?:ä|ae)hrlich|1x\s+j(?:ä|ae)hrlich)\b/.test(lower)) return "yearly";
+  if (/\b(?:weekly|per week|every week|\/week|pro woche|je woche|w(?:ö|oe)chentlich)\b/.test(lower)) return "weekly";
+  /* `mtl.` sits outside the trailing \b on purpose: a word boundary after a
+     full stop needs a word character on the other side, so "12,99 € mtl."
+     at the end of a line matched nothing while "mtl. 12,99 €" would have. */
+  if (/\b(?:monthly|per month|\/month|every month|\/mo\b|mo\/|pro monat|im monat|je monat|monatlich)\b|\bmtl\.?/.test(lower)) return "monthly";
   return undefined;
 }
 
