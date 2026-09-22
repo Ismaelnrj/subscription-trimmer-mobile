@@ -2504,6 +2504,66 @@ last one left off without needing a recap typed out.
   `python3 - <<'PY'` walking braces from `const GUIDES` and printing each depth-1
   key, which is what `store-listing-cancel-paragraph.md` records. Marketing copy
   says "over 30", rounding down so it stays true if a guide is removed.
+- A ROW SHOWS ITS OWN CURRENCY AND IS NEVER CONVERTED. TOTALS CONVERT. That is
+  the rule, decided 2026-09-22, and it REVERSES the display half of the currency
+  work shipped hours earlier the same day, so read this entry rather than the
+  commit message on `79717926`, which describes the superseded behaviour.
+  THE OWNER CAUGHT IT FROM A NUMBER IN A COMMIT MESSAGE, which is worth
+  recording because the reasoning underneath was better than the objection.
+  They read `17.38` and said Netflix Standard US is 19.99 and not that. Both
+  facts were already right: `lib/service-templates.ts` carries 19.99 USD for
+  `netflix-standard` and 15.99 EUR for `netflix-de-standard`, and 17.38 was
+  15.99 EUR converted, never a claim about a Netflix price. But "the price are
+  the same always" is the correct instinct and the code was not honouring it.
+  REGIONAL PRICING IS NOT ARITHMETIC. Netflix charges an Austrian 15.99 EUR and
+  an American 19.99 USD. Neither is a conversion of the other, so a euro row
+  rendered in a dollar-displaying app as `~$17.38` names an amount that will
+  appear on NOBODY's statement, on a product whose whole promise is saying what
+  is about to be debited. The row already holds the true number.
+  MEASURED AGAINST THE REAL STORE, both versions, on Node type stripping with
+  only the two import specifiers stubbed:
+    row  Netflix 15.99 EUR, app in USD     ~$17.38  ->  EUR 15.99
+    row  Spotify  9.99 USD, app in EUR     ~EUR9.19 ->  $9.99
+    row  legacy row, no currency           ~$13.04  ->  ~$13.04   UNCHANGED
+    agg  monthly total, base EUR           ~$41.28  ->  ~$41.28   UNCHANGED
+  PASSING `fromCurrency` IS THE SIGNAL THAT THIS IS A ROW, which is the whole
+  API and the reason the change is small: `fmtC(sub.price, sub.currency)` is a
+  row and renders exact in its own symbol, `fmtC(monthlyTotal)` is a sum and
+  converts from the global base with a `~`. Stage two was not wasted: it is the
+  plumbing that lets a row know its own currency, and stage one's column is
+  required either way.
+  A ROW WITH NO CURRENCY STILL CONVERTS, deliberately. Null means we do not know
+  what unit it was entered in, so the global base is the only reading available
+  and the old behaviour is the honest one. After stage one's backfill no row is
+  null anyway.
+  TOTALS KEEP THE `~` AND KEEP THEIR KNOWN GAP. Every aggregate still adds RAW
+  numbers and converts once, which is exact while a user's rows share one
+  currency and wrong the moment they do not. THE PER-ROW RULE MAKES THAT MORE
+  VISIBLE RATHER THAN LESS, and that is the right direction: rows now read in
+  their own currencies, so a total that does not match them is something a user
+  can SEE instead of a silent arithmetic error.
+  TWO DERIVED SITES WERE STILL WRONG and the stage two guard could not see them.
+  That scan rejects a bare `fmtC(sub.price)`; it cannot see an amount COMPUTED
+  from one row and then formatted. `app/insights.tsx` had two: the price
+  increase sentence would have read "from EUR15.99 to EUR17.99, costing you
+  $26.06 more per year", mixing two currencies inside one sentence, and the
+  streaming tip named the cheapest row in the display currency. Both now pass
+  the row's currency, and both have their own named assertion.
+  THE MARKET PRICE INSIGHT IS CORRECTLY LEFT CONVERTING, and there is a test
+  saying so, because it compares a CATALOGUE price against a TRACKED one and
+  those can be in different currencies. A genuine cross-row comparison needs one
+  unit. Passing a row currency there would label a converted figure with the
+  wrong symbol, which is this same defect in mirror image.
+  MY OWN ASSERTION FAILED AGAINST CORRECT CODE FIRST, for the fifth recorded
+  time in this file and the same reason every time: the row branch explains
+  itself by QUOTING the figure it exists to stop printing, `~$17.38`, so a
+  substring search for a tilde found one in prose. The test now strips block
+  comments and asserts the strip removed something, so it cannot pass vacuously.
+  Only block comments, because stripping `//` to end of line eats a URL.
+  34 assertions, SEVEN of which fail against `7bd9c679`. The 27 that pass both
+  ways are there on purpose: the stage one migration guards, the tilde on an
+  aggregate, and the per-row scan all had to stay correct.
+
 - "YOUR DATA NEVER LEAVES YOUR PHONE" IS FALSE AND MUST NEVER BE WRITTEN, and it
   was one draft away from a Play Store listing on 2026-09-22. `subscriptions.name`
   and `subscriptions.price` are columns in Postgres on Railway, so names and prices

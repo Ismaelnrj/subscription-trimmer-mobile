@@ -186,8 +186,60 @@ describe("conversion reads the row's currency, not one global base", () => {
   });
 });
 
-describe("a converted figure is marked as an estimate", () => {
-  it("useFmt prefixes a tilde when the currencies differ", () => {
+describe("a row is shown in its own currency, never converted", () => {
+  /* Regional pricing is set by the provider, not by an exchange rate. Netflix
+     Standard is 15.99 EUR in DACH and 19.99 USD in the US, and neither figure
+     is a conversion of the other, so a euro row rendered in a dollar-displaying
+     app as ~$17.38 names an amount that will appear on nobody's statement.
+     Measured against the real store before and after:
+
+       row  Netflix 15.99 EUR, app in USD   ~$17.38  ->  EUR15.99
+       row  Spotify  9.99 USD, app in EUR   ~EUR9.19 ->  $9.99
+       agg  monthly total (base EUR)        ~$41.28  ->  ~$41.28  unchanged
+       row  legacy row with no currency     ~$13.04  ->  ~$13.04  unchanged  */
+
+  it("renders a named currency with that currency's own symbol", () => {
+    expect(STORE).toMatch(/const own = CURRENCIES\.find\(x => x\.code === code\)/);
+    expect(STORE).toMatch(/return `\$\{own\.symbol\}\$\{roundTo\(amount, d\)\.toFixed\(d\)\}`/);
+  });
+
+  it("returns the stored amount untouched for a named currency", () => {
+    // `convert` must not appear inside the row branch: converting there IS the
+    // defect. The branch formats `amount`, which is the number as entered.
+    const fn = STORE.slice(STORE.indexOf("export function useFmt"));
+    const rowBranch = fn.slice(fn.indexOf("if (fromCurrency)"), fn.indexOf("const from = String(baseCurrencyCode)"));
+    expect(rowBranch).not.toMatch(/convert\(/);
+    expect(rowBranch).toMatch(/roundTo\(amount,/);
+  });
+
+  it("carries no tilde on a row, because an exact figure is not an estimate", () => {
+    /* THE COMMENTS MUST COME OUT FIRST, and the first draft of this assertion
+       did not do it and failed against correct code. The branch explains
+       itself by quoting the very figure it exists to stop printing, `~$17.38`,
+       so a raw substring search finds a tilde in prose and reports the fix as
+       the defect. Same shape as the four regex lessons already on record: what
+       a comment SAYS is not what the code DOES. Only block comments are
+       stripped, deliberately, because stripping `//` to end of line would eat
+       a `//` inside a URL, which has already caused a false failure here. */
+    const fn = STORE.slice(STORE.indexOf("export function useFmt"));
+    const rowBranch = fn.slice(fn.indexOf("if (fromCurrency)"), fn.indexOf("const from = String(baseCurrencyCode)"));
+    const code = rowBranch.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(code).not.toContain("~");
+    // and prove the stripping actually removed something, so a future change
+    // that drops the comment cannot make this pass vacuously.
+    expect(code.length).toBeLessThan(rowBranch.length);
+  });
+
+  it("an unrecognised code falls through rather than inventing a symbol", () => {
+    // The server validates against the same nine codes, so this is a guard.
+    // Rendering an unknown code with the DISPLAY symbol would mislabel it.
+    const fn = STORE.slice(STORE.indexOf("export function useFmt"));
+    expect(fn).toMatch(/if \(own\) \{/);
+  });
+});
+
+describe("an aggregate still converts, and still says it is an estimate", () => {
+  it("useFmt prefixes a tilde when the base and display currencies differ", () => {
     expect(STORE).toMatch(/return from === currency\.code \? text : `~\$\{text\}`/);
   });
 
@@ -195,6 +247,46 @@ describe("a converted figure is marked as an estimate", () => {
     // A conversion can coincidentally return the same figure and it is still an
     // estimate, so comparing amounts would under-report.
     expect(STORE).not.toMatch(/converted !== amount \? `~/);
+  });
+
+  it("the aggregate branch converts from the global base", () => {
+    // Passing no source currency is the signal that this is a sum, already
+    // expressed in the user's base currency.
+    expect(STORE).toMatch(/const converted = convert\(amount, null\)/);
+  });
+
+  it("a sum is still added before it is converted, and that is recorded", () => {
+    /* The known remaining gap. Totals add RAW numbers and convert once, which
+       is exact while a user's rows share one currency and wrong the moment
+       they do not. It must stay written down rather than be discovered. */
+    expect(STORE).toMatch(/WHAT THIS DOES NOT FIX YET/);
+  });
+});
+
+describe("a derived per-row figure carries its row's currency too", () => {
+  /* The stage two scan below catches a bare `fmtC(sub.price)`. It cannot catch
+     an amount COMPUTED from one row and then formatted, which is how two sites
+     in insights.tsx were left reading the display currency: the price increase
+     sentence would have said "from EUR15.99 to EUR17.99, costing you $26.06
+     more per year", mixing two currencies inside one sentence. */
+  const INSIGHTS = read("app", "insights.tsx");
+
+  it("the price increase names its extra in the row's currency", () => {
+    expect(INSIGHTS).toMatch(/extra: fmtC\(annualExtra, s\.currency\)/);
+    expect(INSIGHTS).not.toMatch(/extra: fmtC\(annualExtra\)/);
+  });
+
+  it("the streaming tip names the cheapest row in its own currency", () => {
+    expect(INSIGHTS).toMatch(/fmtC\(toMonthly\(cheapest\.price, cheapest\.billingCycle\), cheapest\.currency\)/);
+  });
+
+  it("a genuine cross-row comparison is still converted", () => {
+    /* The market price insight compares a CATALOGUE price against a TRACKED
+       one, which can be in different currencies, so it converts both into the
+       base first and formats them as aggregates. Passing a row currency there
+       would label a converted figure with the wrong unit. */
+    expect(INSIGHTS).toMatch(/market: fmtC\(marketMonthlyInBase\)/);
+    expect(INSIGHTS).toMatch(/tracked: fmtC\(trackedMonthly\)/);
   });
 });
 

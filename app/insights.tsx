@@ -114,7 +114,7 @@ export function buildTips(
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
       title: t("insights.streamingTitle", { count: streamingSubs.length }),
       detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
-      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle)) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
+      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle), cheapest.currency) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
     coveredCategories.add("streaming");
   }
 
@@ -156,7 +156,7 @@ export function buildTips(
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
     tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
       title: t("insights.priceUpTitle", { name: s.name }),
-      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from, s.currency), to: fmtC(s.priceIncrease.to, s.currency), cycle: s.billingCycle, extra: fmtC(annualExtra) }),
+      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from, s.currency), to: fmtC(s.priceIncrease.to, s.currency), cycle: s.billingCycle, extra: fmtC(annualExtra, s.currency) }),
       priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle), s.currency) }), savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
   }
 

@@ -144,35 +144,67 @@ export function fmt(amount: number, symbol: string): string {
   return `${symbol}${roundTo(amount, 2).toFixed(2)}`;
 }
 
-// Hook that returns a formatter with live conversion built in
-/* `fromCurrency` is the currency the amount is stored in. Optional, so every
-   existing one argument call site keeps working and each can be upgraded
-   deliberately rather than all at once.
-   A CONVERTED FIGURE IS PREFIXED WITH `~`, and that is not decoration. A rate
-   from api.frankfurter.app is today's rate applied to a price that will be
-   charged on some other day in the row's own currency, so the number shown is
-   an estimate and the only dishonest version is the one that looks exact.
-   The marker is decided from the CURRENCY CODES rather than from whether the
-   number changed, because a conversion can coincidentally return the same
-   figure and that is still an estimate. */
-/* WHAT THIS DOES NOT FIX YET, stated rather than left to be discovered.
-   Every place that SUMS prices, the monthly and yearly totals, the category
-   breakdown, the weekly chart, still adds raw numbers and then converts once
-   from the global base. That is correct while a user's rows share one currency,
-   which is every user today, because the backfill gave each of them their own
-   settings currency. It is wrong the moment somebody switches currency and adds
-   a row, because the sum mixes units before converting.
+/* THE FORMATTER, AND THE ONE RULE THAT DECIDES WHAT IT DOES.
+   `fromCurrency` is the currency the amount is stored in, and PASSING IT IS
+   THE SIGNAL THAT THIS IS A SINGLE ROW rather than a total. It is optional so
+   that every aggregate call site keeps its existing one argument form.
+
+     fmtC(sub.price, sub.currency)   one row   -> its own currency, exact
+     fmtC(monthlyTotal)              a sum     -> display currency, prefixed ~
+
+   WHY A ROW IS NOT CONVERTED. Regional pricing is set by the provider and not
+   by an exchange rate: Netflix Standard is 15.99 EUR in DACH and 19.99 USD in
+   the US, and 15.99 EUR converted is neither of those. A row showing ~$17.38
+   therefore names a figure that will never appear on a statement, which is the
+   one thing this product cannot afford to do. The stored number is already
+   true, so it is shown.
+
+   WHY A TOTAL STILL IS. Adding rows priced in different currencies needs one
+   unit, so there is no honest alternative, and `~` says so. The marker is
+   decided from the CURRENCY CODES rather than from whether the number changed,
+   because a conversion can coincidentally return the same figure and that is
+   still an estimate.
+
+   WHAT THIS DOES NOT FIX YET, stated rather than left to be discovered. Every
+   place that SUMS prices, the monthly and yearly totals, the category
+   breakdown, the weekly chart, still adds RAW numbers and converts once from
+   the global base, so a sum mixes units before converting. That is exactly
+   correct while a user's rows share one currency, which is every user today
+   because the backfill gave each of them their own settings currency. It is
+   wrong the moment somebody switches currency and adds a row.
    Fixing it means converting INSIDE each reducer rather than after it, which
-   touches every aggregate and is its own change. Doing half of it would be
-   worse than either end: per-row prices right and totals silently wrong is
-   harder to notice than both being wrong the same way.
-   So this stage is deliberately display-only, and the inconsistency window is
-   narrow: one currency per user means no difference at all. */
+   touches every aggregate and is its own change.
+   NOTE THAT THE PER-ROW RULE ABOVE MAKES THIS MORE VISIBLE, not less, and that
+   is the right direction: rows now read in their own currencies, so a total
+   that does not match them is something a user can SEE rather than a silent
+   arithmetic error. A defect you can notice is cheaper than one you cannot. */
 export function useFmt(): (amount: number, fromCurrency?: string | null) => string {
   const { currency, convert, baseCurrencyCode } = useCurrencyStore();
   return (amount: number, fromCurrency?: string | null) => {
-    const from = String(fromCurrency || baseCurrencyCode).toUpperCase();
-    const converted = convert(amount, fromCurrency);
+    /* A ROW THAT NAMES ITS OWN CURRENCY IS SHOWN IN IT, NEVER CONVERTED.
+       Netflix charges an Austrian 15.99 EUR and an American 19.99 USD, and
+       neither figure is a conversion of the other: regional pricing is set by
+       the provider, not by an exchange rate. So a euro row rendered as ~$17.38
+       names an amount that will appear on nobody's statement, on a screen whose
+       whole job is saying what is about to be debited. The row already holds
+       the true number; showing anything else is a worse answer. */
+    if (fromCurrency) {
+      const code = String(fromCurrency).toUpperCase();
+      const own = CURRENCIES.find(x => x.code === code);
+      if (own) {
+        const d = own.code === "JPY" ? 0 : 2;
+        return `${own.symbol}${roundTo(amount, d).toFixed(d)}`;
+      }
+      /* An unrecognised code falls through to the convert path rather than
+         being rendered with a symbol we do not have. The server validates
+         against the same nine codes, so this is a guard and not a live case. */
+    }
+    /* NO SOURCE CURRENCY NAMED MEANS THIS IS AN AGGREGATE, already summed in
+       the user's base currency, so it converts to the display currency and
+       keeps the `~`: a total in a currency none of its parts were priced in
+       really is an estimate, and it moves with a rate the user did not set. */
+    const from = String(baseCurrencyCode).toUpperCase();
+    const converted = convert(amount, null);
     const decimals = currency.code === "JPY" ? 0 : 2;
     const text = `${currency.symbol}${roundTo(converted, decimals).toFixed(decimals)}`;
     return from === currency.code ? text : `~${text}`;
