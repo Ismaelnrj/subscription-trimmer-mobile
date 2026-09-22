@@ -583,6 +583,48 @@ last one left off without needing a recap typed out.
   subscriptions" row; and the delete dialog should offer three buttons, with
   "I cancelled it" in the rightmost, prominent slot.
 
+- PUBLISHED THROUGH eac1d7d3 (2026-09-22, second publish of the day), which
+  supersedes every baseline above.
+  NOT YET CONFIRMED. The owner reported the publish went through, which means
+  EAS accepted the bundle and NOTHING MORE. Read the Build Info panel before
+  this sentence is replaced: `Embedded launch (no OTA applied): false` and an
+  `Update ID` DIFFERENT from `01a0c92d-35a4-7276-853c-b3f5bc2df68b`, which is
+  the 12:52:58Z update from this morning. Two publishes on the same day are
+  otherwise identical on that panel, so the id is the whole check.
+  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
+  `eac1d7d3` was committed 14:44:45Z and is the head of master, so a publish
+  later than that could carry it and an earlier one could not. `eas update`
+  uploads the WORKING TREE, so the publish time bounds what can possibly have
+  been in it. That check caught a one commit error on 2026-09-21.
+  `eac1d7d3` AND `b58a0856` CARRY NOTHING A PHONE RUNS, documentation and the
+  landing page generator respectively, so the last commit carrying client files
+  is `b198c794`. Ninth time that gap has looked like a missed publish and has
+  not been one.
+  WHAT WENT OUT, thirteen client files across two commits. The configurable free
+  tier cap (`app/(tabs)/subscriptions.tsx`, `app/cancelled.tsx`,
+  `app/upgrade.tsx` and both locale files), including the subscriptions meter
+  that was a bare English JSX text node; and the design sweep, twelve touch
+  targets and three font sizes (`components/CustomTabBar.tsx`,
+  `components/MonthCalendarGrid.tsx`, `app/login.tsx`, `app/register.tsx`,
+  `app/forgot-password.tsx`, `app/verify-email.tsx`, `app/onboarding.tsx`,
+  `app/refer-a-friend.tsx`).
+  NATIVE CHECK ACROSS `ad525837..eac1d7d3`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion
+  correctly stayed 1.0.1 and no build was needed. Twelfth recorded time, decided
+  by `needs_native_build.py ad525837` rather than by reading the diff by hand.
+  THE BACKEND HALF WENT LIVE SEPARATELY via the Railway deploy on `42161a41`,
+  `FREE_SUBSCRIPTION_LIMIT` and the limit carried on the 403. The landing page
+  rebuild on `b58a0856` rides the same deploys.
+  CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 410, 414, 416 and 417, each on
+  its own exact SHA with the typecheck on the pinned compiler, the full jest
+  suite and lint. The typecheck mattered: eleven TypeScript files changed.
+  DO NOT RAISE `FREE_SUBSCRIPTION_LIMIT` IN RAILWAY UNTIL THIS UPDATE IS
+  CONFIRMED ON DEVICES. An older bundle still draws its own 5 and blocks the add
+  form locally, so raising it early makes the server's gate and the screen
+  drawing the gate disagree, which is the failure the configurable limit entry
+  below exists to prevent. LOWERING is safe at any time, since the client lets
+  the attempt through and the 403 is already handled.
+
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.
   For a UI or logic change, the Build Info panel plus opening the screen is
