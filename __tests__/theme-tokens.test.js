@@ -77,6 +77,46 @@ describe("every theme token a screen names actually exists", () => {
   });
 });
 
+describe("shared helpers whose return shape is easy to misname", () => {
+  /* The third failure of this class in one day: `getCategoryIcon(...).name`,
+     where the field is `icon`. CATEGORY_ICON is declared
+     `Record<string, { icon: string; color: string }>`, so the valid fields are
+     readable without a type system.
+
+     DELIBERATELY NARROW, one helper. Generalising this means reimplementing
+     property checking, which is the typechecker's job and would be a worse
+     version of it. This helper earns a special case because it is used on five
+     screens and its two fields are both plausible names for the other. */
+  it("only reads fields getCategoryIcon actually returns", () => {
+    const CATS = fs.readFileSync(path.join(ROOT, "lib", "categories.ts"), "utf8");
+    const decl = CATS.match(/CATEGORY_ICON:\s*Record<string,\s*\{([^}]*)\}>/);
+    expect(decl).not.toBeNull();
+    const fields = new Set([...decl[1].matchAll(/(\w+)\s*:/g)].map((m) => m[1]));
+    expect(fields.size).toBeGreaterThan(1);
+
+    const bad = [];
+    for (const file of FILES) {
+      const src = fs.readFileSync(file, "utf8");
+      // Direct form: getCategoryIcon(x).field
+      for (const m of src.matchAll(/getCategoryIcon\([^)]*\)\.(\w+)/g)) {
+        if (!fields.has(m[1])) {
+          bad.push(`${path.relative(ROOT, file)} getCategoryIcon(...).${m[1]}`);
+        }
+      }
+      // Bound form: `const icon = getCategoryIcon(x)` then `icon.field`
+      for (const m of src.matchAll(/const (\w+)\s*=\s*getCategoryIcon\(/g)) {
+        const varName = m[1];
+        for (const use of src.matchAll(new RegExp(`(?<![A-Za-z0-9_$.])${varName}\\.(\\w+)`, "g"))) {
+          if (!fields.has(use[1])) {
+            bad.push(`${path.relative(ROOT, file)} ${varName}.${use[1]}`);
+          }
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});
+
 describe("helpers whose argument count is easy to get wrong", () => {
   /* useDateFormat returns (date, pattern) => string. Calling it with the date
      alone typechecks nowhere and renders nothing, and the pattern is a date-fns

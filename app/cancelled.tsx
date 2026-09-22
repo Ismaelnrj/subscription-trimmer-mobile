@@ -151,7 +151,7 @@ export default function CancelledScreen() {
             return (
               <View key={sub.id} style={styles.card}>
                 <View style={[styles.iconWrap, { backgroundColor: icon.color + "22" }]}>
-                  <MaterialCommunityIcons name={icon.name as any} size={20} color={icon.color} />
+                  <MaterialCommunityIcons name={icon.icon as any} size={20} color={icon.color} />
                 </View>
                 <View style={styles.cardBody}>
                   <Text style={styles.cardName} numberOfLines={1}>{sub.name}</Text>
