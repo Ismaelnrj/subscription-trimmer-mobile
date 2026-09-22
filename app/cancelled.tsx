@@ -170,7 +170,7 @@ export default function CancelledScreen() {
                         parseApiDate: that would slice the UTC calendar day and
                         show the wrong one to anybody who cancelled in the
                         evening west of UTC. */}
-                    {t("cancelled.since", { date: fmtD(new Date(sub.cancelledAt)) })}
+                    {t("cancelled.since", { date: fmtD(new Date(sub.cancelledAt), "d MMM yyyy") })}
                   </Text>
                   <Text style={sub.chargesAvoided > 0 ? styles.cardSaved : styles.cardNotYet}>
                     {sub.chargesAvoided > 0
@@ -200,9 +200,9 @@ export default function CancelledScreen() {
 
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1, backgroundColor: c.bg },
     content: { padding: 16, paddingBottom: 40 },
-    centre: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.background, padding: 24 },
+    centre: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.bg, padding: 24 },
     errorText: { marginTop: 12, fontSize: 15, color: c.textSecondary, textAlign: "center", fontFamily: "Montserrat-Regular" },
     retryButton: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: c.primary, minHeight: 48, justifyContent: "center" },
     retryText: { color: "#fff", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
