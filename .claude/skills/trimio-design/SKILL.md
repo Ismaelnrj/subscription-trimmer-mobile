@@ -186,6 +186,45 @@ German locale was written to this rule and its punctuation choice is usually
 the right answer. Watch for one trap: German tolerates a comma splice where
 English needs a period, so a comma is not always the right port.
 
+## Store copy: count the head terms, do not read for them
+
+A Play short description does TWO jobs at once, discovery and conversion, and
+the second is the one you can see. Copy written only for conversion silently
+pays for it out of the first.
+
+```bash
+python3 scripts/check_copy.py --keywords de "Abos, Kosten, Testphasen. ..."
+python3 scripts/check_copy.py --keywords en "..." --against "the line it replaces"
+```
+
+It reports the character count against Play's 80 limit, applies the dash rule,
+and splits terms into two tiers. **Zero CATEGORY terms fails.** Supporting
+terms never substitute for one, because somebody searching for this app does
+not yet know what makes it different.
+
+WHY IT EXISTS: on 2026-09-22 a proposed German line, `Jede Verlängerung im
+Blick. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.`, carried none of
+Abo, Abos, Abonnement, Tracker, Kosten or Testphase. It spent 78 characters of
+the second most weighted indexed field on no category word at all, and it reads
+well, which is exactly why reading it did not catch it. The English draft
+dropped `subscription`. Same class as the `über 160 Vorlagen` overclaim: a
+number or a term that reaches marketing copy has to be COUNTED.
+
+THE TWO TIERS ARE THE WHOLE POINT, and the first draft of this checker got it
+wrong. It had ONE list holding both, so `kündig`, `anleitung` and
+`verlängerung` satisfied the floor and it passed the very line it was written
+to catch. Its own negative test found that, which is the argument for writing
+the negative test first.
+
+IT PRINTS THE SURFACE FORM IT MATCHED, deliberately. German `kostenlos`
+contains `kosten` and Play would not rank it for that query, so a reader has to
+be able to see WHAT matched and overrule the count. Report, not verdict, same
+as `check_screens.py`.
+
+THE TERM LISTS ARE A MARKETING JUDGEMENT rather than a measurement, unlike
+every other number in this skill. They are near the top of `check_copy.py` and
+are meant to be edited when the positioning changes.
+
 ## Localisation parity needs two checks, not one
 
 Matching key counts prove nothing. Both locale files sat at 562 keys with

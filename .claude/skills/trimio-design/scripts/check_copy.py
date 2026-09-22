@@ -4,12 +4,23 @@
     check_copy.py locales/en.json locales/de.json     dash rule
     check_copy.py store-listing-de.md                 dash rule, markdown
     check_copy.py --parity locales/en.json locales/de.json
+    check_copy.py --keywords de "Abos und Kosten im Blick. ..."
+    check_copy.py --keywords en "..." --against "the line it replaces"
 
-Two separate jobs:
+Three separate jobs:
 
 The dash rule. No dash, en dash or em dash as clause-separating punctuation.
 Hyphens inside compound words are fine ("E-Mail", "opt-out"), so this looks for
 a hyphen with whitespace around it, and for en/em dashes anywhere.
+
+Keywords. A Play short description does TWO jobs at once, discovery and
+conversion, and copy written for the second silently pays for the first. On
+2026-09-22 a proposed German line carried zero of Abo, Abos, Abonnement,
+Tracker, Kosten and Testphase: 78 characters of the second most weighted
+indexed field spent on no head term at all. It read well, which is exactly why
+nobody caught it by reading. The English draft dropped "subscription", the head
+term of the category. This is the same class as the "ueber 160 Vorlagen"
+overclaim: a number or a term that reaches marketing copy has to be COUNTED.
 
 Parity. Matching key counts prove nothing on their own. Both locale files once
 sat at 562 keys with nothing missing while a German string had quietly dropped
@@ -87,6 +98,106 @@ def check_markdown(path):
     return len(hits)
 
 
+# TWO TIERS, and the split is the whole point. The first draft of this checker
+# had one list containing both, so it cheerfully passed the very line it was
+# written to catch: "kuendig", "anleitung" and "verlaengerung" satisfied a floor
+# that exists to find a missing CATEGORY word. Its own negative test caught it.
+#
+# CATEGORY is what somebody types into Play when they do not know this app
+# exists. Zero of these is a failure at any length.
+# SUPPORTING is what makes this app the answer rather than a competitor. Good
+# to have, reported, and NEVER a substitute for a category term.
+CATEGORY_TERMS = {
+    "en": ["subscription", "tracker", "track", "budget", "trial"],
+    "de": ["abo", "abonnement", "tracker", "kosten", "testphase", "budget"],
+}
+SUPPORTING_TERMS = {
+    "en": ["cancel", "renewal", "renew", "guide", "reminder"],
+    "de": ["kuendig", "kündig", "anleitung", "verlängerung", "bankzugang",
+           "erinnerung"],
+}
+
+# Play's own limit for the short description.
+SHORT_DESC_LIMIT = 80
+
+
+def find_terms(text, lang, table):
+    """Returns [(term, surface form as it appears)], word-start matches.
+
+    The surface form is reported rather than swallowed on purpose: German
+    "kostenlos" contains "kosten" and Play would NOT rank it for that query,
+    so a reader has to be able to see WHAT matched and overrule the count.
+    Same philosophy as check_screens.py: a report, not a verdict.
+    """
+    found = []
+    low = text.lower()
+    for term in table.get(lang, []):
+        for m in re.finditer(r"\b" + re.escape(term) + r"\w*", low):
+            found.append((term, text[m.start():m.end()]))
+            break
+    return found
+
+
+def check_keywords(lang, text, against=None):
+    if lang not in CATEGORY_TERMS:
+        print(f"unknown language {lang!r}, expected one of "
+              f"{sorted(CATEGORY_TERMS)}", file=sys.stderr)
+        return 1
+
+    n = len(text)
+    cat = find_terms(text, lang, CATEGORY_TERMS)
+    sup = find_terms(text, lang, SUPPORTING_TERMS)
+    problems = 0
+
+    print(f"\n{lang}: {n}/{SHORT_DESC_LIMIT} characters")
+    print(f"  {text}")
+
+    if n > SHORT_DESC_LIMIT:
+        print(f"\n  OVER THE LIMIT by {n - SHORT_DESC_LIMIT}. Play truncates or "
+              f"refuses; either way the tail is not doing any work.")
+        problems += 1
+
+    if CLAUSE_DASH.search(text):
+        print("\n  DASH used as clause punctuation. Colon, comma or period.")
+        problems += 1
+
+    def show(label, hits):
+        print(f"\n  {label}: {len(hits)}")
+        for term, surface in hits:
+            note = ("" if term == surface.lower()
+                    else f"   (matched inside {surface!r})")
+            print(f"    {term}{note}")
+
+    show("category terms", cat)
+    show("supporting terms", sup)
+
+    if not cat:
+        print("\n  ZERO CATEGORY TERMS. This is the field Play weights second")
+        print("  after the title. A line with no category word ranks for")
+        print("  nothing, however well it reads, and supporting terms do not")
+        print("  substitute: somebody searching for this app does not yet know")
+        print("  what makes it different. Put the category word back.")
+        problems += 1
+
+    if against is not None:
+        pc = find_terms(against, lang, CATEGORY_TERMS)
+        ps = find_terms(against, lang, SUPPORTING_TERMS)
+        print(f"\n  the line it replaces carried "
+              f"{len(pc)} category {[t for t, _ in pc]} and "
+              f"{len(ps)} supporting {[t for t, _ in ps]}")
+        lost_c = sorted({t for t, _ in pc} - {t for t, _ in cat})
+        lost_s = sorted({t for t, _ in ps} - {t for t, _ in sup})
+        if lost_c:
+            print(f"  LOSES CATEGORY: {lost_c}")
+            print("  Weigh this one properly. A category term is discovery and")
+            print("  a supporting term is persuasion, and the short description")
+            print("  is the only field doing both.")
+        if lost_s:
+            print(f"  loses supporting: {lost_s}")
+
+    return problems
+
+
 def check_parity(a_path, b_path):
     with open(a_path, encoding="utf-8") as f:
         a = flatten(json.load(f))
@@ -138,9 +249,22 @@ def main():
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--parity", action="store_true",
                     help="compare two locale files by key AND placeholder")
+    ap.add_argument("--keywords", action="store_true",
+                    help="head term coverage of a store short description: "
+                         "pass a language (en|de) then the text")
+    ap.add_argument("--against", metavar="TEXT",
+                    help="--keywords only: the line this one replaces, to "
+                         "report which terms the change gives up")
     a = ap.parse_args()
 
-    if a.parity:
+    if a.keywords:
+        if len(a.paths) != 2:
+            print("--keywords needs a language and the text, e.g.\n"
+                  '  check_copy.py --keywords de "Abos und Kosten im Blick..."',
+                  file=sys.stderr)
+            return 2
+        problems = check_keywords(a.paths[0], a.paths[1], a.against)
+    elif a.parity:
         if len(a.paths) != 2:
             print("--parity needs exactly two files", file=sys.stderr)
             return 2
@@ -158,6 +282,8 @@ def main():
         print("Clean.")
     else:
         print(f"{problems} thing(s) to fix.")
+        if a.keywords:
+            return 1
         print("For the dash rule use a colon, comma or period. When fixing")
         print("English, look at what the German does first: it was written to")
         print("this rule. One trap, German tolerates a comma splice where")
