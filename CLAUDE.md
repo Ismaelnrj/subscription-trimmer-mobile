@@ -245,6 +245,54 @@ throughout, including in the legal copy. Register does not affect
 enforceability, and switching to Sie only there would read as a different
 product.
 
+## Which skill fires when
+
+A skill is loaded per invocation, into the turn that needs it. There is no
+setting that pins them on, and loading all of them at once is actively harmful:
+they compete for the same context the actual work needs. So this table is the
+durable version of "have them active", and it survives a context reset in a way
+a loaded skill does not.
+
+| Skill | Load it before |
+|---|---|
+| `trimio-design` | any colour, screen, store copy, locale string, caption or landing page text |
+| `trimio-release` | an `eas update`, a runtimeVersion or versionCode decision, a Play Console upload |
+| `trimio-verify` | claiming ANY suite passes, and before saying a guard would have caught something |
+| `code-review` | a second pass on a diff that is about to merge |
+| `security-review` | an audit of a branch, as its own pass |
+| `dataviz` | the Stats donut or any chart |
+
+THE REST DO NOT APPLY HERE. xlsx, pptx, docx, pdf, morning, keybindings and the
+artifact skills have nothing to do with this repo, and reaching for one is a
+sign of having misread the task.
+
+WHAT `trimio-design` DOES NOT COVER, learned 2026-09-22 the expensive way: it
+had no ASO check at all, so it returned CLEAN on a short description carrying
+zero category terms. Loading a skill proves you ran ITS checks, never that its
+checks are the right ones. When a skill passes something that later turns out
+broken, the gap is the finding: close it in the skill rather than remembering
+to look harder next time. That is where `--keywords` came from.
+
+## The conversion check is a Routine, not a loop
+
+`trig_01GqW4M3kJfG4wmeF36zx7m5`, Mondays 07:00 UTC, fresh session per fire.
+
+A `/loop` lives inside one session and the positioning test runs 28 days, so a
+loop would have died with the session that created it and nobody would have
+noticed, which is the worst of both. A Routine outlives it.
+
+IT CANNOT READ PLAY CONSOLE AND MUST NOT PRETEND TO. Console is egress-blocked
+like everything else (see "Network limits"), so the Routine ASKS for the two
+numbers and then does the comparison and the decision against the baseline in
+`store-listing-positioning-test.md`. The value is that a 28 day window survives
+being forgotten, not that anything is automated.
+
+IT STORES NO MCP CONNECTORS, which the create call warned about and which has a
+real consequence: a fired session has no GitHub tools, so it cannot read a CI
+run and therefore cannot honestly complete the merge step. It can commit and
+push to the branch. Recreating the Routine from the claude.ai Routines UI would
+attach connectors and close this.
+
 ## Where things stand (marketing push)
 
 Update this section as things move, so a fresh session picks up where the
