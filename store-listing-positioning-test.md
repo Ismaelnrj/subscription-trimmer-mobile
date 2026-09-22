@@ -25,10 +25,38 @@ Play's limit is 80 characters. Counts are measured, not estimated.
 
 | | text | count |
 |---|---|---|
-| **EN** | `See every renewal before it hits. Over 30 guides to actually cancel.` | 68/80 |
-| **DE** | `Jede Verlängerung im Blick. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.` | 78/80 |
+| **EN** | `Subscription tracker. See renewals early, cancel with over 30 real guides.` | 74/80 |
+| **DE** | `Abos, Kosten, Testphasen. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.` | 76/80 |
 
 The German is under Manage translations > German (Deutschland).
+
+**THE FIRST DRAFT OF THESE WAS AN ASO REGRESSION**, caught 2026-09-22 by counting
+head terms rather than reading the lines. It proposed `Jede Verlängerung im
+Blick. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.`, which contains ZERO
+of Abo, Abos, Abonnement, Tracker, Kosten and Testphase: it spent 78 characters
+of the second most weighted indexed field on no head term at all. The English
+draft dropped `subscription`, the head term of the entire category.
+
+WHY THAT IS EASY TO DO HERE: the positioning test is about CONVERSION and the
+short description does BOTH jobs, discovery and conversion, so optimising it for
+the differentiator alone silently pays for the second with the first. The full
+description's opening paragraph is nearly pure conversion, which is why it can
+lead with the guides without costing anything; verified rather than assumed,
+that paragraph still carries subscription, cancel and guide in English, and Abo,
+kündig and Anleitung in German.
+
+THE REPLACEMENTS KEEP BOTH. English carries subscription, track, renewal, cancel
+and guide, which is every term the old line had plus the differentiator. German
+carries Abo, Kosten, Testphase and kündig, one MORE than the line it replaces.
+
+`Abos, Kosten, Testphasen.` READS AS A KEYWORD LIST, and that is the deliberate
+trade: the short description's first job in this listing is discovery, since the
+full description does the persuading. `Abos und Kosten im Blick. Über 30
+Anleitungen zum Kündigen. Ohne Bankzugang.` is the smoother alternative at 76/80
+and drops Testphase, which is both a real feature and a real search intent.
+
+COUNT HEAD TERMS BEFORE SHIPPING ANY SHORT DESCRIPTION. Reading the line tells
+you whether it is good copy and nothing about whether it ranks.
 
 ### First paragraph of the full description
 
