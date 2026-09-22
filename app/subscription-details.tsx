@@ -105,13 +105,13 @@ export default function SubscriptionDetailsScreen() {
             <LinearGradient colors={["#245F52", "#2F8E71"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
               <LogoImage name={sub.name} category={sub.category} size={56} />
               <Text style={styles.heroNameOnGradient}>{sub.name}</Text>
-              <Text style={styles.heroPriceOnGradient}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
+              <Text style={styles.heroPriceOnGradient}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
             </LinearGradient>
           ) : (
             <View style={[styles.hero, styles.heroLight]}>
               <LogoImage name={sub.name} category={sub.category} size={56} />
               <Text style={styles.heroName}>{sub.name}</Text>
-              <Text style={styles.heroPrice}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
+              <Text style={styles.heroPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
             </View>
           )}
 
@@ -144,7 +144,7 @@ export default function SubscriptionDetailsScreen() {
               <View key={i} style={styles.renewalRow}>
                 <MaterialCommunityIcons name="calendar-check-outline" size={18} color={c.textSecondary} />
                 <Text style={styles.renewalDate}>{fmtD(date, "EEEE, MMMM d")}</Text>
-                <Text style={styles.renewalPrice}>{fmtC(sub.price)}</Text>
+                <Text style={styles.renewalPrice}>{fmtC(sub.price, sub.currency)}</Text>
               </View>
             ))
           )}

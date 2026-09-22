@@ -159,3 +159,58 @@ describe("the API hands the currency back", () => {
     expect(block(SERVER, "function formatSub")).not.toMatch(/currency: s\.currency \|\| ['"]USD['"]/);
   });
 });
+
+/* ---- stage two: the display converts from the ROW's currency ---- */
+
+const STORE = read("lib", "currency-store.ts");
+
+describe("conversion reads the row's currency, not one global base", () => {
+  it("convert takes an optional source currency", () => {
+    expect(STORE).toMatch(/convert:\s*\(amount: number, fromCurrency\?: string \| null\)/);
+  });
+
+  it("the source currency wins over the global base", () => {
+    expect(STORE).toMatch(/const from = String\(fromCurrency \|\| baseCurrencyCode\)\.toUpperCase\(\)/);
+  });
+
+  it("rates are looked up by that currency rather than the base", () => {
+    // The bug in miniature: reading rates[baseCurrencyCode] here is what made
+    // every row share one unit no matter what it was entered in.
+    expect(STORE).toMatch(/const baseRate = rates\[from\]/);
+    expect(STORE).not.toMatch(/const baseRate = rates\[baseCurrencyCode\]/);
+  });
+
+  it("falls back to the global base for a row with no currency", () => {
+    // Pre-migration rows must keep the OLD behaviour rather than get a guess.
+    expect(STORE).toMatch(/fromCurrency \|\| baseCurrencyCode/);
+  });
+});
+
+describe("a converted figure is marked as an estimate", () => {
+  it("useFmt prefixes a tilde when the currencies differ", () => {
+    expect(STORE).toMatch(/return from === currency\.code \? text : `~\$\{text\}`/);
+  });
+
+  it("decides from the codes, not from whether the number changed", () => {
+    // A conversion can coincidentally return the same figure and it is still an
+    // estimate, so comparing amounts would under-report.
+    expect(STORE).not.toMatch(/converted !== amount \? `~/);
+  });
+});
+
+describe("every per-row display passes the row's currency", () => {
+  const SITES = [
+    ["app/(tabs)/subscriptions.tsx", ["subscriptions.tsx"]],
+    ["app/subscription-details.tsx", ["subscription-details.tsx"]],
+    ["app/(tabs)/calendar.tsx", ["calendar.tsx"]],
+    ["app/(tabs)/index.tsx", ["index.tsx"]],
+    ["app/insights.tsx", ["insights.tsx"]],
+  ];
+  it.each(SITES.map(([label, parts]) => [label, parts]))("%s has no bare per-row fmtC", (label, parts) => {
+    const src = parts[0] === "subscriptions.tsx" || parts[0] === "calendar.tsx" || parts[0] === "index.tsx"
+      ? read("app", "(tabs)", parts[0])
+      : read("app", parts[0]);
+    // A per-row amount formatted without its currency is the defect returning.
+    expect(src).not.toMatch(/fmtC\((?:sub|s|nextSub)\.price\)/);
+  });
+});

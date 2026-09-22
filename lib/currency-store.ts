@@ -29,7 +29,11 @@ interface CurrencyState {
   setBaseCurrency: (code: string) => void;
   loadCurrency: () => Promise<void>;
   fetchRates: () => Promise<void>;
-  convert: (amount: number) => number;
+  /* `fromCurrency` is the currency the AMOUNT is in, which for a subscription
+     is the one it was entered in and stored on the row. Optional so all
+     existing one argument callers keep the previous behaviour, which is to
+     assume the global base. */
+  convert: (amount: number, fromCurrency?: string | null) => number;
 }
 
 export const useCurrencyStore = create<CurrencyState>((set, get) => ({
@@ -102,16 +106,24 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
     }
   },
 
-  convert: (amount: number) => {
+  convert: (amount: number, fromCurrency?: string | null) => {
     const { rates, baseCurrencyCode, currency } = get();
-    if (baseCurrencyCode === currency.code) return amount;
+    /* THE ROW'S OWN CURRENCY WINS OVER THE GLOBAL BASE, which is the whole
+       point of subscriptions.currency existing. Before this, ONE base described
+       every row, so a 15.99 EUR subscription read as 15.99 USD the moment
+       somebody switched currency: measured at 15.99 against a true 17.38.
+       Falls back to the global base when a row has no currency, which is only
+       a row written before the column existed, so old behaviour is preserved
+       rather than replaced by a guess. */
+    const from = String(fromCurrency || baseCurrencyCode).toUpperCase();
+    if (from === currency.code) return amount;
     /* `?? 1` was the only guard here and it catches null and undefined ONLY, so
        a rate of 0 still divided through to Infinity and a NaN rate still
        propagated. Both render as a price: "€Infinity", "€NaN". Showing an
        unconverted number is a small, quiet error; showing NaN where somebody's
        monthly cost should be looks like the app has fallen over. So anything
        not finite and positive falls back to returning the amount untouched. */
-    const baseRate = rates[baseCurrencyCode];
+    const baseRate = rates[from];
     const targetRate = rates[currency.code];
     const usable = (r: unknown): r is number => typeof r === "number" && Number.isFinite(r) && r > 0;
     if (!usable(baseRate) || !usable(targetRate)) return amount;
@@ -133,11 +145,36 @@ export function fmt(amount: number, symbol: string): string {
 }
 
 // Hook that returns a formatter with live conversion built in
-export function useFmt(): (amount: number) => string {
-  const { currency, convert } = useCurrencyStore();
-  return (amount: number) => {
-    const converted = convert(amount);
+/* `fromCurrency` is the currency the amount is stored in. Optional, so every
+   existing one argument call site keeps working and each can be upgraded
+   deliberately rather than all at once.
+   A CONVERTED FIGURE IS PREFIXED WITH `~`, and that is not decoration. A rate
+   from api.frankfurter.app is today's rate applied to a price that will be
+   charged on some other day in the row's own currency, so the number shown is
+   an estimate and the only dishonest version is the one that looks exact.
+   The marker is decided from the CURRENCY CODES rather than from whether the
+   number changed, because a conversion can coincidentally return the same
+   figure and that is still an estimate. */
+/* WHAT THIS DOES NOT FIX YET, stated rather than left to be discovered.
+   Every place that SUMS prices, the monthly and yearly totals, the category
+   breakdown, the weekly chart, still adds raw numbers and then converts once
+   from the global base. That is correct while a user's rows share one currency,
+   which is every user today, because the backfill gave each of them their own
+   settings currency. It is wrong the moment somebody switches currency and adds
+   a row, because the sum mixes units before converting.
+   Fixing it means converting INSIDE each reducer rather than after it, which
+   touches every aggregate and is its own change. Doing half of it would be
+   worse than either end: per-row prices right and totals silently wrong is
+   harder to notice than both being wrong the same way.
+   So this stage is deliberately display-only, and the inconsistency window is
+   narrow: one currency per user means no difference at all. */
+export function useFmt(): (amount: number, fromCurrency?: string | null) => string {
+  const { currency, convert, baseCurrencyCode } = useCurrencyStore();
+  return (amount: number, fromCurrency?: string | null) => {
+    const from = String(fromCurrency || baseCurrencyCode).toUpperCase();
+    const converted = convert(amount, fromCurrency);
     const decimals = currency.code === "JPY" ? 0 : 2;
-    return `${currency.symbol}${roundTo(converted, decimals).toFixed(decimals)}`;
+    const text = `${currency.symbol}${roundTo(converted, decimals).toFixed(decimals)}`;
+    return from === currency.code ? text : `~${text}`;
   };
 }

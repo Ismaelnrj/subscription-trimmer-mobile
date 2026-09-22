@@ -175,8 +175,8 @@ export default function SubscriptionsScreen() {
           sendLocalNotification(
             t("notifications.priceUpTitle", { name: sub.name }),
             t("notifications.priceUpBody", {
-              from: fmtC(sub.priceIncrease.from),
-              to: fmtC(sub.priceIncrease.to),
+              from: fmtC(sub.priceIncrease.from, sub.currency),
+              to: fmtC(sub.priceIncrease.to, sub.currency),
               cycle: cycleLabel(sub.billingCycle),
             })
           );
@@ -571,7 +571,7 @@ export default function SubscriptionsScreen() {
       `DTSTART;VALUE=DATE:${fmtIcsDate(s.nextBillingDate)}`,
       `DTEND;VALUE=DATE:${nextDay(s.nextBillingDate)}`,
       `SUMMARY:${icsEscape(s.name)} billing`,
-      `DESCRIPTION:${icsEscape(`${fmtC(s.price)} ${s.billingCycle}`)}`,
+      `DESCRIPTION:${icsEscape(`${fmtC(s.price, s.currency)} ${s.billingCycle}`)}`,
       "END:VEVENT",
     ].join("\r\n")).join("\r\n");
 
@@ -881,7 +881,7 @@ export default function SubscriptionsScreen() {
                     onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
                   >
                     <Text style={styles.cardName}>{sub.name}</Text>
-                    <Text style={styles.cardPrice}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
+                    <Text style={styles.cardPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
                       {nextDate
@@ -912,7 +912,7 @@ export default function SubscriptionsScreen() {
                         <View style={styles.priceIncreaseBadge}>
                           <MaterialCommunityIcons name="trending-up" size={10} color="#fff" />
                           <Text style={styles.priceIncreaseBadgeText}>
-                            {t("subscriptions.priceUp", { amount: fmtC(sub.priceIncrease.to - sub.priceIncrease.from) })}
+                            {t("subscriptions.priceUp", { amount: fmtC(sub.priceIncrease.to - sub.priceIncrease.from, sub.currency) })}
                           </Text>
                         </View>
                       )}

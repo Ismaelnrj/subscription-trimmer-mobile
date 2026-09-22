@@ -256,7 +256,7 @@ export default function DashboardScreen() {
             <LogoImage name={nextSub.name} category={nextSub.category} size={40} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.nextPaymentLabel}>{t("dashboard.nextPayment")}</Text>
-              <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price)}</Text>
+              <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price, nextSub.currency)}</Text>
             </View>
             {nextSubDueLabel && (
               <View style={styles.nextPaymentBadge}>
@@ -361,7 +361,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.trialName}>{sub.name}</Text>
                     <Text style={styles.trialCharge}>
-                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price), cycle: cycleLabel(sub.billingCycle) })}
+                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price, sub.currency), cycle: cycleLabel(sub.billingCycle) })}
                     </Text>
                   </View>
                   <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
@@ -490,7 +490,7 @@ export default function DashboardScreen() {
                   <Text style={styles.subMeta}>
                     {viewMode === "yearly"
                       ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)}/yr`
-                      : `${fmtC(sub.price)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
+                      : `${fmtC(sub.price, sub.currency)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
                     }
                   </Text>
                 </View>

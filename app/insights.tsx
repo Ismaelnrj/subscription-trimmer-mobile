@@ -152,8 +152,8 @@ export function buildTips(
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
     tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
       title: t("insights.priceUpTitle", { name: s.name }),
-      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from), to: fmtC(s.priceIncrease.to), cycle: s.billingCycle, extra: fmtC(annualExtra) }),
-      priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle)) }), savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
+      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from, s.currency), to: fmtC(s.priceIncrease.to, s.currency), cycle: s.billingCycle, extra: fmtC(annualExtra) }),
+      priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle), s.currency) }), savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
   }
 
   // Known market price is higher than what's tracked — this is the "before
@@ -200,7 +200,7 @@ export function buildTips(
       tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#C4544A",
         title: days === 0 ? t("insights.trialTitleToday", { name: s.name })
                          : t("insights.trialTitleDays", { name: s.name, count: days }),
-        detail: t("insights.trialDetail", { amount: fmtC(s.price) }),
+        detail: t("insights.trialDetail", { amount: fmtC(s.price, s.currency) }),
         priority: "high" });
     }
   }
@@ -217,8 +217,8 @@ export function buildTips(
   for (const s of subs) {
     if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
-        title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle)) }),
-        detail: t("insights.expensiveDetail", { yearly: fmtC(toMonthly(s.price, s.billingCycle) * 12) }),
+        title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle), s.currency) }),
+        detail: t("insights.expensiveDetail", { yearly: fmtC(toMonthly(s.price, s.billingCycle) * 12, s.currency) }),
         priority: "medium" });
     }
   }

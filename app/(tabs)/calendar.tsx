@@ -256,7 +256,7 @@ export default function CalendarScreen() {
                     <Text style={styles.subName}>{sub.name}</Text>
                     <Text style={styles.subMeta}>{dueLabel(date)}</Text>
                   </View>
-                  <Text style={styles.subPrice}>{fmtC(sub.price)}</Text>
+                  <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
                 </TouchableOpacity>
               ))
             )
@@ -323,7 +323,7 @@ export default function CalendarScreen() {
                             <Text style={styles.subName}>{sub.name}</Text>
                             <Text style={styles.subMeta}>{dueLabel(date)}</Text>
                           </View>
-                          <Text style={styles.subPrice}>{fmtC(sub.price)}</Text>
+                          <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
                         </TouchableOpacity>
                       ))}
                     </>
@@ -339,7 +339,7 @@ export default function CalendarScreen() {
                     <LogoImage name={sub.name} category={sub.category} />
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={styles.subName}>{sub.name}</Text>
-                      <Text style={styles.subMeta}>{fmtC(sub.price)} / {cycleLabel(sub.billingCycle)}</Text>
+                      <Text style={styles.subMeta}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
                     </View>
                     <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
                   </TouchableOpacity>
@@ -379,7 +379,7 @@ export default function CalendarScreen() {
                   <View style={styles.monthSummaryStat}>
                     <Text style={styles.monthSummaryStatLabel}>{t("calendar.highest")}</Text>
                     <Text style={styles.monthSummaryStatValue} numberOfLines={1}>{monthSummary.highest.name}</Text>
-                    <Text style={styles.monthSummaryStatSub}>{fmtC(monthSummary.highest.price)}</Text>
+                    <Text style={styles.monthSummaryStatSub}>{fmtC(monthSummary.highest.price, monthSummary.highest.currency)}</Text>
                   </View>
                 )}
               </View>
