@@ -26,9 +26,28 @@ Play's limit is 80 characters. Counts are measured, not estimated.
 | | text | count |
 |---|---|---|
 | **EN** | `Subscription tracker. See renewals early, cancel with over 30 real guides.` | 74/80 |
-| **DE** | `Abos, Kosten, Testphasen. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.` | 76/80 |
+| **DE** | `Abos & Testphasen im Blick. Über 30 Anleitungen zum Kündigen. Ohne Bankzugang.` | 78/80 |
 
 The German is under Manage translations > German (Deutschland).
+
+THE GERMAN LINE CHANGED AGAIN ON 2026-09-22, after the owner pasted the live
+title. `Trimio: Abo Tracker & Kosten` ALREADY CARRIES Abo, Tracker AND Kosten,
+at the highest weight Play applies, so the previous draft's opening
+`Abos, Kosten, Testphasen.` was spending characters re-buying a term the title
+already owns. These 80 go on terms the title does NOT have.
+THE TRADE IS THE TAGLINE FOR THE DIFFERENTIATOR. Every term the live line
+carries survives (Abos, Testphasen, Bankzugang) and two are added, `kündigen`
+and `Anleitungen`. What goes is `Wissen, bevor abgebucht wird`, and this is the
+field where it earns least: `abgebucht` is not a query, and the tagline is still
+live on the website, in the video captions and closing the full description.
+THE `&` IS LOAD BEARING rather than stylistic: it saves three characters over
+`und`, and at `und` the line is exactly 80/80. A field shipped at its exact
+limit cannot take a later one word edit.
+BOTH FULL DESCRIPTIONS ARE NOW IN THE REPO, `store-listing-en.md` (new) and the
+corrected block in `store-listing-de.md`. Before today the English listing, the
+DEFAULT one, existed only in Play Console, and the German file held a draft that
+was never what went up. Three numbers in the English were wrong and one was
+going to become wrong.
 
 **THE FIRST DRAFT OF THESE WAS AN ASO REGRESSION**, caught 2026-09-22 by counting
 head terms rather than reading the lines. It proposed `Jede Verlängerung im
