@@ -2463,7 +2463,7 @@ last one left off without needing a recap typed out.
   uncompetitive on its face against a same-store rival, and that is worth
   settling BEFORE the €200/month goes anywhere near it.
   WHERE TRIMIO GENUINELY WINS, checked against the code rather than the
-  marketing: 41 CANCELLATION GUIDES, fully bilingual with steps and URLs, which
+  marketing: 36 CANCELLATION GUIDES, fully bilingual with steps and URLs, which
   nothing else in that list advertises and which Rocket Money charges $14/month
   partly to provide; GERMAN DEPTH nobody outside DACH has, across app, Play
   listing, legal documents, website and notifications; REGIONAL PRICING with
@@ -2486,6 +2486,37 @@ last one left off without needing a recap typed out.
   watch installs. Positioning is reversible in an afternoon. Pricing is not.
   SUCCESS CRITERION BEFORE SPENDING ON UAC: one paying customer from organic.
   Until that exists, paid traffic buys a more expensive version of zero.
+
+- THE GUIDE COUNT WAS 41 IN THIS FILE AND IT IS 36, corrected 2026-09-22 while
+  drafting store copy, which is the only reason anybody re-counted. 41 is exactly
+  the number of `url:` occurrences in `lib/cancellation-guides.ts`, and that file
+  puts URLs inside note text as well as one per guide, so the figure was a grep
+  artefact rather than a count. The real number is 36 service guides plus one
+  `GENERIC_GUIDE` fallback, confirmed three ways: a brace walker that skips string
+  literals and printed all 36 keys, a per-guide `steps: {` count of 37 including
+  the fallback, and reading the key preceding every one of those blocks.
+  IT WAS QUOTED AS THE HEADLINE DIFFERENTIATOR in the competitor entry above and
+  repeated several times in conversation before anybody checked it. That is the
+  `über 160 Vorlagen` lesson for the second time: a number that reaches marketing
+  copy has to be counted, and counted by listing what it counts, never by grepping
+  a field name.
+  COUNT IT LIKE THIS, and not with a grep:
+  `python3 - <<'PY'` walking braces from `const GUIDES` and printing each depth-1
+  key, which is what `store-listing-cancel-paragraph.md` records. Marketing copy
+  says "over 30", rounding down so it stays true if a guide is removed.
+- "YOUR DATA NEVER LEAVES YOUR PHONE" IS FALSE AND MUST NEVER BE WRITTEN, and it
+  was one draft away from a Play Store listing on 2026-09-22. `subscriptions.name`
+  and `subscriptions.price` are columns in Postgres on Railway, so names and prices
+  do leave the device. No shipped surface makes that claim, checked: the only
+  "we never see your data" in the tree is a CODE COMMENT in server.js, and the
+  user-facing one is the narrow and true "We never see or store your card details".
+  THE DEFENSIBLE CLAIMS, each verified rather than assumed: nothing to CONNECT, no
+  bank account (zero plaid, truelayer or open banking matches anywhere) and no
+  email login; and the pasted confirmation email is parsed ON THE PHONE, because
+  `lib/parse-subscription.ts` is 290 lines with ZERO network calls. That is a claim
+  about where parsing happens and about what you are not asked to connect, which is
+  a different and smaller claim than one about storage. Keep the distinction: the
+  listing and the Data Safety declaration have to agree.
 
 - Paid track (Google UAC via a €200/month budget) is sequenced deliberately:
   boost an already-proven organic clip first, only start an always-on UAC
