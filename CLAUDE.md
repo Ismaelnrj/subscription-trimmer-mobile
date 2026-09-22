@@ -583,19 +583,23 @@ last one left off without needing a recap typed out.
   subscriptions" row; and the delete dialog should offer three buttons, with
   "I cancelled it" in the rightmost, prominent slot.
 
-- PUBLISHED THROUGH eac1d7d3 (2026-09-22, second publish of the day), which
-  supersedes every baseline above.
-  NOT YET CONFIRMED. The owner reported the publish went through, which means
-  EAS accepted the bundle and NOTHING MORE. Read the Build Info panel before
-  this sentence is replaced: `Embedded launch (no OTA applied): false` and an
-  `Update ID` DIFFERENT from `01a0c92d-35a4-7276-853c-b3f5bc2df68b`, which is
-  the 12:52:58Z update from this morning. Two publishes on the same day are
-  otherwise identical on that panel, so the id is the whole check.
-  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
-  `eac1d7d3` was committed 14:44:45Z and is the head of master, so a publish
-  later than that could carry it and an earlier one could not. `eas update`
+- PUBLISHED THROUGH eac1d7d3 AND CONFIRMED ON A REAL DEVICE (2026-09-22, second
+  publish of the day), which supersedes every baseline above. Read off the Build
+  Info panel rather than inferred from a publish that exited zero: `Embedded
+  launch (no OTA applied): false`, `Update ID:
+  01a0c9b4-b48e-78c5-9a84-9060faea3ce5`, `Update published:
+  2026-09-22T15:20:58.254Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than this morning's update
+  (`01a0c92d-...` at `12:52:58.404Z`), which is the check that distinguishes a
+  new update from the previous one still being applied. Two publishes on the
+  same day are otherwise identical on that panel.
+  THE TIMESTAMP CROSS-CHECK PINNED THE BASELINE BY MEASUREMENT rather than by
+  assumption, which is the habit to keep. The publish was 15:20:58Z,
+  `eac1d7d3` was committed 14:44:45Z so it COULD be in the bundle, and the next
+  commit `c3c7487b` was committed 15:22:26Z so it could NOT. `eas update`
   uploads the WORKING TREE, so the publish time bounds what can possibly have
-  been in it. That check caught a one commit error on 2026-09-21.
+  been in it. The same check caught a one commit error on 2026-09-21.
   `eac1d7d3` AND `b58a0856` CARRY NOTHING A PHONE RUNS, documentation and the
   landing page generator respectively, so the last commit carrying client files
   is `b198c794`. Ninth time that gap has looked like a missed publish and has
@@ -618,12 +622,23 @@ last one left off without needing a recap typed out.
   CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 410, 414, 416 and 417, each on
   its own exact SHA with the typecheck on the pinned compiler, the full jest
   suite and lint. The typecheck mattered: eleven TypeScript files changed.
-  DO NOT RAISE `FREE_SUBSCRIPTION_LIMIT` IN RAILWAY UNTIL THIS UPDATE IS
-  CONFIRMED ON DEVICES. An older bundle still draws its own 5 and blocks the add
-  form locally, so raising it early makes the server's gate and the screen
-  drawing the gate disagree, which is the failure the configurable limit entry
-  below exists to prevent. LOWERING is safe at any time, since the client lets
-  the attempt through and the 403 is already handled.
+  `FREE_SUBSCRIPTION_LIMIT` IS NOW SAFE TO RAISE IN RAILWAY, which it was not
+  before this update was confirmed. An older bundle draws its own 5 and blocks
+  the add form locally, so raising it early makes the server's gate and the
+  screen drawing the gate disagree, which is the failure the configurable limit
+  entry below exists to prevent. That is what the confirmation above unblocks.
+  LOWERING was always safe, since the client lets the attempt through and the
+  403 is already handled. The rule generalises to every future raise: it reaches
+  only phones carrying the new bundle, so raise after a publish lands and lower
+  whenever.
+  THE TAB BAR IS NOT VISIBLE ON EVERY SCREEN, which cost a round trip when the
+  owner went looking for it. Help & Support, where the Build Info panel lives,
+  is a Stack screen pushed OVER the tabs, so the row of icons is hidden there
+  and the black strip underneath is ANDROID's navigation bar rather than
+  Trimio's. The tab bar draws on the four tab routes only: Dashboard, Calendar,
+  Stats and Settings. `subscriptions` is a fifth route carrying `href: null`,
+  so it never draws a tab at all, which `components/CustomTabBar.tsx` reads
+  off `tabBarItemStyle` rather than from a hardcoded route list.
 
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.
