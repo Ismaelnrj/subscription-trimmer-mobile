@@ -1,0 +1,29 @@
+{
+  "_note": "PLACEHOLDER TIMESTAMPS. raw/rec-lens-en.mp4 does not exist yet: see section 4c of video-rerecord-brief.md for the recording brief. make-cut.py refuses missing footage, so this spec fails loudly rather than rendering something wrong. Once the footage exists, set every in/dur from the take and the crops from the actual 1080x1920 frame. Beats 1 to 3 are Android's own UI and pass through as clip; beats 4 to 6 are Trimio's screen and use reframe, because the filled field values have to be legible and that needs real pixels. The caption credits Android for the OCR on purpose: Trimio ships no camera permission and no OCR, and a reviewer can check that in one tap.",
+  "name": "short-lens-paste",
+  "format": "9:16",
+  "lang": "en",
+  "out": "build/short-lens-paste.mp4",
+  "scenes": [
+    {"type": "card", "dur": 3.6, "emphasis": true,
+     "lines": ["The price is in a screenshot,", "not an email."]},
+
+    {"type": "clip", "src": "raw/rec-lens-en.mp4",
+     "in": 0.0, "dur": 3.0},
+
+    {"type": "clip", "src": "raw/rec-lens-en.mp4",
+     "in": 3.0, "dur": 3.4,
+     "caption": "Android reads the screenshot. Trimio reads the text."},
+
+    {"type": "reframe", "src": "raw/rec-lens-en.mp4",
+     "in": 6.4, "dur": 3.0, "crop": [0, 300, 1080, 900], "push": 1.04,
+     "caption": "Copy it. Paste it into Trimio."},
+
+    {"type": "reframe", "src": "raw/rec-lens-en.mp4",
+     "in": 9.4, "dur": 3.2, "crop": [0, 300, 1080, 900], "push": 1.04,
+     "hold": 2.0,
+     "caption": "Name, price, cycle. Filled."},
+
+    {"type": "endcard", "dur": 2.6, "cta": "Free on Google Play"}
+  ]
+}

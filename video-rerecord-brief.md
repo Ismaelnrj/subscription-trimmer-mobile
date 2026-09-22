@@ -183,6 +183,50 @@ validated `streaming` category colour `#C24C3C`, not Netflix red. The savings
 toast green sampled at #1E7761 is the theme's `success` token `#1F7A62`, which
 is the deepened mint the brand rules require for exactly this use.
 
+## 4c. The Lens screenshot clip (separate recording)
+
+This one is NOT part of the long take. It crosses two apps, so it is its own
+short recording, and it is the only beat in this brief that shows something the
+app does not do.
+
+THE INSIGHT: Android already turns a screenshot into selectable text, free, in
+Google Lens. So a price that arrives as a screenshot rather than an email is
+still one paste away from the auto-fill box. That flow works TODAY, with zero
+code, and nobody knows it. Trimio adds no OCR, no camera permission and no
+network round trip: `package.json` excludes `expo-camera` and
+`expo-image-picker` from autolinking on purpose, and `lib/parse-subscription.ts`
+has zero network calls.
+
+SAY WHAT IS OURS AND WHAT IS ANDROID'S. The caption reads "Android reads the
+screenshot. Trimio reads the text." Claiming the OCR would be a claim about a
+capability this app deliberately does not have, and a reviewer can check it in
+one tap.
+
+TEST THE PARSE BEFORE RECORDING, not on camera. The auto-fill box was written
+for confirmation emails, and OCR of a pricing page is a different shape of text.
+If `parseSubscriptionEmail` does not fill the fields from that particular
+screenshot, the clip demonstrates a failure rather than a feature. Try it in the
+app first, pick a screenshot that parses, and only then record.
+
+| # | Beat | What must visibly happen |
+|---|---|---|
+| 1 | The screenshot | A price on screen, in a browser or an account page. Take the screenshot on camera so the flash and the thumbnail are visible. |
+| 2 | Lens | Open the shot, tap Lens, let the text highlight. The highlight IS the beat: it is what nobody knows is there. |
+| 3 | Select and copy | Drag over the service name and the price. Tap Copy. |
+| 4 | Into Trimio | `+ Add`, `Auto-fill from purchase email`, long press, Paste. |
+| 5 | **The fill** | The fields populate. Hold four times longer than feels right, per 4b. This is the payoff and it is over in half a second in real time. |
+| 6 | Save | The row appears in the list at the right price. |
+
+Beats 1 to 3 are Android's UI, so they are `clip` passthrough. Beats 4 to 6 are
+Trimio's own screen and want `reframe`, because the filled field values have to
+be legible and that needs real pixels rather than a re-render.
+
+`cuts/short-lens-paste.json` carries the structure with its timestamps marked as
+placeholders. It will refuse to render until the footage exists, which is the
+correct behaviour rather than a bug.
+
+---
+
 ## 5. Hard constraints
 
 These are not preferences. Each has already cost something once.
