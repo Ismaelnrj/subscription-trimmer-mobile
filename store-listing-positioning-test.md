@@ -99,6 +99,13 @@ The point of a test is a number that decides something.
   under Grow > Store performance.
 - **Baseline:** read the current 28 day figure BEFORE changing anything, and
   write it here.
+- **Paste this BEFORE the video push, not after.** Conversion rate is a RATIO,
+  visitors to installs, so more traffic makes it readable faster rather than
+  confounding it. Three days of video against the old copy and then a switch
+  splits the traffic across two versions and halves the sample on each, which
+  is the one thing this test cannot afford at current volumes. Decided
+  2026-09-22, when the owner set three days of video creation as the next
+  block of work.
 - **Window:** 28 days, or until 300 store visitors, whichever is later. Below
   that the noise is larger than any effect worth acting on.
 - **Continue if:** conversion rate improves at all. Positioning that is not

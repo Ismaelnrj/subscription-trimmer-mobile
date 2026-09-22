@@ -2716,7 +2716,13 @@ last one left off without needing a recap typed out.
   aggregate, and the per-row scan all had to stay correct.
 
 - THE FREE TIER CAP IS NOW A RAILWAY VARIABLE, `FREE_SUBSCRIPTION_LIMIT`,
-  default 5, added 2026-09-22. It is a growth lever rather than a constant: the
+  default 5, added 2026-09-22.
+  IT STAYS AT 5 FOR NOW, the owner's decision on 2026-09-22 once the publish
+  confirming it was on a device. The lever exists and is deliberately not
+  pulled: five is the category norm rather than a disadvantage, since the
+  closest same-store rival caps there too, and moving it at the same time as
+  the positioning test would make both unreadable. Do not raise it unasked,
+  and do not read the variable's existence as an intention to change it. It is a growth lever rather than a constant: the
   closest rival on the same store also caps at five, and moving it is worth
   trying against real signup numbers without a deploy.
   THE REASON IT WAS NOT SAFE TO DO UNTIL NOW is the entry it corrects above.
