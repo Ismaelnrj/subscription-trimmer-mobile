@@ -2686,6 +2686,63 @@ last one left off without needing a recap typed out.
   SUCCESS CRITERION BEFORE SPENDING ON UAC: one paying customer from organic.
   Until that exists, paid traffic buys a more expensive version of zero.
 
+- THE EMAIL PASTE PARSER WAS ENGLISH SHAPED, fixed 2026-09-22, and it is the
+  finding that most contradicts this file's own story about the product. The
+  competitor entry names GERMAN DEPTH and the EMAIL PASTE PARSER as two of the
+  four places Trimio genuinely wins. Measured, the parser was the least German
+  thing in the app.
+  FOUND BY PASTING A SCREENSHOT, which is worth recording as a method rather
+  than an anecdote. Android turns a screenshot into selectable text in Google
+  Lens for free, so the owner lifted a price off a refurbed listing and pasted
+  it in. The reported symptom was "it did not recognise the company". The
+  company was the least of it, and nothing short of real pasted text would have
+  produced those inputs: every existing test case was written in the shape the
+  parser already handled.
+  `15,99 €` RETURNED NO PRICE AT ALL. `extractPrice` matched a symbol BEFORE the
+  amount and a currency code on either side, and not a symbol AFTER it, which is
+  how every German, Austrian and Swiss receipt is written. The app's own
+  notification code already formats "10,00 €", so the parser could not read what
+  the rest of the app writes.
+  EVERY GERMAN CYCLE WORD WAS UNRECOGNISED, six for six: pro Monat, im Monat,
+  monatlich, jährlich, pro Jahr and wöchentlich all returned undefined, so a
+  German paste fell through to whatever the form defaults to.
+  BARE `Monat` AND `Jahr` ARE DELIBERATELY NOT IN THE FIX, with a test saying
+  so. "12 Monate Garantie" on a refurbished phone is a warranty, and admitting
+  it would invent a recurring charge out of a one-off purchase. Only a phrase
+  that can ONLY mean a rate is allowed in.
+  `mtl.` NEEDED ITS OWN ALTERNATION, outside the trailing `\b`: a word boundary
+  after a full stop has no word character to sit against, so "12,99 € mtl." at
+  the end of a line matched nothing while "mtl. 12,99 €" would have. The same
+  class cost English "every 12 months", since `month\b` cannot match inside
+  "months".
+  `\s` MATCHES A NEWLINE, and that one fact caused two separate defects. A €
+  ending one line captured the number starting the next, so
+  "429,00 €\n12 Monate Garantie" returned a price of 12.00: a warranty period
+  read as money, in an app about money. The name patterns did the same and
+  returned "Refurbed\nAmount". Both now use a literal space and tab. This is the
+  regex lesson for the sixth time in this file and the first one that was about
+  whitespace rather than brackets.
+  AN UMBRELLA BRAND IS NOT EVIDENCE OF A SUBSCRIPTION. Four KNOWN_SERVICES keys
+  named things that were not being bought: a refurbished phone became "Apple", an
+  Amazon book order became "Amazon Prime", a Surface laptop became "Microsoft
+  365". Those firms sell hardware and marketplaces as well as subscriptions. The
+  keys are QUALIFIED rather than dropped, which also produces a better name than
+  the umbrella did, and bare `google` had been mapping to the useless label
+  "Google" while `google one` sat two entries below it.
+  FOUR KEYS ARE KNOWINGLY LEFT WRONG and the reasoning is in the source so
+  nobody "fixes" them casually: bear, calm, cursor and overcast are ordinary
+  words with no qualifying second word to hang a match on. Each misfires on a
+  contrived sentence and each is a real product. A wrong NAME is visible and
+  costs four seconds to correct, unlike a wrong PRICE, so the trade is
+  defensible until there are real receipts to measure against.
+  SEVEN OF THE EIGHT NEW ASSERTIONS FAIL AGAINST THE PREVIOUS CODE. The eighth
+  passes both ways on purpose: it is the guard against the German cycle list
+  being "completed" with a bare Monat. The 12 existing assertions pass unchanged.
+  THE GENERAL SHAPE, which this file keeps recording: the parser was tested
+  entirely on inputs written in the shape it already handled. A test suite
+  written by the same person who wrote the code cannot find the inputs that
+  person did not imagine. Real pasted text found five defects in one run.
+
 - THE GUIDE COUNT WAS 41 IN THIS FILE AND IT IS 36, corrected 2026-09-22 while
   drafting store copy, which is the only reason anybody re-counted. 41 is exactly
   the number of `url:` occurrences in `lib/cancellation-guides.ts`, and that file
