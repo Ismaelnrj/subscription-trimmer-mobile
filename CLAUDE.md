@@ -535,18 +535,26 @@ last one left off without needing a recap typed out.
   trick caught a one commit error earlier today: `eas update` uploads the
   working tree, so the publish time bounds what can possibly have been in it.
 
-- PUBLISHED THROUGH ad525837 (2026-09-22), which supersedes every baseline above.
-  NOT YET CONFIRMED. The owner reported the publish went through, which means EAS
-  accepted the bundle and nothing more. Read the Build Info panel before this
-  sentence is deleted: `Embedded launch (no OTA applied): false`, and an
-  `Update ID` DIFFERENT from `01a0c3f0-5f6c-78b9-ab99-79ee01b25208`, which is the
-  2026-09-21 12:28:25Z update. Reading only `Embedded launch: false` proves an OTA
-  landed, never WHICH one.
-  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
-  `eas update` uploads the WORKING TREE, so the publish time bounds what can
-  possibly have been in it, and that cross-check already caught a one commit
-  error on 2026-09-21. `ad525837` touches CLAUDE.md alone, so the last commit
-  carrying anything a phone runs is `76b738e7`.
+- PUBLISHED THROUGH ad525837 AND CONFIRMED ON A REAL DEVICE (2026-09-22), which
+  supersedes every baseline above. Read off the Build Info panel rather than
+  inferred from a publish that exited zero: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a0c92d-35a4-7276-853c-b3f5bc2df68b`, `Update published:
+  2026-09-22T12:52:58.404Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than the 2026-09-21 update
+  (`01a0c3f0-...` at `12:28:25.324Z`), which is the check that distinguishes a new
+  update from the previous one still being applied. Reading only
+  `Embedded launch: false` proves an OTA landed, never WHICH one.
+  THE TIMESTAMP CROSS-CHECK WAS RUN AND IT HOLDS, which is the habit to keep
+  rather than a formality. `eas update` uploads the WORKING TREE, so the publish
+  time bounds what can possibly have been in it: the publish was 12:52:58Z,
+  `ad525837` was committed 12:45:06Z so it COULD be in the bundle, and the next
+  commit `52a305f2` was committed 12:54:56Z so it could NOT. The baseline is
+  therefore ad525837 by measurement rather than by assumption. The same check
+  caught a one commit error on 2026-09-21.
+  `ad525837` TOUCHES CLAUDE.md ALONE, so the last commit carrying anything a
+  phone runs is `76b738e7`. Eighth time that gap has looked like a missed publish
+  and has not been one.
   WHAT WENT OUT, fourteen client files and the largest client range since the
   baseline. The per-row currency rule (`lib/currency-store.ts`, `app/insights.tsx`
   and four screens), the contrast tokens (`lib/theme.ts`), onboarding landing on
