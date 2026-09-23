@@ -57,7 +57,7 @@ const KNOWN_SERVICES: Record<string, string> = {
   slack: "Slack", zoom: "Zoom", linkedin: "LinkedIn Premium",
   "duolingo plus": "Duolingo Plus", duolingo: "Duolingo Plus",
   canva: "Canva", figma: "Figma", github: "GitHub",
-  nord: "NordVPN", expressvpn: "ExpressVPN", grammarly: "Grammarly",
+  nordvpn: "NordVPN", "nord vpn": "NordVPN", expressvpn: "ExpressVPN", grammarly: "Grammarly",
   "new york times": "NY Times", nyt: "NY Times", hbo: "HBO Max",
   peacock: "Peacock", paramount: "Paramount+", crunchyroll: "Crunchyroll",
   headspace: "Headspace", calm: "Calm",
@@ -159,6 +159,55 @@ function detectKnownService(text: string): string | undefined {
   const lower = text.toLowerCase();
   for (const [key, label] of Object.entries(KNOWN_SERVICES)) {
     if (mentionedAsService(lower, key)) return label;
+  }
+  return undefined;
+}
+
+/* Lines that are labels, greetings or plumbing rather than a merchant. A
+   receipt's first line is very often one of these, and naming a subscription
+   "Rechnung" is worse than leaving the field blank. */
+const PROCESSOR_FOOTER =
+  /\b(?:powered|processed|secured|handled|managed|paid|billed)\s+(?:by|with|through|via)\b/i;
+
+const NOT_A_NAME = new RegExp(
+  "^(?:hi|hello|hey|dear|hallo|guten|liebe[rs]?|sehr|invoice|rechnung|receipt|" +
+  "quittung|beleg|order|bestellung|subscription|abo|abonnement|total|summe|" +
+  "betrag|amount|price|preis|date|datum|thank|thanks|danke|vielen)\\b", "i");
+
+/* LAST RESORT, and deliberately the last one: the first line that reads like a
+   brand. It exists because the catalogue can only ever name the 49 services it
+   knows, and the pasted text people actually have is usually a screen rather
+   than a well formed receipt. Measured on real pastes: a refurbed listing, an
+   unknown SaaS pricing page and a German gym all came back with a price and NO
+   NAME, which makes the user type the one thing that was already on screen.
+
+   A WRONG NAME IS CHEAP AND A BLANK ONE IS NOT FREE. The name is visible in the
+   form before saving and takes seconds to correct, which is the same trade this
+   file's KNOWN_SERVICES comment already makes for the ordinary-word keys. A
+   wrong PRICE would be a different matter and this never touches one.
+
+   IT ONLY RUNS WHEN A PRICE WAS FOUND, which is the caller's job and the reason
+   this is not folded into extractName: without an amount there is no evidence
+   the paste is a purchase at all, and naming arbitrary text is noise. */
+function nameFromFirstLine(text: string): string | undefined {
+  for (const raw of text.split("\n")) {
+    const line = raw.trim().replace(/[\s.,;:\-]+$/, "");
+    if (line.length < 2 || line.length > 40) continue;
+    if (!/[A-Za-z]/.test(line)) continue;          // a price, a date, a number
+    if (line.split(/\s+/).length > 4) continue;    // a sentence, not a brand
+    if (/[@]|:\/\//.test(line)) continue;          // an address or a URL
+    if (NOT_A_NAME.test(line)) continue;
+    /* A processor footer is the one line that survives every other guard here,
+       and it did: `isIntermediaryText` and `detectKnownService` both read
+       "Powered by Google Pay" as an INCIDENTAL mention and correctly decline
+       it, which left this fallback free to adopt it as the merchant. Caught by
+       the existing suite rather than by reading, which is the argument for
+       running it before pushing. A line that says how the card was charged is
+       never the thing being bought. */
+    if (PROCESSOR_FOOTER.test(line)) continue;
+    if (isIntermediaryText(line)) continue;
+    if (detectKnownService(line)) continue;        // step 1 already declined it
+    return line;
   }
   return undefined;
 }
@@ -355,7 +404,7 @@ export function parseSubscriptionEmail(text: string): ParsedSubscription {
   if (!text || text.trim().length < 5) return {};
   const amount = extractPrice(text);
   return {
-    name: extractName(text),
+    name: extractName(text) ?? (amount ? nameFromFirstLine(text) : undefined),
     price: amount?.price,
     currency: amount?.currency,
     billingCycle: extractCycle(text),

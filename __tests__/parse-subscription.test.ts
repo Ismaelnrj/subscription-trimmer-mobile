@@ -150,15 +150,21 @@ describe("an umbrella brand is not evidence of a subscription", () => {
   it("does not name a hardware or marketplace purchase after the brand", () => {
     // Each of these named a subscription that was not being bought: a
     // refurbished phone became "Apple", a book order became "Amazon Prime", a
-    // laptop became "Microsoft 365". A blank field the user fills in is better
-    // than a confident wrong answer in an app about money.
-    const buys = [
-      "refurbed\nApple iPhone 13 128 GB\n429,00 €",
-      "Amazon.de Bestellbestätigung\nDas Buch\n19,99 €",
-      "Microsoft Surface Laptop\n1.299,00 €",
+    // laptop became "Microsoft 365". Those firms sell hardware and
+    // marketplaces too, so a bare mention is not evidence of a subscription.
+    //
+    // THE ASSERTION USED TO REQUIRE NO NAME AT ALL, which was narrower than
+    // this test's own title and went stale the moment the first-line fallback
+    // landed: it now reads "refurbed" off the paste, which is what the screen
+    // says and is not an umbrella subscription brand. What must never come
+    // back is the UMBRELLA LABEL, so that is what is asserted.
+    const buys: [string, RegExp][] = [
+      ["refurbed\nApple iPhone 13 128 GB\n429,00 €", /^Apple$/],
+      ["Amazon.de Bestellbestätigung\nDas Buch\n19,99 €", /Amazon Prime/],
+      ["Microsoft Surface Laptop\n1.299,00 €", /^Microsoft 365$/],
     ];
-    for (const text of buys) {
-      expect(parseSubscriptionEmail(text).name).toBeUndefined();
+    for (const [text, umbrella] of buys) {
+      expect(parseSubscriptionEmail(text).name ?? "").not.toMatch(umbrella);
     }
   });
 
@@ -176,5 +182,63 @@ describe("an umbrella brand is not evidence of a subscription", () => {
     for (const [text, expected] of cases) {
       expect(parseSubscriptionEmail(text).name).toBe(expected);
     }
+  });
+});
+
+/* The 2026-09-23 round. The owner pasted a refurbed listing, the price came
+   back right and the NAME CAME BACK BLANK, which the previous round had made
+   deliberate. It was the wrong call: the catalogue can only ever name the 49
+   services it knows, and what people actually paste is a screen. */
+
+describe("an unknown brand is read off the paste rather than left blank", () => {
+  it("names the merchant from the first line when nothing else can", () => {
+    // All three returned a price and no name, so the user had to type the one
+    // thing that was already on screen.
+    expect(parseSubscriptionEmail(
+      "refurbed\nApple iPhone 13 128 GB\n429,00 €\n12 Monate Garantie",
+    ).name).toBe("refurbed");
+    expect(parseSubscriptionEmail("Acme Cloud\nPro plan\n12,99 € pro Monat").name)
+      .toBe("Acme Cloud");
+  });
+
+  it("does not read a German gym as a VPN", () => {
+    /* `nord` was a KNOWN_SERVICES key and Nord is German for north, so
+       "Fitnessstudio Nord" came back named NordVPN: the umbrella-brand defect
+       of the previous round, surviving in the one key that is an ordinary word
+       in the market this app is built for. The key is qualified now. */
+    const r = parseSubscriptionEmail("Fitnessstudio Nord\nMitgliedschaft\n29,90 € monatlich");
+    expect(r.name).toBe("Fitnessstudio Nord");
+    expect(r.name).not.toMatch(/nordvpn/i);
+  });
+
+  it("still recognises NordVPN when it is actually named", () => {
+    expect(parseSubscriptionEmail("NordVPN\n3,99 € pro Monat").name).toBe("NordVPN");
+  });
+
+  it("skips greetings, labels and processor footers", () => {
+    /* The footer is the one that got through every other guard: both the
+       intermediary check and the known-service scan read "Powered by Google
+       Pay" as an INCIDENTAL mention and correctly decline it, which left the
+       fallback free to adopt it as the merchant. The existing suite caught it. */
+    expect(parseSubscriptionEmail("Hallo Ismael,\nVertigo Pro\n9,99 € pro Monat").name)
+      .toBe("Vertigo Pro");
+    expect(parseSubscriptionEmail("Rechnung\nVertigo Pro\n9,99 € pro Monat").name)
+      .toBe("Vertigo Pro");
+    const footer = parseSubscriptionEmail("Powered by Google Pay\n9,99 € pro Monat").name ?? "";
+    expect(footer).not.toMatch(/google|powered/i);
+  });
+
+  it("stays silent when there is no price, since nothing says it is a purchase", () => {
+    /* The gate lives in the caller rather than in extractName: without an
+       amount there is no evidence the paste is a purchase at all, and naming
+       arbitrary text is noise rather than help. */
+    expect(parseSubscriptionEmail("Acme Cloud\nsome notes about nothing").name)
+      .toBeUndefined();
+  });
+
+  it("never lets the first line outrank a service the catalogue knows", () => {
+    // Order matters: the fallback is last, so a real receipt keeps its real name.
+    expect(parseSubscriptionEmail("Rechnung von Musterfirma\nNetflix\n15,99 € pro Monat").name)
+      .toBe("Netflix");
   });
 });
