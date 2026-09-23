@@ -691,22 +691,36 @@ last one left off without needing a recap typed out.
 - PUBLISHED THROUGH a6aad8fc (2026-09-22, third publish of the day), which
   supersedes every baseline above. The owner ran `tools/typecheck.py` and it came
   back clean, which mattered here because the one client file is TypeScript.
-  NOT YET CONFIRMED, and for this one that phrase carries TWO claims rather than
-  the usual one, the same shape as the 251242e2 entry above. The owner reported
-  the publish went through, which means EAS accepted the bundle and nothing more.
-  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
-  `Update ID` DIFFERENT from `01a0c9b4-b48e-78c5-9a84-9060faea3ce5`, which is the
-  15:20:58.254Z update. Two publishes on the same day are otherwise identical on
-  that panel, so reading only `Embedded launch: false` proves an OTA landed,
-  never WHICH one.
-  CHECK TWO, AND IT IS THE ONE THAT MATTERS HERE: that the parser actually
-  behaves differently. A parser fix has no visible effect until somebody
+  CHECK ONE IS SETTLED, read off the Build Info panel rather than inferred from a
+  publish that exited zero: `Embedded launch (no OTA applied): false`, `Update ID:
+  01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, `Update published:
+  2026-09-22T18:59:50.394Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than this afternoon's update
+  (`01a0c9b4-...` at `15:20:58.254Z`), which is the check that distinguishes a
+  new update from the previous one still being applied. Three publishes on the
+  same day are otherwise identical on that panel.
+  THE TIMESTAMP CROSS-CHECK PINNED THE BASELINE BY 48 SECONDS, which is the
+  tightest margin this check has ever had to work with and exactly why it is
+  worth running every time. The publish was 18:59:50.394Z, `a6aad8fc` was
+  committed 18:52:44Z so it COULD be in the bundle, and the next commit
+  `9d2caca5` was committed 19:00:38Z, FORTY-EIGHT SECONDS AFTER the publish, so
+  it could NOT. `eas update` uploads the WORKING TREE, so the publish time bounds
+  what can possibly have been in it. Without the timestamp the baseline would
+  have been recorded as 9d2caca5 on the reasonable-looking grounds that it was
+  master at the time.
+  `9d2caca5` TOUCHES CLAUDE.md ALONE, so nothing a phone runs is missing either
+  way. Eleventh time that gap has looked like a missed publish and has not been
+  one.
+  CHECK TWO IS STILL OPEN, AND IT IS THE ONE THAT MATTERS HERE: that the parser
+  actually behaves differently. A parser fix has no visible effect until somebody
   exercises it, which puts it in the same class as an analytics change: landed
-  and working are independent claims. Paste the refurbed screenshot text again.
-  BEFORE: name "Apple", price 12.00. AFTER: no name, price 429.00, no cycle.
-  Then paste any German receipt carrying `15,99 € pro Monat` and confirm the
-  price AND the cycle both fill, since that is the case that was completely
-  broken.
+  and working are independent claims, and the panel can only ever settle the
+  first. Paste the refurbed screenshot text again. BEFORE: name "Apple", price
+  12.00. AFTER: no name, price 429.00, no cycle. Then paste any German receipt
+  carrying `15,99 € pro Monat` and confirm the price AND the cycle both fill,
+  since that is the case that was completely broken. Do not quietly upgrade
+  "the bundle landed" into "the fix works".
   WHAT WENT OUT, exactly ONE client file: `lib/parse-subscription.ts`. Everything
   else in `eac1d7d3..a6aad8fc` is tests, this document, `video-rerecord-brief.md`
   and `cuts/short-lens-paste.json`, none of which enter a JS bundle. Verified
