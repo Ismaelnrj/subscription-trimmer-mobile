@@ -138,6 +138,24 @@ The headline is deliberately UNCHANGED. "See what is coming before you pay" and
 "Sieh, was auf dich zukommt, bevor abgebucht wird" are the two live taglines,
 and they are deliberately not back translations of each other.
 
+## LIVE SINCE 2026-09-22 EVENING
+
+The owner pasted all four blocks into Play Console on the evening of
+2026-09-22, so the clock started then. That makes the earliest decision date
+**2026-10-20**, and only if 300 store visitors have also arrived by then; below
+that the window stays open, because the rule is 28 days OR 300 visitors,
+WHICHEVER IS LATER.
+
+THE BASELINE FIGURE IS NOT WRITTEN DOWN HERE, and that is the one thing this
+test needed that it may not have. Play Console's conversion rate view is a
+TRAILING 28 DAY WINDOW, so on 2026-10-20 it will be reporting a period that is
+entirely post-change and the pre-change number will no longer be on screen for
+that window. If the owner did read it before pasting, write it here now. If
+not, the recoverable substitute is to pick a fixed historical range in the date
+picker that ends on 2026-09-22 and read the rate for that, which Play Console
+retains; do that BEFORE the comparison rather than at the end, so the two
+numbers are chosen independently of the result they produce.
+
 ## How to read the result
 
 The point of a test is a number that decides something.
