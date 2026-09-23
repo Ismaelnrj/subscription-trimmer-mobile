@@ -2795,6 +2795,43 @@ last one left off without needing a recap typed out.
   written by the same person who wrote the code cannot find the inputs that
   person did not imagine. Real pasted text found five defects in one run.
 
+- A TEST WRITTEN AGAINST "TODAY" EXPIRES, and six of them did, found 2026-09-23
+  when CI went red on a commit touching CLAUDE.md alone. That is the tell worth
+  keeping: when the failure is not in the diff, it is in the calendar.
+  `subscriptions.cancelled` reports a COUNT OF CHARGES BETWEEN cancelled_at AND
+  TODAY, and the handler reads today with a bare `new Date()`, so every literal
+  expectation in `__tests__/subscription-cancel.test.js` was only ever right on
+  the day it was written. The weekly case rolled over at midnight UTC and
+  reported 10 against an expected 9.
+  IT WAS NOT ONE STALE NUMBER. Measured across a moving clock against the real
+  `chargesAvoidedSince`: all six date-dependent assertions pass on 2026-09-22,
+  ONE fails on the 23rd, THREE on the 24th, FOUR by mid October, and by
+  2027-08-02 ALL SIX fail with the weekly one reporting 54 against 9. Five were
+  already armed the day they were written and nobody could have noticed, because
+  a test that is wrong only in the future is indistinguishable from a correct one.
+  THE CLOCK IS NOW FROZEN AT `2026-09-22T12:00:00Z` for that describe block.
+  FREEZING BEAT MAKING THE DATES RELATIVE, which was the other candidate and is
+  worth recording as rejected: relative inputs have to DERIVE the expected count
+  from the same arithmetic the function performs, which is reimplementing the
+  thing under test, and this file already records paying for a stub that was
+  subtly wrong. A literal date beside a literal count stays readable and stays
+  checkable.
+  IT IS A `Date` SUBCLASS RATHER THAN `jest.useFakeTimers`, and that is the
+  speculative-push rule rather than a preference: a sandbox cannot run jest, so a
+  timer-based fix could only have been guessed at and pushed hopefully. The shim
+  was lifted VERBATIM out of the committed test file and executed against the
+  real handler source under the real clock, all seven cases passing, with
+  argument construction, `Date.now`, `Date.UTC` and `instanceof` intact and the
+  real clock restored on thaw. Verify the file, never a copy of it.
+  A GUARD TEST PINS THE SHIM, since removing it returns the block to passing one
+  day a year, which is the state it was already in.
+  THE GENERAL RULE: any assertion whose expected value is a function of `now` is
+  a time bomb with a fuse you chose by accident. Either freeze the clock or make
+  the inputs relative, and prefer freezing wherever the alternative is
+  recomputing the answer. This is the same shape as the CI-was-decorative entry
+  above, one level further in: there the check was always red, here it was green
+  for exactly one day.
+
 - THE GUIDE COUNT WAS 41 IN THIS FILE AND IT IS 36, corrected 2026-09-22 while
   drafting store copy, which is the only reason anybody re-counted. 41 is exactly
   the number of `url:` occurrences in `lib/cancellation-guides.ts`, and that file
