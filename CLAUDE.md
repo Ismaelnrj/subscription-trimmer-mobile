@@ -2787,6 +2787,10 @@ last one left off without needing a recap typed out.
   contrived sentence and each is a real product. A wrong NAME is visible and
   costs four seconds to correct, unlike a wrong PRICE, so the trade is
   defensible until there are real receipts to measure against.
+  THAT SWEEP WAS ENGLISH ONLY AND MISSED `nord`, which is German for north and
+  was measured naming a gym as a VPN the next day. See the entry below: asking
+  "is this an ordinary word" in one language only is half a check on a product
+  whose users read two.
   SEVEN OF THE EIGHT NEW ASSERTIONS FAIL AGAINST THE PREVIOUS CODE. The eighth
   passes both ways on purpose: it is the guard against the German cycle list
   being "completed" with a bare Monat. The 12 existing assertions pass unchanged.
@@ -2794,6 +2798,51 @@ last one left off without needing a recap typed out.
   entirely on inputs written in the shape it already handled. A test suite
   written by the same person who wrote the code cannot find the inputs that
   person did not imagine. Real pasted text found five defects in one run.
+
+- REMOVING A WRONG GUESS IS NOT THE SAME AS GIVING A RIGHT ANSWER, learned
+  2026-09-23 when the owner reported the refurbed paste as STILL not
+  recognising the company. The bundle had landed and the price was right; the
+  NAME was blank, and that blank was mine. The previous round removed the
+  umbrella keys so a refurbished phone would stop being called "Apple", and put
+  nothing in their place, so "no umbrella guess" quietly became "no name for
+  anything the catalogue has not heard of". 49 services are named; everything
+  else is a screen somebody pasted.
+  MEASURED rather than argued: a refurbed listing, an unknown SaaS pricing page
+  and a German gym all returned a price and NO NAME, three of five realistic
+  pastes. The user then types the one thing already on screen.
+  THE FIRST LINE IS THE FALLBACK, last in order and gated on a price having been
+  found. Last, so the catalogue and the generic patterns still win; gated in the
+  CALLER rather than inside extractName, because without an amount there is no
+  evidence the paste is a purchase and naming arbitrary text is noise. It skips
+  greetings, label lines, addresses, URLs, sentences over four words and lines
+  with no letter in them.
+  A WRONG NAME IS CHEAP, A BLANK ONE IS NOT FREE. The name is visible in the
+  form before saving, which is the same trade this file already records for the
+  ordinary-word keys. A wrong PRICE is a different matter and this never touches
+  one.
+  THE EXISTING SUITE CAUGHT A REAL REGRESSION, which is the whole argument for
+  running it before pushing. "Powered by Google Pay" is the ONE line that
+  survives every other guard: `isIntermediaryText` and `detectKnownService` both
+  read it as an INCIDENTAL mention and correctly decline it, which left the new
+  fallback free to adopt it as the merchant. A guard that exists to make one
+  check say no can make a LATER check say yes.
+  `nord` WAS AN ORDINARY GERMAN WORD, and that is the umbrella defect of the
+  previous round surviving in the one key that is a common word in THIS app's
+  market. "Fitnessstudio Nord" came back named NordVPN. The previous pass swept
+  for common ENGLISH words (bear, calm, cursor, overcast) and never asked the
+  same question in German, which is the language half the users read.
+  IT ALSO NEVER MATCHED THE PRODUCT IT NAMED, the mirror image nobody had
+  noticed: `\bnord\b` cannot match inside "NordVPN", because `b` is a word
+  character, so the key recognised the German word for north and not the VPN.
+  Qualified to `nordvpn` and `nord vpn`, which fixes both directions at once.
+  ORDINARY-WORD KEYS STILL IN THE LIST, named so the next sweep does not start
+  from scratch: bear, calm, cursor, overcast (recorded as knowingly left), plus
+  zoom, slack, notion, proton, paramount, peacock and `claude`, which is a
+  person's first name. None is measured misfiring yet. `nord` was, which is why
+  it moved.
+  26 assertions, FOUR of the six new ones failing against the previous code. The
+  two that pass both ways are the no-price gate and the ordering that keeps a
+  known service ahead of the first line.
 
 - A TEST WRITTEN AGAINST "TODAY" EXPIRES, and six of them did, found 2026-09-23
   when CI went red on a commit touching CLAUDE.md alone. That is the tell worth
