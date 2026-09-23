@@ -260,6 +260,49 @@ describe("the free tier cap must not punish you for cancelling", () => {
 });
 
 describe("what a cancellation saved is a count of real charges", () => {
+  /* THE CLOCK IS FROZEN FOR THIS BLOCK, and that is a defect fix rather than a
+     convenience. Every assertion below is a COUNT OF CHARGES BETWEEN A FIXED
+     DATE AND TODAY, and the handler reads today with a bare `new Date()`, so a
+     hardcoded expectation is only ever right on the day it was written. It was
+     written on 2026-09-22 and the weekly case went red at midnight UTC.
+
+     MEASURED ACROSS A MOVING CLOCK rather than reasoned about, against the real
+     chargesAvoidedSince: on 2026-09-22 all six pass; on 2026-09-23 one fails; on
+     2026-09-24 three fail; by 2027-08-02 all six fail, the weekly one reporting
+     54 against an expected 9. So this was not one stale number, it was six, five
+     of them already armed.
+
+     FREEZING BEATS MAKING THE DATES RELATIVE, which was the other candidate.
+     Relative inputs would have to derive the expected count from the same
+     arithmetic the function performs, which is reimplementing the thing under
+     test, and this repo has already paid for a stub that was subtly wrong.
+     A literal date and a literal count stay readable and stay checkable.
+
+     IT IS A Date SUBCLASS RATHER THAN jest.useFakeTimers, because a sandbox
+     cannot run jest and an unverifiable fix is a speculative push. This shim was
+     executed against the real handler source before it was committed: argument
+     construction, Date.now, Date.UTC and instanceof all survive it, and thawing
+     restores the real clock. */
+  const FROZEN = "2026-09-22T12:00:00Z";
+  let RealDate;
+  beforeAll(() => {
+    RealDate = global.Date;
+    const fixed = new RealDate(FROZEN).getTime();
+    class FrozenDate extends RealDate {
+      constructor(...args) { super(...(args.length ? args : [fixed])); }
+      static now() { return fixed; }
+    }
+    global.Date = FrozenDate;
+  });
+  afterAll(() => { global.Date = RealDate; });
+
+  it("really is frozen, so nobody removes the shim and re-arms the clock", () => {
+    /* Without this the block goes back to passing for one day a year. */
+    expect(new Date().toISOString()).toBe("2026-09-22T12:00:00.000Z");
+    expect(new Date(Date.now()).toISOString()).toBe("2026-09-22T12:00:00.000Z");
+    expect(new Date("2011-09-21T00:00:00Z").toISOString()).toBe("2011-09-21T00:00:00.000Z");
+  });
+
   async function avoided(over) {
     subs = [sub(over)];
     const { payload } = await call("/api/trpc/subscriptions.cancelled", {});
