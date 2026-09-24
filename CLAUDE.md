@@ -740,6 +740,54 @@ last one left off without needing a recap typed out.
   update` uploads the WORKING TREE, so the publish time bounds what can possibly
   have been in it. That check caught a one commit error on 2026-09-21.
 
+- PUBLISHED THROUGH d50ffd9c (2026-09-23), which supersedes every baseline above.
+  NOT YET CONFIRMED. The owner reported the publish went through, which means EAS
+  accepted the bundle and nothing more.
+  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
+  `Update ID` DIFFERENT from `01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, which is the
+  2026-09-22T18:59:50.394Z update.
+  CHECK TWO, AND IT IS THE ONE THAT MATTERS: that the NAME field now fills on a
+  paste the catalogue does not recognise. This publish exists for exactly that,
+  so the panel settles nothing on its own. Paste the refurbed text again: the
+  price was already right before this update, and the name was blank. It should
+  now carry the merchant, read off the first line of the paste.
+  WHAT WENT OUT, exactly ONE client file: `lib/parse-subscription.ts`. Everything
+  else in `a6aad8fc..d50ffd9c` is tests, this document and
+  `store-listing-positioning-test.md`, none of which enter a JS bundle. Verified
+  with `git diff --name-only a6aad8fc..d50ffd9c` over app/, lib/, components/ and
+  locales/ rather than assumed from the commit messages.
+  NATIVE CHECK ACROSS `a6aad8fc..d50ffd9c`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion correctly
+  stayed 1.0.1 and no build was needed. Fourteenth recorded time, decided by
+  `needs_native_build.py a6aad8fc`.
+  NOTHING DEPLOYED WITH IT: zero backend files in that range, so Railway had
+  nothing to redeploy and the running service is still the one from `42161a41`.
+  CI WAS GREEN ON THE EXACT COMMIT, on `d50ffd9c`, with the typecheck on the
+  pinned compiler, the full jest suite and lint.
+  VERIFY THE BASELINE AGAINST THE PUBLISH TIMESTAMP when the panel is read.
+  `d50ffd9c` was committed 2026-09-23T15:30:26Z and master has not moved since,
+  so any publish after that carries it and there is no later commit to confuse it
+  with. That is the easiest this cross-check will ever be; it pinned a baseline by
+  48 seconds on 2026-09-22.
+
+  I QUOTED A PRICE OF MY OWN INVENTION BACK AT THE OWNER FOR FOUR TURNS, and it
+  is worth recording because it is a failure of exactly the discipline this file
+  is made of. The refurbed example, `429,00 €` on an iPhone 13, was a FIXTURE I
+  wrote from the owner's description. I then reported "BEFORE: name Apple, price
+  12.00. AFTER: no name, price 429.00" as though it described their paste. It
+  described my test input. The owner asked "why the 429 tho" and that is what
+  exposed it.
+  NOTHING IN THE CODE WAS WRONG BECAUSE OF IT, which is the only reason it stayed
+  cheap: the fixture exercised the real defect and the fix is measured against the
+  real module. What it cost was a diagnostic. "The price is right and only the
+  name is missing" was the owner's information and it arrived four turns late,
+  because I had been asking them to confirm a number that was never theirs.
+  THE RULE: a fixture you wrote is not evidence about the user's data, and the
+  two must never be reported in the same voice. Say "on my test input" every
+  single time, or ask for the real paste before inventing one. This file already
+  says measure rather than reason; the missing half is to be clear about WHAT was
+  measured.
+
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.
   For a UI or logic change, the Build Info panel plus opening the screen is
