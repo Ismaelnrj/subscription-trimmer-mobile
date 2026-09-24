@@ -2922,6 +2922,29 @@ last one left off without needing a recap typed out.
   real clock restored on thaw. Verify the file, never a copy of it.
   A GUARD TEST PINS THE SHIM, since removing it returns the block to passing one
   day a year, which is the state it was already in.
+  THE FREEZE WAS SCOPED TO ONE DESCRIBE BLOCK AND THAT WAS THE BUG REPEATING,
+  found 2026-09-24 when CI went red again on another CLAUDE.md-only commit. The
+  currency totals block one screen below drives the SAME handler with the same
+  literal expectations, was never swept, and reported 63.96 against 47.97: a
+  fourth monthly charge arriving. A fix applied to the block that was REPORTED is
+  not a fix applied to the class, which is the parseApiDate lesson, repeated by
+  me the day after writing the entry about it. IT IS FILE SCOPE NOW, which also
+  covers the blocks nobody has written yet, the same reason the accessibility
+  guard is a scan rather than a list of call sites.
+  AND THE HARNESS I BUILT TO VERIFY IT COULD NOT SEE THE DIFFERENCE, which is
+  the more useful half. A mini jest runner written for this hoisted every
+  beforeAll to the top of the run, so a describe-scoped freeze and a file-scoped
+  one behaved identically and THE NEGATIVE TEST PASSED AGAINST THE EXACT CODE CI
+  HAD JUST REJECTED. That is this file's own "prove the code RAN before believing
+  what it asserts", occurring inside the tool built to do the proving. The runner
+  now scopes beforeAll, afterAll and beforeEach per describe like jest, and its
+  SELF-CHECK IS THAT IT REPRODUCES THE KNOWN FAILURE on the rejected version:
+  same test, same numbers. A harness that cannot reproduce the bug proves nothing
+  about the fix, so make it fail first.
+  MEASURED AGAINST FOUR CLOCKS: 38 passed, 0 failed today and on 2026-10-15,
+  2026-12-02 and 2027-08-02 with the process date shifted. That runner lives in
+  the scratchpad rather than the repo, so the next session rebuilds it; the two
+  things worth rebuilding are per-describe hook scoping and the self-check.
   THE GENERAL RULE: any assertion whose expected value is a function of `now` is
   a time bomb with a fuse you chose by accident. Either freeze the clock or make
   the inputs relative, and prefer freezing wherever the alternative is
