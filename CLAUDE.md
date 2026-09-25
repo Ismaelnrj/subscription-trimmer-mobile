@@ -142,6 +142,18 @@ with no update ID, the app is running the bundle baked into the build: the
 update downloads in the background and applies on the NEXT launch, so force
 close and reopen before concluding anything is broken.
 
+READING ONLY `Embedded launch: false` IS NOT ENOUGH, and on 2026-09-25 that
+warning finally caught something rather than being theoretical. An OLD update
+still applied satisfies that line perfectly. Compare the Update ID against the
+previous one recorded in this file, every time.
+
+TWO SEPARATE CHECKS, and this file used to have a command for only one of them.
+`eas channel:view production` answers whether the bundle ever reached the
+channel, on the owner's machine. The Build Info panel answers whether it reached
+the phone. A publish can pass the first and fail the second, which is exactly
+what happened on 2026-09-25. There is now a CHECK FOR UPDATES button in that
+same panel which collapses the two launch wait to one tap. See the entry below.
+
 ## Network limits in cloud/sandbox sessions
 
 Outbound access to `api.expo.dev` is blocked by this environment's network
@@ -746,6 +758,11 @@ last one left off without needing a recap typed out.
   CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
   `Update ID` DIFFERENT from `01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, which is the
   2026-09-22T18:59:50.394Z update.
+  CHECK ONE WAS STILL OPEN ON 2026-09-25, AND THE REASON IS NOW KNOWN: the bundle
+  is live on the channel and simply had not reached the device. `eas
+  channel:view production` confirms the newest group on runtime 1.0.1 is this
+  publish, so nothing is wrong with it. See the two separate checks entry below,
+  and prefer the new Check for updates button over the two cold launches.
   CHECK TWO, AND IT IS THE ONE THAT MATTERS: that the NAME field now fills on a
   paste the catalogue does not recognise. This publish exists for exactly that,
   so the panel settles nothing on its own. Paste the refurbed text again: the
@@ -787,6 +804,70 @@ last one left off without needing a recap typed out.
   single time, or ask for the real paste before inventing one. This file already
   says measure rather than reason; the missing half is to be clear about WHAT was
   measured.
+
+- A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
+  SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
+  sitting as NOT YET CONFIRMED for two days.
+  WHAT THE PANEL SAID: `Embedded launch (no OTA applied): false`, `Update ID:
+  01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, `Update published:
+  2026-09-22T18:59:50.394Z`. Every one of those reads like a healthy OTA, and
+  that Update ID is the `a6aad8fc` publish from THREE DAYS EARLIER. The phone was
+  one update group behind and `Embedded launch: false` was perfectly happy about
+  it. This file has warned since 2026-09-20 that reading only that line proves an
+  OTA landed and never WHICH one. That is the first time the warning earned
+  itself.
+  THE SERVER SIDE WAS FINE, and this file had no command for checking it, which
+  is the gap worth closing. `eas channel:view production` prints the branch the
+  channel points at and the newest update group per runtime version. It showed
+  branch `production`, runtime `1.0.1`, and the newest group carrying the
+  d50ffd9c message, so the bundle was published, on the right channel, and tagged
+  with the runtime the app asks for. `eas update:list --branch production
+  --limit 5` then showed the phone sitting exactly one group down.
+  `update:list` TAKES `--branch`, NOT `--channel`, which cost a round trip
+  because I told the owner otherwise. `channel:view` is the command that answers
+  "is it on the channel"; `update:list --branch` answers "what is on the branch".
+  THE MECHANISM IS `fallbackToCacheTimeout: 0` IN app.json, and it is correct
+  rather than a bug. The app NEVER waits at startup: it launches the bundle it
+  already has, checks and downloads in the background, and applies on the NEXT
+  launch. So confirming a publish needs TWO cold launches, and the first has to
+  stay open long enough to finish the download. Opening the app and immediately
+  closing it to read the panel is the one sequence that can never work, and it is
+  the obvious thing to do.
+  THE APP NOW HAS A CHECK FOR UPDATES BUTTON in the Build Info panel, which is
+  the real fix: `checkForUpdateAsync`, then `fetchUpdateAsync`, then
+  `reloadAsync`, one tap, no force stopping. All three calls are needed and the
+  test says so: check alone reports availability and downloads nothing, fetch
+  alone downloads and still waits for the next launch, which is the exact problem
+  it exists to remove.
+  IT RELOADS IMMEDIATELY rather than offering to restart later, which is safe on
+  THIS screen and nowhere else: Help & Support holds no unsaved input, so a
+  restart can discard nothing. Do not lift the pattern onto a screen with a form.
+  FOUR STATES, NOT A BOOLEAN: checking, downloading, up to date, and failed with
+  the real error message shown. Same reasoning as the purchase screen's price and
+  for the same reason: "found nothing" and "could not reach the server" are
+  different answers, and collapsing them is how a silent failure reads as
+  success. It renders a line instead of the button when `Updates.isEnabled` is
+  false, since in a dev client that is an inapplicable feature rather than a
+  broken one.
+  RAISING `fallbackToCacheTimeout` WAS CONSIDERED AND REJECTED. It would make an
+  update apply on the FIRST launch, and it would do that by blocking every cold
+  start on a network round trip, for every user, to save one person a diagnostic.
+  The button costs nothing to anybody who never opens Help & Support.
+  THE BUILD INFO FIELD LABELS STAY ENGLISH ON PURPOSE, and there is now a test
+  saying so, because they look exactly like the bare English JSX text nodes this
+  file has recorded three times. They are not the same thing. `Channel:`,
+  `Runtime version:`, `Embedded launch (no OTA applied):`, `Update ID:` and
+  `Update published:` are EAS's own field names, this document quotes them
+  verbatim as the confirmation procedure, and the values beside them are machine
+  identifiers in any language. Translating them would break a documented check to
+  gain nothing. The BUTTON is localised, because that is an action somebody takes
+  rather than a field name. That is where the line sits.
+  EIGHT ASSERTIONS in `__tests__/update-check.test.js`, SEVEN failing against the
+  previous code. The eighth is the English labels guard, which passes both ways
+  on purpose. An A/B run of every runnable JS suite against HEAD and the working
+  tree showed the new suite as the ONLY delta, so nothing else moved.
+  NOT TYPECHECKED HERE. `tools/typecheck.py` exits 2 in a sandbox as designed and
+  `app/help-support.tsx` is TypeScript, so CI is what settles that one.
 
 - ANALYTICS CHANGES NEED A DIFFERENT KIND OF VERIFICATION FROM EVERY OTHER
   PUBLISH, and this is the durable lesson rather than a note about one release.

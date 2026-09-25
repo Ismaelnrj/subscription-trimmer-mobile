@@ -605,7 +605,13 @@
     "emailSupport": "E-Mail-Support",
     "privacyPolicy": "Datenschutzrichtlinie",
     "viewPrivacyPolicy": "Datenschutzrichtlinie anzeigen",
-    "footerNote": "Trimio@subtrimio.com ist unsere offizielle Support-Adresse. Ja, die Domain ist 'subtrimio.com', obwohl die App Trimio heißt."
+    "footerNote": "Trimio@subtrimio.com ist unsere offizielle Support-Adresse. Ja, die Domain ist 'subtrimio.com', obwohl die App Trimio heißt.",
+    "checkForUpdates": "Nach Updates suchen",
+    "checkingForUpdates": "Suche nach Updates...",
+    "downloadingUpdate": "Wird geladen. Die App startet neu, sobald es fertig ist.",
+    "upToDate": "Du hast die neueste Version.",
+    "updateCheckFailed": "Suche nach Updates fehlgeschlagen: {{message}}",
+    "updatesDisabled": "Over the Air Updates sind in diesem Build deaktiviert."
   },
   "referFriend": {
     "screenTitle": "Freunde einladen",
