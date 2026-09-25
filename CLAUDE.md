@@ -805,6 +805,46 @@ last one left off without needing a recap typed out.
   says measure rather than reason; the missing half is to be clear about WHAT was
   measured.
 
+- PUBLISHED THROUGH 77dd14a3 (2026-09-25), which supersedes every baseline above.
+  NOT YET CONFIRMED. The owner reported the publish went through, which means EAS
+  accepted the bundle and nothing more.
+  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
+  `Update ID` DIFFERENT from `01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, which is the
+  2026-09-22T18:59:50.394Z update and is what the phone was STILL running earlier
+  today. It needs two cold launches this once, because the button that removes
+  the need for them only exists in the bundle being landed. After that, Check for
+  updates in the Build Info panel does it in one tap.
+  CHECK TWO IS INHERITED AND STILL OPEN: that the NAME field fills on a paste the
+  catalogue does not recognise. That is what `d50ffd9c` shipped for and it has
+  never been exercised, because the bundle carrying it has never been on the
+  phone. Paste the refurbed text: the price was already right, the name was
+  blank, and it should now carry the merchant read off the first line.
+  CHECK THREE, new and cheap: tap Check for updates on a bundle that is already
+  current. It should say you are on the latest version rather than doing nothing,
+  since "found nothing" and "silently failed" are what the four states exist to
+  tell apart.
+  WHAT WENT OUT, three client files across the whole range `d50ffd9c..77dd14a3`:
+  `app/help-support.tsx` and both locale files, so the parser fix from d50ffd9c
+  plus the update check. Everything else in that range is tests, `tools/` and this
+  document, none of which enter a JS bundle. Verified with
+  `git diff --name-only d50ffd9c..77dd14a3` over app/, lib/, components/ and
+  locales/ rather than assumed from the commit messages.
+  NATIVE CHECK ACROSS `d50ffd9c..77dd14a3`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion correctly
+  stayed 1.0.1 and no build was needed. Fifteenth recorded time, decided by
+  `needs_native_build.py d50ffd9c`, which answered OTA IS ENOUGH.
+  NOTHING DEPLOYED WITH IT: zero backend files in that range, so Railway had
+  nothing to redeploy and the running service is still the one from `42161a41`.
+  CI WAS GREEN ON THE EXACT COMMIT, run 449 on `77dd14a3`, all ten steps with the
+  typecheck on the pinned compiler. That mattered more than usual: the one client
+  screen is TypeScript and a sandbox cannot compile this project, so CI was the
+  only thing that could settle it.
+  THE TIMESTAMP CROSS-CHECK IS TRIVIAL THIS TIME and worth stating anyway.
+  `77dd14a3` was committed 2026-09-25T17:47:58Z and master has not moved since,
+  so any publish after that carries it and there is no later commit to confuse it
+  with. It pinned a baseline by 48 seconds on 2026-09-22, so run it whenever the
+  panel is read.
+
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
   sitting as NOT YET CONFIRMED for two days.
