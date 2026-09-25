@@ -805,24 +805,42 @@ last one left off without needing a recap typed out.
   says measure rather than reason; the missing half is to be clear about WHAT was
   measured.
 
-- PUBLISHED THROUGH 77dd14a3 (2026-09-25), which supersedes every baseline above.
-  NOT YET CONFIRMED. The owner reported the publish went through, which means EAS
-  accepted the bundle and nothing more.
-  CHECK ONE, the usual: `Embedded launch (no OTA applied): false` and an
-  `Update ID` DIFFERENT from `01a0ca7d-15fa-7988-83d4-a2e7a1b6307e`, which is the
-  2026-09-22T18:59:50.394Z update and is what the phone was STILL running earlier
-  today. It needs two cold launches this once, because the button that removes
-  the need for them only exists in the bundle being landed. After that, Check for
-  updates in the Build Info panel does it in one tap.
+- PUBLISHED THROUGH 77dd14a3 AND CONFIRMED ON A REAL DEVICE (2026-09-25), which
+  supersedes every baseline above. Read off the Build Info panel rather than
+  inferred from a publish that exited zero: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a0d9d7-2c73-77a0-8926-4a0f6013025c`, `Update published:
+  2026-09-25T18:32:32.627Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than `01a0ca7d-...` at
+  `2026-09-22T18:59:50.394Z`, which is the a6aad8fc update the phone had been
+  stuck on for THREE DAYS. That is the check earning itself twice in one day:
+  this morning it caught the phone sitting on an old bundle while
+  `Embedded launch: false` read perfectly healthy, and this evening it is what
+  proves the new one really landed.
+  THE d50ffd9c PUBLISH IS ALSO ON THE PHONE NOW, since this bundle carries the
+  whole range. That entry sat as NOT YET CONFIRMED from 2026-09-23 to here, and
+  the reason was never the publish: it was on the channel the whole time.
+  THE TIMESTAMP CROSS-CHECK PINNED THE BASELINE BY MEASUREMENT. The publish was
+  18:32:32.627Z, `77dd14a3` was committed 17:47:58Z, 44.6 minutes BEFORE, so it
+  could be in the bundle, and the next commit `69df8267` was committed 18:54:14Z,
+  21.7 minutes AFTER, so it could not. `eas update` uploads the WORKING TREE, so
+  the publish time bounds what can possibly have been in it. `69df8267` touches
+  CLAUDE.md alone, so nothing a phone runs is missing either way. Twelfth time
+  that gap has looked like a missed publish and has not been one.
+  IT TOOK THE TWO COLD LAUNCHES, as expected, because the button that removes the
+  need for them was inside the bundle being landed. From here, Check for updates
+  in the Build Info panel does it in one tap.
   CHECK TWO IS INHERITED AND STILL OPEN: that the NAME field fills on a paste the
   catalogue does not recognise. That is what `d50ffd9c` shipped for and it has
   never been exercised, because the bundle carrying it has never been on the
   phone. Paste the refurbed text: the price was already right, the name was
   blank, and it should now carry the merchant read off the first line.
-  CHECK THREE, new and cheap: tap Check for updates on a bundle that is already
-  current. It should say you are on the latest version rather than doing nothing,
-  since "found nothing" and "silently failed" are what the four states exist to
-  tell apart.
+  CHECK THREE, new and cheap, ALSO STILL OPEN: tap Check for updates on a bundle
+  that is already current. It should say you are on the latest version rather
+  than doing nothing, since "found nothing" and "silently failed" are what the
+  four states exist to tell apart. Nothing has exercised that button yet, so it
+  is landed rather than known working, which is the same distinction the parser
+  and the analytics entries both record.
   WHAT WENT OUT, three client files across the whole range `d50ffd9c..77dd14a3`:
   `app/help-support.tsx` and both locale files, so the parser fix from d50ffd9c
   plus the update check. Everything else in that range is tests, `tools/` and this
