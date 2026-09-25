@@ -11,6 +11,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from PIL import Image, ImageDraw, ImageFont
 from importlib import import_module
 icons = import_module("make-icons")
+import fontpath
 
 W, H = 1284, 2778
 GROUND    = (247, 246, 241)
@@ -21,7 +22,6 @@ RING      = (214, 236, 228)
 CHIP      = (223, 241, 234)
 WAVE_1    = (223, 242, 235)
 WAVE_2    = (206, 235, 224)
-M = "/usr/share/fonts/opentype/montserrat/Montserrat-%s.otf"
 
 S = 2                               # supersample
 img = Image.new("RGBA", (W * S, H * S), GROUND + (255,))
@@ -113,7 +113,7 @@ for ang, rr in ((18, R_OUT * 1.00), (168, R_OUT * 0.82)):
     r = R_OUT * 0.026
     d.ellipse([px - r, py - r, px + r, py + r], fill=MINT)
 
-word_font = ImageFont.truetype(M % "Medium", int(H * S * 0.062))
+word_font = ImageFont.truetype(fontpath.montserrat("Medium"), int(H * S * 0.062))
 wy = H * S * 0.585
 tw = d.textlength("Trimio", font=word_font)
 d.text((W * S / 2 - tw / 2, wy), "Trimio", font=word_font, fill=NAVY)
@@ -124,7 +124,7 @@ if off:
         px = W * S / 2 - tw / 2 + d.textlength("Trimio"[:idx], font=word_font) + dx
         d.ellipse([px - rr, wy + dy - rr, px + rr, wy + dy + rr], fill=MINT)
 
-tag_font = ImageFont.truetype(M % "SemiBold", int(H * S * 0.0148))
+tag_font = ImageFont.truetype(fontpath.montserrat("SemiBold"), int(H * S * 0.0148))
 tag = "KNOW BEFORE YOU PAY."
 tracked_text(d, (W * S / 2, H * S * 0.665), tag, tag_font, NAVY,
              tracking=H * S * 0.0042,

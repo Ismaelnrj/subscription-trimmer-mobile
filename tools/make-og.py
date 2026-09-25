@@ -13,8 +13,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from PIL import Image, ImageDraw, ImageFont
 from importlib import import_module
 icons = import_module("make-icons")
+import fontpath
 
-M = "/usr/share/fonts/opentype/montserrat/Montserrat-%s.otf"
 S = 2
 W, H = 1200, 630
 
@@ -24,7 +24,7 @@ DIM   = (169, 184, 194)
 
 
 def font(weight, size):
-    return ImageFont.truetype(M % weight, size * S)
+    return ImageFont.truetype(fontpath.montserrat(weight), size * S)
 
 
 # The big mark sits centred at 0.815 of the width, so type has to stop short

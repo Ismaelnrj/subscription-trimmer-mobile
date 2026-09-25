@@ -2198,7 +2198,41 @@ last one left off without needing a recap typed out.
   zones, so a tight crop comes out LARGER than in the source), and `clip`
   (passthrough for footage that already has its own composition; `reframe` would
   stack a second header on it). ffmpeg comes from `imageio_ffmpeg`, since there
-  is no system ffmpeg in a sandbox.
+  is no system ffmpeg in a sandbox, and it is installable here, see the entry
+  below.
+- THE VIDEO TOOLS DO RUN IN A SANDBOX, learned 2026-09-25 reviewing a UGC clip,
+  and this corrects what the entry above implies. `pip install imageio-ffmpeg
+  pillow` SUCCEEDS through the agent proxy, so a cloud session has both ffmpeg
+  and PIL and can decode, measure and re-render video. Worth knowing before
+  concluding that a video question cannot be answered from here: that whole
+  review was frames extracted with ffmpeg, caption and safe zone positions
+  measured with PIL, audio levels read with `volumedetect`, and the real icon
+  rendered from `tools/make-icons.py` for a side by side against the frame. The
+  numpy and OpenCV note further down still stands, since those were not
+  installed and were not tried.
+  `brand-video.py` COULD NOT RUN AT ALL UNTIL THE FONTS WERE FIXED, and the
+  failure named nothing. Four generators, make-cut, make-og, make-splash and
+  make-youtube, each hardcoded
+  `/usr/share/fonts/opentype/montserrat/Montserrat-%s.otf`, which is a fact
+  about one machine rather than about this repository, and PIL answered
+  `OSError: cannot open resource` without naming the file it wanted or the
+  directory it looked in.
+  `tools/fontpath.py` IS THE FIX and is the one place to change now. It tries
+  the system install first, so a machine that has it is unaffected, then falls
+  back to `assets/fonts/Montserrat-*.ttf`, which the repository already carries
+  because the app ships them. FreeType reads a TrueType file whatever the
+  extension claims, so the two are interchangeable here. A miss refuses BY
+  NAME, printing both paths it tried, because not knowing where to look was the
+  entire cost of the original failure.
+  MEASURED RATHER THAN ASSERTED: with `/usr/share/fonts/opentype/montserrat`
+  DELETED, the same `brand-video.py` command produced a file BYTE IDENTICAL to
+  the one rendered while the fonts were present. The fallback therefore changes
+  no output at all, only where the tool can run.
+  THIS IS THE typecheck.py LESSON A SECOND TIME: a tool that exists to enforce
+  a rule, that cannot run on the machine where the rule is needed. There it was
+  a shebang Windows would not honour, here a font path only one machine had.
+  When a tool exists to catch a failure, check that the tool itself runs where
+  it has to.
 - WHAT THE PLATFORM COVERS, measured not guessed: the bottom 20% and the right
   15% of a vertical frame. Every video sent for review before 2026-09-16 put its
   own footer, the app's tab bar or the floating button inside that strip.

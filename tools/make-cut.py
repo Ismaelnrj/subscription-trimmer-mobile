@@ -36,6 +36,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from PIL import Image, ImageDraw, ImageFont
 
 icons = import_module("make-icons")
+import fontpath
 
 try:
     import imageio_ffmpeg
@@ -43,7 +44,6 @@ try:
 except Exception:                                  # a system ffmpeg is fine too
     FFMPEG = "ffmpeg"
 
-M = "/usr/share/fonts/opentype/montserrat/Montserrat-%s.otf"
 SS = 2                                             # supersample for type
 
 FORMATS = {"9:16": (1080, 1920), "16:9": (1920, 1080), "1:1": (1080, 1080)}
@@ -73,7 +73,7 @@ class CutError(Exception):
 
 
 def font(weight, size):
-    return ImageFont.truetype(M % weight, int(size * SS))
+    return ImageFont.truetype(fontpath.montserrat(weight), int(size * SS))
 
 
 # --- validation ------------------------------------------------------------

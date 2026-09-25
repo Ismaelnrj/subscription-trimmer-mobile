@@ -24,8 +24,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from PIL import Image, ImageDraw, ImageFont
 from importlib import import_module
 icons = import_module("make-icons")
+import fontpath
 
-M = "/usr/share/fonts/opentype/montserrat/Montserrat-%s.otf"
 S = 2                                    # supersample, then LANCZOS down
 
 BANNER_W, BANNER_H = 2048, 1152
@@ -38,7 +38,7 @@ DIM   = (169, 184, 194)
 
 
 def font(weight, size):
-    return ImageFont.truetype(M % weight, size * S)
+    return ImageFont.truetype(fontpath.montserrat(weight), size * S)
 
 
 def banner(out="assets/youtube-banner.png"):
