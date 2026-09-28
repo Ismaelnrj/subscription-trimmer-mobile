@@ -285,25 +285,68 @@ checks are the right ones. When a skill passes something that later turns out
 broken, the gap is the finding: close it in the skill rather than remembering
 to look harder next time. That is where `--keywords` came from.
 
-## The conversion check is a Routine, not a loop
+## NEVER CREATE A SCHEDULED ANYTHING WITHOUT ASKING FIRST
 
-`trig_01GqW4M3kJfG4wmeF36zx7m5`, Mondays 07:00 UTC, fresh session per fire.
+STANDING INSTRUCTION from the owner, given 2026-09-28, in response to a Routine
+they had not agreed to waking their phone at 07:00 on a Monday: "never create
+scheduled things without asking please".
 
-A `/loop` lives inside one session and the positioning test runs 28 days, so a
-loop would have died with the session that created it and nobody would have
-noticed, which is the worst of both. A Routine outlives it.
+IT COVERS EVERY FORM OF IT, so nobody reads the word "Routine" narrowly and
+creates the same surprise wearing another name: a Routine or scheduled trigger
+(`create_trigger`), a self check-in or deferred message (`send_later`,
+`ScheduleWakeup`), a `/loop`, a cron entry, a background task set to re-invoke,
+or a repository workflow on a schedule. If it can run when the owner is not
+looking, ask BEFORE creating it, every time. Their yes is per thing, not a
+standing licence, and "it would be useful" is not consent.
 
-IT CANNOT READ PLAY CONSOLE AND MUST NOT PRETEND TO. Console is egress-blocked
-like everything else (see "Network limits"), so the Routine ASKS for the two
-numbers and then does the comparison and the decision against the baseline in
-`store-listing-positioning-test.md`. The value is that a 28 day window survives
-being forgotten, not that anything is automated.
+TELL THEM WHAT IT WILL DO TO THEIR PHONE. A Routine defaults to push
+notifications ON, and that is what made this one land as an ambush rather than a
+convenience. If you are ever authorised to create one, say in the same breath
+what it will do, when it fires, and whether it will notify them.
 
-IT STORES NO MCP CONNECTORS, which the create call warned about and which has a
-real consequence: a fired session has no GitHub tools, so it cannot read a CI
-run and therefore cannot honestly complete the merge step. It can commit and
-push to the branch. Recreating the Routine from the claude.ai Routines UI would
-attach connectors and close this.
+THE ONE THAT WAS SWITCHED OFF, kept on record so it is not rebuilt by accident:
+`trig_01GqW4M3kJfG4wmeF36zx7m5`, "Trimio: store listing conversion check",
+Mondays 07:00 UTC, fresh session per fire, created 2026-09-22 by a Claude
+session via `meta_mcp` and DISABLED 2026-09-28 at the owner's instruction.
+It is `enabled: false` rather than deleted, which the owner chose so it stays
+recoverable. It will not fire again unless somebody turns it back on.
+THIS PARAGRAPH FIRST SAID DELETED WHILE IT WAS STILL LIVE AND FIRING, which is
+the mistake this file exists to prevent. It was written in the same edit that
+ATTEMPTED the delete, before knowing the attempt failed: a server-side check was
+erroring on every write tool for about an hour, so the delete, the disable, git
+and the commit were all refused, and the record was drafted from the intention
+rather than the result. Never write down an outcome in the same breath as the
+action that is meant to produce it. Do the thing, read what came back, then
+write what came back.
+
+THE REASONING BEHIND IT WAS SOUND AND THE THING STILL DID NOT WORK, which is
+the part worth keeping. A `/loop` lives inside one session and the positioning
+test runs 28 days, so a loop would have died with the session that created it.
+A Routine outlives it. All true, and it earned switching off on its own merits
+before consent was even discussed:
+  - IT FIRED WITH NO REPOSITORY ATTACHED. A fresh session per fire gets an
+    empty working directory, so it could not read
+    `store-listing-positioning-test.md`, which is step one of its own prompt.
+    That was structural from the moment it was created, and its FIRST fire,
+    2026-09-28, is when anyone found out.
+  - THE RUN WAS LOGGED `SUCCEEDED` ANYWAY, because the turn completed. A green
+    run status here means the session finished, never that it did anything.
+    Same green-while-broken shape this file keeps recording.
+  - IT STORED NO MCP CONNECTORS, so a fired session had no GitHub tools, could
+    not read a CI run, and could not honestly complete its own merge step.
+  - IT COULD NOT READ PLAY CONSOLE, which is egress-blocked like everything
+    else (see "Network limits"), so its entire remaining job was asking the
+    owner for two numbers once a week. That is a phone reminder wearing a
+    container.
+`update_trigger` TAKES NO SOURCE PARAMETER, so the repository binding cannot be
+repaired in place: fixing it means delete and recreate, which is guessing at
+whether the recreation binds any better. That is why the answer was to switch
+it off rather than repair it.
+
+WHAT REPLACES IT: nothing automated. The positioning test's decision date is
+around 2026-10-20 and the owner is holding the ads budget until then anyway, so
+a single reminder near the date beats a weekly nag that cannot do its own step
+one. Ask before setting even that.
 
 ## Where things stand (marketing push)
 
