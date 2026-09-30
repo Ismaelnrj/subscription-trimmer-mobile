@@ -1011,17 +1011,22 @@ last one left off without needing a recap typed out.
   panel is read.
 
 - AN `eas update` IS GENUINELY OWED, 2026-09-30, AND THIS TIME IT IS NOT THE
-  DOCUMENTATION GAP. Master is at `631e7fa5` and the publish baseline is still
+  DOCUMENTATION GAP. Master is at `40562f4c` and the publish baseline is still
   `77dd14a3`. TWELVE TIMES this file has recorded master sitting ahead of the
   baseline and the gap turning out to be CLAUDE.md or a test. THIS IS THE
-  THIRTEENTH AND IT IS DIFFERENT: the range carries TWELVE CLIENT FILES.
-  `git diff --name-only 77dd14a3..631e7fa5` over app/, lib/, components/ and
+  THIRTEENTH AND IT IS DIFFERENT: the range carries FIFTEEN CLIENT FILES.
+  `git diff --name-only 77dd14a3..40562f4c` over app/, lib/, components/ and
   locales/ gives `app/(tabs)/analytics.tsx`, `app/(tabs)/calendar.tsx`,
-  `app/(tabs)/index.tsx`, `app/(tabs)/subscriptions.tsx`, `app/alerts.tsx`,
-  `app/insights.tsx`, `lib/currency-store.ts`, `lib/notification-scheduler.ts`,
+  `app/(tabs)/index.tsx`, `app/(tabs)/subscriptions.tsx`, `app/_layout.tsx`,
+  `app/alerts.tsx`, `app/insights.tsx`, `app/upgrade.tsx`,
+  `lib/currency-store.ts`, `lib/iap.ts`, `lib/notification-scheduler.ts`,
   `lib/recurrence.ts`, `lib/utils.ts` and both locale files. Read the list, do
   not assume either way: the habit of checking WHAT the gap contains is what
   makes the twelve previous non-publishes correct and this one necessary.
+  THE LAST THREE OF THOSE ARE THE PAYMENT PAIR, `40562f4c`, added after this
+  entry was first written, which is why the count grew from twelve. See its own
+  entry below: it is the half of this range that touches money, so a reader
+  deciding whether the publish is worth asking for should weigh it first.
   NOT YET PUBLISHED AND NOT YET ASKED FOR. Running `eas update` is on the short
   list of things that still need the owner's word, and they were mid marketing
   work when this landed.
@@ -1045,7 +1050,88 @@ last one left off without needing a recap typed out.
   typecheck on the pinned compiler, which mattered more than usual: eight
   TypeScript files changed and no sandbox can compile this project. Run 457 on
   `99dcd71c` went red first on ONE assertion of 683, the dependency-array pin
-  described above, and the typecheck passed on that run too.
+  described above, and the typecheck passed on that run too. Run 462 on
+  `40562f4c` is green as well, which is the one that covers the payment pair,
+  and its typecheck is the only thing that could settle those three TypeScript
+  files.
+
+- THE PAYMENT PAIR, F01 AND F02 FROM THE SAME REVIEW, fixed 2026-09-30 in
+  `40562f4c`. Both were about a boolean carrying two different facts, in the one
+  place in this product where being wrong costs somebody money they already
+  spent.
+  F01, THE CLIENT DISCARDED THE SERVER'S VERDICT. `/auth/verify-premium`
+  deliberately IGNORES the `isPremium` it is posted: it asks RevenueCat itself
+  with the secret key, writes what comes back, and returns the updated user.
+  `syncPremiumWithBackend` returned a bare boolean meaning "the POST did not
+  throw", and the purchase screen then wrote `isPaid: true` locally off the back
+  of it. So a server answering 200 with `isPaid: false` produced a Premium
+  welcome and a user who silently lost Premium the next time anything loaded
+  them from the server. The response body was already there and was being
+  thrown away.
+  IT IS NOW A TAGGED RESULT, `PremiumSync`, which is the same discipline as the
+  purchase screen's three price states and for the same reason: verified carries
+  the user the server returned, unverified carries whether the refusal was a 503
+  (no RevenueCat secret key in Railway) or a network failure, and a 200 with no
+  usable user in it is UNVERIFIED rather than a verdict, because treating it as
+  one reinstates the bug one level down.
+  THE SCREEN APPLIES WHAT CAME BACK AND NOTHING ELSE. `applyServerVerdict`
+  returns `boolean | null`, null meaning "no verdict", and it CHECKS THE USER ID
+  AGAINST THE CURRENT SESSION before writing: this resolves after several
+  awaits, so a sign-out and a sign-in underneath it would otherwise write one
+  account's entitlement onto another's. `app/_layout.tsx` does the same on the
+  launch retry, re-reading the id at APPLY time rather than capturing it above.
+  THE LAUNCH RETRY USED TO DROP ITS ANSWER ENTIRELY, which is the part worth
+  keeping: `retryPendingPremiumSync` exists for a purchase that was CHARGED on a
+  previous run and never reached the account, so a verdict arriving there is the
+  whole point, and the user stayed unpaid on screen until something unrelated
+  happened to refetch them.
+  F02, A FAILED LOOKUP WAS REPORTED AS NO PURCHASE. `restorePremium` returned
+  `{ active: false, synced: false }` from its catch, which is BYTE FOR BYTE the
+  value an account with genuinely nothing to restore returns. So "you never
+  bought this", "your phone is offline" and "RevenueCat is down" all produced
+  the same "No purchase found" alert. The screen already had a separate retry
+  message and it was simply unreachable.
+  FOUR OUTCOMES NOW, `restored`, `none`, `cancelled` and `error`, and `cancelled`
+  is its own outcome so the app stays quiet about a failure the person chose.
+  `checkIsPremium` returns `boolean | null` for the same reason, null meaning the
+  lookup failed, and every caller treats null as unchanged rather than as no.
+  THE ERROR PATH IS THE ONLY ONE THAT DOES NOT SYNC, and that asymmetry is
+  deliberate rather than an oversight. Posting `false` after a successful lookup
+  that found nothing is how a client that is WRONG gets corrected UPWARD, since
+  the server does not trust the posted value. Posting `false` after a FAILED
+  lookup would take Premium away from a paying customer because their train went
+  into a tunnel. I got this the wrong way round in a first draft and reasoned it
+  back.
+  `isUserCancelled` REPLACES A STRING SEARCH OVER SDK TEXT. The call site did
+  `e.message.toLowerCase().includes("cancel")`, on a message the SDK is free to
+  localise or reword, so the day it does, a cancelled purchase starts showing a
+  purchase-failed alert. react-native-purchases carries a typed `userCancelled`
+  flag, read FIRST, with the string check kept underneath only so behaviour
+  cannot get worse than today if that field is ever absent.
+  BOTH HANDLERS NOW REFUSE TO RE-ENTER, `if (loading || restoring) return`, since
+  two overlapping purchase flows writing entitlement is the same class of race as
+  the notification generation bug above.
+  WHAT THIS DOES FOR A REFERRAL-PREMIUM USER, which the review did not mention
+  and is the case most likely to exist today: `formatUser` computes
+  `isPaid: u.is_paid || hasBonusPremium(u)`, so somebody premium through
+  referrals has never purchased anything. Tapping Restore Purchase told them
+  "No purchase found", which is technically true of Play and reads as a denial of
+  the access they can see they have. They now get the server's verdict.
+  MEASURED AGAINST MASTER, not reasoned about. The real `lib/iap.ts` was executed
+  on Node type stripping with ONLY its import specifiers rewritten, six changed
+  lines proven by diff, across 17 outcomes. Against the previous code 7 of 8
+  scenarios differ, and the ORDINARY SUCCESSFUL PURCHASE is unchanged, which is
+  the property that makes this safe to ship rather than a rewrite of the money
+  path.
+  `__tests__/premium-verdict.test.js` pins it, 13 assertions, ALL THIRTEEN
+  failing against `origin/master`. It is source-reading and says so in its own
+  header, because the behavioural half cannot run under jest here, and it records
+  that the behaviour was measured separately rather than leaving a reader to
+  assume the assertions cover it.
+  NOTHING DEPLOYED WITH IT: zero backend files, so Railway had nothing to
+  redeploy. All three changed files are client, so NONE of this reaches a phone
+  until the `eas update` above is run. A user hitting the old bug today still
+  hits it.
 
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
