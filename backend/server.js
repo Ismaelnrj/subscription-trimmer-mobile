@@ -699,6 +699,90 @@ async function sendAccountDeletedEmail(to, wantsGerman) {
   );
 }
 
+/* THE REWARD USED TO BE COMPLETELY SILENT. Somebody earned 30 days of Premium
+   and nothing anywhere said so: no email, no push, no screen they had not
+   already chosen to open. The bonus simply appeared on the referral screen for
+   whoever thought to look, which for the INVITER is a screen they have no
+   reason to revisit after sharing their code.
+   A referral programme nobody is told about cannot spread, so this is the one
+   email in this file that exists for growth rather than for duty.
+   IT NAMES THE REAL NUMBER, never a flat "30 days". Near the balance cap the
+   true grant is smaller, and a mail that overstates it on the way to a screen
+   showing the smaller figure is worse than no mail at all. */
+const REFERRAL_EMAIL = {
+  en: {
+    subject: 'Your bonus Premium is active',
+    heading: 'You earned bonus Premium',
+    referrer: 'Somebody just joined Trimio with your referral code.',
+    friend: 'Thanks for joining Trimio with a referral code.',
+    /* PHRASED TO DODGE SUBJECT VERB AGREEMENT. "30 days of Premium has been
+       added" is wrong and "1 day ... have been" is wrong the other way, so the
+       count is moved into the object where neither applies. */
+    granted: (days, date) => `We have added ${days === 1 ? '1 day' : `${days} days`} of Premium to your account. Your bonus access runs until <strong>${date}</strong>.`,
+    billing: 'Bonus access does not change an existing paid subscription or its next charge. When bonus access ends, Premium continues only if you have another active subscription.',
+    cta: 'Open Trimio',
+  },
+  de: {
+    subject: 'Dein Bonus Premium ist aktiv',
+    heading: 'Du hast Bonus Premium erhalten',
+    referrer: 'Jemand ist Trimio gerade mit deinem Empfehlungscode beigetreten.',
+    friend: 'Danke, dass du Trimio mit einem Empfehlungscode beigetreten bist.',
+    /* Same reason as the English: "1 Tag ... wurden" is wrong and "30 Tage ...
+       wurde" is wrong, so the count becomes the object of haben instead. */
+    granted: (days, date) => `Wir haben dir ${days === 1 ? '1 Tag' : `${days} Tage`} Premium gutgeschrieben. Dein Bonuszugang läuft bis <strong>${date}</strong>.`,
+    billing: 'Bonuszugang ändert weder ein bestehendes kostenpflichtiges Abo noch die nächste Abbuchung. Nach Ablauf des Bonus bleibt Premium nur mit einem weiteren aktiven Abo verfügbar.',
+    cta: 'Trimio öffnen',
+  },
+};
+
+/* The date a person reads, in the form their own country writes it. German is
+   1. Oktober 2026 and English is 1 October 2026, and the timeZone is pinned to
+   UTC because bonus_premium_until is stored as an instant at midnight UTC:
+   formatting it in the server's zone is the parseApiDate bug wearing a
+   different hat, and would name the previous day west of UTC. */
+function formatBonusDate(value, lang) {
+  return new Date(value).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  });
+}
+
+async function sendReferralRewardEmail({ email, language, grantedDays, expiresAt, role }) {
+  const c = REFERRAL_EMAIL[language === 'de' ? 'de' : 'en'];
+  const why = role === 'referrer' ? c.referrer : c.friend;
+  await sendEmail(
+    email,
+    c.subject,
+    `<div style="font-family:sans-serif;max-width:440px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+      <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
+      <p style="color:#52616B;line-height:1.6">${why}</p>
+      <p style="color:#142B3A;line-height:1.6;font-size:16px">${c.granted(grantedDays, formatBonusDate(expiresAt, language))}</p>
+      <p style="color:#52616B;font-size:13px;line-height:1.6">${c.billing}</p>
+      <p style="margin-top:24px">
+        <a href="https://play.google.com/store/apps/details?id=com.trimio.app"
+           style="color:#1F7A62;font-weight:600;text-decoration:none">${c.cta}</a>
+      </p>
+    </div>`
+  );
+}
+
+/* WHICH LANGUAGE TO WRITE TO SOMEBODY IN, recorded at the moments we actually
+   know. lib/api.ts sends a bare `de` or `en` on every request, so this is free
+   information that was being thrown away.
+   FIRE AND FORGET, AND EVERY FAILURE SWALLOWED, on purpose: recording a
+   preference must never be able to fail a registration, a verification or a
+   referral. The write no-ops when unchanged, so the common request does not
+   dirty a row. */
+function languageOf(req) {
+  return /^\s*de\b/i.test(req.headers['accept-language'] || '') ? 'de' : 'en';
+}
+
+function recordLanguage(userId, req) {
+  pool.query(
+    'UPDATE users SET language = $1 WHERE id = $2 AND language IS DISTINCT FROM $1',
+    [languageOf(req), userId]
+  ).catch(() => {});
+}
+
 // crypto.randomInt, not Math.random: these codes gate email verification and
 // password resets, and Math.random's PRNG state is recoverable from enough
 // observed outputs, which is not a property you want on a reset code.
@@ -963,6 +1047,15 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN DEFAULT FALSE`);
+  /* THE ONLY LANGUAGE SIGNAL THE BACKEND HAS is the Accept-Language header on
+     a live request, which is useless for an email sent to somebody who is not
+     the one making the request. A referral rewards TWO people and only one of
+     them is holding the phone, so without this column the inviter is always
+     written to in English, on the one email that tells them they earned
+     something, in a product whose whole claim is German depth.
+     NULL means not yet seen and reads as English, which is exactly the
+     behaviour today, so nothing regresses for an account that never sets it. */
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT`);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   /* Which billing date a reminder email has already gone out for.
 
@@ -1486,7 +1579,34 @@ async function assignReferralCode(userId) {
 // a large audience cannot turn the referral programme into a decade of free
 // Premium, and someone who refers a friend a year is never shut out.
 // Set REFERRAL_MAX_BONUS_MONTHS in Railway to change it without a deploy.
-const REFERRAL_MAX_BONUS_MONTHS = parseInt(process.env.REFERRAL_MAX_BONUS_MONTHS, 10) || 12;
+const REFERRAL_MAX_BONUS_MONTHS = (() => {
+  const raw = process.env.REFERRAL_MAX_BONUS_MONTHS;
+  if (raw == null || raw === '') return 12;
+  /* ALL DIGITS, for the same reason FREE_SUBSCRIPTION_LIMIT insists on them,
+     and the failure here is worse than the one that rule was written for.
+     parseInt is lenient: "3.5.1" is 3 and "1e3" is 1, so a typo silently
+     shrinks the ceiling. A NEGATIVE value is the dangerous one, because
+     parseInt("-5") is -5 and -5 is truthy, so the old `|| 12` never fired.
+     make_interval(months => -5) is five months in the PAST, LEAST picks it,
+     and bonus_premium_until is written backwards for BOTH participants. That
+     is not a cap granting less, it is a typo in a Railway variable deleting
+     bonus Premium from everyone the next reward touches. */
+  const n = /^\d+$/.test(raw.trim()) ? parseInt(raw, 10) : NaN;
+  /* AN UPPER BOUND, because all-digits is not enough on its own. A long enough
+     run of digits parses to something like 1e21, which is finite and greater
+     than 1 and sails through, and then make_interval(months => 1e21) is not
+     even a function signature Postgres has. A merely large one is worse,
+     because it IS a valid call and answers `ERROR: timestamp out of range`,
+     so every reward fails rather than one. Measured against PostgreSQL 16:
+     1000000000 months throws.
+     1200 is a hundred years, which is far past any real setting and leaves
+     make_interval comfortably inside int4. */
+  if (!Number.isSafeInteger(n) || n < 1 || n > 1200) {
+    console.warn(`WARNING: REFERRAL_MAX_BONUS_MONTHS is "${raw}", which is not a whole number between 1 and 1200. Using 12.`);
+    return 12;
+  }
+  return n;
+})();
 
 /* HOW MANY SUBSCRIPTIONS A FREE ACCOUNT MAY TRACK. Tunable from Railway without
    a code change, because it is a growth lever rather than a constant: the
@@ -1531,27 +1651,105 @@ const FREE_SUBSCRIPTION_LIMIT = (() => {
 // dies between the two statements the reward is lost rather than doubled,
 // which is the safer direction for this to fail in.
 async function rewardReferral(referrerId, referredId) {
-  const claimed = await pool.query(
-    'UPDATE users SET referral_rewarded = TRUE WHERE id = $1 AND referral_rewarded = FALSE RETURNING id',
-    [referredId]
-  );
-  if (claimed.rowCount === 0) return false;
-  // GREATEST keeps this stacking: a second referral extends an unexpired
-  // bonus rather than restarting it, and an expired one starts fresh today.
-  // LEAST is the cap. Someone already at the ceiling keeps what they have
-  // rather than losing any of it, and the friend they referred is credited
-  // either way, since the cap is the referrer's balance and not the friend's
-  // reward. It applies to both ids because a redeemer sitting at the cap
-  // should not be able to exceed it either.
-  await pool.query(
-    `UPDATE users SET bonus_premium_until = LEAST(
-       GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days',
-       NOW() + make_interval(months => $2)
-     )
-     WHERE id = ANY($1::int[])`,
-    [[referrerId, referredId], REFERRAL_MAX_BONUS_MONTHS]
-  );
-  return true;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const claimed = await client.query(
+      'UPDATE users SET referral_rewarded = TRUE WHERE id = $1 AND referral_rewarded = FALSE RETURNING id',
+      [referredId]
+    );
+    if (claimed.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return [];
+    }
+
+    /* LOCKED IN A CONSISTENT ORDER, by id, so two referrals that happen to
+       share a participant queue behind each other instead of deadlocking.
+       Reading here also captures the expiry BEFORE the update, which is the
+       only way to say how much time was really added. */
+    const before = await client.query(
+      `SELECT id, email, language, bonus_premium_until
+         FROM users WHERE id = ANY($1::int[]) ORDER BY id FOR UPDATE`,
+      [[referrerId, referredId]]
+    );
+
+    /* GREATEST ON THE OUTSIDE IS THE FIX, and it is not cosmetic. LEAST alone
+       is a cap that can point BACKWARDS: when an existing expiry already sits
+       beyond the ceiling, LEAST picks the ceiling and SHORTENS access somebody
+       earned. The comment that used to stand here said "Someone already at the
+       ceiling keeps what they have rather than losing any of it", which is the
+       opposite of what the code did, and the fourth time in this repository a
+       comment has described an intention rather than the behaviour.
+       It bites hardest when the ceiling MOVES: lowering
+       REFERRAL_MAX_BONUS_MONTHS in Railway would otherwise reach back on the
+       next reward and cut every balance above the new value.
+       GREATEST on the inside is unchanged and is what makes rewards STACK: a
+       second referral extends an unexpired bonus rather than restarting it,
+       and an expired one starts fresh from today. */
+    const after = await client.query(
+      `UPDATE users SET bonus_premium_until = GREATEST(
+         COALESCE(bonus_premium_until, NOW()),
+         LEAST(
+           GREATEST(COALESCE(bonus_premium_until, NOW()), NOW()) + INTERVAL '30 days',
+           NOW() + make_interval(months => $2)
+         )
+       )
+       WHERE id = ANY($1::int[])
+       RETURNING id, bonus_premium_until, NOW() AS server_now`,
+      [[referrerId, referredId], REFERRAL_MAX_BONUS_MONTHS]
+    );
+
+    await client.query('COMMIT');
+
+    /* NOW() is the TRANSACTION's clock rather than the JS process's, so the
+       granted figure cannot drift with the gap between them. */
+    const fresh = new Map(after.rows.map((r) => [r.id, r]));
+    const results = [];
+    for (const row of before.rows) {
+      const next = fresh.get(row.id);
+      if (!next) continue;
+      const now = new Date(next.server_now).getTime();
+      const had = row.bonus_premium_until ? new Date(row.bonus_premium_until).getTime() : 0;
+      const base = Math.max(had, now);
+      const until = new Date(next.bonus_premium_until).getTime();
+      results.push({
+        userId: row.id,
+        email: row.email,
+        language: row.language === 'de' ? 'de' : 'en',
+        grantedDays: Math.max(0, Math.round((until - base) / 86400000)),
+        expiresAt: new Date(until),
+        role: row.id === referrerId ? 'referrer' : 'friend',
+      });
+    }
+
+    /* SENT FROM IN HERE rather than from the two call sites, so a third caller
+       cannot forget it, which is the same reason buildTips filters inside
+       itself. After COMMIT, never awaited, every failure swallowed: the reward
+       is already durable and a Brevo outage must not undo it or fail the
+       request that earned it.
+       ZERO DAYS SENDS NOTHING. At the balance cap the grant really is nothing,
+       and "you earned 0 days of Premium" is a worse message than silence. */
+    for (const r of results) {
+      if (r.grantedDays > 0 && r.email) {
+        sendReferralRewardEmail(r).catch((e) => console.error('Referral reward email failed:', e.message));
+      }
+    }
+    return results;
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    /* SWALLOWED ON PURPOSE, and this is a real trade rather than laziness.
+       Throwing would 500 the verification that triggered it, and the client
+       would then retry into `if (user.is_verified) return ...`, which succeeds
+       without ever reaching the reward again. So throwing loses the reward AND
+       breaks the screen. Rolling back leaves referral_rewarded unclaimed, and
+       the reconciliation in referrals.me picks it up the next time the referral
+       screen is opened. */
+    console.error('Referral reward failed, claim rolled back and left retryable:', e.message);
+    return [];
+  } finally {
+    client.release();
+  }
 }
 
 /* The nine codes lib/currency-store.ts actually offers. An unknown code is a
@@ -1680,6 +1878,7 @@ app.post('/api/auth/register', async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
+    recordLanguage(user.id, req);
     await sendVerificationEmail(email, code).catch(e => console.error('Email send failed:', e));
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
@@ -1839,7 +2038,20 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
-    if (user.is_verified) return res.json({ success: true, user: formatUser(user) });
+    recordLanguage(req.userId, req);
+    /* AN EARLY RETURN THAT SKIPS THE REWARD IS HOW ONE GETS LOST FOREVER.
+       The address is already verified here, so the handler used to answer
+       success and stop. If the reward had failed on the first call, every
+       retry took this branch and the claim was never revisited. Reconciling
+       first makes the retry mean something. */
+    if (user.is_verified) {
+      if (user.referred_by && !user.referral_rewarded) {
+        await rewardReferral(user.referred_by, req.userId);
+        const again = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
+        return res.json({ success: true, user: formatUser(again.rows[0] || user) });
+      }
+      return res.json({ success: true, user: formatUser(user) });
+    }
     if (!tokenMatches(user.verification_token, code)) return res.status(400).json({ error: 'Invalid code' });
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
@@ -1861,13 +2073,31 @@ app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
     // arithmetic the cap itself does, rather than a 30 day approximation of
     // it in JS that would disagree near the boundary.
     const result = await pool.query(
-      `SELECT referral_code, referred_by, bonus_premium_until,
+      `SELECT referral_code, referred_by, bonus_premium_until, is_verified, referral_rewarded,
               bonus_premium_until >= NOW() + make_interval(months => $2) - INTERVAL '1 day' AS at_bonus_cap
        FROM users WHERE id = $1`,
       [req.userId, REFERRAL_MAX_BONUS_MONTHS]
     );
-    const user = result.rows[0];
+    let user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
+    recordLanguage(req.userId, req);
+
+    /* THE SELF HEALING POINT, and the reason rewardReferral is allowed to
+       swallow its own failure. A reward that rolled back leaves the claim
+       unspent with nothing scheduled to retry it, and this is the screen
+       somebody opens precisely because they are wondering where their bonus
+       is. Reconciling here costs one query on a screen that is already
+       querying, and needs no cron, no job and no scheduled anything. */
+    if (user.referred_by && user.is_verified && !user.referral_rewarded) {
+      await rewardReferral(user.referred_by, req.userId);
+      const healed = await pool.query(
+        `SELECT referral_code, referred_by, bonus_premium_until,
+                bonus_premium_until >= NOW() + make_interval(months => $2) - INTERVAL '1 day' AS at_bonus_cap
+         FROM users WHERE id = $1`,
+        [req.userId, REFERRAL_MAX_BONUS_MONTHS]
+      );
+      if (healed.rows[0]) user = { ...user, ...healed.rows[0] };
+    }
     // Codes are handed out at registration, and nothing ever backfilled the
     // accounts that existed before the referral feature shipped. Those users
     // open this screen, see a dash where their code should be, and the share
@@ -1902,6 +2132,7 @@ app.post('/api/trpc/referrals.redeem', authMiddleware, async (req, res) => {
     if (referrer.id === me.id) return res.status(400).json({ error: "You can't redeem your own referral code" });
 
     await pool.query('UPDATE users SET referred_by = $1 WHERE id = $2', [referrer.id, me.id]);
+    recordLanguage(me.id, req);
 
     // Already verified, so there is nothing left to wait for.
     if (me.is_verified) await rewardReferral(referrer.id, me.id);
