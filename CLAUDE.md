@@ -348,6 +348,110 @@ around 2026-10-20 and the owner is holding the ads budget until then anyway, so
 a single reminder near the date beats a weekly nag that cannot do its own step
 one. Ask before setting even that.
 
+## An external review, 2026-09-29, and the six findings taken from it
+
+Codex reviewed master at `9931511b` and produced twelve findings. SEVEN were
+checked against the real code before anything was changed and ALL SEVEN were
+real: zero false positives, which is a better hit rate than any review pass
+recorded in this file. Fixed in `99dcd71c` and `631e7fa5`.
+
+THE REVIEW'S PRIORITY ORDER WAS WRONG FOR THIS PRODUCT, and that is the part
+worth keeping rather than the list. It put payment reliability first. With zero
+paying customers those findings affect nobody today, while the paused-rows and
+preferences bugs were live for every actual user. THE RIGHT AXIS IS NOT USER
+COUNT, it is whether a bug sits on the path you are about to spend money driving
+people down. At zero users an acquisition-path bug is MORE urgent, not less,
+because at a thousand you would already know about it.
+
+WHAT WAS FIXED, and each was measured rather than argued:
+  - THE ALERTS SCREEN MAPPED TYPES THE SERVER HAS NEVER SENT. It switched on
+    `"expensive"` and `"renewal"` while `alerts.list` emits `renewal_alert`,
+    `trial_alert` and `expensive_alert`, so EVERY alert fell through to the
+    generic `information` icon and colour was the only thing telling them
+    apart. The severity badge beside it was a bare English JSX node, the FOURTH
+    time that class has appeared here.
+  - THE DASHBOARD SCHEDULED REMINDERS FROM INVENTED PREFERENCES, passing
+    `notifPrefs ?? {}`. `lib/language-store.ts` ALREADY carried this exact fix
+    and a long comment saying `?? {}` is the insufficient version; it was never
+    applied to the other caller. A cold start where the preferences query lost
+    the race re-enabled reminders somebody had turned off.
+  - PAUSED ROWS GENERATED PLANNED ACTIVITY ON THE PHONE. The server filters
+    `is_active = TRUE` in four places and `subscriptions.list` deliberately does
+    not, because the management screen needs paused rows. So every client
+    consumer has to filter and NONE did: the scheduler, the calendar, the weekly
+    chart, the dashboard and buildTips all read the raw list. A paused row was
+    paused on the server and live on the device.
+    `livePlanned` in `lib/recurrence.ts` is the rule, beside `isPhantomOccurrence`
+    for the same reason. `buildTips` filters INSIDE itself so a third caller
+    cannot forget, and its signature is untouched: adding a parameter there is
+    what shipped `TypeError: 50 is not a function`.
+  - A BILLING DATE THE CALENDAR DOES NOT HAVE WAS ACCEPTED. `isNaN` is not a
+    validity check, because JavaScript ROLLS OVER: `new Date("2026-02-31")` is a
+    valid Date holding 3 MARCH. The ISO branch of `normaliseDateInput` accepted
+    31 February, 31 April and 29 February in a non-leap year, while the SLASH
+    branch directly beneath it compared the month back and correctly refused
+    them. One helper right, its neighbour wrong, the same shape as `fmtIcsDate`
+    beside `nextDay`. Both client and server now compare all three components,
+    and `parseCalendarDateStrict` in server.js does it via `Date.UTC` so the
+    answer does not depend on the server's timezone. Measured across four.
+  - TOTALS ADDED RAW NUMBERS ACROSS CURRENCIES. `analytics.summary` summed a
+    10 EUR row and a 10 USD row into 20, and the dashboard then passed that to
+    `fmtC`, which by convention treats an unlabelled aggregate as ALREADY base
+    currency and converts it a second time. The server now also reports
+    `monthlyByCurrency` and introduces NO exchange rate (rates belong to the
+    client, which already fetches and validates them); `sumMixedInBase`
+    converts each part once, into BASE, which is what `fmtC` and `budgetGoal`
+    already assume, so one value drops into the old total's place and every
+    consumer becomes correct untouched. Existing fields are unchanged for
+    installed builds.
+    ONLY THE DASHBOARD SLICE WAS DONE. Exports, threshold comparisons, weekly
+    buckets and market price selection are deferred and still add raw.
+
+THE EMPTY STATE WAS SEEDING THAT MIXED TOTAL, and this one the review missed.
+`handleLoadExamples` inserted three hardcoded USD rows, so for any non-USD user
+the FIRST SCREEN AFTER ONBOARDING mixed two currencies and every total on it was
+a sum of two. Its comment claimed "these three prices are the US figures".
+THAT WAS FALSE: 15.99 is the DACH Netflix price, the US price is 19.99, and the
+catalogue puts Spotify Premium at 12.99 rather than 9.99, so two of the three
+were stale as well as mislabelled. They come from the catalogue now through
+`findTemplateByExactName(name, baseCurrencyCode)`, so a German user gets three
+EUR rows at verified DACH prices and a US user three USD rows.
+A TEST EXISTED ASSERTING THE MISLABELLING WAS CORRECT BY DESIGN, named "tags the
+sample subscriptions USD, since those are the US figures". It was REPLACED
+rather than patched, the same way the CANCELLATION test was, because a test
+whose NAME asserts a false premise tells the next reader the question is closed.
+
+I FIXED AN ASSERTION CLASS IN THE SUITE I COULD RUN AND NOT IN THE ONE I COULD
+NOT, and CI caught it. `calendar-next-up` and `calendar-phantom` both pinned a
+LITERAL dependency array for `app/(tabs)/calendar.tsx`. Filtering paused rows
+renamed that dependency, I fixed the first because it runs in a sandbox, and
+`calendar-phantom` imports a `.ts` module so it does not run here and failed in
+CI: one assertion of 683. That is this file's own parseApiDate lesson, committed
+by me, in the same session as writing about it.
+THE HABIT THAT WOULD HAVE CAUGHT IT: after changing a shared file, grep the
+WHOLE `__tests__` directory for what was changed, not just the suites that run.
+`grep -rn "\[subscriptions" __tests__/` found all three in one command.
+BOTH NOW NAME THE IDENTIFIER the memo really iterates rather than one spelling,
+so they still catch a genuinely missing dependency and stop objecting to a
+rename.
+
+`isMixedCurrency` EXISTS BECAUSE `fmtC`'s TILDE RULE IS NOT ENOUGH here. It
+marks an estimate when the BASE differs from the display currency, which misses
+the case this change created: a US reader with one euro row has base and display
+both USD, so an exact-looking figure was printed for a number that had moved
+through a rate. The dashboard total, and the over-budget and remaining amounts
+derived from it, are marked whenever any PART was priced in something else.
+
+WHAT WAS DEFERRED AND WHY, so nobody re-litigates it from the review document:
+the payment findings (the client discards the server's premium verdict, and a
+restore error is reported as "no purchase found") are real and cheap and should
+be done BEFORE the first customer rather than after, since the failure mode is
+somebody paying and not getting it. The session-race finding the review itself
+marks as NOT REPRODUCED is the most expensive to do properly and the least
+evidenced. The savings-suggestion finding is product judgement rather than a
+bug. E02, scheduling later billing cycles, expands scheduled behaviour and is
+covered by the standing rule above: ask first.
+
 ## Where things stand (marketing push)
 
 Update this section as things move, so a fresh session picks up where the
@@ -905,6 +1009,43 @@ last one left off without needing a recap typed out.
   so any publish after that carries it and there is no later commit to confuse it
   with. It pinned a baseline by 48 seconds on 2026-09-22, so run it whenever the
   panel is read.
+
+- AN `eas update` IS GENUINELY OWED, 2026-09-30, AND THIS TIME IT IS NOT THE
+  DOCUMENTATION GAP. Master is at `631e7fa5` and the publish baseline is still
+  `77dd14a3`. TWELVE TIMES this file has recorded master sitting ahead of the
+  baseline and the gap turning out to be CLAUDE.md or a test. THIS IS THE
+  THIRTEENTH AND IT IS DIFFERENT: the range carries TWELVE CLIENT FILES.
+  `git diff --name-only 77dd14a3..631e7fa5` over app/, lib/, components/ and
+  locales/ gives `app/(tabs)/analytics.tsx`, `app/(tabs)/calendar.tsx`,
+  `app/(tabs)/index.tsx`, `app/(tabs)/subscriptions.tsx`, `app/alerts.tsx`,
+  `app/insights.tsx`, `lib/currency-store.ts`, `lib/notification-scheduler.ts`,
+  `lib/recurrence.ts`, `lib/utils.ts` and both locale files. Read the list, do
+  not assume either way: the habit of checking WHAT the gap contains is what
+  makes the twelve previous non-publishes correct and this one necessary.
+  NOT YET PUBLISHED AND NOT YET ASKED FOR. Running `eas update` is on the short
+  list of things that still need the owner's word, and they were mid marketing
+  work when this landed.
+  NATIVE CHECK ACROSS `77dd14a3..631e7fa5`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion
+  correctly stays 1.0.1 and NO native build is needed. OTA is enough.
+  THE BACKEND HALF IS ALREADY LIVE, via the Railway deploy on `631e7fa5`. It is
+  additive and cannot change what an installed build reads: two NEW fields on
+  `analytics.summary` (`monthlyByCurrency`, `categoryByCurrency`) with every
+  existing field untouched, plus a stricter date guard on subscriptions.create
+  and subscriptions.update that refuses 31 February and its relatives. No
+  migration, no startup change, so a green deploy is the whole check here.
+  WHAT THE PUBLISH WILL ACTUALLY CHANGE ON A PHONE, worth reading before
+  confirming it landed: alert rows get their real icons and a translated
+  severity badge; pausing a subscription stops its reminders, calendar dots,
+  weekly bars and next-payment line; the add form refuses an impossible date;
+  the dashboard total stops adding currencies together and carries a `~` when
+  its parts are mixed; and Load examples seeds three rows in the user's own
+  currency at catalogue prices rather than three USD rows.
+  CI WAS GREEN ON THE EXACT COMMIT, run 458 on `631e7fa5`, including the
+  typecheck on the pinned compiler, which mattered more than usual: eight
+  TypeScript files changed and no sandbox can compile this project. Run 457 on
+  `99dcd71c` went red first on ONE assertion of 683, the dependency-array pin
+  described above, and the typecheck passed on that run too.
 
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
