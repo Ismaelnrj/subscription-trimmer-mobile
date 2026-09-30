@@ -977,11 +977,24 @@ last one left off without needing a recap typed out.
   IT TOOK THE TWO COLD LAUNCHES, as expected, because the button that removes the
   need for them was inside the bundle being landed. From here, Check for updates
   in the Build Info panel does it in one tap.
-  CHECK TWO IS INHERITED AND STILL OPEN: that the NAME field fills on a paste the
-  catalogue does not recognise. That is what `d50ffd9c` shipped for and it has
-  never been exercised, because the bundle carrying it has never been on the
-  phone. Paste the refurbed text: the price was already right, the name was
-  blank, and it should now carry the merchant read off the first line.
+  CHECK TWO IS SETTLED, 2026-09-30, AND THE PARSER FIX WORKS. The owner pasted
+  the refurbed text on the real device and reported it recognised correctly.
+  That closes a check that had been open since 2026-09-23, across two publishes,
+  and it is the second half of the parser work rather than the bundle landing:
+  `d50ffd9c` shipped the first-line name fallback and `77dd14a3` was the bundle
+  that finally carried it to a phone.
+  WHAT IS RECORDED IS THE OWNER'S REPORT, not a value read off a panel, and the
+  two are different evidence. This file already records paying for that
+  distinction in the opposite direction: I quoted a price of my own invention
+  back at the owner for four turns because a FIXTURE was reported in the same
+  voice as their data. Here the direction is honest, the owner exercised their
+  own paste, so the claim is theirs and stands. The specific name that filled was
+  not captured, so do not later report a particular string as measured.
+  THE OPEN PARSER QUESTION IS NOW A DIFFERENT ONE, and it is not urgent: the
+  ordinary-word keys still in KNOWN_SERVICES (bear, calm, cursor, overcast, zoom,
+  slack, notion, proton, paramount, peacock and `claude`) are unmeasured rather
+  than known good. `nord` was the one that was measured misfiring, in German, and
+  it moved. The rest wait on real receipts.
   CHECK THREE, new and cheap, ALSO STILL OPEN: tap Check for updates on a bundle
   that is already current. It should say you are on the latest version rather
   than doing nothing, since "found nothing" and "silently failed" are what the
