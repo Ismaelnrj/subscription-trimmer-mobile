@@ -210,3 +210,75 @@ export function useFmt(): (amount: number, fromCurrency?: string | null) => stri
     return from === currency.code ? text : `~${text}`;
   };
 }
+
+/** Sums a per-currency breakdown into ONE number in the user's BASE currency.
+ *
+ *  `analytics.summary` used to add a 10 EUR row to a 10 USD row and report 20.
+ *  That number is not an amount of anything, and the dashboard then fed it to
+ *  `fmtC`, which by convention treats an unlabelled aggregate as ALREADY being
+ *  in the base currency and converts it once more. Two errors stacked, on the
+ *  first screen after onboarding.
+ *
+ *  BASE rather than the display currency on purpose. Every existing consumer
+ *  of that total already assumes base: `fmtC` converts base to display, and
+ *  `budgetGoal` is a bare number with no currency column, so the budget
+ *  percentage and the remaining amount are base-currency comparisons too.
+ *  Returning base means this one value drops into the place the old total
+ *  occupied and every one of those becomes correct without being touched.
+ *  Returning display currency would have required changing all of them and
+ *  would have compared a display-currency total against a base-currency goal.
+ *
+ *  The rate guard is the same one `convert` carries and for the same reason:
+ *  `?? 1` catches null and undefined only, so a rate of 0 divides through to
+ *  Infinity and a NaN propagates, and both render as somebody's monthly cost.
+ *  Anything not finite and positive leaves that part unconverted.
+ *
+ *  An absent or empty breakdown returns the fallback, so a client talking to a
+ *  server that predates these fields behaves exactly as it did before. */
+/** The pure arithmetic, exported separately so it can be executed and measured
+ *  without a React renderer. A hook cannot be run from a plain Node script, and
+ *  a money calculation that can only be reasoned about is one this codebase has
+ *  already paid for twice. */
+export function sumMixedInBase(
+  byCurrency: Record<string, number> | null | undefined,
+  rates: Record<string, number>,
+  baseCurrencyCode: string,
+  fallback = 0
+): number {
+  const codes = byCurrency ? Object.keys(byCurrency) : [];
+  if (codes.length === 0) return fallback;
+
+  const base = String(baseCurrencyCode).toUpperCase();
+  const usable = (r: unknown): r is number => typeof r === "number" && Number.isFinite(r) && r > 0;
+  const baseRate = rates[base];
+
+  let total = 0;
+  for (const code of codes) {
+    const amount = Number(byCurrency![code]);
+    if (!Number.isFinite(amount)) continue;
+    /* "" is a row with no stored currency, which every other reader already
+       treats as the base, so it needs no conversion. */
+    const from = (code || base).toUpperCase();
+    if (from === base) { total += amount; continue; }
+    const fromRate = rates[from];
+    total += usable(fromRate) && usable(baseRate) ? amount * (baseRate / fromRate) : amount;
+  }
+  return Number.isFinite(total) ? total : fallback;
+}
+
+export function useMixedTotalInBase(): (
+  byCurrency: Record<string, number> | null | undefined,
+  fallback?: number
+) => number {
+  const { rates, baseCurrencyCode } = useCurrencyStore();
+  return (byCurrency, fallback = 0) => sumMixedInBase(byCurrency, rates, baseCurrencyCode, fallback);
+}
+
+/** True when a breakdown holds anything not priced in `code`, so the total
+ *  derived from it is an estimate that moves with a rate the user did not set
+ *  rather than a figure that will appear on a statement. */
+export function isMixedCurrency(byCurrency: Record<string, number> | null | undefined, code: string): boolean {
+  const codes = byCurrency ? Object.keys(byCurrency) : [];
+  if (codes.length === 0) return false;
+  return !(codes.length === 1 && (codes[0] || code).toUpperCase() === code.toUpperCase());
+}

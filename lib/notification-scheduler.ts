@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { livePlanned } from "./recurrence";
 import { registerForPushNotificationsAsync } from "./notifications";
 import { parseLocalDate } from "./utils";
 import i18n from "./i18n";
@@ -199,7 +200,13 @@ async function performSchedule(
     const leadDays = LEAD_TIME_KEYS[prefs.renewalAlertDays as number] ? (prefs.renewalAlertDays as number) : 3;
     const renewalRemindersOn = prefs.renewalAlerts !== false;
 
-    for (const sub of subscriptions) {
+    /* Paused rows carry no planned charge, so they must not carry a reminder
+       either. subscriptions.list returns them because the management screen
+       needs them; every consumer of planned activity has to filter. Before
+       this, pausing a subscription stopped the server's reminder EMAIL and
+       left the phone's local notification queued, so the same row was paused
+       in one place and live in the other. */
+    for (const sub of livePlanned(subscriptions)) {
       /* Bail the moment the session changes under us. This loop awaits once per
          notification, so a run that began before a sign-out can still be going
          after it and would re-queue everything cancelAllReminders just cleared,

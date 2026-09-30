@@ -75,7 +75,14 @@ describe("the weekly spending chart only counts charges that happen", () => {
   const src = read("app/(tabs)/analytics.tsx");
 
   it("filters phantom occurrences out of the buckets", () => {
-    expect(src).toMatch(/import \{ getOccurrencesInMonth, isPhantomOccurrence \}/);
+    /* Membership, not the exact import list. Pinning the whole list made this
+       fail when `livePlanned` was added beside it, which is an addition rather
+       than a regression. What matters is that both names are imported and the
+       call below actually happens. */
+    const imp = /import \{([^}]*)\} from "\.\.\/\.\.\/lib\/recurrence";/.exec(src);
+    expect(imp).not.toBeNull();
+    expect(imp[1]).toContain("getOccurrencesInMonth");
+    expect(imp[1]).toContain("isPhantomOccurrence");
     expect(src).toMatch(/if \(isPhantomOccurrence\(sub, date, today\)\) continue;/);
   });
 

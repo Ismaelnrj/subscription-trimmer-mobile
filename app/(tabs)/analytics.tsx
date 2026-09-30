@@ -14,7 +14,7 @@ import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { getCategoryIcon } from "../../lib/categories";
 import { useCategoryLabel } from "../../lib/category-label";
-import { getOccurrencesInMonth, isPhantomOccurrence } from "../../lib/recurrence";
+import { getOccurrencesInMonth, isPhantomOccurrence, livePlanned } from "../../lib/recurrence";
 
 // 4, not 5 - a 5th bucket would only ever cover 0-3 leftover days (0 in a
 // 28-day February, up to 3 in a 31-day month) but render with the same
@@ -56,7 +56,11 @@ export default function AnalyticsScreen() {
 
   const weeklyBuckets = useMemo(() => {
     const buckets = new Array(WEEK_COUNT).fill(0);
-    for (const sub of subscriptions as any[]) {
+    /* Paused rows carry no planned charge, so they must not raise a weekly
+       bar. Same reason the phantom filter sits here: this panel promises to
+       show which weeks hit hardest, and a bar for a paused subscription is a
+       week that does not hit at all. */
+    for (const sub of livePlanned(subscriptions as any[])) {
       for (const date of getOccurrencesInMonth(sub, today)) {
         /* getOccurrencesInMonth projects a cycle indefinitely in both
            directions from nextBillingDate, and backwards past a point it

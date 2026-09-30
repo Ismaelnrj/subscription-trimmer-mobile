@@ -22,7 +22,7 @@ import { useDateFormat } from "../../lib/date-locale";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
 import { track } from "../../lib/analytics";
-import { ServiceTemplate, searchTemplates, formatTemplatePrice, getPopularTemplates } from "../../lib/service-templates";
+import { ServiceTemplate, searchTemplates, formatTemplatePrice, getPopularTemplates, findTemplateByExactName } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
 import { LogoImage } from "../../components/LogoImage";
 import * as SecureStore from "expo-secure-store";
@@ -560,15 +560,33 @@ export default function SubscriptionsScreen() {
 
   const handleLoadExamples = async () => {
     setLoadingExamples(true);
-    /* These three prices are the US figures, so they are tagged USD rather than
-       the user's current currency. Sending the display currency would assert
-       that 15.99 is 15.99 in euros, which is the same class of error the
-       currency column exists to stop, committed by the sample data itself. */
-    const examples = [
-      { name: "Netflix", price: 15.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null, currency: "USD" },
-      { name: "Spotify", price: 9.99, billingCycle: "monthly", category: "entertainment", trialEndDate: null, currency: "USD" },
-      { name: "iCloud+", price: 2.99, billingCycle: "monthly", category: "software", trialEndDate: null, currency: "USD" },
+    /* THESE COME FROM THE CATALOGUE NOW, looked up at the user's own currency.
+       They used to be three hardcoded rows tagged USD, and that was wrong two
+       ways at once.
+       The currency: this is the EMPTY STATE button, so for any non-USD user it
+       made their very first screen a mix of USD rows against a EUR base, and
+       every total on it an unlabelled sum of two currencies. The default first
+       run of the app demonstrated the one error the currency column exists to
+       prevent.
+       And the prices: the old comment claimed "these three prices are the US
+       figures". 15.99 is the DACH Netflix price. The US price is 19.99, and the
+       catalogue says Spotify Premium is 12.99 rather than 9.99, so two of the
+       three were stale as well as mislabelled.
+       findTemplateByExactName already answers "which regional row" by currency,
+       which is exactly this question, and every row named here carries a
+       verified date. The hardcoded values remain as a fallback so a renamed
+       template degrades to the old behaviour instead of loading nothing. */
+    const seeds: Array<{ template: string; fallback: { name: string; price: number; billingCycle: string; category: string; currency: string } }> = [
+      { template: "Netflix Standard", fallback: { name: "Netflix", price: 19.99, billingCycle: "monthly", category: "entertainment", currency: "USD" } },
+      { template: "Spotify Premium",  fallback: { name: "Spotify", price: 12.99, billingCycle: "monthly", category: "entertainment", currency: "USD" } },
+      { template: "iCloud+ 200GB",    fallback: { name: "iCloud+", price: 2.99, billingCycle: "monthly", category: "software", currency: "USD" } },
     ];
+    const examples = seeds.map(({ template, fallback }) => {
+      const t = findTemplateByExactName(template, baseCurrencyCode);
+      return t
+        ? { name: t.name, price: t.defaultPrice, billingCycle: t.billingCycle, category: t.category, trialEndDate: null, currency: t.currency }
+        : { ...fallback, trialEndDate: null };
+    });
     try {
       for (const ex of examples) {
         const res = await apiClient.post("/trpc/subscriptions.create", ex).catch((e: any) => e.response);

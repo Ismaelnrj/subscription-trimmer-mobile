@@ -510,7 +510,10 @@
     "couldntLoad": "Couldn't load alerts. Pull down to retry.",
     "allClear": "All clear! No alerts at the moment.",
     "service": "Service:",
-    "viewSubscription": "View Subscription"
+    "viewSubscription": "View Subscription",
+    "severity_high": "High",
+    "severity_medium": "Medium",
+    "severity_low": "Low"
   },
   "cancelGuide": {
     "heading": "How to cancel {{name}}",

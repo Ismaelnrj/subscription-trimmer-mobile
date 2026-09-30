@@ -29,6 +29,18 @@ eval(helpers);
    rest of the file rather than disabling a real rule across the test suite. */
 /* global addMonthsUTC, advanceBillingDate, startOfUtcDay, nextBillingDate */
 
+/* parseCalendarDateStrict sits AFTER toMonthly, deliberately outside the slice
+   above so that adding it could not disturb what that eval already defines. The
+   update block now calls it, so it is lifted out separately and passed into the
+   harness below as the REAL function rather than reimplemented here: a copy
+   would test the copy. */
+const STRICT_SRC = (() => {
+  const i = SERVER.indexOf("function parseCalendarDateStrict");
+  return SERVER.slice(i, SERVER.indexOf("\n}\n", i) + 3);
+})();
+// eslint-disable-next-line no-eval
+const parseCalendarDateStrict = eval(`(${STRICT_SRC})`);
+
 const day = (d) => d.toISOString().slice(0, 10);
 const utc = (s) => new Date(s + "T00:00:00.000Z");
 
@@ -182,9 +194,9 @@ describe("editing a subscription does not throw the anchor away", () => {
     SERVER.indexOf("const result = await pool.query(", SERVER.indexOf("subscriptions.update"))
   );
   const decide = (existing, body) =>
-    new Function("existing", "billingCycle", "nextBillingDateInput", "nextBillingDate", "res",
+    new Function("existing", "billingCycle", "nextBillingDateInput", "nextBillingDate", "parseCalendarDateStrict", "res",
       BLOCK + "\nreturn { newBillingDate, newAnchorDay };"
-    )(existing, body.billingCycle, body.nextBillingDate, nextBillingDate, { status: () => ({ json: () => {} }) });
+    )(existing, body.billingCycle, body.nextBillingDate, nextBillingDate, parseCalendarDateStrict, { status: () => ({ json: () => {} }) });
 
   // Really billed on the 31st, currently sitting at a clamped 28 February.
   const clamped = { next_billing_date: utc("2027-02-28"), billing_cycle: "monthly", billing_anchor_day: 31 };

@@ -1318,6 +1318,31 @@ function toMonthly(price, billingCycle) {
   return price;
 }
 
+/* A BILLING DATE THE CALENDAR DOES NOT HAVE MUST BE REFUSED, and `isNaN` does
+   not refuse it. JavaScript ROLLS OVER instead of failing: `new Date(
+   "2026-02-31")` is a perfectly valid Date object holding 3 MARCH, so an
+   isNaN-only guard accepted 31 February, 31 April and 29 February in a
+   non-leap year and silently stored a different day from the one submitted.
+   Both this file's create and update routes had exactly that guard.
+
+   The components are checked against a date built with Date.UTC rather than
+   against `parsed`, so the answer does not depend on the server's timezone or
+   on whether the client sent a bare `YYYY-MM-DD` or a full ISO instant. If the
+   input carries no leading calendar date at all, behaviour is unchanged and
+   only the isNaN check applies, so nothing that used to be accepted starts
+   being refused. */
+function parseCalendarDateStrict(input) {
+  const parsed = new Date(input);
+  if (isNaN(parsed.getTime())) return null;
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(input).trim());
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    const probe = new Date(Date.UTC(y, mo - 1, d));
+    if (probe.getUTCFullYear() !== y || probe.getUTCMonth() + 1 !== mo || probe.getUTCDate() !== d) return null;
+  }
+  return parsed;
+}
+
 /* WHAT A CANCELLATION ACTUALLY SAVED YOU, and the reason it is a COUNT of real
    charges rather than a rate times a duration.
    The tempting version is `monthlyPrice * monthsSinceCancelling`. It is wrong in
@@ -2331,8 +2356,8 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
     let billingDate = nextBillingDate(billingCycle);
     if (nextBillingDateInput) {
-      const parsed = new Date(nextBillingDateInput);
-      if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
+      const parsed = parseCalendarDateStrict(nextBillingDateInput);
+      if (parsed === null) return res.status(400).json({ error: 'Invalid next billing date' });
       billingDate = parsed.toISOString();
     }
 
@@ -2457,8 +2482,8 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       newAnchorDay = new Date(newBillingDate).getUTCDate();
     }
     if (nextBillingDateInput) {
-      const parsed = new Date(nextBillingDateInput);
-      if (isNaN(parsed.getTime())) return res.status(400).json({ error: 'Invalid next billing date' });
+      const parsed = parseCalendarDateStrict(nextBillingDateInput);
+      if (parsed === null) return res.status(400).json({ error: 'Invalid next billing date' });
       const submittedDay = parsed.toISOString().slice(0, 10);
       const storedDay = existing.next_billing_date
         ? new Date(existing.next_billing_date).toISOString().slice(0, 10)
@@ -2810,6 +2835,33 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
     }
     const categoryBreakdown = Object.entries(byCategory).map(([category, amount]) => ({ category, amount }));
 
+    /* `monthlyTotal` ABOVE ADDS RAW NUMBERS ACROSS CURRENCIES, so a 10 EUR row
+       and a 10 USD row make 20 of nothing, and the dashboard then renders that
+       20 as though it were already in the user's base currency. This is the
+       first screen after onboarding, and Load examples used to seed USD rows
+       for every user, so the default first run demonstrated it.
+       NO EXCHANGE RATE IS INTRODUCED HERE, deliberately: rates belong to the
+       client, which already fetches and validates them in lib/currency-store,
+       and adding a backend rate dependency would make every summary depend on
+       a third party being reachable. The server reports WHAT WAS SPENT IN
+       WHICH CURRENCY and the client, which knows the display currency and the
+       rates, does the one conversion.
+       The existing fields are left exactly as they were. An installed build
+       that has never heard of these keys keeps its current behaviour rather
+       than having the meaning of a number it already reads changed underneath
+       it. A row with no currency is keyed "" and the client reads that as the
+       user's base, which is what it already assumes for such a row. */
+    const monthlyByCurrency = {};
+    const categoryByCurrency = {};
+    for (const s of subs) {
+      const monthly = toMonthly(parseFloat(s.price), s.billing_cycle);
+      if (!Number.isFinite(monthly)) continue;
+      const code = s.currency ? String(s.currency).toUpperCase() : '';
+      monthlyByCurrency[code] = (monthlyByCurrency[code] || 0) + monthly;
+      categoryByCurrency[s.category] = categoryByCurrency[s.category] || {};
+      categoryByCurrency[s.category][code] = (categoryByCurrency[s.category][code] || 0) + monthly;
+    }
+
     res.json(trpc({
       activeSubscriptions: subs.length,
       totalSubscriptions: allSubs.length,
@@ -2817,6 +2869,8 @@ app.get('/api/trpc/analytics.summary', authMiddleware, async (req, res) => {
       yearlyTotal: monthlyTotal * 12,
       alertCount,
       categoryBreakdown,
+      monthlyByCurrency,
+      categoryByCurrency,
     }));
   } catch (err) {
     handleError(err, res);

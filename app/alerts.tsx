@@ -17,13 +17,33 @@ export default function AlertsScreen() {
     queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
   });
 
+  /* These names must match what alerts.list in backend/server.js actually
+     sends: renewal_alert, trial_alert and expensive_alert. They used to read
+     "renewal" and "expensive", which match NO type the server has ever sent,
+     so every alert on this screen fell through to the generic "information"
+     icon and the severity colour was the only thing telling them apart.
+     The bare names are kept as aliases so a payload from an older or
+     hand-rolled source still resolves rather than silently going generic. */
   const getAlertIcon = (type: string) => {
     switch (type) {
+      case "expensive_alert":
       case "expensive": return "alert-circle";
+      case "renewal_alert":
       case "renewal": return "calendar-alert";
+      case "trial_alert":
+      case "trial": return "clock-alert-outline";
       default: return "information";
     }
   };
+
+  /* The badge used to render `severity.charAt(0).toUpperCase() + slice(1)`,
+     which is a bare English JSX text node: a German reader got "High".
+     An unknown severity falls back to the server's own string rather than
+     blanking the badge. */
+  const severityLabel = (severity: string) =>
+    severity === "high" || severity === "medium" || severity === "low"
+      ? t(`alerts.severity_${severity}`)
+      : severity;
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -73,7 +93,7 @@ export default function AlertsScreen() {
                     <Text style={styles.alertTitle}>{alert.title}</Text>
                     <View style={[styles.alertBadge, { backgroundColor: bg }]}>
                       <Text style={[styles.alertBadgeText, { color: col }]}>
-                        {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
+                        {severityLabel(alert.severity)}
                       </Text>
                     </View>
                   </View>

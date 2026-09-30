@@ -510,7 +510,10 @@
     "couldntLoad": "Hinweise konnten nicht geladen werden. Nach unten ziehen zum Wiederholen.",
     "allClear": "Alles klar! Derzeit keine Hinweise.",
     "service": "Dienst:",
-    "viewSubscription": "Abonnement anzeigen"
+    "viewSubscription": "Abonnement anzeigen",
+    "severity_high": "Hoch",
+    "severity_medium": "Mittel",
+    "severity_low": "Niedrig"
   },
   "cancelGuide": {
     "heading": "So kündigst du {{name}}",

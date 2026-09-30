@@ -140,11 +140,44 @@ describe("the client sends what it knows", () => {
     expect(SCREEN).toMatch(/currency: baseCurrencyCode/);
   });
 
-  it("tags the sample subscriptions USD, since those are the US figures", () => {
-    // Sending the display currency would assert 15.99 is 15.99 in euros, which
-    // is the same error the column exists to stop, made by the sample data.
-    const examples = SCREEN.slice(SCREEN.indexOf("const examples = ["));
-    expect(examples.slice(0, 700)).toMatch(/Netflix[^}]*currency: "USD"/);
+  /* THIS BLOCK REPLACES A TEST NAMED "tags the sample subscriptions USD, since
+     those are the US figures", AND THAT NAME WAS THE DEFECT. 15.99 is the DACH
+     Netflix price. The US price is 19.99, and the catalogue puts Spotify
+     Premium at 12.99 rather than 9.99, so two of the three hardcoded rows were
+     stale as well as mislabelled, and the test said the mislabelling was
+     correct by design.
+     The concern underneath it was real and is preserved below: the sample data
+     must not assert that a dollar figure is a euro figure. It is met by reading
+     the catalogue at the user's own currency instead, so a euro user gets the
+     real 15.99 EUR row rather than a dollar number wearing a euro symbol. */
+  it("seeds the samples from the catalogue rather than hardcoded figures", () => {
+    expect(SCREEN).toContain("findTemplateByExactName");
+    const seeded = SCREEN.slice(SCREEN.indexOf("const examples = seeds.map"));
+    expect(seeded.slice(0, 400)).toMatch(/currency: t\.currency/);
+    expect(seeded.slice(0, 400)).toMatch(/price: t\.defaultPrice/);
+  });
+
+  it("looks the rows up at the user's own currency, not a fixed one", () => {
+    /* This is the EMPTY STATE button, so for a non-USD user the old rows made
+       the very first screen of the app a mix of two currencies, and every
+       total on it a sum of two. */
+    expect(SCREEN).toMatch(/findTemplateByExactName\(template, baseCurrencyCode\)/);
+  });
+
+  it("the three seeds resolve to one currency, and it is the user's", () => {
+    // Behavioural, against the real catalogue rather than the screen's source.
+    const { findTemplateByExactName } = require("../lib/service-templates");
+    for (const base of ["USD", "EUR"]) {
+      const rows = ["Netflix Standard", "Spotify Premium", "iCloud+ 200GB"]
+        .map((n) => findTemplateByExactName(n, base));
+      expect(rows.every(Boolean)).toBe(true);
+      expect([...new Set(rows.map((t) => t.currency))]).toEqual([base]);
+    }
+  });
+
+  it("the stale hardcoded figures cannot come back", () => {
+    expect(SCREEN).not.toMatch(/name: "Netflix", price: 15\.99/);
+    expect(SCREEN).not.toMatch(/name: "Spotify", price: 9\.99/);
   });
 });
 

@@ -25,6 +25,42 @@ export interface RecurringSub {
   billingAnchorDay?: number | null;
 }
 
+/** A subscription that is paused has no PLANNED future charges.
+ *
+ *  The server already knows this and applies it consistently: the reminder
+ *  email cron, analytics.summary and alerts.list all filter
+ *  `is_active = TRUE`. subscriptions.list deliberately does NOT, because that
+ *  one query also feeds the management screen, where a paused row must still
+ *  be visible so you can resume it.
+ *
+ *  So the filter has to happen client side, and before this existed it
+ *  happened NOWHERE: the notification scheduler, the calendar grid, the
+ *  weekly spending chart, the dashboard's next payment and buildTips all
+ *  consumed the raw list. Pausing a subscription stopped the emails and
+ *  changed nothing on the phone, so the same row was paused on the server and
+ *  live on the device. That is the split brain this codebase keeps recording,
+ *  last seen when the calendar and the subscription card named two different
+ *  days for one renewal.
+ *
+ *  `!== false` rather than `=== true` on purpose, matching the server's own
+ *  `isActive: s.is_active ?? true`: a row written before the column existed
+ *  has no value and is active, so treating absent as paused would silently
+ *  stop reminders for the oldest accounts.
+ *
+ *  CANCELLED rows need no test here. subscriptions.list excludes them at the
+ *  query, with a comment saying why, and subscriptions.cancelled serves them
+ *  separately. */
+export function hasPlannedCharges(sub: { isActive?: boolean | null }): boolean {
+  return sub.isActive !== false;
+}
+
+/** Every subscription with planned future charges. Use this, not the raw list,
+ *  before scheduling a reminder, projecting an occurrence, totalling planned
+ *  spend or naming the next payment. */
+export function livePlanned<T extends { isActive?: boolean | null }>(subs: T[]): T[] {
+  return subs.filter(hasPlannedCharges);
+}
+
 function anchorDayOf(sub: RecurringSub, anchor: Date): number {
   const d = Number(sub.billingAnchorDay);
   return Number.isInteger(d) && d >= 1 && d <= 31 ? d : getDate(anchor);

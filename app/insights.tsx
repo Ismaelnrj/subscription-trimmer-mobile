@@ -22,6 +22,9 @@ export type Sub = {
   // one it is displayed in. Optional because a row written before the column
   // existed has none, and `fmtC` correctly falls back to the global base there.
   currency?: string | null;
+  /* Paused. Optional and nullable to match the server's own
+     `isActive: s.is_active ?? true`, so an absent value reads as active. */
+  isActive?: boolean | null;
 };
 export type Tip = {
   id: string; icon: string; color: string;
@@ -87,12 +90,24 @@ export function buildTips(
   singleSubThreshold: number = DEFAULT_SINGLE_SUB_THRESHOLD,
   currencyContext?: { baseCurrencyCode: string; rates: Record<string, number> }
 ): Tip[] {
-  if (subs.length === 0) return [];
+  /* FILTERED HERE rather than at the call sites, and the SIGNATURE IS
+     DELIBERATELY UNCHANGED. There are two callers (this screen and the
+     dashboard), and a third would have to remember; filtering inside means
+     none of them can forget, which is the same reason the accessibility guard
+     is a scan rather than a list and the phantom filter lives in one map.
+
+     Adding a parameter is what shipped `TypeError: 50 is not a function` to
+     every dashboard in September 2026, so the fix takes no new argument.
+
+     Paused rows must not raise a saving tip: the tip names money you are not
+     currently spending, and the advice is to cancel something already paused. */
+  const planned = subs.filter((s) => s.isActive !== false);
+  if (planned.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();
-  const totalMonthly = subs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+  const totalMonthly = planned.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
   const byCategory: Record<string, Sub[]> = {};
-  for (const s of subs) { byCategory[s.category] = byCategory[s.category] || []; byCategory[s.category].push(s); }
+  for (const s of planned) { byCategory[s.category] = byCategory[s.category] || []; byCategory[s.category].push(s); }
 
   /* The streaming and fitness rules are specialisations of the generic
      "several in one category" rule, so for anyone with 3 or more streaming
@@ -107,7 +122,7 @@ export function buildTips(
   const coveredCategories = new Set<string>();
 
   // Streaming overlap (3+ streaming services)
-  const streamingSubs = subs.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
+  const streamingSubs = planned.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
   if (streamingSubs.length >= 3) {
     const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
@@ -119,7 +134,7 @@ export function buildTips(
   }
 
   // Fitness overlap (2+ fitness services)
-  const fitnessSubs = subs.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
+  const fitnessSubs = planned.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
   if (fitnessSubs.length >= 2) {
     const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
     tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
@@ -150,7 +165,7 @@ export function buildTips(
 
 
   // Price increase alerts
-  for (const s of subs) {
+  for (const s of planned) {
     if (!s.priceIncrease) continue;
     const diff = s.priceIncrease.to - s.priceIncrease.from;
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
@@ -166,7 +181,7 @@ export function buildTips(
   // catalog) has since risen above what you're still tracking here.
   if (currencyContext) {
     const { baseCurrencyCode, rates } = currencyContext;
-    for (const s of subs) {
+    for (const s of planned) {
       const template = findTemplateByExactName(s.name, baseCurrencyCode);
       if (!template) continue;
       /* Only speak for a price somebody has actually checked recently.
@@ -195,7 +210,7 @@ export function buildTips(
   }
 
   // Trial alerts
-  for (const s of subs) {
+  for (const s of planned) {
     if (!s.trialEndDate) continue;
     const days = daysUntil(s.trialEndDate, now);
     // `days != null` first: null >= 0 is TRUE in JavaScript, so a nullable
@@ -218,7 +233,7 @@ export function buildTips(
   }
 
   // Individual expensive subs
-  for (const s of subs) {
+  for (const s of planned) {
     if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
         title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle), s.currency) }),
@@ -228,7 +243,7 @@ export function buildTips(
   }
 
   // Switch monthly → yearly
-  const monthlySubs = subs.filter(s => s.billingCycle === "monthly" && s.price >= 5);
+  const monthlySubs = planned.filter(s => s.billingCycle === "monthly" && s.price >= 5);
   if (monthlySubs.length > 0) {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
     tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#1F7A62",
@@ -238,16 +253,16 @@ export function buildTips(
   }
 
   // No yearly plans at all — nudge harder
-  const yearlyCount = subs.filter(s => s.billingCycle === "yearly").length;
-  if (yearlyCount === 0 && subs.length >= 4) {
+  const yearlyCount = planned.filter(s => s.billingCycle === "yearly").length;
+  if (yearlyCount === 0 && planned.length >= 4) {
     tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#142B3A",
       title: t("insights.noYearlyTitle"),
-      detail: t("insights.noYearlyDetail", { count: subs.length }),
+      detail: t("insights.noYearlyDetail", { count: planned.length }),
       priority: "medium" });
   }
 
   // Renewals this week
-  const thisWeek = subs.filter(s => {
+  const thisWeek = planned.filter(s => {
     const days = daysUntil(s.nextBillingDate, now);
     return days != null && days >= 0 && days <= 7;
   });
@@ -262,7 +277,7 @@ export function buildTips(
   if (tips.length === 0) {
     tips.push({ id: "all-good", icon: "check-decagram", color: "#1F7A62",
       title: t("insights.allGoodTitle"),
-      detail: t("insights.allGoodDetail", { count: subs.length, total: fmtC(totalMonthly) }),
+      detail: t("insights.allGoodDetail", { count: planned.length, total: fmtC(totalMonthly) }),
       priority: "low" });
   }
 

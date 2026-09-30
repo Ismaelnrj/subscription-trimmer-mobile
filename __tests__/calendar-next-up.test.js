@@ -69,7 +69,16 @@ describe("an empty day says when the next renewal is", () => {
     // happened to be selected when the subscriptions last loaded.
     const memo = CODE.slice(CODE.indexOf("const nextUp = useMemo"));
     const deps = memo.slice(0, memo.indexOf("];") + 1);
-    expect(deps).toMatch(/\[subscriptions, selectedDate\]/);
+    expect(deps).toMatch(/selectedDate/);
+    /* And the LIST the memo actually reads has to be in there too, whatever it
+       is called. Pinning the literal `[subscriptions, selectedDate]` made this
+       assertion fail the moment paused rows started being filtered out into a
+       derived `planned` list, which is a correct change: naming the real first
+       argument ties the dependency to the data source instead of to a spelling,
+       so it keeps catching a genuinely missing dependency and stops objecting
+       to a rename. */
+    const source = argsOf(memo, "getUpcomingOccurrences")[0];
+    expect(deps).toContain(source);
   });
 
   it("caps the list rather than printing the whole future", () => {

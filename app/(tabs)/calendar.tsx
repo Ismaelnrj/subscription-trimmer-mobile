@@ -13,7 +13,7 @@ import { useTheme, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
 import { LogoImage } from "../../components/LogoImage";
-import { getOccurrencesInMonth, getUpcomingOccurrences, isPhantomOccurrence } from "../../lib/recurrence";
+import { getOccurrencesInMonth, getUpcomingOccurrences, isPhantomOccurrence, livePlanned } from "../../lib/recurrence";
 import { getCategoryIcon } from "../../lib/categories";
 import { useCategoryLabel, canonicalCategory } from "../../lib/category-label";
 
@@ -62,9 +62,16 @@ export default function CalendarScreen() {
      nobody is watching and not worth a timer for. */
   const today = useMemo(() => startOfDay(new Date()), []);
 
+  /* Paused rows have no planned charge. Computed ONCE and used by all three
+     consumers below (the day map, the timeline and the Next up list), for the
+     same reason isPhantomOccurrence is applied in one place: three separate
+     filters are three chances for one to be forgotten, and a missed one draws
+     a dot for money that will never move. */
+  const planned = useMemo(() => livePlanned(subscriptions as any[]), [subscriptions]);
+
   const occurrencesByDay = useMemo(() => {
     const map = new Map<string, any[]>();
-    for (const sub of subscriptions as any[]) {
+    for (const sub of planned) {
       const dates = getOccurrencesInMonth(sub, month);
       for (const date of dates) {
         /* Drops the impossible band, `[today, anchor)`. Without this the grid
@@ -84,7 +91,7 @@ export default function CalendarScreen() {
       }
     }
     return map;
-  }, [subscriptions, month, today]);
+  }, [planned, month, today]);
 
   // markedDates deduplicates by colour because that is what the dots draw.
   // The spoken label needs the real number, so it is derived separately from
@@ -165,8 +172,8 @@ export default function CalendarScreen() {
   const selectedDayTotal = selectedDaySubs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0);
 
   const upcoming = useMemo(
-    () => getUpcomingOccurrences(subscriptions as any[], new Date(), TIMELINE_WINDOW_DAYS),
-    [subscriptions]
+    () => getUpcomingOccurrences(planned, new Date(), TIMELINE_WINDOW_DAYS),
+    [planned]
   );
 
   /* What is due AFTER the day being looked at, for the days that have nothing
@@ -183,10 +190,10 @@ export default function CalendarScreen() {
   const nextUp = useMemo(
     () =>
       selectedDate
-        ? getUpcomingOccurrences(subscriptions as any[], selectedDate, NEXT_UP_WINDOW_DAYS)
+        ? getUpcomingOccurrences(planned, selectedDate, NEXT_UP_WINDOW_DAYS)
             .slice(0, NEXT_UP_COUNT)
         : [],
-    [subscriptions, selectedDate]
+    [planned, selectedDate]
   );
 
   const monthSummary = useMemo(() => {

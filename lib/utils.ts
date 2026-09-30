@@ -7,7 +7,21 @@ export function normaliseDateInput(raw: string): string | null {
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
     const d = new Date(trimmed + "T00:00:00");
-    return isNaN(d.getTime()) ? null : trimmed;
+    if (isNaN(d.getTime())) return null;
+    /* isNaN ALONE IS NOT A VALIDITY CHECK, because JavaScript rolls a date
+       over instead of refusing it: `new Date("2026-02-31T00:00:00")` is a
+       perfectly valid Date object holding 3 MARCH. So this branch used to
+       accept 2026-02-31, 2026-04-31 and 2025-02-29 and hand each one straight
+       back as the billing date the user typed.
+       The slash branch two blocks down has always compared the month back,
+       which is why `29/02/2025` was correctly refused while `2025-02-29` was
+       not: one helper right, its neighbour wrong, the same shape as
+       fmtIcsDate sitting beside nextDay.
+       Comparing all three components catches the rollover whichever field
+       overflowed, and a real leap day still passes because nothing moved. */
+    const [y, m, day] = trimmed.split("-").map(Number);
+    if (d.getFullYear() !== y || d.getMonth() + 1 !== m || d.getDate() !== day) return null;
+    return trimmed;
   }
 
   const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);

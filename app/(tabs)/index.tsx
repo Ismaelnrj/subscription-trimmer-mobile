@@ -6,8 +6,9 @@ import { useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
+import { livePlanned } from "../../lib/recurrence";
 import { daysUntil } from "../../lib/utils";
-import { useCurrencyStore, useFmt } from "../../lib/currency-store";
+import { useCurrencyStore, useFmt, useMixedTotalInBase } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
@@ -65,7 +66,24 @@ export default function DashboardScreen() {
   const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
-    onSuccess: (data: any[]) => scheduleRenewalReminders(data, currency.symbol, notifPrefs ?? {}),
+    /* `notifPrefs ?? {}` was the bug here, and it is the SAME one
+       lib/language-store.ts already carries a long comment about. The
+       scheduler reads an absent preference as ON, with a three day lead,
+       which is the right default FOR THE SCHEDULER (dropping reminders
+       because a query was slow is the failure this product cannot afford)
+       and the wrong one for a caller: the two queries race, so on any cold
+       start where preferences lose, this re-enabled reminders somebody had
+       explicitly turned off and silently replaced a seven day choice with
+       three.
+
+       Not loaded means DO NOTHING. Nothing is lost by skipping: the effect
+       below fires the moment preferences arrive and schedules with the real
+       values. language-store.ts fixed exactly this and the fix was never
+       applied to this caller. */
+    onSuccess: (data: any[]) => {
+      if (!notifPrefs) return;
+      scheduleRenewalReminders(data, currency.symbol, notifPrefs);
+    },
   });
 
   /* Reschedule when the preferences themselves change, not only when the
@@ -94,13 +112,24 @@ export default function DashboardScreen() {
   };
 
   const { user } = useAuthStore();
+  const mixedTotalInBase = useMixedTotalInBase();
   const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading || subsLoading;
   const isError = summaryError || subsError;
   const recentSubs = subscriptions.slice(0, 3);
 
   const budgetGoal = settings?.budgetGoal;
-  const monthlyTotal = summary?.monthlyTotal ?? 0;
+  /* `summary.monthlyTotal` ADDS RAW NUMBERS ACROSS CURRENCIES, so a 10 EUR row
+     and a 10 USD row arrive here as 20, and fmtC then converts that 20 as
+     though it were already base currency. Load examples used to seed USD rows
+     for every user, so this was the default first run for anyone outside the
+     US. monthlyByCurrency carries the parts; this converts each once into the
+     base currency, which is what every consumer below already assumes:
+     fmtC converts base to display, and budgetGoal is a bare number with no
+     currency column, so the percentage and the remaining amount are
+     base-currency comparisons too. The old field is the fallback, so an older
+     server keeps the previous behaviour rather than rendering nothing. */
+  const monthlyTotal = mixedTotalInBase(summary?.monthlyByCurrency, summary?.monthlyTotal ?? 0);
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
   const budgetPct = Math.min(budgetRaw, 100);
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
@@ -112,7 +141,10 @@ export default function DashboardScreen() {
     (a) => !a.subscriptionId || activeSubIds.has(a.subscriptionId)
   ).length;
 
-  const yearlyTotal = summary?.yearlyTotal ?? 0;
+  /* Derived from the corrected monthly figure rather than read from the
+     server's `yearlyTotal`, which is the mixed-currency monthlyTotal * 12 and
+     therefore wrong in exactly the same way, twelve times over. */
+  const yearlyTotal = monthlyTotal * 12;
   const yearlyAnim = useRef(new Animated.Value(yearlyTotal)).current;
   const [displayYearly, setDisplayYearly] = useState(yearlyTotal);
   const prevSubsCount = useRef<number | null>(null);
@@ -144,7 +176,14 @@ export default function DashboardScreen() {
     }
   }, [yearlyTotal, subscriptions.length]);
 
-  const trialsSoon = (subscriptions as any[]).filter((s) => {
+  /* Paused rows carry no planned charge, so they raise no trial warning and
+     are not your next payment. This matches the SERVER exactly: alerts.list
+     filters `is_active = TRUE` before it generates a trial_alert, so without
+     this the phone warned about a trial the backend had already decided was
+     not live. */
+  const planned = livePlanned(subscriptions as any[]);
+
+  const trialsSoon = planned.filter((s) => {
     if (!s.trialEndDate) return false;
     const days = daysUntil(s.trialEndDate);
     return days != null && days >= 0 && days <= 14;
@@ -211,7 +250,7 @@ export default function DashboardScreen() {
   const greeting = greetingHour < 12 ? t("dashboard.goodMorning") : greetingHour < 18 ? t("dashboard.goodAfternoon") : t("dashboard.goodEvening");
   const firstName = user?.name?.trim().split(/\s+/)[0];
 
-  const nextSub = (subscriptions as any[])
+  const nextSub = planned
     .filter((s) => s.nextBillingDate)
     .sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime())[0];
 
@@ -399,7 +438,7 @@ export default function DashboardScreen() {
             <View style={styles.heroIconOnGradient}>
               <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
             </View>
-            <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
             <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
           </LinearGradient>
         ) : (
@@ -407,7 +446,7 @@ export default function DashboardScreen() {
             <View style={styles.heroIcon}>
               <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
             </View>
-            <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? (summary?.monthlyTotal ?? 0) : displayYearly)}</Text>
+            <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
             <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
           </View>
         )}
@@ -421,7 +460,7 @@ export default function DashboardScreen() {
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.secondaryStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {fmtC(viewMode === "monthly" ? displayYearly : (summary?.monthlyTotal ?? 0))}
+              {fmtC(viewMode === "monthly" ? displayYearly : monthlyTotal)}
             </Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
           </View>
