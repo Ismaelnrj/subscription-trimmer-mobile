@@ -1024,8 +1024,10 @@ last one left off without needing a recap typed out.
   panel is read.
 
 - AN `eas update` IS GENUINELY OWED, 2026-09-30, AND THIS TIME IT IS NOT THE
-  DOCUMENTATION GAP. Master is at `40562f4c` and the publish baseline is still
-  `77dd14a3`. TWELVE TIMES this file has recorded master sitting ahead of the
+  DOCUMENTATION GAP. Master is at `3b2fe722` and the publish baseline is still
+  `77dd14a3`. The FILE LIST below is unchanged at fifteen, but both locale
+  files have moved again since it was written (the referral copy), so the
+  range is the same names carrying more. TWELVE TIMES this file has recorded master sitting ahead of the
   baseline and the gap turning out to be CLAUDE.md or a test. THIS IS THE
   THIRTEENTH AND IT IS DIFFERENT: the range carries FIFTEEN CLIENT FILES.
   `git diff --name-only 77dd14a3..40562f4c` over app/, lib/, components/ and
@@ -1145,6 +1147,131 @@ last one left off without needing a recap typed out.
   redeploy. All three changed files are client, so NONE of this reaches a phone
   until the `eas update` above is run. A user hitting the old bug today still
   hits it.
+
+- A SANDBOX CAN RUN A REAL POSTGRESQL, AND THAT CHANGES WHAT IS VERIFIABLE
+  HERE. Learned 2026-09-30, and it is the biggest correction to this file's
+  own verification section since the Node type stripping entry.
+  THIS FILE HAS SAID FOR WEEKS that a cloud session cannot run the jest suites
+  and must fall back to source reading plus type stripping. True for the app.
+  FALSE for anything whose real behaviour lives in the DATABASE, which is most
+  of `backend/server.js`. Whether GREATEST/LEAST shortens an expiry, whether a
+  BEGIN actually rolls back, whether make_interval refuses a value: none of
+  those can be settled by reading JavaScript, and all three were settled in
+  about twenty minutes.
+  WHAT IS ACTUALLY INSTALLED: `psql` and a full server under
+  `/usr/lib/postgresql/16/bin` (16.13 on the 2026-09-30 image), and
+  `npm install pg --no-save --prefix /tmp/pgs` SUCCEEDS through the agent
+  proxy. So a real cluster plus the real driver are both available.
+  THREE THINGS THAT WILL WASTE TIME IF NOBODY WRITES THEM DOWN, and each cost
+  a round trip:
+    1. `initdb` and `pg_ctl` REFUSE TO RUN AS ROOT and the session is root.
+       There is an unprivileged `postgres` user already on the image, so
+       everything goes through `su postgres -s /bin/bash -c "..."`, and the
+       data directory has to be chowned to it first.
+    2. THE UNIX SOCKET PATH HAS A 107 BYTE LIMIT and the scratchpad path is
+       longer than that on its own, so `-k` pointed at the scratchpad fails
+       with "socket path is too long" AFTER the server appears to start. Put
+       the socket somewhere short, `/tmp/pgs/run`, and it works.
+    3. `pg_ctl ... >/dev/null 2>&1` HIDES THE REASON initdb never ran, and
+       then the failure presents as "server not accepting connections", which
+       sends you looking in the wrong place. Let it print the first time.
+  THE TECHNIQUE, which is the reusable half: pull the real function out of
+  `backend/server.js` with indexOf rather than a regex, hand it a real `pg`
+  Pool through `new Function('pool', ..., src + '; return fn;')`, and drive it
+  against a table you create. That is the revenuecat-webhook eval trick with a
+  REAL database under it instead of a stub, so the SQL is exercised rather than
+  imagined.
+  AND THE NEGATIVE TEST COMES FREE: `git show <ref>:backend/server.js` gives
+  the previous version of the same function, so both can be driven through the
+  same scenarios in one script. That is how "the old code granted MINUS 170
+  days" became a measured sentence rather than an argument.
+  EXTRACT THE SQL, DO NOT RETYPE IT. The comparison that proved the cap fix
+  lifted both expressions out of the two files by string index. Retyping them
+  would have tested a copy, which is this file's own "verify the file, never a
+  copy of it" lesson.
+  WHAT THIS DOES NOT CHANGE: a committed test still cannot depend on it,
+  because CI has no PostgreSQL. So the suite that ships stays source reading,
+  says so in its header, and RECORDS what was measured separately. Both halves
+  are needed: the measurement is the evidence, the committed test is the guard.
+
+- THE REFERRAL REWARD WAS SILENT, AND THREE THINGS UNDER IT WERE BROKEN, fixed
+  2026-09-30 in `3b2fe722`. The owner asked for the email; the email is why the
+  rest had to be fixed, because it has to name a real number.
+  NOTHING TOLD ANYBODY THEY HAD EARNED IT. Five emails existed in the whole
+  backend (verification, password reset, account deleted, renewal reminder,
+  win-back) and none was about referrals. The bonus simply appeared on the
+  referral screen for whoever thought to look, which for the INVITER is a
+  screen they have no reason to open again after sharing their code. The one
+  person whose behaviour the programme exists to change was the one person
+  never told it worked.
+  THE CAP COULD REVOKE BONUS PREMIUM, which is worse than the review that
+  prompted this said. `parseInt(process.env.X, 10) || 12` passes a NEGATIVE
+  through, because parseInt("-5") is -5 and -5 is truthy, and
+  `make_interval(months => -5)` is five months in the PAST. Measured on real
+  PostgreSQL: an expiry of 2026-11-09 becomes 2026-04-30, for BOTH
+  participants. A typo in a Railway variable deleting earned access, not a cap
+  granting less. All digits is not enough either: a long enough run parses to
+  1e21, and a merely large value makes make_interval answer
+  `ERROR: timestamp out of range`, so EVERY reward fails rather than one. It is
+  a safe integer between 1 and 1200 now, mirroring FREE_SUBSCRIPTION_LIMIT,
+  which had this exact guard two hundred lines away and was never swept back.
+  `LEAST` WAS A CAP THAT POINTED BACKWARDS. With an existing expiry already
+  past the ceiling it picked the ceiling and SHORTENED access. Measured, old
+  against new, six scenarios: five identical, and the sixth (ceiling lowered to
+  one month, inviter holding 200 days) granted MINUS 170 days. The fix is
+  GREATEST on the OUTSIDE against the existing value. The comment that stood
+  there said "Someone already at the ceiling keeps what they have rather than
+  losing any of it", the exact opposite of the code, and the FOURTH time this
+  file has recorded a comment documenting an intention rather than a behaviour.
+  THE REWARD WAS TWO WRITES AND COULD HALF HAPPEN. The flag claim and the grant
+  were separate `pool.query` calls and the flag is the ONLY idempotency guard.
+  Injected a failure between them against a real database: `referral_rewarded`
+  true, nothing granted, and the retry returns false. Permanent, silent,
+  unrecoverable, and nobody would ever find out. One transaction on one checked
+  out client now. A POOL IS NOT A CONNECTION: `pool.query` inside a BEGIN can
+  land on a different connection and cover nothing, so every statement goes
+  through `client`.
+  ROLLING BACK IS ONLY WORTH SOMETHING IF SOMETHING RETRIES, which is why
+  rewardReferral SWALLOWS its own failure rather than throwing. Throwing would
+  500 the verification that triggered it, and the client's retry hits
+  `if (user.is_verified) return ...`, which succeeds without ever reaching the
+  reward again: the reward is lost AND the screen breaks. So verify-email now
+  reconciles before that early return, and `referrals.me` reconciles a pending
+  claim, which is the screen somebody opens precisely because they are
+  wondering where their bonus is. No cron, no job, no scheduled anything.
+  A `language` COLUMN, because a referral rewards TWO people and only one is
+  holding the phone. Accept-Language answers for the requester and says nothing
+  about the other, so without it the inviter is always written to in English on
+  the one email that says they earned something. Additive, NULL reads as
+  English exactly as today, recorded fire and forget at register, verify,
+  redeem and referrals.me. THE BULK EMAILS ARE STILL ENGLISH ONLY (the renewal
+  reminder and the win-back both hardcode their strings, and the win-back has a
+  literal `{ monthly: 'Monthly' }` map). The column now exists to fix that as
+  its own change.
+  THE COPY PROMISED A MONTH THE CALCULATION COULD NOT KEEP, since near the cap
+  the real grant is smaller. Both locales say up to 30 days now. The German
+  also said "erhalten ihr beide", which is the wrong person: it is "erhaltet".
+  MY OWN EMAIL COPY HAD THE SAME CLASS OF ERROR and rendering it once is what
+  caught it: "30 days of Premium has been added" and, in German, "1 Tag ...
+  wurden". Both are fixed by moving the count into the object of a verb that
+  does not agree with it ("We have added ...", "Wir haben dir ..."). RENDER THE
+  EMAIL, do not just read the template.
+  WHAT WAS DELIBERATELY NOT DONE, so nobody re-litigates it from the brief: the
+  qualification change (requiring a subscription to be added before granting)
+  is abuse prevention on a funnel with ZERO redemptions, and referral abuse
+  costs almost nothing because Premium's marginal cost is near zero. The line
+  taken was "fix what can take access away from a real person, defer what makes
+  earning harder". The ledger table, offer versioning and rollout flags are
+  deferred with it.
+  MEASURED: 21 assertions against the real function on a real PostgreSQL 16,
+  covering the grant maths, the cap, stacking, zero days sending no mail, the
+  language, the rollback and the retry after it. `__tests__/referral-reward.test.js`
+  is source reading with 28 assertions, 27 of which fail against `ca029a18`,
+  and its header records what was measured separately so a green run here is
+  not mistaken for proof of the database behaviour.
+  NOT YET EXERCISED IN PRODUCTION. The email has never been sent. `Email sent:
+  <messageId>` in the Railway log is what will settle it, and the first real
+  referral is the only thing that can produce it.
 
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
