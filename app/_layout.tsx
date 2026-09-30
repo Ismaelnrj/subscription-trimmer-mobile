@@ -118,7 +118,26 @@ export default function RootLayout() {
         setOnboardingDone(done === "true");
         requestNotificationPermission();
         if (useAuthStore.getState().isAuthenticated) {
-          retryPendingPremiumSync();
+          /* APPLY WHAT COMES BACK. This path exists for a purchase that was
+             CHARGED on a previous run and never reached the account, so a
+             verdict arriving here is the whole point: without applying it the
+             user stays unpaid on screen until something unrelated happens to
+             refetch them, which on a launch that opens straight to the
+             dashboard may be a long time.
+             Fire and forget, and every failure swallowed, exactly as before: a
+             launch must not be delayed or broken by this, and the RevenueCat
+             webhook remains the other way in.
+             The id is re-read at APPLY time rather than captured above,
+             because this resolves after an await and the session can change
+             underneath it. A mismatch means it is not ours to write. */
+          retryPendingPremiumSync()
+            .then((sync) => {
+              if (!sync || sync.status !== "verified") return;
+              const current = useAuthStore.getState().user;
+              if (!current || current.id !== sync.user.id) return;
+              useAuthStore.getState().setUser(sync.user as any);
+            })
+            .catch(() => {});
         }
       } catch {
         setOnboardingDone(false);

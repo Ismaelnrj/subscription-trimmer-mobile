@@ -9,7 +9,8 @@ import { useTranslation } from "react-i18next";
 import { PurchasesPackage } from "react-native-purchases";
 import {
   setupIAP, checkIsPremium, getOfferings,
-  purchasePackage, restorePremium, PRODUCT_IDS,
+  purchasePackage, restorePremium, isUserCancelled, PRODUCT_IDS,
+  type PremiumSync,
 } from "../lib/iap";
 import { useAuthStore } from "../lib/auth-store";
 import { useTheme, AppColors } from "../lib/theme";
@@ -116,7 +117,11 @@ export default function UpgradeScreen() {
         if (ready) {
           const [pkgs, premium] = await Promise.all([getOfferings(), checkIsPremium()]);
           setPackages(pkgs);
-          setIsPremium(premium);
+          /* null means the LOOKUP FAILED, which is not the same as "not
+             premium". `isPremium` is already seeded from the server's own
+             `user.isPaid`, so leaving it alone is strictly better than
+             overwriting a known-good answer with a failure. */
+          if (premium !== null) setIsPremium(premium);
         }
       } finally {
         /* In a finally, and set even when setupIAP said not ready, or the
@@ -131,7 +136,32 @@ export default function UpgradeScreen() {
   const getPackageForPlan = (plan: PlanKey): PurchasesPackage | undefined =>
     packages.find((p) => p.product.identifier === PRODUCT_IDS[plan]);
 
+  /* APPLIES THE SERVER'S USER, AND RETURNS THE SERVER'S VERDICT.
+     Both handlers used to do `setUser({ ...user, isPaid: true })`, which
+     MANUFACTURES a paid account out of the old one by flipping a field. The
+     server already returns the real updated user from verify-premium and that
+     was thrown away, so a 200 carrying `isPaid: false` produced a Premium
+     welcome and an account that lost Premium on the next load.
+     It also protects REFERRAL premium without doing anything special:
+     formatUser computes `isPaid: is_paid || hasBonusPremium(u)`, so the server
+     already folds a free referral month in. Deriving entitlement from the SDK
+     instead would strip it from every referral user.
+     Returns true/false for a real verdict, or null when the server gave none,
+     which the callers must not read as "no". */
+  const applyServerVerdict = (sync: PremiumSync): boolean | null => {
+    if (sync.status !== "verified") return null;
+    /* Never write another account's user into this session. The response is
+       for whoever the request was authenticated as, so a mismatch means the
+       session changed underneath this call. */
+    if (!user || sync.user.id !== user.id) return null;
+    setUser(sync.user as any);
+    setIsPremium(sync.user.isPaid);
+    return sync.user.isPaid;
+  };
+
   const handleBuy = async () => {
+    // One store operation at a time: a second tap must not start a second one.
+    if (loading || restoring) return;
     if (!iapReady) {
       Alert.alert(t("common.error"), t("upgrade.errNotAvailable"));
       return;
@@ -143,19 +173,23 @@ export default function UpgradeScreen() {
     }
     setLoading(true);
     try {
-      const { active, synced } = await purchasePackage(pkg);
-      if (active && synced) {
-        setIsPremium(true);
+      const { sync } = await purchasePackage(pkg);
+      if (applyServerVerdict(sync) === true) {
         track("upgrade_completed", { plan: selectedPlan });
-        if (user) setUser({ ...user, isPaid: true });
         Alert.alert(t("upgrade.welcomeTitle"), t("upgrade.welcomeMsg"), [
           { text: t("upgrade.welcomeBtn"), onPress: () => router.back() },
         ]);
       } else {
+        /* CHARGED, NOT YET CONFIRMED. Reached either because the server could
+           not be asked or because it has not seen the entitlement yet. Never a
+           failure message: the money has already moved, and telling somebody a
+           payment failed is how they buy it twice. */
         Alert.alert(t("upgrade.purchaseReceivedTitle"), t("upgrade.purchaseReceivedMsg"));
       }
     } catch (e: any) {
-      if (!e?.message?.toLowerCase().includes("cancel")) {
+      // Typed flag first, so a reworded SDK message cannot turn a cancellation
+      // into a "purchase failed" alert.
+      if (!isUserCancelled(e)) {
         Alert.alert(t("upgrade.purchaseFailedTitle"), t("upgrade.purchaseFailedMsg"));
       }
     } finally {
@@ -164,21 +198,34 @@ export default function UpgradeScreen() {
   };
 
   const handleRestore = async () => {
+    if (loading || restoring) return;
     if (!iapReady) return;
     setRestoring(true);
     try {
-      const { active, synced } = await restorePremium();
-      if (active && synced) {
-        setIsPremium(true);
-        if (user) setUser({ ...user, isPaid: true });
+      const result = await restorePremium();
+      // The person chose to stop. Saying anything here would be noise.
+      if (result.status === "cancelled") return;
+      /* THE LOOKUP ITSELF FAILED, so nothing is known. This is the case that
+         used to render as "No purchase found": offline, or RevenueCat down,
+         reported to a paying customer as never having bought anything. The
+         retry copy already existed and was simply unreachable. */
+      if (result.status === "error") {
+        Alert.alert(t("upgrade.errRestoreTitle"), t("upgrade.errRestoreMsg"));
+        return;
+      }
+
+      const verdict = applyServerVerdict(result.sync);
+      if (verdict === true) {
         Alert.alert(t("upgrade.restoredTitle"), t("upgrade.restoredMsg"));
-      } else if (active) {
+      } else if (verdict === null || result.status === "restored") {
+        /* Either the server gave no verdict, or it has not caught up with a
+           purchase the SDK can already see. Both are "wait a moment", not
+           "you have nothing". */
         Alert.alert(t("upgrade.almostThereTitle"), t("upgrade.almostThereMsg"));
       } else {
+        // The server CHECKED with RevenueCat and this account has nothing.
         Alert.alert(t("upgrade.noPurchaseTitle"), t("upgrade.noPurchaseMsg"));
       }
-    } catch {
-      Alert.alert(t("upgrade.errRestoreTitle"), t("upgrade.errRestoreMsg"));
     } finally {
       setRestoring(false);
     }
