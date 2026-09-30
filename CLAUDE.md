@@ -995,12 +995,11 @@ last one left off without needing a recap typed out.
   slack, notion, proton, paramount, peacock and `claude`) are unmeasured rather
   than known good. `nord` was the one that was measured misfiring, in German, and
   it moved. The rest wait on real receipts.
-  CHECK THREE, new and cheap, ALSO STILL OPEN: tap Check for updates on a bundle
-  that is already current. It should say you are on the latest version rather
-  than doing nothing, since "found nothing" and "silently failed" are what the
-  four states exist to tell apart. Nothing has exercised that button yet, so it
-  is landed rather than known working, which is the same distinction the parser
-  and the analytics entries both record.
+  CHECK THREE IS SETTLED, 2026-09-30, AND THE BUTTON WORKS. Tapped on a bundle
+  that was already current, it renders `You are on the latest version.` rather
+  than doing nothing, which is the whole reason it has four states instead of
+  being a boolean: "found nothing" and "silently failed" look identical
+  otherwise. Read off a screenshot of the panel rather than reported.
   WHAT WENT OUT, three client files across the whole range `d50ffd9c..77dd14a3`:
   `app/help-support.tsx` and both locale files, so the parser fix from d50ffd9c
   plus the update check. Everything else in that range is tests, `tools/` and this
@@ -1023,7 +1022,11 @@ last one left off without needing a recap typed out.
   with. It pinned a baseline by 48 seconds on 2026-09-22, so run it whenever the
   panel is read.
 
-- AN `eas update` IS GENUINELY OWED, 2026-09-30, AND THIS TIME IT IS NOT THE
+- THIS ENTRY IS DONE. The publish happened at 19:27Z the same day and is
+  confirmed on a device; see the baseline entry below, which supersedes it.
+  Kept because the reasoning is what made the publish necessary rather than
+  optional, and because the thirteenth gap being real is the point.
+- AN `eas update` WAS GENUINELY OWED, 2026-09-30, AND THIS TIME IT WAS NOT THE
   DOCUMENTATION GAP. Master is at `3b2fe722` and the publish baseline is still
   `77dd14a3`. The FILE LIST below is unchanged at fifteen, but both locale
   files have moved again since it was written (the referral copy), so the
@@ -1144,9 +1147,61 @@ last one left off without needing a recap typed out.
   that the behaviour was measured separately rather than leaving a reader to
   assume the assertions cover it.
   NOTHING DEPLOYED WITH IT: zero backend files, so Railway had nothing to
-  redeploy. All three changed files are client, so NONE of this reaches a phone
-  until the `eas update` above is run. A user hitting the old bug today still
-  hits it.
+  redeploy. All three changed files are client, so none of it reached a phone
+  until the publish. IT IS LIVE NOW, in the 2026-09-30T19:27:24.524Z update.
+
+- PUBLISHED THROUGH 218c1df2 AND CONFIRMED ON A REAL DEVICE (2026-09-30), which
+  supersedes every baseline above. Read off the Build Info panel rather than
+  inferred from a publish that exited zero: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a0f3c9-336c-76a3-89a1-596902389fc4`, `Update published:
+  2026-09-30T19:27:24.524Z`, against `App version: 1.0.3`, `Native build: 40`,
+  `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than `01a0d9d7-...` at
+  `2026-09-25T18:32:32.627Z`, which is the check that distinguishes a new update
+  from the previous one still being applied.
+  BOTH CHECKS WERE RUN THIS TIME, which the 2026-09-25 entry says to do and
+  nothing had done in one sitting before. The panel answers whether it reached
+  the PHONE. `eas channel:view production` answers whether it reached the
+  CHANNEL, and it did: branch `production`, runtime `1.0.1`, group
+  `04ab00e8-2ea1-48a9-bcc4-b6caac015745`, carrying this publish's own message
+  verbatim. A publish can pass one and fail the other, so agreeing is the
+  strongest confirmation this file has recorded.
+  THE TIMESTAMP CROSS-CHECK IS THE WIDEST MARGIN IT HAS EVER HAD. The publish
+  was 19:27:24.524Z and `218c1df2` was committed 09:35:25Z, 592 minutes before,
+  with NO later commit on master at all. Compare 2026-09-22, where the same
+  check pinned a baseline by 48 seconds. Run it regardless: it is free, and the
+  day it is not trivial is the day it earns itself.
+  WHAT WENT OUT, fifteen client files across the whole range `77dd14a3..218c1df2`
+  and the largest client range in this file: alert icons and the translated
+  severity badge; paused rows no longer generating reminders, calendar dots,
+  weekly bars or a next-payment line; the impossible-date guard on the add form;
+  the dashboard total no longer adding currencies together, with a `~` when its
+  parts are mixed; Load examples seeding the user's own currency at catalogue
+  prices; the payment pair; and the referral copy saying up to 30 days rather
+  than promising a flat month.
+  NATIVE CHECK ACROSS `77dd14a3..218c1df2`: zero files under android/, assets/,
+  app.json, package.json, pnpm-lock.yaml or eas.json, so runtimeVersion
+  correctly stayed 1.0.1 and no build was needed. Sixteenth recorded time,
+  decided by `needs_native_build.py 77dd14a3`, which answered OTA IS ENOUGH.
+  THE BACKEND HALF WENT LIVE SEPARATELY, via the Railway deploys on `631e7fa5`
+  (the additive analytics fields and the date guard) and `3b2fe722` (the referral
+  transaction, the reward email and the `language` column).
+  CI WAS GREEN ON EVERY COMMIT IN THE RANGE, including the typecheck on the
+  pinned compiler, which mattered: eleven TypeScript files changed across the
+  range and no sandbox can compile this project.
+  PULLING FIRST IS PART OF THE PROCEDURE AND IS EASY TO SKIP. `eas update`
+  uploads the WORKING TREE, so the owner's clone has to be at the commit being
+  published before the command runs, not merely aware of it. `git pull origin
+  master` then `git rev-parse --short HEAD` and compare, before publishing.
+  A REPORTED VALUE IS NOT A READ VALUE, and that cost a round trip here. The
+  owner first said the Update ID was the old one, I diagnosed a failed landing
+  from that sentence, and the screenshot then showed a new id and a new
+  timestamp: the publish had been fine the whole time. This file is full of
+  "read it off the panel" discipline and the failure was accepting a paraphrase
+  OF the panel instead. Ask for the screenshot or the three lines verbatim, and
+  do not start diagnosing from a summary of them. It is the fixture lesson
+  inverted: there I reported my own test input as the user's data, here I took
+  the user's recollection as the panel's output.
 
 - A SANDBOX CAN RUN A REAL POSTGRESQL, AND THAT CHANGES WHAT IS VERIFIABLE
   HERE. Learned 2026-09-30, and it is the biggest correction to this file's
@@ -1269,9 +1324,13 @@ last one left off without needing a recap typed out.
   is source reading with 28 assertions, 27 of which fail against `ca029a18`,
   and its header records what was measured separately so a green run here is
   not mistaken for proof of the database behaviour.
-  NOT YET EXERCISED IN PRODUCTION. The email has never been sent. `Email sent:
+  THE COPY IS LIVE ON PHONES from the 2026-09-30T19:27:24.524Z publish, and the
+  backend half went live with the deploy on `3b2fe722` before it.
+  THE EMAIL ITSELF IS STILL UNEXERCISED, which is a different claim and must not
+  be collapsed into the one above. It has never been sent. `Email sent:
   <messageId>` in the Railway log is what will settle it, and the first real
-  referral is the only thing that can produce it.
+  referral is the only thing that can produce it. Same shape as the analytics
+  entry: shipped and working are independent here.
 
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
