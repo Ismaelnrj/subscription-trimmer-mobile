@@ -8,7 +8,7 @@ import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
 import { livePlanned } from "../../lib/recurrence";
 import { daysUntil } from "../../lib/utils";
-import { useCurrencyStore, useFmt, useMixedTotalInBase } from "../../lib/currency-store";
+import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
@@ -130,6 +130,20 @@ export default function DashboardScreen() {
      base-currency comparisons too. The old field is the fallback, so an older
      server keeps the previous behaviour rather than rendering nothing. */
   const monthlyTotal = mixedTotalInBase(summary?.monthlyByCurrency, summary?.monthlyTotal ?? 0);
+
+  /* fmtC adds the `~` when the BASE differs from the display currency, which
+     is the right rule for a total whose parts were all priced in the base. It
+     is not enough here: a US reader with one euro row has base and display
+     both USD, so fmtC sees no difference and prints an exact-looking figure
+     for a number that moved through an exchange rate. Marking it whenever any
+     PART was priced in something else is the honest test, and it is the
+     difference between a figure that will appear on a statement and one that
+     will not. */
+  const totalIsEstimate = isMixedCurrency(summary?.monthlyByCurrency, currency.code);
+  const fmtTotal = (n: number) => {
+    const text = fmtC(n);
+    return totalIsEstimate && !text.startsWith("~") ? `~${text}` : text;
+  };
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
   const budgetPct = Math.min(budgetRaw, 100);
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
@@ -358,7 +372,7 @@ export default function DashboardScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
                 <Text style={styles.budgetAmount}>
-                  {fmtC(monthlyTotal)}{" "}
+                  {fmtTotal(monthlyTotal)}{" "}
                   <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
                 </Text>
               </View>
@@ -378,8 +392,8 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.budgetRemaining}>
                 {budgetRaw >= 100
-                  ? t("dashboard.overLimit", { amount: fmtC(monthlyTotal - budgetGoal) })
-                  : t("dashboard.remaining", { amount: fmtC(budgetGoal - monthlyTotal) })}
+                  ? t("dashboard.overLimit", { amount: fmtTotal(monthlyTotal - budgetGoal) })
+                  : t("dashboard.remaining", { amount: fmtTotal(budgetGoal - monthlyTotal) })}
               </Text>
             </View>
           </View>
@@ -438,7 +452,7 @@ export default function DashboardScreen() {
             <View style={styles.heroIconOnGradient}>
               <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
             </View>
-            <Text style={styles.heroValueOnGradient}>{fmtC(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
+            <Text style={styles.heroValueOnGradient}>{fmtTotal(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
             <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
           </LinearGradient>
         ) : (
@@ -446,7 +460,7 @@ export default function DashboardScreen() {
             <View style={styles.heroIcon}>
               <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
             </View>
-            <Text style={styles.heroValue}>{fmtC(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
+            <Text style={styles.heroValue}>{fmtTotal(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
             <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
           </View>
         )}
@@ -460,7 +474,7 @@ export default function DashboardScreen() {
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
             <Text style={styles.secondaryStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {fmtC(viewMode === "monthly" ? displayYearly : monthlyTotal)}
+              {fmtTotal(viewMode === "monthly" ? displayYearly : monthlyTotal)}
             </Text>
             <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
           </View>

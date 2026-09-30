@@ -133,7 +133,19 @@ describe("the calendar screen applies it in the one place that feeds everything"
     // new Date() inline would give the memo a new dependency on every pass.
     expect(SRC).toMatch(/const today = useMemo\(\(\) => startOfDay\(new Date\(\)\), \[\]\)/);
     const memo = SRC.slice(SRC.indexOf("const occurrencesByDay = useMemo"));
-    expect(memo.slice(memo.indexOf("}, ["))).toMatch(/\[subscriptions, month, today\]/);
+    const deps = memo.slice(memo.indexOf("}, ["));
+    /* `today` is the one this test is actually about, and `month` decides
+       which cells are projected. The LIST is named rather than spelled: this
+       pinned the literal `[subscriptions, month, today]` and so failed the
+       moment paused rows started being filtered into a derived `planned`
+       list, which is a correct change. Reading the identifier the memo really
+       iterates keeps it catching a genuinely missing dependency without
+       objecting to a rename. */
+    expect(deps).toMatch(/today/);
+    expect(deps).toMatch(/month/);
+    const source = /for \(const sub of (\w+)\)/.exec(memo);
+    expect(source).not.toBeNull();
+    expect(deps).toContain(source[1]);
   });
 
   it("leaves getUpcomingOccurrences alone", () => {

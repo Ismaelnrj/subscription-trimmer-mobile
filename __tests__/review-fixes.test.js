@@ -262,6 +262,20 @@ describe("a total is summed in one named currency", () => {
     expect(code).not.toContain("summary?.yearlyTotal");
     expect(code).not.toContain("(summary?.monthlyTotal ?? 0)");
   });
+
+  it("marks a cross-currency total as an estimate", () => {
+    /* fmtC's own tilde rule compares the BASE against the display currency,
+       which misses the case that matters here: a US reader with one euro row
+       has base and display both USD, so an exact-looking figure is printed for
+       a number that moved through an exchange rate. */
+    const code = codeOf("app/(tabs)/index.tsx");
+    expect(code).toContain("isMixedCurrency(summary?.monthlyByCurrency");
+    expect(code).toMatch(/const fmtTotal = [\s\S]{0,200}?\?\s*`~\$\{text\}`\s*:\s*text;/);
+    /* and every TOTAL must go through it, or one of them still reads exact */
+    /* Anything DERIVED from the total is an estimate too, so the over-budget
+       and remaining amounts go through it as well. */
+    expect(code).not.toMatch(/fmtC\((viewMode|monthlyTotal|budgetGoal - monthlyTotal)/);
+  });
 });
 
 // ── The empty state seeded a mixed-currency first run ────────────────────────
