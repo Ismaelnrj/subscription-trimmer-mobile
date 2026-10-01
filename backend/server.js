@@ -169,8 +169,8 @@ app.get('/icon.png', (req, res) => {
    Somebody who wants to stop receiving email should never be asked to log in
    first, and an unsubscribe that needs a password is an unsubscribe that does
    not work. */
-function unsubscribePage(title, body) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8" />
+function unsubscribePage(title, body, lang = 'en') {
+  return `<!doctype html><html lang="${lang === 'de' ? 'de' : 'en'}"><head><meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title} · Trimio</title></head>
     <body style="margin:0;font-family:system-ui,-apple-system,sans-serif;background:#F7F6F1;color:#142B3A">
@@ -199,13 +199,32 @@ async function applyUnsubscribe(req) {
   return true;
 }
 
+/* The page answers in the language of the BROWSER the link was opened in,
+   via Accept-Language, rather than reading users.language. That works the same
+   for a link that failed verification, where the user id in the URL cannot be
+   trusted, and a German reader of a German email opens it in a German browser. */
+const UNSUBSCRIBE_PAGE = {
+  en: {
+    okTitle: 'You are unsubscribed',
+    okBody: 'You will not receive any more emails from Trimio. Push notifications and the app itself are unaffected, and you can turn email reminders back on any time in Account Settings.',
+    badTitle: 'That link did not work',
+    badBody: 'It may have been altered or truncated by your email client. You can turn email reminders off directly in the app under Account Settings.',
+  },
+  de: {
+    okTitle: 'Du bist abgemeldet',
+    okBody: 'Du bekommst keine E-Mails mehr von Trimio. Push-Benachrichtigungen und die App selbst sind davon nicht betroffen, und du kannst E-Mail-Erinnerungen jederzeit in den Kontoeinstellungen wieder einschalten.',
+    badTitle: 'Der Link hat nicht funktioniert',
+    badBody: 'Dein E-Mail-Programm hat ihn vielleicht verändert oder gekürzt. Du kannst E-Mail-Erinnerungen auch direkt in der App unter Kontoeinstellungen ausschalten.',
+  },
+};
+
 app.get('/unsubscribe', async (req, res) => {
   try {
     const ok = await applyUnsubscribe(req);
+    const lang = languageOf(req);
+    const c = UNSUBSCRIBE_PAGE[lang];
     res.status(ok ? 200 : 400).type('html').send(
-      ok
-        ? unsubscribePage('You are unsubscribed', 'You will not receive any more emails from Trimio. Push notifications and the app itself are unaffected, and you can turn email reminders back on any time in Account Settings.')
-        : unsubscribePage('That link did not work', 'It may have been altered or truncated by your email client. You can turn email reminders off directly in the app under Account Settings.')
+      ok ? unsubscribePage(c.okTitle, c.okBody, lang) : unsubscribePage(c.badTitle, c.badBody, lang)
     );
   } catch (err) {
     handleError(err, res);
@@ -608,11 +627,29 @@ function unsubscribeUrlFor(userId) {
    one. The win-back email is plainly marketing; the renewal digest is the
    service people asked for, but it is still recurring bulk mail and the same
    rules apply to it. */
-function emailFooter(unsubscribeUrl) {
+/* The REASON line differs per email because it has to be true. Both used to
+   say "because you turned on email reminders", which the win-back email has no
+   claim to: it goes to people who cancelled Premium, whether or not they ever
+   turned email reminders on. */
+const EMAIL_FOOTER = {
+  en: {
+    reminders: 'You are receiving this because you turned on email reminders in Trimio.',
+    premium: 'You are receiving this because you had Trimio Premium.',
+    unsubscribe: 'Unsubscribe from Trimio emails',
+  },
+  de: {
+    reminders: 'Du bekommst diese E-Mail, weil du E-Mail-Erinnerungen in Trimio eingeschaltet hast.',
+    premium: 'Du bekommst diese E-Mail, weil du Trimio Premium hattest.',
+    unsubscribe: 'Von Trimio E-Mails abmelden',
+  },
+};
+
+function emailFooter(unsubscribeUrl, lang = 'en', reason = 'reminders') {
   if (!unsubscribeUrl) return '';
+  const c = EMAIL_FOOTER[lang === 'de' ? 'de' : 'en'];
   return `<p style="color:#8A949B;font-size:12px;text-align:center;margin-top:28px;line-height:1.6">
-      You are receiving this because you turned on email reminders in Trimio.<br />
-      <a href="${unsubscribeUrl}" style="color:#1F7A62">Unsubscribe from Trimio emails</a>
+      ${c[reason] || c.reminders}<br />
+      <a href="${unsubscribeUrl}" style="color:#1F7A62">${c.unsubscribe}</a>
     </p>`;
 }
 
@@ -811,6 +848,96 @@ function formatBonusDate(value, lang) {
   return new Date(value).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   });
+}
+
+/* ── The two scheduled emails, in both languages ────────────────────────────
+   Both were English only until 2026-10-01, the last English-only mail this
+   backend sent. They go out from a cron with no request, so the language comes
+   from users.language, which /auth/me now backfills on every app launch.
+
+   The German reuses the app's own wording for the same event, so the email and
+   the push notification say one thing: "wird ... verlängert" for a renewal,
+   "pro Monat" for a rate, "Lebenslang" for the lifetime plan. Subject and verb
+   agree in number in both languages, which the referral email got wrong once
+   and only rendering it caught. */
+const REMINDER_EMAIL = {
+  en: {
+    subject: (n) => `Trimio: ${n} subscription${n > 1 ? 's' : ''} renewing soon`,
+    greeting: (name) => `Hi ${name || 'there'}!`,
+    intro: 'Here are your upcoming subscription renewals in the next 3 days:',
+    colService: 'Service',
+    colPrice: 'Price',
+    colDate: 'Renewal Date',
+    button: 'Review in Trimio',
+    manage: 'Tap the button above or open the app to manage your notification preferences.',
+  },
+  de: {
+    subject: (n) => (n > 1 ? `Trimio: ${n} Abos werden bald verlängert` : 'Trimio: 1 Abo wird bald verlängert'),
+    greeting: (name) => (name ? `Hallo ${name}!` : 'Hallo!'),
+    intro: 'Diese Abos werden in den nächsten 3 Tagen verlängert:',
+    colService: 'Abo',
+    colPrice: 'Preis',
+    colDate: 'Verlängert am',
+    button: 'In Trimio ansehen',
+    manage: 'Tippe auf den Button oben oder öffne die App, um deine Benachrichtigungen zu verwalten.',
+  },
+};
+
+/* German needs the adjective DECLINED to agree with Premium, so it cannot reuse
+   the app's "Monatlich", which is the bare form; a lifetime plan has no
+   auto-renew to switch off, so it takes no adjective at all. English keeps the
+   exact wording it had. */
+const WIN_BACK_EMAIL = {
+  en: {
+    subject: (name) => `We're sorry to see you go, ${name || 'there'}`,
+    heading: (plan) => `Your Trimio ${{ monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime' }[plan] || 'Premium'} plan is set to end`,
+    body: "You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.",
+    button: 'Keep Premium',
+    small: 'This is an automatic reminder. No action needed if you meant to cancel.',
+  },
+  de: {
+    subject: (name) => (name ? `Schade, dass du gehst, ${name}` : 'Schade, dass du gehst'),
+    heading: (plan) => {
+      const adj = { monthly: 'monatliches', annual: 'jährliches' }[plan];
+      return adj ? `Dein ${adj} Trimio Premium läuft bald aus` : 'Dein Trimio Premium läuft bald aus';
+    },
+    body: 'Du behältst Premium bis zum Ende deines aktuellen Zeitraums, aber die automatische Verlängerung ist ausgeschaltet. Falls das ein Versehen war, kannst du sie jederzeit in deinen Abo-Einstellungen wieder einschalten.',
+    button: 'Premium behalten',
+    small: 'Das ist eine automatische Erinnerung. Wenn du kündigen wolltest, musst du nichts tun.',
+  },
+};
+
+const CYCLE_NOUN = {
+  en: { monthly: 'month', yearly: 'year', weekly: 'week' },
+  de: { monthly: 'Monat', yearly: 'Jahr', weekly: 'Woche' },
+};
+
+/* A billing date is stored as midnight UTC, so it is formatted IN UTC: in any
+   other zone west of it, the same instant names the previous day, which is the
+   parseApiDate bug this product has already paid for twice. */
+function formatEmailDate(value, lang) {
+  return new Date(value).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  });
+}
+
+/* The row's own ISO currency, written the way the reader's language writes
+   money: "15,99 €" in German, "€15.99" in English. Intl throws a RangeError on a
+   malformed code, and the currency column is written from the client, so a bad
+   value falls back to the account symbol rather than costing the whole email. */
+function formatEmailPrice(price, currency, fallbackSymbol, cycle, lang) {
+  const amount = parseFloat(price);
+  let money;
+  try {
+    if (!currency) throw new RangeError('no currency');
+    money = new Intl.NumberFormat(lang === 'de' ? 'de-DE' : 'en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    const sym = fallbackSymbol || '$';
+    money = lang === 'de' ? `${amount.toFixed(2).replace('.', ',')} ${sym}` : `${sym}${amount.toFixed(2)}`;
+  }
+  const noun = CYCLE_NOUN[lang === 'de' ? 'de' : 'en'][cycle] || cycle || '';
+  if (!noun) return money;
+  return lang === 'de' ? `${money} pro ${noun}` : `${money}/${noun}`;
 }
 
 async function sendReferralRewardEmail({ email, language, grantedDays, expiresAt, role }) {
@@ -2080,6 +2207,14 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    /* The renewal reminder and win-back emails are sent by a cron, with no
+       request and so no Accept-Language, which leaves users.language as the
+       only signal. Every account created before 2026-09-30 has it NULL, and
+       NULL reads as English, so without this the German emails would reach
+       almost nobody who exists today. The app calls /auth/me on every launch
+       with a session, which makes this the one place that backfills everybody
+       on their next open. recordLanguage only writes when the value changed. */
+    recordLanguage(req.userId, req);
     res.json(formatUser(result.rows[0]));
   } catch (err) {
     handleError(err, res);
@@ -3377,7 +3512,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
     // user inside the loop. LEFT JOIN because a user who never opened settings
     // has no row there.
     const usersResult = await pool.query(`
-      SELECT u.id, u.email, u.name, us.currency_symbol
+      SELECT u.id, u.email, u.name, u.language, us.currency_symbol
       FROM users u
       JOIN notification_preferences np ON np.user_id = u.id
       LEFT JOIN user_settings us ON us.user_id = u.id
@@ -3403,46 +3538,44 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
       );
       if (subsResult.rows.length === 0) continue;
 
-      // This used to hardcode a dollar sign, so a user tracking in euros got a
-      // reminder listing their subscriptions in dollars. The digest and the
-      // in-app alerts already read the setting; this template did not.
-      const sym = user.currency_symbol || '$';
+      const lang = user.language === 'de' ? 'de' : 'en';
+      const c = REMINDER_EMAIL[lang];
 
-      // Subscription names are user-supplied, so they get escaped before
-      // going anywhere near email HTML. So is the currency symbol: it is
-      // written straight from the client with no validation.
+      /* Subscription names are user-supplied, so they are escaped before going
+         anywhere near email HTML. The price is shown in the ROW's own currency,
+         never the account's symbol: a row shows its own currency and is never
+         converted, which is the rule everywhere else in this product. This
+         template used to print the account symbol, so a euro Netflix row read
+         "$15.99" for anybody whose setting said dollars. */
       const rows = subsResult.rows.map(s =>
         `<tr>
           <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(s.name || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(sym)}${parseFloat(s.price).toFixed(2)}/${escapeHtml(s.billing_cycle || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${new Date(s.next_billing_date).toLocaleDateString()}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(formatEmailPrice(s.price, s.currency, user.currency_symbol, s.billing_cycle, lang))}</td>
+          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(formatEmailDate(s.next_billing_date, lang))}</td>
         </tr>`
       ).join('');
 
       const delivered = await sendEmail(
         user.email,
-        `Trimio: ${subsResult.rows.length} subscription${subsResult.rows.length > 1 ? 's' : ''} renewing soon`,
+        c.subject(subsResult.rows.length),
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
-          <h2 style="color:#142B3A;margin-bottom:4px">Hi ${escapeHtml(user.name || 'there')}!</h2>
-          <p style="color:#52616B;margin-bottom:20px">Here are your upcoming subscription renewals in the next 3 days:</p>
+          <h2 style="color:#142B3A;margin-bottom:4px">${escapeHtml(c.greeting(user.name))}</h2>
+          <p style="color:#52616B;margin-bottom:20px">${c.intro}</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#FCFBF8;border-radius:8px;overflow:hidden;border:1px solid #DCDEDB">
             <thead>
               <tr style="background:#E9E6DE">
-                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Service</th>
-                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Price</th>
-                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">Renewal Date</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colService}</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colPrice}</th>
+                <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colDate}</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
           <div style="text-align:center;margin-top:24px">
-            <a href="trimio://subscriptions?from=renewal_reminder" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Review in Trimio</a>
+            <a href="trimio://subscriptions?from=renewal_reminder" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">${c.button}</a>
           </div>
-          <p style="color:#52616B;font-size:12px;margin-top:20px">
-            You're receiving this because you enabled email reminders in Trimio.
-            Tap the button above (or open the app) to manage your notification preferences.
-          </p>
-          ${emailFooter(unsubscribeUrlFor(user.id))}
+          <p style="color:#52616B;font-size:12px;margin-top:20px">${c.manage}</p>
+          ${emailFooter(unsubscribeUrlFor(user.id), lang, 'reminders')}
         </div>`,
         { unsubscribeUrl: unsubscribeUrlFor(user.id) }
       ).then(() => true).catch(e => { console.error(`Email failed for user ${user.id}:`, e); return false; });
@@ -3479,7 +3612,7 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
   }
   try {
     const usersResult = await pool.query(`
-      SELECT id, email, name, last_plan
+      SELECT id, email, name, last_plan, language
       FROM users
       WHERE is_paid = TRUE
         AND is_verified = TRUE
@@ -3491,23 +3624,32 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
 
     let sent = 0;
     for (const user of usersResult.rows) {
-      const planLabel = { monthly: 'Monthly', annual: 'Annual', lifetime: 'Lifetime' }[user.last_plan] || 'Premium';
-      await sendEmail(
+      const lang = user.language === 'de' ? 'de' : 'en';
+      const c = WIN_BACK_EMAIL[lang];
+      const delivered = await sendEmail(
         user.email,
-        `We're sorry to see you go, ${user.name || 'there'}`,
+        c.subject(user.name),
         `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
-          <h2 style="color:#142B3A;margin-bottom:8px">Your Trimio ${escapeHtml(planLabel)} plan is set to end</h2>
-          <p style="color:#52616B">You'll keep Premium access until your current period ends, but auto-renew is off. If that was a mistake, you can turn it back on anytime from your subscription settings.</p>
+          <h2 style="color:#142B3A;margin-bottom:8px">${escapeHtml(c.heading(user.last_plan))}</h2>
+          <p style="color:#52616B">${c.body}</p>
           <div style="text-align:center;margin-top:24px">
-            <a href="trimio://upgrade" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">Keep Premium</a>
+            <a href="trimio://upgrade" style="display:inline-block;background:#142B3A;color:#fff;font-weight:600;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px">${c.button}</a>
           </div>
-          <p style="color:#52616B;font-size:12px;margin-top:20px">This is an automatic reminder. No action needed if you meant to cancel.</p>
-          ${emailFooter(unsubscribeUrlFor(user.id))}
+          <p style="color:#52616B;font-size:12px;margin-top:20px">${c.small}</p>
+          ${emailFooter(unsubscribeUrlFor(user.id), lang, 'premium')}
         </div>`,
         { unsubscribeUrl: unsubscribeUrlFor(user.id) }
-      ).catch(e => console.error(`Win-back email failed for user ${user.id}:`, e));
-      await pool.query('UPDATE users SET win_back_sent_at = NOW() WHERE id = $1', [user.id]);
-      sent++;
+      ).then(() => true).catch(e => { console.error(`Win-back email failed for user ${user.id}:`, e); return false; });
+
+      /* Mark ONLY after the send succeeded, the same rule the renewal reminder
+         above already follows and for the same reason. This used to mark the
+         row sent whatever happened, so a Brevo outage on the one day somebody
+         became eligible meant they were never written to at all, and the
+         reported count was attempts rather than deliveries. */
+      if (delivered) {
+        await pool.query('UPDATE users SET win_back_sent_at = NOW() WHERE id = $1', [user.id]);
+        sent++;
+      }
     }
 
     res.json({ success: true, emailsSent: sent });
