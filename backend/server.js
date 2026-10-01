@@ -1123,6 +1123,33 @@ async function initDB() {
      NULL means not yet seen and reads as English, which is exactly the
      behaviour today, so nothing regresses for an account that never sets it. */
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS language TEXT`);
+  /* subscriptions IS CREATED HERE, directly above the first statement that
+     touches it, and it must stay above every ALTER, UPDATE and INDEX on it.
+
+     It used to sit 43 lines further down, below three ALTERs and a backfill
+     UPDATE added on 2026-09-18. Production never noticed, because its table
+     already existed and CREATE TABLE IF NOT EXISTS was a no-op there. An EMPTY
+     database did notice: the first ALTER threw `relation "subscriptions" does
+     not exist` and the service never booted. That is a replacement database, a
+     restore into a fresh instance, or any staging environment, which is to say
+     the day things are already going wrong.
+
+     Moving the CREATE rather than the ALTERs keeps every column in the order
+     production already has. __tests__/initdb-order.test.js checks every table
+     this function creates, not just this one. */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      price NUMERIC NOT NULL,
+      billing_cycle TEXT NOT NULL DEFAULT 'monthly',
+      category TEXT DEFAULT 'other',
+      next_billing_date TIMESTAMPTZ,
+      trial_end_date TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE`);
   /* Which billing date a reminder email has already gone out for.
 
@@ -1165,19 +1192,6 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
   // Google sign-in accounts have no password, so password_hash can no longer be NOT NULL.
   await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      name TEXT NOT NULL,
-      price NUMERIC NOT NULL,
-      billing_cycle TEXT NOT NULL DEFAULT 'monthly',
-      category TEXT DEFAULT 'other',
-      next_billing_date TIMESTAMPTZ,
-      trial_end_date TIMESTAMPTZ,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
   await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_end_date TIMESTAMPTZ`);
   /* THE CURRENCY A PRICE WAS ENTERED IN, which this table could not represent
      until 2026-09-22 and which cost real accuracy the moment anybody changed

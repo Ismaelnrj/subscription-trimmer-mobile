@@ -18,10 +18,9 @@
  *   off by a day, and verified counting Google users who never saw an email.
  * Do not read a green run of THIS file as proof of any of that.
  *
- * THAT MEASUREMENT FOUND initDB CANNOT BUILD AN EMPTY DATABASE: it runs ALTER
- * TABLE subscriptions 43 lines before CREATE TABLE subscriptions. Production
- * boots because its table predates those ALTERs. Recorded in CLAUDE.md; not
- * changed here, because reordering boot code is its own change.
+ * THAT MEASUREMENT FOUND initDB COULD NOT BUILD AN EMPTY DATABASE: it ran
+ * ALTER TABLE subscriptions 43 lines before CREATE TABLE subscriptions. Fixed
+ * in its own change the same day, and guarded by __tests__/initdb-order.test.js.
  */
 const fs = require('fs');
 const path = require('path');
