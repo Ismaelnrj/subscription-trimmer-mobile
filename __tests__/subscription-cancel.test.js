@@ -231,10 +231,16 @@ describe("cancelling is a third state, not pause and not delete", () => {
     expect(status).toBe(404);
   });
 
-  it("tells Brevo both the count and the next renewal changed", async () => {
+  /* REPLACED 2026-10-01, not patched. This used to assert that cancelling
+     pushed the renewal digest (subscription names, prices, dates) to Brevo as
+     well as the count. The digest fed a Brevo automation the account's plan
+     does not allow, so it shipped personal data for nothing and was removed;
+     a test whose name asserts that premise would tell the next reader it was
+     wanted. The count still goes. */
+  it("tells Brevo the count changed, and never sends a renewal digest", async () => {
     subs = [sub()];
     await call("/api/trpc/subscriptions.setCancelled", { id: 1, cancelled: true });
-    expect(brevoCalls.map((c) => c[0]).sort()).toEqual(["count", "renewal"]);
+    expect(brevoCalls.map((c) => c[0])).toEqual(["count"]);
   });
 });
 
@@ -442,7 +448,10 @@ describe("every live-row query learned about the new state", () => {
     ["the duplicate name check", /WHERE user_id = \$1 AND cancelled_at IS NULL AND LOWER\(TRIM\(name\)\)/],
     ["the CSV export", /WHERE user_id = \$1 AND cancelled_at IS NULL ORDER BY name ASC/],
     ["analytics.summary", /SELECT \* FROM subscriptions WHERE user_id = \$1 AND cancelled_at IS NULL'/],
-    ["the Brevo next renewal", /is_active = TRUE AND cancelled_at IS NULL AND next_billing_date >= NOW\(\)/],
+    /* "the Brevo next renewal" used to be checked here. That query lived in
+       syncNextRenewalToBrevo, which was removed on 2026-10-01 along with the
+       whole renewal digest, so there is no longer a query to filter.
+       __tests__/brevo-minimal-data.test.js guards that it stays removed. */
   ];
   it.each(cases)("%s excludes cancelled rows", (_label, re) => {
     expect(SERVER).toMatch(re);

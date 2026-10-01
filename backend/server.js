@@ -1037,8 +1037,6 @@ function syncBrevoSubCount(email, count) {
   updateBrevoContact(email, { SUB_COUNT: count });
 }
 
-// Must match the window used in the Brevo automation's "in the next N days" filter.
-const RENEWAL_DIGEST_WINDOW_DAYS = 3;
 
 // Fire-and-forget: recompute the user's subscription count and push it to
 // Brevo. Never awaited by callers so it can't slow down or fail their request.
@@ -1049,54 +1047,19 @@ function syncSubCountToBrevo(userId, email) {
     .catch((err) => console.error('[Brevo] Sub count lookup failed for user', userId, err.message));
 }
 
-// Fire-and-forget: find the soonest upcoming renewal/trial-end date across
-// the user's subscriptions, plus an itemized digest of everything renewing
-// within RENEWAL_DIGEST_WINDOW_DAYS, and push both to Brevo for the
-// renewal-reminder automation (date drives the trigger, digest drives the
-// email content so a contact with several renewals gets all of them listed).
-function syncNextRenewalToBrevo(userId, email) {
-  if (!email) return;
-  Promise.all([
-    pool.query(
-      `SELECT MIN(d) AS next_date FROM (
-         SELECT next_billing_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL AND next_billing_date >= NOW()
-         UNION ALL
-         SELECT trial_end_date AS d FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL AND trial_end_date >= NOW()
-       ) t`,
-      [userId]
-    ),
-    pool.query(
-      `SELECT name, price, billing_cycle,
-         CASE WHEN trial_end_date >= NOW() AND (next_billing_date IS NULL OR trial_end_date <= next_billing_date)
-              THEN trial_end_date ELSE next_billing_date END AS relevant_date
-       FROM subscriptions
-       WHERE user_id = $1
-         AND is_active = TRUE
-         AND (
-           (next_billing_date >= NOW() AND next_billing_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
-           OR (trial_end_date >= NOW() AND trial_end_date <= NOW() + INTERVAL '${RENEWAL_DIGEST_WINDOW_DAYS} days')
-         )
-       ORDER BY relevant_date ASC`,
-      [userId]
-    ),
-    pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [userId]),
-  ])
-    .then(([dateResult, digestResult, settingsResult]) => {
-      const nextDate = dateResult.rows[0]?.next_date || null;
-      const symbol = settingsResult.rows[0]?.currency_symbol || '$';
-      const digest = digestResult.rows
-        .map((r) => `${r.name} (${symbol}${parseFloat(r.price).toFixed(2)}/${r.billing_cycle}) · ${new Date(r.relevant_date).toISOString().slice(0, 10)}`)
-        .join('; ');
-      const totalAmount = digestResult.rows.reduce((sum, r) => sum + parseFloat(r.price), 0);
-      updateBrevoContact(email, {
-        NEXT_RENEWAL_DATE: nextDate ? new Date(nextDate).toISOString().slice(0, 10) : null,
-        UPCOMING_RENEWALS: digest || null,
-        TOTAL_AMOUNT: digestResult.rows.length ? totalAmount.toFixed(2) : null,
-        CURRENCY_SYMBOL: symbol,
-      });
-    })
-    .catch((err) => console.error('[Brevo] Next renewal lookup failed for user', userId, err.message));
-}
+/* NO RENEWAL DIGEST GOES TO BREVO, and there used to be one. Until 2026-10-01
+   every add, edit, pause, cancel and delete pushed the user's upcoming
+   subscription NAMES, prices and renewal dates into their Brevo contact
+   (UPCOMING_RENEWALS, TOTAL_AMOUNT, NEXT_RENEWAL_DATE, CURRENCY_SYMBOL), for
+   every user, free or paid, opted out or not, to feed a Brevo renewal
+   automation. Four days after it was added, the win-back moved out of Brevo
+   Automation into code because workflows are "gated behind a plan we don't
+   have", so the automation it fed almost certainly never ran. The reminder
+   email is sent from code, by reminders.sendEmailReminders.
+   What a person pays for is personal data, and some of it is sensitive. Do
+   not re-add a digest here: renewals belong to the code-side cron, which is
+   localised, honours email_opt_out and is gated on Premium, and an automation
+   in Brevo would be none of those. */
 
 // Verification/reset codes are emailed in plaintext but only the hash is stored,
 // so a database leak alone can't be used to take over accounts.
@@ -2861,7 +2824,6 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       [req.userId, 'Subscription Added', `${name} (${currency} ${price}/${billingCycle}) was added.`, 'info']
     );
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
-    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -2970,8 +2932,6 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
       }
     }
 
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -3009,8 +2969,6 @@ app.post('/api/trpc/subscriptions.setActive', authMiddleware, async (req, res) =
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
 
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -3093,10 +3051,8 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
         );
 
     const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    /* Both Brevo syncs, because cancelling changes the tracked count AND may
-       remove the row that was supplying the next renewal date. */
+    // Cancelling changes the tracked count. No renewal digest goes to Brevo.
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
-    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -3151,7 +3107,6 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
     await pool.query('DELETE FROM subscriptions WHERE id = $1 AND user_id = $2', [id, req.userId]);
     const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
-    syncNextRenewalToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc({ success: true }));
   } catch (err) {
     handleError(err, res);
