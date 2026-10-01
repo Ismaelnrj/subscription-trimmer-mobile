@@ -1332,6 +1332,98 @@ last one left off without needing a recap typed out.
   referral is the only thing that can produce it. Same shape as the analytics
   entry: shipped and working are independent here.
 
+- BREVO SHOWING ZERO IS NOT EVIDENCE OF ZERO ACCOUNTS, and that is the trap to
+  remember from the first day this product had real traffic. 2026-10-01, the
+  owner ran an ad, reported 22 installs, and Brevo's dashboard read 0.
+  WHY IT PROVES NOTHING ON ITS OWN: `POST /api/auth/google` inserts a user with
+  `is_verified = TRUE` and sends NO EMAIL AT ALL. It never calls
+  sendVerificationEmail, because a Google account needs no code. So every
+  account created through Continue with Google is invisible to Brevo by design.
+  A Brevo count of zero and twenty-two real accounts are fully consistent.
+  THE AUTHORITATIVE COUNT IS THE DATABASE, never the mail provider.
+  `SELECT count(*) FROM users;` and
+  `SELECT count(*) FROM users WHERE google_id IS NOT NULL;` in the Railway
+  console settle it in one go, and the second number is the one that explains a
+  silent Brevo. Getting there: Railway > Database > Console is a SHELL, so run
+  `psql -U postgres` first, see the account deletion entry for the rest.
+  AND IT IS THE TRANSACTIONAL TAB, NOT CAMPAIGNS. `sendEmail` posts to
+  `https://api.brevo.com/v3/smtp/email`, which is Brevo's transactional
+  endpoint, so Campaign statistics are permanently zero and correctly so.
+  Transactional > Statistics for the aggregate, Transactional > Logs for the
+  per-email list.
+  NO TAGS ARE SENT, so the only discriminator in those logs is the SUBJECT
+  LINE. Worth knowing before trying to filter: `Verify your Trimio account` is
+  a registration, `Your bonus Premium is active` is a referral reward,
+  `Trimio: N subscriptions renewing soon` is the cron.
+  THE API IS FASTER THAN THE DASHBOARD for a count, and needs no sandbox:
+  `GET /v3/smtp/statistics/aggregatedReport?startDate=&endDate=` with the
+  `api-key` header returns requests, delivered, hardBounces, softBounces,
+  blocked and spamReports for a day, and `GET /v3/smtp/emails?limit=100`
+  grouped by subject gives the per-email breakdown. BREVO_API_KEY is in
+  Railway.
+  TWO SOURCES THAT MUST NOT BE CONFLATED: Brevo counts what BREVO ACCEPTED, the
+  Railway log's `Email sent: <messageId>` counts what OUR SERVER HANDED OVER. A
+  gap between them is a send failure on our side and
+  `Email send attempt N/3 failed:` names it; requests without deliveries is the
+  receiving mailbox instead.
+
+- THE VERIFICATION EMAIL WAS ENGLISH ONLY, fixed 2026-10-01 in `dc3bb299`,
+  found while answering a question about Brevo rather than by any sweep. It is
+  the single worst place in the product for that defect and it had been there
+  from the beginning.
+  WHY IT MATTERS MORE THAN ITS SIZE: it is the FIRST thing a German user ever
+  receives from Trimio, and it sits on the step that gates everything behind
+  it. `is_verified` controls the referral reward and BOTH bulk email queries,
+  so a German reader met an English code email at the exact point where giving
+  up costs them the bonus. Every other email in the backend already had a
+  German version; the first one anybody receives did not.
+  THE PASSWORD RESET HAD THE SAME DEFECT and went in the same pass. A fix
+  applied to the email that was REPORTED is not a fix applied to the class,
+  which this file has recorded paying for twice (parseApiDate, and the
+  describe-scoped clock freeze).
+  THE LANGUAGE COMES FROM THE REQUEST, not from `users.language`, and the split
+  is the reusable part. Both of these are triggered by the person who will READ
+  the mail, from the app they are holding, so `Accept-Language` is the most
+  current signal there is and costs no extra query. `users.language` exists for
+  the opposite case, the referral email, whose inviter is not holding a phone
+  at all. At register time the column is not even written yet.
+  VERIFIED THAT THE HEADER IS ACTUALLY THERE, rather than assumed: all four
+  paths (register, google, forgot-password, resend-verification) go through
+  `apiClient`, and `lib/api.ts` sets Accept-Language UNCONDITIONALLY and before
+  the auth token, so it rides unauthenticated requests too. Without that check
+  the whole change would have been inert and looked complete.
+  AN UNKNOWN LANGUAGE FALLS BACK TO ENGLISH RATHER THAN THROWING, deliberately:
+  a renderer that throws sends NO code to anybody, which is strictly worse than
+  sending an English one.
+  GOOGLE SIGN IN NOW RECORDS THE LANGUAGE TOO. It is the only account path that
+  never reaches `/register` and never needs verify-email, so it was the one path
+  leaving `users.language` NULL, which reads as English on the referral reward
+  email. The call sits OUTSIDE the `if (!user)` block so a returning Google user
+  is covered, and `recordLanguage` no-ops when the value has not changed. Login
+  was deliberately left alone: `referrals.me` already records it and is the
+  screen you must open to get your code, so the one consumer is covered without
+  an UPDATE on the hottest path in the app.
+  `lib/api.ts:58` STILL SAYS "There is no language column on the user", which
+  became false on 2026-09-30. Left stale ON PURPOSE: correcting a comment there
+  would put a client file in the publish gap for zero user benefit, which is the
+  exact ambiguity this file has mis-read twelve times. It should ride the next
+  real client change.
+  THE TEST IS BEHAVIOURAL RATHER THAN SOURCE READING, and the reason is
+  yesterday: the referral email shipped a subject-verb agreement error in both
+  languages that was invisible in the template and obvious on the first render.
+  `__tests__/code-email-localization.test.js` lifts the real const and the real
+  renderer out by STRING INDEX and executes them against a captured sendEmail.
+  12 assertions, ALL TWELVE failing against `dc41bf85`.
+  ALL FOUR WERE RENDERED AND READ before anything was committed: umlauts
+  intact, informal du throughout, no dash as clause punctuation, the code
+  present in each, four distinct subjects.
+  MY OWN ASSERTION FAILED AGAINST CORRECT CODE, for the sixth recorded time in
+  this file and the same cause every time. It searched the WHOLE FILE for
+  `'Reset your Trimio password',`, which legitimately still exists as the
+  English subject inside the new const. It is scoped to the handler now and
+  asserts the handler calls no raw `sendEmail` of its own, which is the thing
+  that actually had to change.
+
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
   sitting as NOT YET CONFIRMED for two days.
