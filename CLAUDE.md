@@ -1424,6 +1424,63 @@ last one left off without needing a recap typed out.
   asserts the handler calls no raw `sendEmail` of its own, which is the thing
   that actually had to change.
 
+- THE FUNNEL HAS TWO HALVES IN TWO TOOLS, and neither alone answers "where are
+  the people going". Recorded 2026-10-01, the first day of real ad traffic.
+  THE CLIENT HALF IS ALREADY IN POSTHOG AND NEEDS NO PUBLISH. The app tracks a
+  complete funnel: `onboarding_started`, `onboarding_completed`,
+  `sign_up_completed` (email), `google_auth_completed` (fires for RETURNING
+  Google users too, `screen: "login"`, so it is not a signup count),
+  `subscription_added`, `paywall_viewed`, `upgrade_completed`, plus
+  `app_opened` on every cold start with an `authenticated` property.
+  THE FUNNEL TO BUILD: eu.posthog.com > Product analytics > New insight >
+  Funnels, steps `onboarding_started` > `onboarding_completed` >
+  `subscription_added` > `paywall_viewed` > `upgrade_completed`. Start from
+  onboarding_started, NOT app_opened: app_opened fires for every returning
+  launch, so as step one it dilutes a new-user funnel with people who signed up
+  in July. The signup step is left out on purpose because it is two events and
+  PostHog funnel steps do not OR; `subscription_added` implies an account
+  anyway, and the endpoint below splits Google from email.
+  `app_opened` IS FOR RETENTION, read as a Trends insight with Unique users and
+  a breakdown on `authenticated`. It counts COLD STARTS, not resumes, which is
+  its own comment's warning and the definition to keep.
+  THE OWNER'S OWN PHONE IS IN EVERY NUMBER, as one person. At 22 installs that is
+  close to five percent, so subtract it rather than ignore it.
+  THE SERVER HALF IS `GET /api/admin/funnel`, added in `03a22daa`, with the
+  `x-cron-secret` header. COHORTS, NOT TOTALS: each window counts users CREATED
+  inside it and how far those same users got. Rolling windows, last24h, last7d
+  and allTime, plus `?since=<ISO>` for an exact moment such as an ad going live.
+  It is the only place that says how many signed up by Google versus email, and
+  how many email signups VERIFIED, which is the number that says whether the
+  verification email works.
+  `atFreeLimit` MIRRORS THE CREATE GATE EXACTLY, active rows against
+  FREE_SUBSCRIPTION_LIMIT, and it is the population that has seen the price.
+  The pricing entry above names it as the evidence that would reopen pricing.
+  MEASURED ON REAL POSTGRESQL against the schema the real initDB builds: 13 of
+  13, six SQL mutations all caught. The committed suite is half behavioural
+  (stub pool) and records that, and ten handler mutations were all caught.
+  FROM POWERSHELL, since a browser cannot send the header:
+  `Invoke-RestMethod -Uri "https://subscription-trimmer-mobile-production.up.railway.app/api/admin/funnel" -Headers @{ "x-cron-secret" = "<CRON_SECRET>" } | ConvertTo-Json -Depth 5`
+
+- `initDB` CANNOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring the
+  funnel SQL against the real schema, and NOT FIXED YET. It runs
+  `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active` at line ~1126,
+  plus `reminder_sent_for`, `billing_anchor_day` and an UPDATE, all BEFORE
+  `CREATE TABLE IF NOT EXISTS subscriptions` at line ~1169. On an empty database
+  the first ALTER throws `relation "subscriptions" does not exist` and the
+  service never boots.
+  PRODUCTION IS UNAFFECTED TODAY because its table predates those ALTERs, which
+  were added in `31a93689` and `43e0df2f` on 2026-09-18 above an older CREATE.
+  WHERE IT BITES: a replacement Railway database, a restore into a fresh
+  instance, or any staging environment. Each of those is a moment when the
+  owner is already having a bad day, and the backend would add a boot crash.
+  With the two real CREATE statements run first, the REST of initDB completed
+  cleanly, so this is the only ordering defect, not one of several.
+  THE FIX IS SMALL AND IS BOOT CODE, so it is its own change rather than a ride
+  along: move the subscriptions CREATE above the first statement that touches
+  the table. Every statement is IF NOT EXISTS, so on production it is a no-op,
+  but a mistake in boot code takes the service down, so it gets its own CI run
+  and its own deploy, and the owner hears about it before it lands.
+
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
   sitting as NOT YET CONFIRMED for two days.
@@ -3519,6 +3576,15 @@ last one left off without needing a recap typed out.
   watch installs. Positioning is reversible in an afternoon. Pricing is not.
   SUCCESS CRITERION BEFORE SPENDING ON UAC: one paying customer from organic.
   Until that exists, paid traffic buys a more expensive version of zero.
+  THE OWNER DECIDED, 2026-10-01: THE PRICE STAYS AT $2.99 A MONTH. Their
+  reasoning is that Trimio is the better app, which this entry already agreed
+  with on the product half. That is a decision, not an open question, so do not
+  re-raise lifetime pricing unasked. WHAT WOULD REOPEN IT IS EVIDENCE, and it is
+  now measurable without any new code: PostHog `paywall_viewed` against
+  `upgrade_completed`, and `atFreeLimit` against `paid` from
+  `/api/admin/funnel`. The price is only ever shown to people who reach the free
+  cap, so until a real number of users reach it the question cannot be answered
+  either way. Bring the numbers, not the argument.
 
 - THE EMAIL PASTE PARSER WAS ENGLISH SHAPED, fixed 2026-09-22, and it is the
   finding that most contradicts this file's own story about the product. The
