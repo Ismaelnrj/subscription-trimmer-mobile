@@ -639,17 +639,70 @@ async function sendEmail(to, subject, html, opts = {}) {
   }
 }
 
-async function sendVerificationEmail(email, code) {
+/* The two code emails, verification and password reset.
+
+   Both were English only until 2026-10-01, which made the verification email
+   the FIRST thing a German user ever received from Trimio, in the wrong
+   language, on the one step that gates everything behind it: is_verified
+   controls the referral reward and both bulk email queries.
+
+   The language comes from the REQUEST rather than from users.language, and
+   that is deliberate. Both of these are triggered by the person who will read
+   the mail, from the app they are holding, so Accept-Language is the most
+   current signal there is and costs no extra query. users.language exists for
+   the opposite case, the referral email, which writes to an inviter who is not
+   holding a phone at all. At register time the column is not even written yet. */
+const CODE_EMAIL = {
+  verify: {
+    en: {
+      subject: 'Verify your Trimio account',
+      heading: 'Verify your Trimio email',
+      body: 'Enter this code in the app to activate your account:',
+      expiry: "This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.",
+    },
+    de: {
+      subject: 'Bestätige dein Trimio Konto',
+      heading: 'Bestätige deine Trimio E-Mail',
+      body: 'Gib diesen Code in der App ein, um dein Konto zu aktivieren:',
+      expiry: 'Dieser Code läuft in 24 Stunden ab. Falls du kein Trimio Konto erstellt hast, ignoriere diese E-Mail.',
+    },
+  },
+  reset: {
+    en: {
+      subject: 'Reset your Trimio password',
+      heading: 'Reset your password',
+      body: 'Enter this code in the app to reset your password:',
+      expiry: "This code expires in 1 hour. If you didn't request this, ignore this email.",
+    },
+    de: {
+      subject: 'Trimio Passwort zurücksetzen',
+      heading: 'Passwort zurücksetzen',
+      body: 'Gib diesen Code in der App ein, um dein Passwort zurückzusetzen:',
+      expiry: 'Dieser Code läuft in einer Stunde ab. Falls du das nicht angefordert hast, ignoriere diese E-Mail.',
+    },
+  },
+};
+
+async function sendCodeEmail(kind, email, code, lang) {
+  const c = CODE_EMAIL[kind][lang === 'de' ? 'de' : 'en'];
   await sendEmail(
     email,
-    'Verify your Trimio account',
+    c.subject,
     `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
-      <h2 style="color:#142B3A;margin-bottom:8px">Verify your Trimio email</h2>
-      <p style="color:#52616B">Enter this code in the app to activate your account:</p>
+      <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
+      <p style="color:#52616B">${c.body}</p>
       <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#142B3A;text-align:center;padding:24px 0">${code}</div>
-      <p style="color:#52616B;font-size:12px">This code expires in 24 hours. If you didn't create a Trimio account, ignore this email.</p>
+      <p style="color:#52616B;font-size:12px">${c.expiry}</p>
     </div>`
   );
+}
+
+async function sendVerificationEmail(email, code, lang) {
+  await sendCodeEmail('verify', email, code, lang);
+}
+
+async function sendPasswordResetEmail(email, code, lang) {
+  await sendCodeEmail('reset', email, code, lang);
 }
 
 /* The confirmation that an account is gone.
@@ -1879,7 +1932,7 @@ app.post('/api/auth/register', async (req, res) => {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
-    await sendVerificationEmail(email, code).catch(e => console.error('Email send failed:', e));
+    await sendVerificationEmail(email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
     res.json({ token: accessToken, refreshToken, user: formatUser(user) });
@@ -1953,6 +2006,13 @@ app.post('/api/auth/google', async (req, res) => {
       await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
       await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
     }
+
+    /* Outside the `if (!user)` block on purpose, so it covers a returning
+       Google user too. This is the only account path that never reaches
+       /register and never needs verify-email, so it was the one path where
+       users.language stayed NULL, which reads as English on the referral
+       reward email. recordLanguage no-ops when the value has not changed. */
+    recordLanguage(user.id, req);
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
     res.json({ token: accessToken, refreshToken, user: formatUser(user) });
@@ -2154,16 +2214,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
-    await sendEmail(
-      email,
-      'Reset your Trimio password',
-      `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
-        <h2 style="color:#142B3A;margin-bottom:8px">Reset your password</h2>
-        <p style="color:#52616B">Enter this code in the app to reset your password:</p>
-        <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#142B3A;text-align:center;padding:24px 0">${code}</div>
-        <p style="color:#52616B;font-size:12px">This code expires in 1 hour. If you didn't request this, ignore this email.</p>
-      </div>`
-    );
+    recordLanguage(user.id, req);
+    await sendPasswordResetEmail(email, code, languageOf(req));
     res.json({ success: true });
   } catch (err) {
     handleError(err, res);
@@ -2198,7 +2250,8 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
-    await sendVerificationEmail(user.email, code).catch(e => console.error('Email send failed:', e));
+    recordLanguage(user.id, req);
+    await sendVerificationEmail(user.email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
     res.json({ success: true });
   } catch (err) {
     handleError(err, res);
