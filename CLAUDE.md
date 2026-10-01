@@ -58,6 +58,18 @@ resets between sessions and can lose detail even within one long session
   or force pushing anything, and any change whose failure mode is a broken
   production deploy that the owner has not already been told about. Pushing
   finished green work to master is NOT on that list any more.
+  AND FIX WHAT MATTERS WITHOUT BEING ASKED. STANDING INSTRUCTION from the owner,
+  2026-10-01, on being asked whether to fix a defect found mid-task: "Always fix
+  what you think is important for trimio!" So a real defect found while doing
+  something else is FIXED, in its own commit with its own CI run, not parked
+  waiting for permission. Judge importance by the axis the review entry below
+  sets: what sits on the path users and money travel, what can lose data, what
+  can take the service down. Cosmetic tidy-ups are not that.
+  IT DOES NOT WIDEN THE ASK-FIRST LIST ABOVE, it works inside it. `eas update`,
+  runtimeVersion, native builds, deletes, force pushes and anything scheduled
+  (see NEVER CREATE A SCHEDULED ANYTHING) still get asked first. And every fix
+  made this way is REPORTED with what it deploys, so "fixed without asking"
+  never means "fixed without telling".
   ONE STEP THAT IS EASY TO DROP, and it is what keeps the above working on the
   NEXT session rather than only this one: after the merge, push master back to
   the working branch as well, `git push origin master:claude/<branch>`. Without
@@ -1461,8 +1473,9 @@ last one left off without needing a recap typed out.
   FROM POWERSHELL, since a browser cannot send the header:
   `Invoke-RestMethod -Uri "https://subscription-trimmer-mobile-production.up.railway.app/api/admin/funnel" -Headers @{ "x-cron-secret" = "<CRON_SECRET>" } | ConvertTo-Json -Depth 5`
 
-- `initDB` CANNOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring the
-  funnel SQL against the real schema, and NOT FIXED YET. It runs
+- `initDB` COULD NOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring
+  the funnel SQL against the real schema. FIXED THE SAME DAY, see the end of this
+  entry. It ran
   `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS is_active` at line ~1126,
   plus `reminder_sent_for`, `billing_anchor_day` and an UPDATE, all BEFORE
   `CREATE TABLE IF NOT EXISTS subscriptions` at line ~1169. On an empty database
@@ -1480,6 +1493,32 @@ last one left off without needing a recap typed out.
   the table. Every statement is IF NOT EXISTS, so on production it is a no-op,
   but a mistake in boot code takes the service down, so it gets its own CI run
   and its own deploy, and the owner hears about it before it lands.
+  FIXED by moving the ONE CREATE statement up, directly above the first line that
+  touches the table, rather than moving the four statements that use it. That
+  keeps every column in the order production already has, and a comment beside
+  it says why it lives there so nobody tidies it back beside its later ALTERs.
+  MEASURED ON REAL POSTGRESQL, both versions, seven checks: the OLD initDB on an
+  empty database fails with `relation "subscriptions" does not exist`, so the bug
+  was real; the NEW one succeeds, and succeeds again when run twice, which
+  production does on every boot; on a production shaped database (tables
+  predating the ALTERs, old initDB already run, real rows) it boots, leaves every
+  row byte for byte unchanged and keeps a billing_anchor_day of 31; and
+  `pg_dump --schema-only` of the fresh path and the production path is
+  IDENTICAL, column order included.
+  ON PRODUCTION IT CHANGES NOTHING, which is the property that made it safe to
+  ship: every statement is IF NOT EXISTS, so the move only matters to a database
+  that does not have the table yet.
+  `__tests__/initdb-order.test.js` IS A SCAN, NOT A LIST: for EVERY table initDB
+  creates, the CREATE must precede any ALTER, UPDATE, INSERT, index, foreign
+  key, read or regclass naming it, so it covers the next table somebody adds.
+  Against the old code it reports `subscriptions: "ALTER TABLE subscriptions" on
+  initDB line 53, before its CREATE`, and the same mistake planted on two other
+  tables was caught both times. Its inventory assertion passes both ways on
+  purpose, so the scan can never quietly check zero tables.
+  THE HABIT THIS CAME FROM is worth more than the fix: building a fresh schema
+  by running the REAL initDB rather than retyping CREATE statements. Retyped,
+  the measurement would have tested a schema that cannot exist, and this defect
+  would still be waiting for the worst possible day.
 
 - A PUBLISH CAN BE LIVE ON THE SERVER AND NOT ON THE PHONE, AND THOSE ARE TWO
   SEPARATE CHECKS. Learned 2026-09-25 on the `d50ffd9c` publish, which had been
