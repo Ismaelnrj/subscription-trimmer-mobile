@@ -1311,10 +1311,8 @@ last one left off without needing a recap typed out.
   about the other, so without it the inviter is always written to in English on
   the one email that says they earned something. Additive, NULL reads as
   English exactly as today, recorded fire and forget at register, verify,
-  redeem and referrals.me. THE BULK EMAILS ARE STILL ENGLISH ONLY (the renewal
-  reminder and the win-back both hardcode their strings, and the win-back has a
-  literal `{ monthly: 'Monthly' }` map). The column now exists to fix that as
-  its own change.
+  redeem and referrals.me. THE BULK EMAILS WERE ENGLISH ONLY when this was
+  written; they were localised on 2026-10-01, see the scheduled emails entry.
   THE COPY PROMISED A MONTH THE CALCULATION COULD NOT KEEP, since near the cap
   the real grant is smaller. Both locales say up to 30 days now. The German
   also said "erhalten ihr beide", which is the wrong person: it is "erhaltet".
@@ -1472,6 +1470,81 @@ last one left off without needing a recap typed out.
   (stub pool) and records that, and ten handler mutations were all caught.
   FROM POWERSHELL, since a browser cannot send the header:
   `Invoke-RestMethod -Uri "https://subscription-trimmer-mobile-production.up.railway.app/api/admin/funnel" -Headers @{ "x-cron-secret" = "<CRON_SECRET>" } | ConvertTo-Json -Depth 5`
+
+- BREVO IS A DELIVERY PIPE AND NOTHING IS BUILT IN IT. Recorded 2026-10-01,
+  when the owner asked whether the emails should be "created on Brevo" and was
+  about to hire a Fiverr freelancer to "do the whole Brevo thing".
+  EVERY EMAIL IS WRITTEN IN `backend/server.js` and posted to
+  `https://api.brevo.com/v3/smtp/email` as finished HTML. There is no
+  `templateId` anywhere. A template built in Brevo's editor would never be sent
+  by anything, so paying somebody to build them buys nothing.
+  THE DELIVERABILITY SETUP IS ALREADY DONE, and is the only Brevo work that
+  ever mattered: the domain authentication (two `brevo*._domainkey` CNAMEs,
+  DMARC, the single SPF record) is in the LIVE DOMAIN entry. A freelancer
+  "optimising" that is the likeliest way to get a SECOND `v=spf1` record, which
+  invalidates SPF and breaks every email this product sends.
+  DO NOT HAND BREVO ACCESS TO A THIRD PARTY. The account holds every user's
+  email address as a contact, plus the API key. Somebody with access is a data
+  processor under GDPR who would need a written agreement, which a Fiverr gig
+  is not.
+  WHAT BREVO STILL RECEIVES: the emails themselves, and two contact
+  attributes, `PLAN` and `SUB_COUNT`, from `updateBrevoContact`.
+  `__tests__/brevo-minimal-data.test.js` allows those two and nothing else.
+  Whether even those are worth keeping depends on whether Brevo campaigns are
+  ever used, which is the owner's call.
+  THE RENEWAL DIGEST IS GONE, removed in `e7bfcc41`. Until then every add, edit,
+  pause, cancel and delete pushed that user's upcoming subscription NAMES,
+  prices and dates into Brevo as `UPCOMING_RENEWALS`, `TOTAL_AMOUNT`,
+  `NEXT_RENEWAL_DATE` and `CURRENCY_SYMBOL`, for every user, free or paid,
+  unsubscribed or not. It fed a Brevo renewal automation, added 2026-06-24,
+  four days before the win-back moved OUT of Brevo Automation because workflows
+  are "gated behind a plan we don't have". So it almost certainly fed nothing,
+  while shipping what people pay for, some of it sensitive, to a third party.
+  TWO THINGS ONLY THE OWNER CAN DO, since a sandbox cannot reach Brevo:
+  check Brevo > Automations is EMPTY, because an automation there would
+  duplicate the code-side reminder and ignore `email_opt_out`; and delete the
+  four now-orphaned contact attributes under Contacts > Settings > Contact
+  attributes, which removes the values already stored for every contact at
+  once. The code change stops new data and deletes nothing that is already
+  there.
+
+- THE TWO SCHEDULED EMAILS ARE BILINGUAL, 2026-10-01 in `eb40ec5c`: the renewal
+  reminder, the win-back, the shared footer and the unsubscribe page. They were
+  the last English-only mail the backend sent.
+  THE REMINDER HAD THREE MORE DEFECTS UNDER THE LANGUAGE, measured on the same
+  data. Old, to a German user: `Netflix $15.99/monthly 10/2/2026`. New:
+  `Netflix 15,99 € pro Monat 2. Oktober 2026`. The old one used the ACCOUNT's
+  currency symbol rather than the row's own currency, which breaks the per-row
+  rule recorded above, printed the raw API cycle identifier, and wrote a US date.
+  The date is formatted IN UTC, since a billing date is stored as midnight UTC.
+  THE GERMAN REUSES THE APP'S WORDING ("wird ... verlängert", "pro Monat"), so
+  email and push notification say one thing, and both subjects agree in number.
+  THE LANGUAGE IS BACKFILLED BY `/auth/me`, and that is the load bearing part.
+  A cron has no request, so `users.language` is the only signal, and every
+  account older than 2026-09-30 had it NULL, which reads as English. The app
+  calls `/auth/me` on every launch with a session, so existing users are
+  recorded on their next open. Without that, the German emails reach almost
+  nobody who exists today.
+  THE FOOTER NOW STATES A TRUE REASON PER EMAIL. It told win-back recipients
+  they had "turned on email reminders", which nothing guarantees.
+  THE WIN-BACK MARKED ITSELF SENT ON A FAILED SEND, so a Brevo outage on the day
+  somebody became eligible meant they were never written to. It marks only on
+  delivery now, the rule the reminder already followed.
+  MEASURED ON A REAL POSTGRESQL with the schema built by the real initDB on an
+  empty database: both jobs end to end, 22 of 22 checks, every email read in
+  full. `__tests__/scheduled-email-localization.test.js` drives the real
+  handlers on stub data, and a mutation pass found one real gap in it first
+  (the win-back footer reason was tested on the footer function, never on what
+  the job passes it), now closed: 10 of 10.
+
+- NEXT, FOUND WHILE DOING THE ABOVE AND NOT YET FIXED: the IN-APP notification
+  rows are written by the SERVER in English with a hardcoded dollar sign.
+  `subscriptions.create` inserts the title "Subscription Added", and
+  `subscriptions.update` inserts "{name} increased by ${diff}" and "went from
+  ${old} to ${new}", for a euro subscriber in a German app. The notifications
+  screen reads those rows as stored. Same class as the emails, and it needs a
+  decision about whether rows store text or a key the client translates, since
+  text stored in one language cannot be re-rendered when the user switches.
 
 - `initDB` COULD NOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring
   the funnel SQL against the real schema. FIXED THE SAME DAY, see the end of this
