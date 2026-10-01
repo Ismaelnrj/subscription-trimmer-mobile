@@ -521,6 +521,20 @@ app.use('/api/auth/reset-password', codeLimiter);
 app.use('/api/auth/account', authLimiter);
 app.use('/api/trpc', apiLimiter);
 
+/* Its own instance rather than a reused one, because express-rate-limit keeps a
+   counter PER INSTANCE and keys it on IP: sharing authLimiter would let the
+   owner reading stats from home spend the login budget of anybody else on the
+   same address. The ceiling exists to slow guessing at CRON_SECRET, which
+   secretMatches already compares in constant time. */
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many requests. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/admin', adminLimiter);
+
 /* POSTGRES TLS, and why verification is off by default here.
  *
  * Railway's Postgres image generates its OWN private CA and signs the server
@@ -3487,6 +3501,112 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
     handleError(err, res);
   }
 });
+
+/* ── Signup funnel, for the owner ───────────────────────────────────────────
+   Answers "of the people who installed, how far did they get" in one request,
+   because the honest answer was otherwise a psql session in the Railway console
+   on the day the first ad ran, and Brevo had just read zero for a reason that
+   had nothing to do with the funnel (Google sign in sends no email at all).
+
+   COHORTS, NOT TOTALS. Each window counts the users CREATED inside it and then
+   asks how far those same users got, so every number is a fraction of the
+   signups line above it. A total of everybody who ever added a subscription
+   would mix this week's ad traffic with July's test accounts.
+
+   ROLLING WINDOWS rather than calendar days, deliberately: "today" depends on
+   whose midnight, and the owner reads this from Vienna against a server in
+   UTC. last24h means the same thing everywhere. ?since=<ISO date> adds one
+   window from an exact moment, such as when an ad went live.
+
+   AGGREGATE COUNTS ONLY. No email, no name, no id leaves this route, so even a
+   leaked CRON_SECRET exposes a handful of integers.
+
+   atFreeLimit MIRRORS THE GATE in subscriptions.create exactly: active rows,
+   cancelled_at IS NULL, compared against FREE_SUBSCRIPTION_LIMIT. It is the
+   only population that has ever been shown the price, so it is the one that
+   says whether the price is the blocker. A count that drifted from the gate
+   would answer a different question with the same name. */
+async function funnelCounts(sinceValue) {
+  const { rows } = await pool.query(
+    `WITH cohort AS (
+       SELECT u.google_id, u.is_verified, u.is_paid, u.bonus_premium_until,
+              u.referred_by, u.referral_rewarded, u.language,
+              COALESCE(s.total, 0)  AS subs_total,
+              COALESCE(s.active, 0) AS subs_active
+         FROM users u
+         LEFT JOIN (
+           SELECT user_id,
+                  COUNT(*) AS total,
+                  COUNT(*) FILTER (WHERE cancelled_at IS NULL) AS active
+             FROM subscriptions
+            GROUP BY user_id
+         ) s ON s.user_id = u.id
+        WHERE u.created_at >= $1::timestamptz
+     )
+     SELECT
+       COUNT(*)::int                                                           AS signups,
+       COUNT(*) FILTER (WHERE google_id IS NOT NULL)::int                      AS via_google,
+       COUNT(*) FILTER (WHERE google_id IS NULL)::int                          AS via_email,
+       COUNT(*) FILTER (WHERE google_id IS NULL AND is_verified IS TRUE)::int  AS email_verified,
+       COUNT(*) FILTER (WHERE subs_total >= 1)::int                            AS added_subscription,
+       COUNT(*) FILTER (WHERE subs_active >= $2)::int                          AS at_free_limit,
+       COUNT(*) FILTER (WHERE is_paid IS TRUE)::int                            AS paid,
+       COUNT(*) FILTER (WHERE is_paid IS NOT TRUE
+                          AND bonus_premium_until > NOW())::int                AS bonus_premium,
+       COUNT(*) FILTER (WHERE referred_by IS NOT NULL)::int                    AS referred,
+       COUNT(*) FILTER (WHERE referral_rewarded IS TRUE)::int                  AS referral_rewarded,
+       COUNT(*) FILTER (WHERE language = 'de')::int                            AS lang_de,
+       COUNT(*) FILTER (WHERE language = 'en')::int                            AS lang_en,
+       COUNT(*) FILTER (WHERE language IS NULL)::int                           AS lang_unknown
+     FROM cohort`,
+    [sinceValue, FREE_SUBSCRIPTION_LIMIT]
+  );
+  const r = rows[0];
+  return {
+    signups: r.signups,
+    viaGoogle: r.via_google,
+    viaEmail: r.via_email,
+    emailVerified: r.email_verified,
+    addedSubscription: r.added_subscription,
+    atFreeLimit: r.at_free_limit,
+    paid: r.paid,
+    bonusPremium: r.bonus_premium,
+    referred: r.referred,
+    referralRewarded: r.referral_rewarded,
+    language: { de: r.lang_de, en: r.lang_en, unknown: r.lang_unknown },
+  };
+}
+
+async function adminFunnel(req, res) {
+  // Same secret and same constant-time check as the two cron routes above, so
+  // an unset CRON_SECRET rejects everybody rather than admitting everybody.
+  if (!secretMatches(req.headers['x-cron-secret'], process.env.CRON_SECRET)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  let since = null;
+  if (req.query.since != null) {
+    const ms = Date.parse(String(req.query.since));
+    if (!Number.isFinite(ms)) {
+      return res.status(400).json({ error: 'since must be an ISO date, for example 2026-10-01T08:00:00Z' });
+    }
+    since = new Date(ms);
+  }
+  try {
+    const now = Date.now();
+    const windows = {
+      last24h: await funnelCounts(new Date(now - 24 * 60 * 60 * 1000)),
+      last7d: await funnelCounts(new Date(now - 7 * 24 * 60 * 60 * 1000)),
+      allTime: await funnelCounts('-infinity'),
+    };
+    if (since) windows.since = { from: since.toISOString(), ...(await funnelCounts(since)) };
+    res.set('Cache-Control', 'no-store');
+    res.json({ generatedAt: new Date(now).toISOString(), freeLimit: FREE_SUBSCRIPTION_LIMIT, windows });
+  } catch (err) {
+    handleError(err, res);
+  }
+}
+
+app.get('/api/admin/funnel', adminFunnel);
 
 // ── App version check ──────────────────────────────────────────────────────
 // Lets the app nudge users still on an old native build to update from the
