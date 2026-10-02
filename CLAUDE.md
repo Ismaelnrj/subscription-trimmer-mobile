@@ -1562,6 +1562,34 @@ last one left off without needing a recap typed out.
   SCANS every `INSERT INTO notifications`, so a fifth writer cannot arrive in
   English: six mutations, six caught.
 
+- SERVER ERROR TEXT IS GERMAN FOR GERMAN READERS, 2026-10-02 in `a09e17ce`,
+  LIVE via Railway. The app shows `err.response.data.error` verbatim on login,
+  signup, verification and reset, so a German user with a wrong password read
+  "Invalid email or password" on the first screens an ad sends them to. ONE
+  middleware, `ERROR_TEXT_DE`, mounted after express.json and BEFORE the rate
+  limiters (their refusals go through res.json too), swaps known strings when
+  Accept-Language is German. Backend only, so every installed build has it.
+  `'Email already registered'` STAYS ENGLISH ON PURPOSE: register.tsx tests it
+  for "already" and shows its own localised line, so translating it would break
+  that on every installed build. Machine codes stay English for the same reason.
+  `__tests__/server-error-localization.test.js` SCANS every error string the
+  server sends and fails on one that is neither translated nor listed as
+  deliberately English, so a new error forces a decision. Measured by booting
+  both servers over HTTP; seven mutations, seven caught.
+
+- RENEWAL REMINDERS NAMED THE APP'S CURRENCY, NOT THE ROW'S, fixed 2026-10-02 in
+  `5c803d5c` (deferred review finding F06). The push printed a row's raw price
+  with the account symbol: measured on the real scheduler for a euro user, a
+  1500 yen row was announced as `1.500,00 €` and a 9.99 USD row as `9,99 €`. Now
+  `9,99 $` and `1.500 ¥`; a row with no currency keeps the account symbol.
+  `lib/currencies.ts` holds the nine currencies with NO imports, so the scheduler
+  can read it without dragging zustand and expo-secure-store into
+  notification-race.test.js; currency-store re-exports it.
+  CLIENT FILES, SO NOT ON PHONES UNTIL AN `eas update`, which is the owner's
+  call. Same commit: register and verify-email no longer fall back to English
+  placeholders, and the stale `lib/api.ts` language comment is corrected.
+  `needs_native_build.py 218c1df2` says OTA IS ENOUGH.
+
 - A SANDBOX CAN BOOT THE WHOLE REAL BACKEND AND DRIVE IT OVER HTTP, learned
   2026-10-02, and it is the strongest verification this file records, one step
   past the real PostgreSQL entry above: not a function lifted out of
