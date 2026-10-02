@@ -1537,14 +1537,59 @@ last one left off without needing a recap typed out.
   (the win-back footer reason was tested on the footer function, never on what
   the job passes it), now closed: 10 of 10.
 
-- NEXT, FOUND WHILE DOING THE ABOVE AND NOT YET FIXED: the IN-APP notification
-  rows are written by the SERVER in English with a hardcoded dollar sign.
-  `subscriptions.create` inserts the title "Subscription Added", and
-  `subscriptions.update` inserts "{name} increased by ${diff}" and "went from
-  ${old} to ${new}", for a euro subscriber in a German app. The notifications
-  screen reads those rows as stored. Same class as the emails, and it needs a
-  decision about whether rows store text or a key the client translates, since
-  text stored in one language cannot be re-rendered when the user switches.
+- IN-APP NOTIFICATION ROWS ARE WRITTEN IN THE READER'S LANGUAGE, fixed
+  2026-10-02 in `69a8211d`. The notifications screen renders each row's stored
+  `title` and `message` AS IS, so the server's text is what people read, and all
+  four writers stored English, two with a hardcoded dollar sign.
+  MEASURED BY BOOTING THE REAL SERVER, both versions, see the entry below.
+  Before, a German user with a euro Netflix:
+  `Netflix increased by $2.00 | ...went from $15.99 to $17.99 per monthly.`
+  After: `Netflix ist um 2,00 € teurer geworden | Dein Abo Netflix kostet jetzt
+  17,99 € pro Monat statt 15,99 €.`
+  TEXT, NOT A KEY, and that reverses what this entry used to propose. Every
+  writer (welcome on signup and Google sign in, added, price increase) runs
+  inside a request from the person the row is for, so Accept-Language is their
+  language at that moment and the text is written in it. That fixes every
+  installed build with a BACKEND DEPLOY ALONE, since displaying a string needs no
+  client change. A key the client translates would only add re-translation after
+  a language switch, on a history list, at the cost of a schema change and an
+  app publish. Rows written before the fix stay English and age out.
+  A PRICE CHANGE ACROSS TWO CURRENCIES IS NOT A RISE. The currency moves with the
+  price, so a EUR to USD edit used to be announced as "increased by $2.00", and
+  the old server did exactly that in the measured run. It is still recorded in
+  `price_history`; it is just not called an increase.
+  `__tests__/notification-rows-localization.test.js` renders the real copy and
+  SCANS every `INSERT INTO notifications`, so a fifth writer cannot arrive in
+  English: six mutations, six caught.
+
+- A SANDBOX CAN BOOT THE WHOLE REAL BACKEND AND DRIVE IT OVER HTTP, learned
+  2026-10-02, and it is the strongest verification this file records, one step
+  past the real PostgreSQL entry above: not a function lifted out of
+  `server.js`, but `node server.js` itself, booting through initDB, the
+  middleware, the rate limiters and the real routes.
+  THE RECIPE, three pieces, each of which cost a round trip to find:
+    1. DEPENDENCIES OUTSIDE THE REPO: copy `backend/package.json` to
+       `/tmp/pgs/srv`, `npm install --omit=dev` there (it succeeds through the
+       proxy, 118 packages), and start the server with
+       `NODE_PATH=/tmp/pgs/srv/node_modules`. Nothing lands in the checkout.
+    2. THE SERVER INSISTS ON TLS TO POSTGRES, exactly as in production:
+       `DATABASE_URL` is required (it exits without it) and a set DATABASE_URL
+       means `ssl: { rejectUnauthorized: false }`. A Unix socket cannot carry
+       TLS, so give the cluster a throwaway self-signed certificate
+       (`openssl req -x509 -nodes` into the data directory, owned by postgres,
+       key mode 600) and start it with
+       `-c listen_addresses=127.0.0.1 -p 5433 -c ssl=on`. initdb's default
+       pg_hba is `trust` on 127.0.0.1, so no password is needed.
+    3. THE SOCKET NAME FOLLOWS THE PORT: on 5433 it is `.s.PGSQL.5433`, so any
+       admin connection over `/tmp/pgs/run` needs `port: 5433` too.
+  THE NEGATIVE TEST COMES FREE HERE TOO: `git archive HEAD backend | tar -x`
+  into a scratch directory gives the previous server, which boots on its own
+  port against its own fresh database, so the SAME HTTP scenario runs against
+  both and the before/after is two printouts rather than an argument.
+  WHAT IT CANNOT DO: send email (BREVO_API_KEY unset, so `sendEmail` logs
+  `[DEV]` and returns) or sign in with Google (GOOGLE_CLIENT_IDS unset, so that
+  route answers 503). Both are fine for most checks and must be named when a
+  change touches them.
 
 - `initDB` COULD NOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring
   the funnel SQL against the real schema. FIXED THE SAME DAY, see the end of this
