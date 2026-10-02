@@ -1,17 +1,8 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
 
-export const CURRENCIES = [
-  { code: "USD", symbol: "$",   name: "US Dollar" },
-  { code: "EUR", symbol: "€",   name: "Euro" },
-  { code: "GBP", symbol: "£",   name: "British Pound" },
-  { code: "BRL", symbol: "R$",  name: "Brazilian Real" },
-  { code: "CAD", symbol: "C$",  name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$",  name: "Australian Dollar" },
-  { code: "JPY", symbol: "¥",   name: "Japanese Yen" },
-  { code: "MXN", symbol: "MX$", name: "Mexican Peso" },
-  { code: "INR", symbol: "₹",   name: "Indian Rupee" },
-];
+import { CURRENCIES } from "./currencies";
+export { CURRENCIES };
 
 export type Currency = (typeof CURRENCIES)[0];
 

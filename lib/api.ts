@@ -55,11 +55,12 @@ apiClient.interceptors.request.use(async (config) => {
     );
   }
 
-  /* Accept-Language is the ONLY language signal the backend has. There is no
-     language column on the user, and anything the server sends by email or
-     renders as a page would otherwise be English for everyone, including the
-     German half of the audience. The account deletion email is the first thing
-     to depend on it.
+  /* Accept-Language is the language signal for anything the server sends IN
+     ANSWER to this request: code emails, notification rows, error text. The
+     server also stores it as users.language, which is what the scheduled emails
+     read, since a cron has no request to ask. Without this header every one of
+     those would be English for everyone, including the German half of the
+     audience.
 
      Its own try/catch, deliberately: i18n is not worth failing a request over,
      and an English email is a far smaller problem than a request that never

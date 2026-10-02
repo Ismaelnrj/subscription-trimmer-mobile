@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { livePlanned } from "./recurrence";
+import { CURRENCIES } from "./currencies";
 import { registerForPushNotificationsAsync } from "./notifications";
 import { parseLocalDate } from "./utils";
 import i18n from "./i18n";
@@ -24,14 +25,23 @@ function lang(): "de" | "en" {
   }
 }
 
-function formatAmount(price: unknown, symbol: string): string | null {
+/* A ROW IS NAMED IN ITS OWN CURRENCY, the rule every screen already follows
+   through useFmt. The amount here is the row's raw price, never converted, so
+   labelling it with the APP's symbol named a charge nobody will see: a 9.99 USD
+   Spotify row reminded a euro user that "9,99 €" was about to be debited. The
+   app's symbol is the fallback only for a row that carries no currency, which
+   is the one case where it is the best reading available. */
+function formatAmount(price: unknown, rowCurrency: unknown, fallbackSymbol: string): string | null {
   const n = Number(price);
   // No notification is better than one that says "NaN will be charged".
   if (!Number.isFinite(n)) return null;
+  const own = CURRENCIES.find(c => c.code === String(rowCurrency ?? "").toUpperCase());
+  const symbol = own ? own.symbol : fallbackSymbol;
+  const d = own?.code === "JPY" ? 0 : 2;
   if (lang() === "de") {
-    return `${n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
+    return `${n.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d })} ${symbol}`;
   }
-  return `${symbol}${n.toFixed(2)}`;
+  return `${symbol}${n.toFixed(d)}`;
 }
 
 function formatDate(d: Date): string {
@@ -216,7 +226,7 @@ async function performSchedule(
       const rawBilling = String(sub.nextBillingDate).slice(0, 10);
       const billing = parseLocalDate(rawBilling);
 
-      const amount = formatAmount(sub.price, currencySymbol);
+      const amount = formatAmount(sub.price, sub.currency, currencySymbol);
       const reminders = renewalRemindersOn
         ? [{ daysBefore: leadDays, whenKey: LEAD_TIME_KEYS[leadDays] }]
         : [];

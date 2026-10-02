@@ -50,8 +50,11 @@ export default function VerifyEmailScreen() {
       setResent(true);
       Alert.alert(t("verifyEmail.codeSentTitle"), t("verifyEmail.codeSentMsg"));
     } catch (err: any) {
-      const msg = err.response?.data?.error || err.message || "Unknown error";
-      Alert.alert(t("common.error"), `${t("verifyEmail.errResend")}: ${msg}`);
+      // The server's text arrives in the reader's language. An axios message
+      // ("Network Error") or an English placeholder does not, so with no
+      // server text the localised sentence stands alone.
+      const msg = err.response?.data?.error;
+      Alert.alert(t("common.error"), msg ? `${t("verifyEmail.errResend")}: ${msg}` : t("verifyEmail.errResend"));
     } finally {
       setResending(false);
     }

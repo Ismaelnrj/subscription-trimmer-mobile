@@ -69,7 +69,9 @@ export default function RegisterScreen() {
       track("sign_up_completed", { method: "email" });
       router.replace("/(tabs)");
     } catch (err: any) {
-      const msg = err.response?.data?.error || "Something went wrong.";
+      // Empty rather than an English sentence, so the localised fallback below
+      // is what a German reader sees when the server sent no text at all.
+      const msg: string = err.response?.data?.error || "";
       if (msg.toLowerCase().includes("already")) {
         setEmailError(t("register.emailAlreadyRegistered"));
       } else {
