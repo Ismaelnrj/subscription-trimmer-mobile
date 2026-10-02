@@ -112,9 +112,14 @@ describe("what gets stored on create", () => {
     // Scoped to the INSERT rather than the whole handler, because the comment
     // above that line quotes the old form on purpose and a file-wide search
     // matches the explanation instead of the code.
-    const insert = SERVER.slice(SERVER.indexOf("'Subscription Added'") - 200,
-                                SERVER.indexOf("'Subscription Added'") + 200);
-    expect(insert).toMatch(/\$\{currency\} \$\{price\}/);
+    // 2026-10-02: the row now goes through formatEmailPrice with its OWN
+    // currency and the reader's language ("15,99 € pro Monat"), superseding the
+    // bare ISO code this used to pin. The intent is unchanged and stricter:
+    // the row's currency reaches the text, and no dollar sign is written in.
+    const at = SERVER.indexOf("c.addedBody(");
+    expect(at).toBeGreaterThan(-1);
+    const insert = SERVER.slice(at - 200, at + 200);
+    expect(insert).toMatch(/formatEmailPrice\(price, currency, currency, billingCycle, lang\)/);
     expect(insert).not.toMatch(/\(\$\$\{price\}/);
   });
 });

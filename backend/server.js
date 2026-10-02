@@ -940,6 +940,40 @@ function formatEmailPrice(price, currency, fallbackSymbol, cycle, lang) {
   return lang === 'de' ? `${money} pro ${noun}` : `${money}/${noun}`;
 }
 
+/* ── In-app notification rows, in the language of whoever's request wrote them ──
+   The notifications screen renders `title` and `message` exactly as stored, so
+   these rows are the text. Until 2026-10-02 all four writers stored English,
+   and two stored a hardcoded dollar sign: a euro subscriber in the German app
+   read "Netflix increased by $2.00 ... per monthly".
+
+   Every writer runs inside a request from the person the row is for (signup,
+   Google sign in, add, edit), so Accept-Language is the language they are
+   reading the app in RIGHT NOW. Writing the text in it fixes every installed
+   build with a backend deploy alone, because no client change is needed to
+   display a string. The one thing this does not do is re-translate a row when
+   somebody later switches language; storing a key for the client to translate
+   would, at the cost of a schema change and an app publish, for a history list
+   whose old rows are rarely read. Money uses the ROW's own currency and the
+   reader's number format, through the same formatter as the reminder email. */
+const NOTIFICATION_TEXT = {
+  en: {
+    welcomeTitle: 'Welcome to Trimio!',
+    welcomeBody: 'Start adding your subscriptions to track your spending.',
+    addedTitle: 'Subscription Added',
+    addedBody: (name, priceWithCycle) => `${name} (${priceWithCycle}) was added.`,
+    increaseTitle: (name, diff) => `${name} increased by ${diff}`,
+    increaseBody: (name, oldPrice, newPriceWithCycle) => `Your ${name} subscription went from ${oldPrice} to ${newPriceWithCycle}.`,
+  },
+  de: {
+    welcomeTitle: 'Willkommen bei Trimio!',
+    welcomeBody: 'Füge deine Abos hinzu, um deine Ausgaben im Blick zu behalten.',
+    addedTitle: 'Abo hinzugefügt',
+    addedBody: (name, priceWithCycle) => `${name} (${priceWithCycle}) wurde hinzugefügt.`,
+    increaseTitle: (name, diff) => `${name} ist um ${diff} teurer geworden`,
+    increaseBody: (name, oldPrice, newPriceWithCycle) => `Dein Abo ${name} kostet jetzt ${newPriceWithCycle} statt ${oldPrice}.`,
+  },
+};
+
 async function sendReferralRewardEmail({ email, language, grantedDays, expiresAt, role }) {
   const c = REFERRAL_EMAIL[language === 'de' ? 'de' : 'en'];
   const why = role === 'referrer' ? c.referrer : c.friend;
@@ -2041,7 +2075,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     await pool.query(
       'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-      [user.id, 'Welcome to Trimio!', 'Start adding your subscriptions to track your spending.', 'info']
+      [user.id, NOTIFICATION_TEXT[languageOf(req)].welcomeTitle, NOTIFICATION_TEXT[languageOf(req)].welcomeBody, 'info']
     );
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
     await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
@@ -2119,7 +2153,7 @@ app.post('/api/auth/google', async (req, res) => {
 
       await pool.query(
         'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-        [user.id, 'Welcome to Trimio!', 'Start adding your subscriptions to track your spending.', 'info']
+        [user.id, NOTIFICATION_TEXT[languageOf(req)].welcomeTitle, NOTIFICATION_TEXT[languageOf(req)].welcomeBody, 'info']
       );
       await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
       await pool.query('INSERT INTO user_settings (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [user.id]);
@@ -2813,16 +2847,17 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day, currency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
       [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay, currency]
     );
-    /* This used to read `($${price}/...)` with a hardcoded dollar sign, so a
-       euro subscriber got their price stamped with the wrong symbol in their
-       own notification list. Same class as the column above: a number written
-       down without the unit it was measured in. The code is used rather than a
-       symbol because this string is not localised and `EUR 15.99` is at least
-       unambiguous in every language. */
-    await pool.query(
-      'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
-      [req.userId, 'Subscription Added', `${name} (${currency} ${price}/${billingCycle}) was added.`, 'info']
-    );
+    /* The row's own currency, in the reader's number format and language, so a
+       euro row reads "Netflix (15,99 € pro Monat) wurde hinzugefügt." See
+       NOTIFICATION_TEXT for why the text is written here rather than keyed. */
+    {
+      const lang = languageOf(req);
+      const c = NOTIFICATION_TEXT[lang];
+      await pool.query(
+        'INSERT INTO notifications (user_id, title, message, type) VALUES ($1, $2, $3, $4)',
+        [req.userId, c.addedTitle, c.addedBody(name, formatEmailPrice(price, currency, currency, billingCycle, lang)), 'info']
+      );
+    }
     syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
@@ -2922,12 +2957,20 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
         'INSERT INTO price_history (subscription_id, user_id, old_price, new_price) VALUES ($1, $2, $3, $4)',
         [id, req.userId, oldPrice, price]
       );
-      if (price > oldPrice) {
-        const diff = (price - oldPrice).toFixed(2);
+      /* An increase is only an increase in ONE currency. The currency moves
+         with the price, so 15.99 EUR edited to 19.99 USD used to be announced
+         as "increased by $4.00", a difference between two units. That edit is
+         still recorded in price_history above; it just is not called a rise. */
+      const oldCurrency = existing.currency || currency;
+      if (price > oldPrice && oldCurrency === currency) {
+        const lang = languageOf(req);
+        const c = NOTIFICATION_TEXT[lang];
+        const money = (n, cycle) => formatEmailPrice(n, currency, currency, cycle, lang);
         await pool.query(
           `INSERT INTO notifications (user_id, title, message, type)
            VALUES ($1, $2, $3, 'price_increase')`,
-          [req.userId, `${name} increased by $${diff}`, `Your ${name} subscription went from $${oldPrice.toFixed(2)} to $${price.toFixed(2)} per ${billingCycle}.`]
+          [req.userId, c.increaseTitle(name, money(roundToCents(price - oldPrice), null)),
+           c.increaseBody(name, money(oldPrice, null), money(price, billingCycle))]
         );
       }
     }
