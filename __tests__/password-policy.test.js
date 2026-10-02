@@ -180,7 +180,13 @@ describe("all three paths enforce it, and identically", () => {
   it("there is exactly one copy of the rule", () => {
     // Two copies is how the three paths drifted apart in the first place.
     expect((SRC.match(/function validatePassword\(/g) || []).length).toBe(1);
-    expect((SRC.match(/Password must be at least 8 characters/g) || []).length).toBe(1);
+    // ERROR_TEXT_DE quotes the message as a translation KEY, which is not a
+    // second copy of the rule, so it is cut out before counting. The cut is
+    // asserted, so this cannot pass by removing nothing.
+    const d = SRC.indexOf("const ERROR_TEXT_DE = {");
+    expect(d).toBeGreaterThan(-1);
+    const rest = SRC.slice(0, d) + SRC.slice(SRC.indexOf("\n};\n", d));
+    expect((rest.match(/Password must be at least 8 characters/g) || []).length).toBe(1);
   });
 });
 

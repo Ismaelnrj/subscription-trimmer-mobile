@@ -464,6 +464,77 @@ app.get('/de/nutzungsbedingungen', (req, res) => {
 
 app.use(express.json());
 
+/* Error text a person reads, in German. The app shows `err.response.data.error`
+   verbatim on login, signup, verification and password reset, so every one of
+   these reached a German reader in English, on the screens a new user meets
+   first. Translating here rather than in each handler fixes every installed
+   build with a backend deploy alone, the same reasoning as NOTIFICATION_TEXT.
+
+   DELIBERATELY ABSENT:
+   - machine codes (FREE_LIMIT_REACHED, DUPLICATE_SUBSCRIPTION and friends),
+     which clients compare by value;
+   - 'Email already registered', because app/register.tsx tests the message for
+     "already" and swaps in its own localised line. It is never shown raw in the
+     app, and translating it would break that check on every installed build;
+   - parameter errors only another developer can trigger. */
+const ERROR_TEXT_DE = {
+  'Unauthorized': 'Du bist nicht angemeldet. Bitte melde dich erneut an.',
+  'Internal server error': 'Etwas ist schiefgelaufen. Bitte versuche es erneut.',
+  'User not found': 'Konto nicht gefunden.',
+  'Subscription not found': 'Abo nicht gefunden.',
+  'Too many attempts. Please try again in 15 minutes.': 'Zu viele Versuche. Bitte versuche es in 15 Minuten erneut.',
+  'Too many requests. Please try again in 15 minutes.': 'Zu viele Anfragen. Bitte versuche es in 15 Minuten erneut.',
+  'Too many requests. Please try again in an hour.': 'Zu viele Anfragen. Bitte versuche es in einer Stunde erneut.',
+  'Too many requests. Please try again shortly.': 'Zu viele Anfragen. Bitte versuche es gleich noch einmal.',
+  'Email and password required': 'Bitte gib E-Mail-Adresse und Passwort ein.',
+  'Email required': 'Bitte gib deine E-Mail-Adresse ein.',
+  'Password required': 'Bitte gib dein Passwort ein.',
+  'Invalid email or password': 'E-Mail-Adresse oder Passwort ist falsch.',
+  'Name must be under 80 characters': 'Der Name darf höchstens 80 Zeichen lang sein.',
+  'Name must be under 120 characters': 'Der Name darf höchstens 120 Zeichen lang sein.',
+  'Password must be at least 8 characters.': 'Das Passwort muss mindestens 8 Zeichen lang sein.',
+  'Password must be 72 bytes or fewer. Accented characters and emoji count as more than one byte each.':
+    'Das Passwort darf höchstens 72 Byte lang sein. Umlaute und Emojis zählen jeweils als mehr als ein Byte.',
+  'Password must contain at least one uppercase letter.': 'Das Passwort muss mindestens einen Großbuchstaben enthalten.',
+  'Password must contain at least one number.': 'Das Passwort muss mindestens eine Zahl enthalten.',
+  'Code required': 'Bitte gib den Code ein.',
+  'Invalid code': 'Ungültiger Code.',
+  'Invalid or expired code': 'Ungültiger oder abgelaufener Code.',
+  'Code expired. Request a new one.': 'Der Code ist abgelaufen. Fordere einen neuen an.',
+  'Code expired. Please request a new one.': 'Der Code ist abgelaufen. Fordere einen neuen an.',
+  'Email, code and new password required': 'Bitte gib E-Mail-Adresse, Code und neues Passwort ein.',
+  'Current password required': 'Bitte gib dein aktuelles Passwort ein.',
+  'Current password is incorrect': 'Dein aktuelles Passwort ist falsch.',
+  'Incorrect password': 'Falsches Passwort.',
+  'Invalid Google token': 'Die Anmeldung mit Google ist fehlgeschlagen. Bitte versuche es erneut.',
+  'Google sign-in is not configured': 'Die Anmeldung mit Google ist gerade nicht verfügbar.',
+  'Google account email is not verified': 'Die E-Mail-Adresse deines Google-Kontos ist nicht bestätigt.',
+  'Google account does not match': 'Dieses Google-Konto gehört nicht zu deinem Trimio-Konto.',
+  'Name and price required': 'Bitte gib Name und Preis ein.',
+  'Price must be a positive number under 99,999': 'Der Preis muss eine positive Zahl unter 99.999 sein.',
+  'Invalid next billing date': 'Ungültiges Abrechnungsdatum.',
+  'Invalid billing cycle': 'Ungültiger Abrechnungszeitraum.',
+  'Referral code required': 'Bitte gib einen Empfehlungscode ein.',
+  'Invalid referral code': 'Ungültiger Empfehlungscode.',
+  'You already redeemed a referral code': 'Du hast bereits einen Empfehlungscode eingelöst.',
+};
+
+/* Mounted before the rate limiters on purpose: express-rate-limit sends its
+   `message` object through res.json, so their refusals are translated too. Only
+   an error status with a KNOWN string changes; anything else passes untouched. */
+app.use((req, res, next) => {
+  if (languageOf(req) !== 'de') return next();
+  const json = res.json.bind(res);
+  res.json = (body) => {
+    if (res.statusCode >= 400 && body && typeof body.error === 'string'
+        && Object.prototype.hasOwnProperty.call(ERROR_TEXT_DE, body.error)) {
+      body = { ...body, error: ERROR_TEXT_DE[body.error] };
+    }
+    return json(body);
+  };
+  next();
+});
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
