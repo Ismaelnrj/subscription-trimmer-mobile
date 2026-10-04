@@ -1215,6 +1215,41 @@ last one left off without needing a recap typed out.
   inverted: there I reported my own test input as the user's data, here I took
   the user's recollection as the panel's output.
 
+- PUBLISHED THROUGH 5c803d5c AND CONFIRMED ON A REAL DEVICE (2026-10-04), which
+  supersedes every baseline above. Read off a SCREENSHOT of the Build Info
+  panel, the discipline the entry above asks for: `Embedded launch (no OTA
+  applied): false`, `Update ID: 01a10724-658f-7a70-b70f-e77a3a397a90`,
+  `Update published: 2026-10-04T13:39:48.239Z`, against `App version: 1.0.3`,
+  `Native build: 40`, `Channel: production` and `Runtime version: 1.0.1`.
+  DIFFERENT ID AND A LATER TIMESTAMP than `01a0f3c9-...` at
+  `2026-09-30T19:27:24.524Z`, so it is the new bundle and not the old one
+  still applied. The same screenshot shows the update button rendered as
+  `Nach Updates suchen`, so the phone it was read on runs the app in German.
+  THE TIMESTAMP CROSS-CHECK CANNOT SAY WHETHER THE TREE WAS `506d6b95` OR
+  `981d8690`, and it does not need to. `981d8690` was committed 13:34:04Z,
+  under six minutes before the publish, and the owner was told to expect
+  `506d6b95`, so either is possible. Both are CLAUDE.md only. The last commit
+  carrying anything a phone runs is `5c803d5c`, which is why the baseline is
+  named by it.
+  WHAT WENT OUT, six client files across `218c1df2..5c803d5c`:
+  `lib/notification-scheduler.ts` and the new `lib/currencies.ts` (reminders
+  in each row's own currency), `lib/currency-store.ts` (re-exports the list),
+  `app/register.tsx` and `app/verify-email.tsx` (no English placeholder
+  errors), and `lib/api.ts` (a comment). Verified with `git diff --name-only`
+  over app/, lib/, components/ and locales/.
+  NATIVE CHECK ACROSS `218c1df2..5c803d5c`: OTA IS ENOUGH per
+  `needs_native_build.py 218c1df2`, so runtimeVersion correctly stayed 1.0.1.
+  Seventeenth recorded time.
+  THE BACKEND HALF WENT LIVE BEFORE IT via Railway, on `a09e17ce` (German
+  server error text) and the 2026-10-01/02 email and notification commits.
+  CI WAS GREEN ON EVERY COMMIT IN THE RANGE, runs 484, 486, 487 and 490,
+  including the typecheck on the pinned compiler.
+  NOT YET EXERCISED, and it is the half that matters: the panel proves the
+  bundle landed, not that a reminder now names the right currency. That needs
+  a row whose currency differs from the account's, with a reminder scheduled,
+  and the notification read when it fires. Nobody has done that, so do not
+  record the fix as observed working.
+
 - A SANDBOX CAN RUN A REAL POSTGRESQL, AND THAT CHANGES WHAT IS VERIFIABLE
   HERE. Learned 2026-09-30, and it is the biggest correction to this file's
   own verification section since the Node type stripping entry.
@@ -1604,10 +1639,11 @@ last one left off without needing a recap typed out.
   `lib/currencies.ts` holds the nine currencies with NO imports, so the scheduler
   can read it without dragging zustand and expo-secure-store into
   notification-race.test.js; currency-store re-exports it.
-  CLIENT FILES, SO NOT ON PHONES UNTIL AN `eas update`, which is the owner's
-  call. Same commit: register and verify-email no longer fall back to English
+  Same commit: register and verify-email no longer fall back to English
   placeholders, and the stale `lib/api.ts` language comment is corrected.
   `needs_native_build.py 218c1df2` says OTA IS ENOUGH.
+  LIVE ON PHONES since the 2026-10-04T13:39:48.239Z publish, confirmed on a
+  device; see that baseline entry.
 
 - A SANDBOX CAN BOOT THE WHOLE REAL BACKEND AND DRIVE IT OVER HTTP, learned
   2026-10-02, and it is the strongest verification this file records, one step
