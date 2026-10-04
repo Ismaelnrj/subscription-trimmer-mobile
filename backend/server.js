@@ -1045,6 +1045,34 @@ const NOTIFICATION_TEXT = {
   },
 };
 
+/* ── The Alerts screen, in the reader's language and each row's own currency ──
+   app/alerts.tsx renders `title` and `message` from alerts.list verbatim, the
+   same way the notifications screen renders its rows, so this is the text.
+   Until 2026-10-04 it was English for everybody and priced every row with the
+   ACCOUNT's symbol: a euro user's 9.99 USD row read "€9.99 will be charged".
+   The wording is the app's own push reminder (notifications.reminders in the
+   locale files), so push, email and this screen say one thing. */
+const ALERT_TEXT = {
+  en: {
+    when: (days) => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
+    renewalTitle: (name, when) => `${name} renews ${when}`,
+    renewalBody: (name, money) => `${money} will be charged for ${name}.`,
+    trialTitle: (name, when) => `${name} trial ends ${when}`,
+    trialBody: (name) => `Your free trial for ${name} is about to end. Cancel now to avoid charges.`,
+    spendTitle: 'High monthly spending',
+    spendBody: (moneyPerMonth) => `You spend ${moneyPerMonth} on subscriptions.`,
+  },
+  de: {
+    when: (days) => (days <= 0 ? 'heute' : days === 1 ? 'morgen' : `in ${days} Tagen`),
+    renewalTitle: (name, when) => `${name} wird ${when} verlängert`,
+    renewalBody: (name, money) => `${money} wird für ${name} abgebucht.`,
+    trialTitle: (name, when) => `Testphase von ${name} endet ${when}`,
+    trialBody: (name) => `Deine Testphase für ${name} endet bald. Kündige jetzt, wenn nichts abgebucht werden soll.`,
+    spendTitle: 'Hohe monatliche Ausgaben',
+    spendBody: (moneyPerMonth) => `Du gibst ${moneyPerMonth} für Abos aus.`,
+  },
+};
+
 async function sendReferralRewardEmail({ email, language, grantedDays, expiresAt, role }) {
   const c = REFERRAL_EMAIL[language === 'de' ? 'de' : 'en'];
   const why = role === 'referrer' ? c.referrer : c.friend;
@@ -3399,11 +3427,14 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
   try {
     const [subResult, settingsResult, prefsResult] = await Promise.all([
       pool.query('SELECT * FROM subscriptions WHERE user_id = $1 AND is_active = TRUE AND cancelled_at IS NULL', [req.userId]),
-      pool.query('SELECT currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
+      pool.query('SELECT currency, currency_symbol FROM user_settings WHERE user_id = $1', [req.userId]),
       pool.query('SELECT renewal_alert_days FROM notification_preferences WHERE user_id = $1', [req.userId]),
     ]);
     const subs = subResult.rows;
     const sym = settingsResult.rows[0]?.currency_symbol || '$';
+    const accountCurrency = settingsResult.rows[0]?.currency || null;
+    const lang = languageOf(req);
+    const T = ALERT_TEXT[lang];
     const renewalAlertDays = prefsResult.rows[0]?.renewal_alert_days ?? 3;
     const now = new Date();
     const alerts = [];
@@ -3447,8 +3478,8 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
         alerts.push({
           id: `renewal-${sub.id}`,
           type: 'renewal_alert',
-          title: `${sub.name} billing ${days <= 0 ? 'today' : `in ${days} day${days !== 1 ? 's' : ''}`}`,
-          message: `${sym}${parseFloat(sub.price).toFixed(2)} will be charged for ${sub.name}.`,
+          title: T.renewalTitle(sub.name, T.when(days)),
+          message: T.renewalBody(sub.name, formatEmailPrice(sub.price, sub.currency, sym, null, lang)),
           subscriptionId: sub.id,
           subscriptionName: sub.name,
           severity: days <= 1 ? 'high' : days <= 3 ? 'medium' : 'low',
@@ -3460,8 +3491,8 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
           alerts.push({
             id: `trial-${sub.id}`,
             type: 'trial_alert',
-            title: `${sub.name} trial ends ${trialDays === 0 ? 'today' : `in ${trialDays} day${trialDays !== 1 ? 's' : ''}`}`,
-            message: `Your free trial for ${sub.name} is about to end. Cancel now to avoid charges.`,
+            title: T.trialTitle(sub.name, T.when(trialDays)),
+            message: T.trialBody(sub.name),
             subscriptionId: sub.id,
             subscriptionName: sub.name,
             severity: trialDays === 0 ? 'high' : 'medium',
@@ -3470,15 +3501,27 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       }
     }
 
-    // Configurable: total monthly spend threshold for the "high spending" alert.
+    /* Total monthly spend threshold for the "high spending" alert. It used to
+       add every row's raw price whatever its currency, so 10 EUR and 10 USD
+       made 20 of nothing, printed with the account's symbol. The server holds
+       no exchange rates on purpose (the client fetches and validates them), so
+       a total exists only when every row shares one currency. Across several
+       there is no honest number to compare, and the alert stays quiet: the
+       dashboard already shows a correctly converted total. */
     const TOTAL_SPEND_ALERT_THRESHOLD = 200;
-    const monthlyTotal = subs.reduce((sum, s) => sum + toMonthly(parseFloat(s.price), s.billing_cycle), 0);
+    const totalsByCurrency = {};
+    for (const s of subs) {
+      const cur = s.currency || accountCurrency || '';
+      totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + toMonthly(parseFloat(s.price), s.billing_cycle);
+    }
+    const currencies = Object.keys(totalsByCurrency);
+    const monthlyTotal = currencies.length === 1 ? totalsByCurrency[currencies[0]] : 0;
     if (monthlyTotal > TOTAL_SPEND_ALERT_THRESHOLD) {
       alerts.push({
         id: 'expensive',
         type: 'expensive_alert',
-        title: 'High monthly spending',
-        message: `You spend ${sym}${monthlyTotal.toFixed(2)}/month on subscriptions.`,
+        title: T.spendTitle,
+        message: T.spendBody(formatEmailPrice(monthlyTotal, currencies[0] || null, sym, 'monthly', lang)),
         subscriptionId: null,
         subscriptionName: null,
         severity: 'low',
