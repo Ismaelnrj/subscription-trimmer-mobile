@@ -1507,6 +1507,25 @@ last one left off without needing a recap typed out.
   attributes, which removes the values already stored for every contact at
   once. The code change stops new data and deletes nothing that is already
   there.
+  THE AUTOMATIONS WERE NOT EMPTY, found 2026-10-04 from the owner's
+  screenshot. "Automation #1", last edited 24-06-2026 13:23 (the date the
+  renewal digest was added), was ACTIVE, had run once (1 started, 1
+  finished), and by the owner's description sends a "renews in 3 days"
+  email: a duplicate of the cron reminder that ignores `email_opt_out`, is
+  English only and reads frozen attribute values. A second automation sits
+  Inactive and was not opened.
+  THE OWNER PAUSED IT ON 2026-10-04 (their report, not read off a panel) and
+  chose to stop there. Paused rather than deleted is fine: it cannot send,
+  and one click undoes it. NOT DONE, by the owner's choice: deleting the
+  automation, deleting the four attributes (the stored values are still on
+  every contact), and checking who the one contact that ran through it was.
+  None of those is urgent; do not nag about them. If the attributes are ever
+  deleted, the automation must stay paused or be deleted first, or a stray
+  trigger sends an email with empty fields.
+  BREVO ITSELF STAYS. It is the delivery pipe for every email the backend
+  sends (codes, reset, deletion, referral, reminder, win-back), and the
+  domain authentication is already done for it. Switching providers buys
+  nothing at this volume and risks breaking delivery.
 
 - THE TWO SCHEDULED EMAILS ARE BILINGUAL, 2026-10-01 in `eb40ec5c`: the renewal
   reminder, the win-back, the shared footer and the unsubscribe page. They were
