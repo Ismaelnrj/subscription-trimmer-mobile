@@ -1616,6 +1616,24 @@ last one left off without needing a recap typed out.
   SCANS every `INSERT INTO notifications`, so a fifth writer cannot arrive in
   English: six mutations, six caught.
 
+- THE ALERTS SCREEN IS WRITTEN IN THE READER'S LANGUAGE, fixed 2026-10-04 in
+  `561ca9b7`, LIVE via Railway. Same class as the notification rows above, on
+  the one screen that was missed: `app/alerts.tsx` renders alerts.list's
+  `title` and `message` verbatim, and the server wrote them in English, priced
+  every row with the ACCOUNT symbol, and summed raw prices across currencies.
+  Measured over HTTP on both servers: `Spotify billing in 1 day | €9.99 will be
+  charged` for a 9.99 USD row became `Spotify wird morgen verlängert | 9,99 $
+  wird für Spotify abgebucht.`, and 150 EUR plus 150 USD stopped reading as
+  "€300.00/month". `ALERT_TEXT` reuses the push reminder's wording.
+  THE SPENDING ALERT NOW FIRES ONLY WHEN EVERY ROW SHARES ONE CURRENCY. The
+  server holds no rates on purpose, so across several there is no honest
+  total; the dashboard shows a converted one. A null-currency row counts as the
+  account's. STILL TRUE AND NOT CHANGED: the threshold is a bare 200 in
+  whatever that currency is, so 200 yen trips it. Few yen users; revisit if any
+  appear. Ids, types and severities are unchanged, so no app publish.
+  `__tests__/alerts-localization.test.js` drives the REAL handler on a stub
+  pool: four mutations, four caught.
+
 - SERVER ERROR TEXT IS GERMAN FOR GERMAN READERS, 2026-10-02 in `a09e17ce`,
   LIVE via Railway. The app shows `err.response.data.error` verbatim on login,
   signup, verification and reset, so a German user with a wrong password read
