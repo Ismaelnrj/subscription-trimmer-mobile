@@ -12,7 +12,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useAuthStore } from "../lib/auth-store";
 import { useCurrencyStore } from "../lib/currency-store";
 import { useThemeStore } from "../lib/theme-store";
-import { requestNotificationPermission } from "../lib/notification-scheduler";
+import { prepareNotifications } from "../lib/notifications";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { initAnalytics, track } from "../lib/analytics";
 import { useTheme } from "../lib/theme";
@@ -124,7 +124,9 @@ export default function RootLayout() {
         ]);
         fetchRates();
         setOnboardingDone(done === "true");
-        requestNotificationPermission();
+        /* Sets up, never asks: the question waits for the first subscription,
+           see lib/reminder-primer.ts. */
+        prepareNotifications().catch(() => {});
         if (useAuthStore.getState().isAuthenticated) {
           /* APPLY WHAT COMES BACK. This path exists for a purchase that was
              CHARGED on a previous run and never reached the account, so a

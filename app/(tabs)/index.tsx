@@ -11,6 +11,7 @@ import { daysUntil } from "../../lib/utils";
 import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
+import { FirstRunCard } from "../../components/FirstRunCard";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, useIsDark, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
@@ -281,6 +282,15 @@ export default function DashboardScreen() {
     return <DashboardSkeleton />;
   }
 
+  const isFirstRun = subscriptions.length === 0;
+  const verifyBanner = user && !user.isVerified ? (
+    <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
+      <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
+      <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
+      <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
+    </TouchableOpacity>
+  ) : null;
+
   if (isError) {
     return (
       <View style={styles.loadingContainer}>
@@ -319,13 +329,14 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {user && !user.isVerified && (
-          <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
-            <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
-            <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
-            <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
-          </TouchableOpacity>
-        )}
+        {/* NOTHING ADDED YET: one focused card instead of a dashboard of zeros,
+            an upsell and a warning. See components/FirstRunCard.tsx for the
+            measurement behind it. The ordinary dashboard returns with the
+            first subscription. */}
+        {isFirstRun && <FirstRunCard verifyBanner={verifyBanner} />}
+
+        {!isFirstRun && (<>
+        {verifyBanner}
 
         {estimateBanner && (
           <View style={styles.estimateBanner}>
@@ -541,8 +552,8 @@ export default function DashboardScreen() {
                   <Text style={styles.subName}>{sub.name}</Text>
                   <Text style={styles.subMeta}>
                     {viewMode === "yearly"
-                      ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)}/yr`
-                      : `${fmtC(sub.price, sub.currency)} / ${sub.billingCycle}${monthly != null ? `  ·  ${fmtC(monthly)}/mo` : ""}`
+                      ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)} / ${cycleLabel("yearly")}`
+                      : `${fmtC(sub.price, sub.currency)} / ${cycleLabel(sub.billingCycle)}${monthly != null ? `  ·  ${fmtC(monthly)} / ${cycleLabel("monthly")}` : ""}`
                     }
                   </Text>
                 </View>
@@ -555,6 +566,7 @@ export default function DashboardScreen() {
         <TouchableOpacity style={styles.viewAllLink} onPress={() => router.push("/(tabs)/subscriptions")}>
           <Text style={styles.viewAllLinkText}>{t("dashboard.viewAllSubscriptions")} →</Text>
         </TouchableOpacity>
+        </>)}
       </View>
     </ScrollView>
   );

@@ -22,9 +22,11 @@ import { useDateFormat } from "../../lib/date-locale";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
 import { track } from "../../lib/analytics";
-import { ServiceTemplate, searchTemplates, formatTemplatePrice, getPopularTemplates, findTemplateByExactName } from "../../lib/service-templates";
+import { ServiceTemplate, SERVICE_TEMPLATES, searchTemplates, formatTemplatePrice, getPopularTemplates, findTemplateByExactName, prefersDachCatalogue } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
 import { LogoImage } from "../../components/LogoImage";
+import { ReminderPrimer } from "../../components/ReminderPrimer";
+import { shouldOfferReminderPrimer, rememberPrimerDeclined, acceptReminderPrimer } from "../../lib/reminder-primer";
 import * as SecureStore from "expo-secure-store";
 
 /* THE FALLBACK ONLY, NOT THE SOURCE. The server owns this number and sends it
@@ -70,7 +72,7 @@ async function reviewEligible(): Promise<boolean> {
 
 export default function SubscriptionsScreen() {
   const router = useRouter();
-  const { from, editId } = useLocalSearchParams<{ from?: string; editId?: string }>();
+  const { from, editId, templateId } = useLocalSearchParams<{ from?: string; editId?: string; templateId?: string }>();
   const { user } = useAuthStore();
   const { language } = useLanguageStore();
   const isPremium = user?.isPaid ?? false;
@@ -103,6 +105,7 @@ export default function SubscriptionsScreen() {
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [templateSearch, setTemplateSearch] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [primerName, setPrimerName] = useState<string | null>(null);
 
   const removedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -286,6 +289,9 @@ export default function SubscriptionsScreen() {
       });
       invalidate();
       closeModal();
+      // The moment a reminder has an obvious meaning, so the moment to ask.
+      const addedName = typeof data?.name === "string" ? data.name : "";
+      shouldOfferReminderPrimer().then((offer) => { if (offer) setPrimerName(addedName); });
     },
     onError: (err: any, variables: any) => {
       const code = err.response?.data?.error;
@@ -294,11 +300,11 @@ export default function SubscriptionsScreen() {
         router.push("/upgrade");
       } else if (code === "DUPLICATE_SUBSCRIPTION") {
         Alert.alert(
-          "Duplicate subscription",
-          `You already have "${err.response.data.existingName}" in your list. Add it anyway?`,
+          t("subscriptions.duplicateTitle"),
+          t("subscriptions.duplicateMsg", { name: err.response.data.existingName }),
           [
-            { text: "Cancel", style: "cancel" },
-            { text: "Add anyway", onPress: () => createMutation.mutate({ ...variables, force: true }) },
+            { text: t("subscriptions.cancel"), style: "cancel" },
+            { text: t("subscriptions.addAnyway"), onPress: () => createMutation.mutate({ ...variables, force: true }) },
           ]
         );
       } else {
@@ -367,13 +373,23 @@ export default function SubscriptionsScreen() {
     setShowModal(true);
   };
 
+  /* Three ways in from elsewhere, all opening the add form: "fab" plain,
+     "template" prefilled from a catalogue row (the first-run tiles on the
+     dashboard), and "paste" with the email box already open. */
   useEffect(() => {
-    if (from !== "fab" || subscriptionsLoading) return;
+    if (!from || subscriptionsLoading) return;
+    if (from !== "fab" && from !== "template" && from !== "paste") return;
     openAdd();
-    // Clear the param once consumed so the next FAB tap (which sets the same
-    // "fab" value again) is seen as a fresh change and re-triggers this effect.
-    router.setParams({ from: undefined });
-  }, [from, subscriptionsLoading]);
+    if (from === "template") {
+      const tpl = SERVICE_TEMPLATES.find((x) => x.id === templateId);
+      if (tpl) applyTemplate(tpl);
+    } else if (from === "paste") {
+      setShowEmailPaste(true);
+    }
+    // Clear the params once consumed so the next tap (which sets the same
+    // value again) is seen as a fresh change and re-triggers this effect.
+    router.setParams({ from: undefined, templateId: undefined });
+  }, [from, templateId, subscriptionsLoading]);
 
   const openEdit = (sub: any) => {
     setEditingId(sub.id);
@@ -415,7 +431,7 @@ export default function SubscriptionsScreen() {
      The currency is an explicit statement about money, which is what is
      actually being chosen here, so it decides. Language stays as a fallback
      for anyone still on the USD default. */
-  const preferDach = currency.code === "EUR" || currency.code === "CHF" || language === "de";
+  const preferDach = prefersDachCatalogue(currency.code, language);
   const filteredTemplates = useMemo(
     () => searchTemplates(templateSearch, preferDach),
     [templateSearch, preferDach]
@@ -425,12 +441,20 @@ export default function SubscriptionsScreen() {
     [preferDach]
   );
 
+  /* THE PRICE IS ONLY FILLED IN WHEN IT IS IN THE CURRENCY IT WILL BE SAVED IN.
+     submitData sends `currency: baseCurrencyCode` with whatever number is in
+     the field, so a catalogue row in another currency used to be relabelled
+     rather than converted: a Swiss or British user tapping Netflix saved 15.99
+     as francs or pounds. Regional pricing is not arithmetic, so converting would
+     invent a figure too. Leaving the field empty asks for the one number only
+     the user knows. Name, cycle and category still fill, which is most of the
+     typing. */
   const applyTemplate = (tpl: ServiceTemplate) => {
     const guessed = guessCategory(tpl.name);
     setFormData((prev) => ({
       ...prev,
       name: tpl.name,
-      price: String(tpl.defaultPrice),
+      price: tpl.currency === baseCurrencyCode ? String(tpl.defaultPrice) : "",
       billingCycle: tpl.billingCycle,
       category: guessed !== "other" ? guessed : tpl.category,
     }));
@@ -494,11 +518,11 @@ export default function SubscriptionsScreen() {
     );
     if (duplicate) {
       Alert.alert(
-        "Duplicate subscription",
-        `You already have "${duplicate.name}" in your list. Add it anyway?`,
+        t("subscriptions.duplicateTitle"),
+        t("subscriptions.duplicateMsg", { name: duplicate.name }),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Add anyway", onPress: () => submitData(price, trialEndDate, nextBillingDate, true) },
+          { text: t("subscriptions.cancel"), style: "cancel" },
+          { text: t("subscriptions.addAnyway"), onPress: () => submitData(price, trialEndDate, nextBillingDate, true) },
         ]
       );
       return;
@@ -1037,6 +1061,22 @@ export default function SubscriptionsScreen() {
           )}
         </View>
       </ScrollView>
+
+      <ReminderPrimer
+        name={primerName}
+        onAccept={async () => {
+          setPrimerName(null);
+          const granted = await acceptReminderPrimer();
+          track("reminder_permission", { result: granted ? "granted" : "denied" });
+          // Refetching re-runs the dashboard's scheduler, now with permission.
+          if (granted) queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+        }}
+        onDecline={() => {
+          setPrimerName(null);
+          rememberPrimerDeclined();
+          track("reminder_permission", { result: "not_now" });
+        }}
+      />
 
       <Modal visible={showReviewPrompt} animationType="fade" transparent onRequestClose={handleReviewLater}>
         <View style={styles.reviewOverlay}>

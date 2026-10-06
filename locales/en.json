@@ -730,5 +730,24 @@
     "a11yRestore": "Restore {{name}}",
     "restoreBlockedBody_one": "You already track {{count}} subscription. Upgrade to Premium, or remove one before restoring this.",
     "restoreBlockedBody_other": "You already track {{count}} subscriptions. Upgrade to Premium, or remove one before restoring this."
+  },
+  "firstRun": {
+    "eyebrow": "Welcome to Trimio",
+    "title": "Add your first subscription",
+    "subtitle": "It only takes a moment. Start with one you know you pay for.",
+    "step1": "Add what you pay for",
+    "step2": "Get a reminder before every renewal",
+    "step3": "Cancel in a few taps with our guides",
+    "popular": "Popular subscriptions",
+    "otherService": "Another service",
+    "pasteEmail": "Paste an email",
+    "privacy": "No bank account and no inbox access. Only what you add.",
+    "a11yTile": "Add {{name}}"
+  },
+  "reminderPrimer": {
+    "title": "Get a heads-up before {{name}} renews?",
+    "body": "Trimio reminds you a few days before each charge, so you have time to cancel. Android will ask you to allow notifications.",
+    "accept": "Yes, remind me",
+    "decline": "Not now"
   }
 }

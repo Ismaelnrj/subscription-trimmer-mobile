@@ -267,6 +267,16 @@ export function dedupeForRegion(list: ServiceTemplate[], preferDach: boolean): S
   return [...out.values()];
 }
 
+/* Which regional catalogue to offer, decided by the currency first.
+
+   The currency is an explicit statement about money, so it decides; language
+   is the fallback for anyone still on the USD default. One definition, so the
+   add form's quick picks and the first-run tiles cannot disagree about what a
+   German subscriber is shown. */
+export function prefersDachCatalogue(currencyCode: string, language: string): boolean {
+  return currencyCode === "EUR" || currencyCode === "CHF" || language === "de";
+}
+
 export function getPopularTemplates(preferDach = false): ServiceTemplate[] {
   return dedupeForRegion(SERVICE_TEMPLATES.filter((t) => t.popular), preferDach);
 }

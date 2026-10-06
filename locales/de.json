@@ -730,5 +730,24 @@
     "a11yRestore": "{{name}} wiederherstellen",
     "restoreBlockedBody_one": "Du verfolgst bereits {{count}} Abo. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst.",
     "restoreBlockedBody_other": "Du verfolgst bereits {{count}} Abos. Hol dir Premium oder entferne eins, bevor du dieses wiederherstellst."
+  },
+  "firstRun": {
+    "eyebrow": "Willkommen bei Trimio",
+    "title": "Füge dein erstes Abo hinzu",
+    "subtitle": "Dauert nur einen Moment. Fang mit einem an, das du sicher zahlst.",
+    "step1": "Trag ein, was du zahlst",
+    "step2": "Erhalte eine Erinnerung vor jeder Verlängerung",
+    "step3": "Kündige in wenigen Schritten mit unseren Anleitungen",
+    "popular": "Beliebte Abos",
+    "otherService": "Anderer Dienst",
+    "pasteEmail": "E-Mail einfügen",
+    "privacy": "Kein Bankkonto und kein Postfachzugriff. Nur das, was du einträgst.",
+    "a11yTile": "{{name}} hinzufügen"
+  },
+  "reminderPrimer": {
+    "title": "Erinnerung, bevor {{name}} verlängert wird?",
+    "body": "Trimio erinnert dich ein paar Tage vor jeder Abbuchung, damit du rechtzeitig kündigen kannst. Android fragt dich gleich, ob du Benachrichtigungen erlaubst.",
+    "accept": "Ja, erinnere mich",
+    "decline": "Jetzt nicht"
   }
 }
