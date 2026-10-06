@@ -1513,6 +1513,36 @@ last one left off without needing a recap typed out.
   it into the command. Do NOT rotate CRON_SECRET to get past a 401: the
   cron-job.org jobs send the old one and the daily emails would stop.
 
+- THE FIRST FUNNEL READING, 2026-10-06T12:49Z, from `/api/admin/funnel`.
+  All time: 30 signups (14 Google, 16 email), 8 of 16 email signups verified,
+  10 added a subscription, 3 at the free limit, `paid` 5. Last 7 days: ONE
+  signup (Google, referred, rewarded), against roughly 22 installs from the
+  2026-10-01 ad. So the leak is INSTALL TO ACCOUNT, before anybody sees a
+  price. Next evidence: PostHog `onboarding_started` and
+  `onboarding_completed` since 2026-10-01, which says whether installs opened
+  the app at all.
+  `paid` 5 IS PROBABLY NOT REVENUE: until 2026-09-17 verify-premium trusted the
+  posted isPremium, so test purchases set is_paid. Play Console Order
+  management settles it. Language: de 0, en 1, unknown 29, so 29 accounts have
+  not launched since language recording began.
+  GETTING THE SECRET INTO POWERSHELL took eight round trips. What works: paste
+  `$s = (Get-Clipboard -Raw).Trim().Trim('"'); $s.Length` into PowerShell
+  WITHOUT pressing Enter, copy CRON_SECRET in Railway, then press Enter. Copying
+  the command from chat AFTER the secret overwrites the clipboard, and without
+  `-Raw` Windows PowerShell returns lines, not a string. Expect length 64.
+
+- THE LAUNCH RECORDED THE DEVICE LANGUAGE, NOT THE CHOSEN ONE, fixed
+  2026-10-06 in `bfb399ce`, found from that funnel's de 0 while the owner's own
+  app runs German. `app/_layout.tsx` ran restoreToken (which calls /auth/me,
+  whose Accept-Language the server stores as users.language) BEFORE
+  loadLanguage, and `lib/i18n.ts` starts on the device locale. So anyone on a
+  non-German phone who chose German was re-recorded as English every cold
+  start and got English scheduled emails. Language now loads first, its
+  failure swallowed so it cannot block the restore.
+  `__tests__/launch-language-order.test.js`, 5 assertions, 2 failing against
+  `37152882`. CI run 500 green. CLIENT ONLY, NOT YET PUBLISHED: it needs an
+  `eas update`, which the owner was told can ride the next publish.
+
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
   schedules them. Two jobs, "Trimio renewal reminders" POSTing
