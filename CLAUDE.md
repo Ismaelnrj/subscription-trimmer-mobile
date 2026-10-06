@@ -1617,10 +1617,29 @@ last one left off without needing a recap typed out.
   MATCHING IS BY THE START OF THE NAME, never a substring, with the next
   character not a letter or digit, so "Skype" is not Sky. Bare "max" and "ea"
   are absent on purpose. 73 of 127 catalogue names get a mark.
-  NO MARK EXISTS FOR Disney+, Amazon Prime, Xbox, Microsoft 365, Adobe, Canva,
-  LinkedIn, Slack, Hulu, Peacock or Joyn: those brands are not in simple-icons
-  (several asked to be removed). DO NOT DRAW THEM BY HAND, which is the mark
-  lesson above: a redrawn logo drifts. They get their first letter, see below.
+  TWELVE MARKS COME FROM OLDER simple-icons RELEASES, added 2026-10-06 when the
+  owner asked for the real logo of every service: Amazon (for Amazon Prime,
+  Kindle and Prime Video), Amazon Music, Xbox, Microsoft, OneDrive, Adobe
+  Creative Cloud, Lightroom (Adobe Foto-Abo), LinkedIn, Canva, Slack, Nintendo
+  Switch and Scribd. Those brands asked simple-icons to stop distributing them,
+  so the current release lacks them; each row pins the last release carrying
+  it (`from`, 12.4.0 or 14.15.0), same CC0 data. THE REMOVAL IS A SIGNAL THEY
+  ENFORCE THEIR GUIDELINES: if one ever objects, delete its row, re-run, ship
+  over the air. That is the whole remedy.
+  MICROSOFT IS DRAWN IN ITS FOUR REAL COLOURS (`parts`), the real subpaths
+  coloured in order, nothing redrawn. A grey grid read as a generic icon.
+  89 of 127 catalogue names now get a mark.
+  STILL NO MARK, AND NONE AVAILABLE OFFLINE: Disney+, Hulu, Peacock, Joyn, WOW,
+  RTL+, Zoom, Garmin, Spiegel+, ZEIT+, Bild+, Calm, Blinkist, MasterClass and
+  the Austrian and Swiss telcos, among others. Most are in no release at all;
+  RTL, Zoom, Garmin, Spiegel, Hulu, Prime Video and the Amazon Prime wordmark
+  exist but are wordmarks the 2.5 guard refuses. Wikimedia is egress blocked
+  from a sandbox. DO NOT DRAW THEM BY HAND, which is the mark lesson above: a
+  redrawn logo drifts. They get their first letter, see below.
+  THE TILE ROWS CHANGED WITH IT: DACH now reads Netflix, Amazon Prime,
+  Spotify, YouTube Premium, Xbox, Microsoft 365; US the same with Adobe
+  Creative Cloud in the last slot. Disney+, DAZN and iCloud+ left the tiles
+  (still one search away), because marksFirst puts every marked row first.
   TILES NOW LEAD WITH MARKS (`marksFirst`) from the reader's OWN regional
   catalogue (`getRegionalPopularTemplates`), so a US reader is no longer
   offered DAZN in euros. Measured on the real modules: DACH gets Netflix,

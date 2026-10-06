@@ -58,7 +58,11 @@ export function LogoImage({ name, category, size = 36 }: Props) {
   return (
     <View style={[styles.wrap, wrapStyle, styles.ring, { backgroundColor: mark.ground, borderColor: c.border }]}>
       <Svg width={glyph} height={glyph} viewBox="0 0 24 24">
-        <Path d={mark.path} fill={mark.hex} />
+        {mark.parts ? (
+          mark.parts.map((part, i) => <Path key={i} d={part.d} fill={part.fill} />)
+        ) : (
+          <Path d={mark.path} fill={mark.hex} />
+        )}
       </Svg>
     </View>
   );

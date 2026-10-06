@@ -13,10 +13,28 @@
    identify the user's own subscription to that service, in the brand's own
    colour and unaltered.
 
-   RUN, from the repo root (neither package is a dependency of the app, and
-   both go in ONE install: a second --no-save install prunes the first):
+   RUN, from the repo root (none of these packages is a dependency of the app,
+   and the current two go in ONE install: a second --no-save install into the
+   same prefix prunes the first):
      npm install --no-save --prefix /tmp/si simple-icons@16.34.0 svg-path-bbox@2.1.0
-     node tools/build-brand-marks.js /tmp/si/node_modules
+     for v in 12.4.0 14.15.0; do npm install --no-save --prefix /tmp/siv/$v simple-icons@$v; done
+     node tools/build-brand-marks.js /tmp/si/node_modules /tmp/siv
+
+   SOME MARKS COME FROM AN OLDER RELEASE, pinned per row with `from`. Amazon,
+   Microsoft, Xbox, LinkedIn, Adobe, Canva, Slack and Nintendo asked
+   simple-icons to stop distributing their marks, so the current release lacks
+   them; the last release that carried each one is the same CC0 data, drawn
+   from the brand's own artwork. Their removal is a signal those brands
+   enforce their guidelines, so the use here stays the narrow one above: the
+   user's own subscription, in the brand's colour, unaltered. If a brand ever
+   objects, deleting its row here and re-running is the whole remedy, and it
+   ships over the air.
+
+   MULTI COLOUR, ONLY WHERE THE REAL MARK IS: Microsoft's four squares carry
+   four colours, and a single grey grid reads as a generic icon rather than as
+   Microsoft. `parts` colours the real subpaths in order; nothing is redrawn.
+   For a multi colour mark the ground must let the strongest part reach 3:1,
+   since the mark reads as a whole.
 
    THE GROUND IS MEASURED, NOT CHOSEN. Each mark sits on white when its brand
    colour reaches 3:1 against white (WCAG 1.4.11, non-text contrast), and on
@@ -49,6 +67,19 @@ const MARKS = [
   ["icloud", ["icloud"]],
   ["apple", ["apple one", "apple"]],
   ["netflix", ["netflix"]],
+  ["amazonmusic", ["amazon music"], { from: "14.15.0" }],
+  // Amazon's smile, not the "prime" wordmark (5.16 wide, refused below).
+  ["amazon", ["amazon prime", "prime video", "kindle", "amazon"], { from: "14.15.0" }],
+  ["xbox", ["xbox"], { from: "12.4.0" }],
+  ["microsoftonedrive", ["onedrive", "microsoft onedrive"], { from: "12.4.0" }],
+  ["microsoft", ["microsoft"], { from: "12.4.0", parts: ["#F25022", "#7FBA00", "#00A4EF", "#FFB900"] }],
+  ["adobelightroom", ["adobe foto", "adobe lightroom", "lightroom"], { from: "12.4.0" }],
+  ["adobecreativecloud", ["adobe creative cloud", "adobe"], { from: "12.4.0" }],
+  ["linkedin", ["linkedin"], { from: "12.4.0" }],
+  ["canva", ["canva"], { from: "14.15.0" }],
+  ["slack", ["slack"], { from: "14.15.0" }],
+  ["nintendoswitch", ["nintendo switch", "nintendo"], { from: "12.4.0" }],
+  ["scribd", ["scribd"], { from: "14.15.0" }],
   ["spotify", ["spotify"]],
   ["dazn", ["dazn"]],
   ["hbo", ["hbo max", "hbo"]],
@@ -104,21 +135,50 @@ const ratio = (a, b) => {
 const MAX_ASPECT = 2.5;
 
 const modules = process.argv[2];
-if (!modules) {
-  console.error("usage: node tools/build-brand-marks.js <node_modules holding simple-icons and svg-path-bbox>");
+const legacyRoot = process.argv[3];
+if (!modules || !legacyRoot) {
+  console.error("usage: node tools/build-brand-marks.js <node_modules holding simple-icons and svg-path-bbox> <root holding <version>/node_modules/simple-icons>");
   process.exit(2);
 }
-const pkgDir = path.resolve(modules, "simple-icons");
-const si = require(pkgDir);
 const { svgPathBbox } = require(path.resolve(modules, "svg-path-bbox"));
-const version = require(path.join(pkgDir, "package.json")).version;
-const bySlug = {};
-for (const icon of Object.values(si)) if (icon && icon.slug) bySlug[icon.slug] = icon;
+const loadRelease = (dir) => {
+  const by = {};
+  for (const icon of Object.values(require(dir))) if (icon && icon.slug) by[icon.slug] = icon;
+  return { by, version: require(path.join(dir, "package.json")).version };
+};
+const current = loadRelease(path.resolve(modules, "simple-icons"));
+const version = current.version;
+const releases = {};
+const release = (from) => {
+  if (!from) return current;
+  if (!releases[from]) releases[from] = loadRelease(path.resolve(legacyRoot, from, "node_modules", "simple-icons"));
+  if (releases[from].version !== from) {
+    console.error(`${legacyRoot}/${from} holds simple-icons ${releases[from].version}, not ${from}`);
+    process.exit(1);
+  }
+  return releases[from];
+};
 
-const rows = MARKS.map(([slug, match]) => {
-  const icon = bySlug[slug];
+/* Splits a path into its subpaths, rewriting each leading relative moveto as
+   absolute. After a `z` the current point returns to the subpath's start, so
+   `m dx dy` is relative to that start. Only the leading moveto changes;
+   everything after it is relative to it already. */
+const splitSubpaths = (d) => {
+  const parts = d.split(/(?=[Mm])/);
+  let start = [0, 0];
+  return parts.map((p) => {
+    const m = p.match(/^([Mm])\s*(-?[\d.]+)[\s,]*(-?[\d.]+)/);
+    const [x, y] = [Number(m[2]), Number(m[3])];
+    start = m[1] === "M" ? [x, y] : [start[0] + x, start[1] + y];
+    return `M${+start[0].toFixed(3)} ${+start[1].toFixed(3)}` + p.slice(m[0].length);
+  });
+};
+
+const rows = MARKS.map(([slug, match, opts = {}]) => {
+  const rel = release(opts.from);
+  const icon = rel.by[slug];
   if (!icon) {
-    console.error(`simple-icons ${version} has no "${slug}"`);
+    console.error(`simple-icons ${rel.version} has no "${slug}"`);
     process.exit(1);
   }
   const [x0, y0, x1, y1] = svgPathBbox(icon.path);
@@ -128,16 +188,31 @@ const rows = MARKS.map(([slug, match]) => {
     process.exit(1);
   }
   const hex = `#${icon.hex.toUpperCase()}`;
-  const ground = ratio(hex, WHITE) >= 3 ? WHITE : NAVY;
-  if (ratio(hex, ground) < 3) {
-    console.error(`${slug} ${hex} reaches 3:1 on neither ground`);
+  let parts;
+  if (opts.parts) {
+    const subpaths = splitSubpaths(icon.path);
+    if (subpaths.length !== opts.parts.length) {
+      console.error(`${slug} has ${subpaths.length} subpaths, ${opts.parts.length} colours given`);
+      process.exit(1);
+    }
+    parts = subpaths.map((d, i) => ({ d, fill: opts.parts[i] }));
+  }
+  const fills = parts ? parts.map((p) => p.fill) : [hex];
+  const best = (g) => Math.max(...fills.map((f) => ratio(f, g)));
+  const ground = best(WHITE) >= 3 ? WHITE : NAVY;
+  if (best(ground) < 3) {
+    console.error(`${slug} reaches 3:1 on neither ground`);
     process.exit(1);
   }
-  return { slug, title: icon.title, hex, ground, match, path: icon.path };
+  const row = { slug, title: icon.title, hex, ground, match, path: icon.path };
+  if (parts) row.parts = parts;
+  if (opts.from) row.from = opts.from;
+  return row;
 });
 
 const out = [
-  `/* GENERATED by tools/build-brand-marks.js from simple-icons ${version}. Do not`,
+  `/* GENERATED by tools/build-brand-marks.js from simple-icons ${version}, with`,
+  "   the rows carrying `from` taken from the older release named there. Do not",
   "   hand edit: change the MARKS table there and re-run it. Icon data is CC0;",
   "   the marks are trademarks of their owners, shown only to identify the",
   "   user's own subscription to that service. */",
@@ -149,6 +224,10 @@ const out = [
   "  ground: string;",
   "  match: readonly string[];",
   "  path: string;",
+  "  /** Multi colour marks only: the real subpaths, each in its own colour. */",
+  "  parts?: readonly { d: string; fill: string }[];",
+  "  /** The simple-icons release a mark came from, when not the current one. */",
+  "  from?: string;",
   "};",
   "",
   "export const BRAND_MARKS: readonly BrandMark[] = [",
@@ -160,4 +239,4 @@ const out = [
 const dest = path.join(__dirname, "..", "lib", "brand-mark-data.ts");
 fs.writeFileSync(dest, out);
 console.log(`wrote ${rows.length} marks, ${out.length} bytes, to ${path.relative(process.cwd(), dest)}`);
-for (const r of rows) console.log(`  ${r.slug.padEnd(16)} ${r.hex} on ${r.ground === WHITE ? "white" : "navy "} ${ratio(r.hex, r.ground).toFixed(2)}:1`);
+for (const r of rows) console.log(`  ${r.slug.padEnd(18)} ${r.hex} on ${r.ground === WHITE ? "white" : "navy "} ${ratio(r.hex, r.ground).toFixed(2)}:1${r.from ? `  (simple-icons ${r.from})` : ""}${r.parts ? `  ${r.parts.length} colours` : ""}`);

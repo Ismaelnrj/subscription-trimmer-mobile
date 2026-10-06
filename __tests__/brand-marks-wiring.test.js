@@ -44,6 +44,8 @@ describe('logos are bundled, not fetched', () => {
     expect(LOGO).toContain('from "react-native-svg"');
     expect(LOGO).toContain('brandMarkFor(name)');
     expect(LOGO).toMatch(/<Path d=\{mark\.path\} fill=\{mark\.hex\} \/>/);
+    // A multi colour mark draws each real subpath in its own colour.
+    expect(LOGO).toMatch(/mark\.parts\.map\(\(part, i\) => <Path key=\{i\} d=\{part\.d\} fill=\{part\.fill\} \/>\)/);
     expect(LOGO).toContain('getCategoryIcon(category)');
   });
 
@@ -63,14 +65,17 @@ describe('the data is generated, and the generator holds its own guards', () => 
   it('the generator refuses illegible wordmarks and illegible colours', () => {
     expect(GEN).toContain('const MAX_ASPECT = 2.5;');
     expect(GEN).toMatch(/if \(aspect > MAX_ASPECT\)/);
-    expect(GEN).toMatch(/ratio\(hex, WHITE\) >= 3 \? WHITE : NAVY/);
-    expect(GEN).toMatch(/if \(ratio\(hex, ground\) < 3\)/);
+    expect(GEN).toMatch(/best\(WHITE\) >= 3 \? WHITE : NAVY/);
+    expect(GEN).toMatch(/if \(best\(ground\) < 3\)/);
   });
 
   it('every generated row carries the six fields LogoImage reads', () => {
     const rows = DATA.split('\n').filter((l) => l.startsWith('  {')).map((l) => JSON.parse(l.trim().replace(/,$/, '')));
     expect(rows.length).toBeGreaterThan(30);
-    for (const r of rows) expect(Object.keys(r).sort()).toEqual(['ground', 'hex', 'match', 'path', 'slug', 'title']);
+    for (const r of rows) {
+      const keys = Object.keys(r).filter((k) => k !== 'parts' && k !== 'from').sort();
+      expect(keys).toEqual(['ground', 'hex', 'match', 'path', 'slug', 'title']);
+    }
   });
 });
 
