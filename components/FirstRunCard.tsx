@@ -128,11 +128,11 @@ export function FirstRunCard({ verifyBanner }: Props) {
       <View style={styles.actions}>
         <TouchableOpacity style={styles.actionButton} onPress={openOther} accessibilityRole="button">
           <MaterialCommunityIcons name="magnify" size={18} color={c.text} />
-          <Text style={styles.actionText} numberOfLines={1}>{t("firstRun.otherService")}</Text>
+          <Text style={styles.actionText} numberOfLines={2}>{t("firstRun.otherService")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={openPaste} accessibilityRole="button">
           <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.text} />
-          <Text style={styles.actionText} numberOfLines={1}>{t("firstRun.pasteEmail")}</Text>
+          <Text style={styles.actionText} numberOfLines={2}>{t("firstRun.pasteEmail")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -198,6 +198,7 @@ function makeStyles(c: AppColors) {
     actionButton: {
       flex: 1,
       minHeight: 48,
+      paddingVertical: 6,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -208,7 +209,10 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.card,
       paddingHorizontal: 10,
     },
-    actionText: { fontSize: 14, color: c.text, fontFamily: "Montserrat-SemiBold", flexShrink: 1 },
+    /* Two lines, not one: on a real phone with a larger system font "Another
+       service" read "Another servi..." on the first screen a new user sees.
+       minHeight on the button keeps the row 48dp either way. */
+    actionText: { fontSize: 14, lineHeight: 18, color: c.text, fontFamily: "Montserrat-SemiBold", flexShrink: 1, textAlign: "center" },
     privacyRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18, paddingHorizontal: 4 },
     verifySlot: { marginTop: 18 },
     privacyText: { flex: 1, fontSize: 13, lineHeight: 18, color: c.textSecondary },
