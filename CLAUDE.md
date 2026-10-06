@@ -1633,9 +1633,24 @@ last one left off without needing a recap typed out.
   DAZN NOW SITS ON THE DACH TILE ROW with its contested 29.99 (see the
   catalogue's own comment on resisting verification). The form shows the price
   before saving, so it is a visible default, not a silent one.
-  CLIENT ONLY, needs an `eas update`; `needs_native_build.py 364e4995` says OTA
-  IS ENOUGH. Contact sheet of every mark on both card grounds was rendered in
-  Chromium and read before shipping.
+  `needs_native_build.py 364e4995` said OTA IS ENOUGH. Contact sheet of every
+  mark on both card grounds was rendered in Chromium and read before shipping.
+  PUBLISHED THROUGH 427bf193 AND CONFIRMED ON A REAL DEVICE (2026-10-06), read
+  off a screenshot of the Build Info panel: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a11270-ce8c-7214-a779-cc53dec6a82b`, `Update
+  published: 2026-10-06T18:19:05.228Z`, build 40, runtime 1.0.1, channel
+  production. DIFFERENT ID AND LATER than `01a1123d-...` at 17:23:05.031Z.
+  Timestamp cross-check: `427bf193` was committed 18:03:53Z with nothing after
+  it on master, so the tree carried it, and with it the banner move
+  (`795803ef`). A second screenshot shows the DACH tile row exactly as
+  measured: five marks plus Disney+ on its category icon.
+  THE OWNER READ THE DISNEY+ ICON AS A FAILED LOGO. It is the designed
+  fallback (no mark exists, and Disney+'s logo is a wordmark the 2.5 guard
+  would refuse anyway). Worth knowing: beside five real logos, a category icon
+  reads as broken rather than as a fallback.
+  THE SAME SCREENSHOT SHOWED "Another servi..." TRUNCATED on the first-run
+  card, at the phone's system font size. The two action labels now wrap to two
+  lines; not yet published.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
