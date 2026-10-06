@@ -11,6 +11,7 @@ module.exports = defineConfig([
     files: [
       "*.config.js",
       "scripts/**/*.js",
+      "tools/**/*.js",
       "plugins/**/*.js",
       "react-native.config.js",
     ],

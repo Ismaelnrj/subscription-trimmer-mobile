@@ -7,8 +7,9 @@ import { useTranslation } from "react-i18next";
 import { useTheme, useIsDark, AppColors } from "../lib/theme";
 import { useCurrencyStore } from "../lib/currency-store";
 import { useLanguageStore } from "../lib/language-store";
-import { getPopularTemplates, prefersDachCatalogue, ServiceTemplate } from "../lib/service-templates";
+import { getRegionalPopularTemplates, prefersDachCatalogue, ServiceTemplate } from "../lib/service-templates";
 import { LogoImage } from "./LogoImage";
+import { marksFirst } from "../lib/brand-marks";
 import { track } from "../lib/analytics";
 
 /* THE DASHBOARD FOR SOMEBODY WITH NOTHING ON IT YET.
@@ -51,11 +52,14 @@ export function FirstRunCard({ verifyBanner }: Props) {
   /* Rows priced in the currency the form saves in come first, so a euro
      account sees six euro rows (Microsoft 365 rather than Adobe's dollar row).
      Where the catalogue has too few, the regional list stands and the form
-     leaves the price for the person to type, see applyTemplate. */
+     leaves the price for the person to type, see applyTemplate.
+     Services with a bundled mark lead, so the row reads as logos; a popular
+     service without one (Disney+, Amazon Prime) still fills a remaining slot
+     with its category icon rather than being dropped. */
   const tiles = useMemo(() => {
-    const popular = getPopularTemplates(preferDach).filter((tpl) => tpl.domain);
+    const popular = getRegionalPopularTemplates(preferDach);
     const sameCurrency = popular.filter((tpl) => tpl.currency === baseCurrencyCode);
-    return (sameCurrency.length >= TILE_COUNT ? sameCurrency : popular).slice(0, TILE_COUNT);
+    return marksFirst(sameCurrency.length >= TILE_COUNT ? sameCurrency : popular).slice(0, TILE_COUNT);
   }, [preferDach, baseCurrencyCode]);
 
   const openTemplate = (tpl: ServiceTemplate) => {

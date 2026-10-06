@@ -59,7 +59,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   // ─── ENTERTAINMENT / MUSIC (Global / USD) ───────────────────────────────────
   { id: "spotify", name: "Spotify Premium", defaultPrice: 12.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", domain: "spotify.com", popular: true, verified: "2026-09-16" },
   { id: "apple-music", name: "Apple Music", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
-  { id: "youtube-premium", name: "YouTube Premium", defaultPrice: 13.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
+  { id: "youtube-premium", name: "YouTube Premium", defaultPrice: 15.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL", popular: true, verified: "2026-10-06" },
   { id: "amazon-music", name: "Amazon Music Unlimited", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "tidal", name: "Tidal", defaultPrice: 10.99, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
   { id: "audible", name: "Audible", defaultPrice: 7.95, currency: "USD", billingCycle: "monthly", category: "entertainment", region: "GLOBAL" },
@@ -172,7 +172,7 @@ export const SERVICE_TEMPLATES: ServiceTemplate[] = [
   { id: "spiegel-plus-yearly", name: "Spiegel+ Jahresabo", defaultPrice: 199.99, currency: "EUR", billingCycle: "yearly", category: "entertainment", region: "DE" },
   { id: "zeit-plus", name: "ZEIT+ Digital", defaultPrice: 21.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DE" },
   { id: "bild-plus", name: "Bild+", defaultPrice: 7.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DE" },
-  { id: "youtube-premium-de", name: "YouTube Premium", defaultPrice: 11.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH" },
+  { id: "youtube-premium-de", name: "YouTube Premium", defaultPrice: 14.99, currency: "EUR", billingCycle: "monthly", category: "entertainment", region: "DACH", popular: true, verified: "2026-10-06" },
 
   // ─── SOFTWARE (DACH / EUR) ────────────────────────────────────────────────────
   { id: "adobe-cc-de", name: "Adobe Creative Cloud", defaultPrice: 54.99, currency: "EUR", billingCycle: "monthly", category: "software", region: "DACH" },
@@ -279,6 +279,15 @@ export function prefersDachCatalogue(currencyCode: string, language: string): bo
 
 export function getPopularTemplates(preferDach = false): ServiceTemplate[] {
   return dedupeForRegion(SERVICE_TEMPLATES.filter((t) => t.popular), preferDach);
+}
+
+/* The popular rows of the reader's own regional catalogue only, for the
+   handful offered as one-tap tiles. getPopularTemplates keeps a DACH-only
+   service (DAZN, RTL+, WOW) in the US list because it has no global twin to
+   lose to, which is right for browsing and wrong for six tiles: a US reader
+   should not be offered a German sports service priced in euros. */
+export function getRegionalPopularTemplates(preferDach = false): ServiceTemplate[] {
+  return getPopularTemplates(preferDach).filter((t) => isDachTemplate(t) === preferDach);
 }
 
 // Exact (not fuzzy) match on purpose — used to compare a tracked

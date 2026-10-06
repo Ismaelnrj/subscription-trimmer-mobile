@@ -1590,11 +1590,52 @@ last one left off without needing a recap typed out.
   `components/LogoImage.tsx` loads `logo.clearbit.com`, which HubSpot shut
   down in December 2025, so every request fails and falls back to the
   category icon. Nothing crashed, which is why nobody noticed. Only 11
-  catalogue rows carry a `domain` at all. Replacement is an OPEN DECISION for
-  the owner (bundled brand marks vs a third party logo service).
+  catalogue rows carry a `domain` at all. DECIDED AND BUILT, see the brand
+  marks entry below.
   THE VERIFY BANNER PUSHED THE TILES BELOW THE FOLD, fixed in the next commit
   by moving it under the tiles. Not yet published.
   NOT YET MEASURED: the 60% first-session bar, which needs new signups.
+
+- LOGOS ARE BUNDLED BRAND MARKS NOW, 2026-10-06, the owner's choice over a
+  third party logo service. `tools/build-brand-marks.js` generates
+  `lib/brand-mark-data.ts` (46 marks, about 41KB) from simple-icons 16.34.0,
+  whose data is CC0; `components/LogoImage.tsx` draws them with
+  react-native-svg, which build 40 already carries (DonutChart uses it), so it
+  is OTA safe. Nothing is fetched, so no third party learns which services a
+  user pays for, and nothing can go dark the way Clearbit did.
+  DO NOT HAND EDIT THE DATA FILE. Change the MARKS table in the generator and
+  re-run it; its header has the exact command, and both npm packages must go in
+  ONE `--no-save` install, because a second one prunes the first (cost a
+  round trip).
+  THE GROUND IS MEASURED: white when the brand colour reaches 3:1 on white,
+  Ink Navy otherwise (Spotify 1.92 on white, 7.62 on navy). The generator exits
+  1 if a mark reaches 3:1 on neither.
+  WORDMARKS ARE REFUSED by the generator above 2.5 times wider than tall, since
+  they render about 4dp high in a 36dp circle: RTL, YouTube TV, Zoom, Garmin and
+  the "max" wordmark were measured and left out. Negative tested by adding RTL
+  back: exit 1. Those rows keep the category icon.
+  MATCHING IS BY THE START OF THE NAME, never a substring, with the next
+  character not a letter or digit, so "Skype" is not Sky. Bare "max" and "ea"
+  are absent on purpose. 73 of 127 catalogue names get a mark.
+  NO MARK EXISTS FOR Disney+, Amazon Prime, Xbox, Microsoft 365, Adobe, Canva,
+  LinkedIn, Slack, Hulu, Peacock or Joyn: those brands are not in simple-icons
+  (several asked to be removed). DO NOT DRAW THEM BY HAND, which is the mark
+  lesson above: a redrawn logo drifts. They keep the category icon.
+  TILES NOW LEAD WITH MARKS (`marksFirst`) from the reader's OWN regional
+  catalogue (`getRegionalPopularTemplates`), so a US reader is no longer
+  offered DAZN in euros. Measured on the real modules: DACH gets Netflix,
+  Spotify, YouTube Premium, iCloud+, DAZN, Disney+; US gets Netflix, Spotify,
+  YouTube Premium, iCloud+, Disney+, Amazon Prime.
+  YOUTUBE PREMIUM BECAME POPULAR and both prices were wrong: US 13.99 to 15.99
+  (9to5Google, TechAdvisor, Ubergizmo, April 2026), DACH 11.99 to 14.99
+  (teltarif, PC-Welt, June 2026). Verified 2026-10-06. A blog claiming 16.99
+  US was not corroborated and was not used.
+  DAZN NOW SITS ON THE DACH TILE ROW with its contested 29.99 (see the
+  catalogue's own comment on resisting verification). The form shows the price
+  before saving, so it is a visible default, not a silent one.
+  CLIENT ONLY, needs an `eas update`; `needs_native_build.py 364e4995` says OTA
+  IS ENOUGH. Contact sheet of every mark on both card grounds was rendered in
+  Chromium and read before shipping.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo

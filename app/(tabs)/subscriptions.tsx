@@ -22,9 +22,10 @@ import { useDateFormat } from "../../lib/date-locale";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
 import { track } from "../../lib/analytics";
-import { ServiceTemplate, SERVICE_TEMPLATES, searchTemplates, formatTemplatePrice, getPopularTemplates, findTemplateByExactName, prefersDachCatalogue } from "../../lib/service-templates";
+import { ServiceTemplate, SERVICE_TEMPLATES, searchTemplates, formatTemplatePrice, getRegionalPopularTemplates, findTemplateByExactName, prefersDachCatalogue } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
 import { LogoImage } from "../../components/LogoImage";
+import { marksFirst } from "../../lib/brand-marks";
 import { ReminderPrimer } from "../../components/ReminderPrimer";
 import { shouldOfferReminderPrimer, rememberPrimerDeclined, acceptReminderPrimer } from "../../lib/reminder-primer";
 import * as SecureStore from "expo-secure-store";
@@ -437,7 +438,7 @@ export default function SubscriptionsScreen() {
     [templateSearch, preferDach]
   );
   const quickPickTemplates = useMemo(
-    () => getPopularTemplates(preferDach).filter((tpl) => tpl.domain).slice(0, 8),
+    () => marksFirst(getRegionalPopularTemplates(preferDach)).slice(0, 8),
     [preferDach]
   );
 
