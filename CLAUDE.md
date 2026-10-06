@@ -1554,6 +1554,33 @@ last one left off without needing a recap typed out.
   `37152882`. CI run 500 green. CLIENT ONLY, NOT YET PUBLISHED: it needs an
   `eas update`, which the owner was told can ride the next publish.
 
+- THE FIRST SESSION WAS REBUILT, 2026-10-06 in `364e4995`, from that funnel:
+  20 of 30 accounts never added a subscription. Two causes found by walking
+  the first session in code, since there is no session replay.
+  NOTIFICATIONS WERE ASKED AT LAUNCH. `_layout.tsx` called
+  registerForPushNotificationsAsync, which ASKS, so Android 13+ showed its
+  dialog before onboarding. Launch now calls `prepareNotifications` (channel,
+  plus the token only if already granted). The question comes after a
+  subscription is saved, through `components/ReminderPrimer.tsx` naming it,
+  and only while `getReminderPermission` says undetermined;
+  `lib/reminder-primer.ts` holds Not now for 7 days. Measured on Node type
+  stripping against stubbed permission answers, 10 of 10.
+  AN EMPTY DASHBOARD WAS ZEROS, AN UPSELL AND A WARNING. While
+  `subscriptions.length === 0` it now renders `components/FirstRunCard.tsx`:
+  one promise, three steps, six one-tap tiles that OPEN THE FORM PREFILLED
+  (never save), "Another service" and "Paste an email". Tiles prefer rows in
+  `baseCurrencyCode`.
+  A TEMPLATE PRICE IS ONLY PREFILLED IN THE CURRENCY IT IS SAVED IN, since
+  submitData labels the number with `baseCurrencyCode`: a CHF or GBP user
+  tapping Netflix used to save 15.99 euros as francs or pounds.
+  NEW EVENTS: `first_run_action` (tile, other, paste; never which service)
+  and `reminder_permission` (granted, denied, not_now). SUCCESS BAR: first
+  session `subscription_added` from 33% of signups to at least 60%.
+  NOT YET PUBLISHED, and NOT SEEN ON A DEVICE: CI run 508 is green including
+  the typecheck, OTA IS ENOUGH per `needs_native_build.py 5c803d5c`. The same
+  publish carries `bfb399ce` (launch language order) and `afac9d16` (three
+  dashboard strings).
+
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
   schedules them. Two jobs, "Trimio renewal reminders" POSTing
