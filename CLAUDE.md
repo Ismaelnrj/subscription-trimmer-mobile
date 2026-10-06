@@ -1505,6 +1505,27 @@ last one left off without needing a recap typed out.
   (stub pool) and records that, and ten handler mutations were all caught.
   FROM POWERSHELL, since a browser cannot send the header:
   `Invoke-RestMethod -Uri "https://subscription-trimmer-mobile-production.up.railway.app/api/admin/funnel" -Headers @{ "x-cron-secret" = "<CRON_SECRET>" } | ConvertTo-Json -Depth 5`
+  `<CRON_SECRET>` IS A PLACEHOLDER, and on 2026-10-05 it was run literally and
+  answered `Unauthorized`. The KNOWN-GOOD COPY of the secret is the
+  `x-cron-secret` header saved in the cron-job.org jobs (Edit > Advanced >
+  Headers), since those jobs demonstrably pass the same `secretMatches` check.
+  Read it into a variable with `Read-Host` and `.Trim()` it rather than typing
+  it into the command. Do NOT rotate CRON_SECRET to get past a 401: the
+  cron-job.org jobs send the old one and the daily emails would stop.
+
+- THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
+  owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
+  schedules them. Two jobs, "Trimio renewal reminders" POSTing
+  `/api/trpc/reminders.sendEmailReminders` and "Trimio win-back emails" POSTing
+  `/api/trpc/reminders.sendWinBackEmails`, both daily at 9:00 in the owner's
+  cron-job.org timezone, and the last four executions were all
+  `Successful (200 OK)`. A 401 would show there, so the stored header matches
+  Railway's CRON_SECRET.
+  200 MEANS THE JOB RAN, NOT THAT ANYBODY WAS EMAILED. Both handlers answer
+  `{ success: true, emailsSent: N }`, and N is in each run's DETAILS. With few
+  Premium users the reminder legitimately sends 0, so read N before concluding
+  anything about delivery. cron-job.org emails the owner on FAILURE by default,
+  so silence from it is the healthy state.
 
 - BREVO IS A DELIVERY PIPE AND NOTHING IS BUILT IN IT. Recorded 2026-10-01,
   when the owner asked whether the emails should be "created on Brevo" and was
