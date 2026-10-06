@@ -33,3 +33,26 @@ export function brandMarkFor(name: string | null | undefined): BrandMark | undef
 export function marksFirst<T extends { name: string }>(list: readonly T[]): T[] {
   return [...list.filter((x) => brandMarkFor(x.name)), ...list.filter((x) => !brandMarkFor(x.name))];
 }
+
+/* The letter drawn for a service with no mark: its first cased letter or
+   digit, upper cased ("Disney+" is "D", "1Password" would be "1"). A script
+   without case (Chinese, Japanese) falls back to the first visible character.
+   Null only for a name with nothing visible in it, where the caller keeps the
+   category icon.
+
+   Deliberately no `\p{L}` regex: a Unicode property escape Hermes cannot
+   parse is a syntax error in the bundle, which crashes every launch rather
+   than one screen. Comparing upper and lower case asks the same question
+   with nothing but String methods. */
+export function monogramFor(name: string | null | undefined): string | null {
+  if (!name) return null;
+  let firstVisible: string | null = null;
+  for (const ch of name) {
+    if (/\s/.test(ch)) continue;
+    if (firstVisible === null) firstVisible = ch;
+    // The first code point of the upper case: "ß" upper cases to "SS", and a
+    // circle holds one letter.
+    if (/[0-9]/.test(ch) || ch.toUpperCase() !== ch.toLowerCase()) return Array.from(ch.toUpperCase())[0];
+  }
+  return firstVisible;
+}

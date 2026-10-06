@@ -30,6 +30,16 @@ describe('logos are bundled, not fetched', () => {
     expect(LOGO).not.toContain('clearbit');
   });
 
+  it('a service with no mark gets its letter, at a fixed size, before any category icon', () => {
+    expect(LOGO).toContain('const letter = monogramFor(name);');
+    expect(LOGO).toMatch(/<Text allowFontScaling=\{false\}/);
+    expect(LOGO.indexOf('monogramFor(name)')).toBeLessThan(LOGO.indexOf('getCategoryIcon(category)'));
+  });
+
+  it('the monogram helper uses no Unicode property escape Hermes might not parse', () => {
+    expect(codeOf(read('lib/brand-marks.ts'))).not.toMatch(/\\p\{/);
+  });
+
   it('LogoImage draws the bundled mark and keeps the category fallback', () => {
     expect(LOGO).toContain('from "react-native-svg"');
     expect(LOGO).toContain('brandMarkFor(name)');

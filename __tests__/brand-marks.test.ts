@@ -4,7 +4,7 @@
    in December 2025, so every row showed a category icon. These pin the
    replacement: which names get a mark, which must not, that every mark is
    legible on the ground it is drawn on, and what the first-run tiles offer. */
-import { brandMarkFor, marksFirst } from "../lib/brand-marks";
+import { brandMarkFor, marksFirst, monogramFor } from "../lib/brand-marks";
 import { BRAND_MARKS } from "../lib/brand-mark-data";
 import { getRegionalPopularTemplates, SERVICE_TEMPLATES } from "../lib/service-templates";
 
@@ -106,5 +106,35 @@ describe("tiles", () => {
       ["EUR", 14.99, true, "2026-10-06"],
       ["USD", 15.99, true, "2026-10-06"],
     ]);
+  });
+});
+
+describe("monogramFor, the letter a service without a mark gets", () => {
+  it("takes the first letter, upper cased", () => {
+    expect(monogramFor("Disney+")).toBe("D");
+    expect(monogramFor("amazon prime")).toBe("A");
+    expect(monogramFor("  xbox")).toBe("X");
+  });
+
+  it("skips leading symbols to the first letter or digit", () => {
+    expect(monogramFor("+Plus")).toBe("P");
+    expect(monogramFor("(Gym) Nord")).toBe("G");
+    expect(monogramFor("1Password")).toBe("1");
+  });
+
+  it("upper cases beyond ASCII", () => {
+    expect(monogramFor("ärztekammer")).toBe("Ä");
+    expect(monogramFor("ßpezial")).toBe("S");
+  });
+
+  it("falls back to the first visible character in a script without case", () => {
+    expect(monogramFor("网飞")).toBe("网");
+  });
+
+  it("is null only when nothing is visible, so the category icon stays", () => {
+    expect(monogramFor("")).toBeNull();
+    expect(monogramFor("   ")).toBeNull();
+    expect(monogramFor(null)).toBeNull();
+    expect(monogramFor(undefined)).toBeNull();
   });
 });

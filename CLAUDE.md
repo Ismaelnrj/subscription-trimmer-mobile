@@ -1620,7 +1620,7 @@ last one left off without needing a recap typed out.
   NO MARK EXISTS FOR Disney+, Amazon Prime, Xbox, Microsoft 365, Adobe, Canva,
   LinkedIn, Slack, Hulu, Peacock or Joyn: those brands are not in simple-icons
   (several asked to be removed). DO NOT DRAW THEM BY HAND, which is the mark
-  lesson above: a redrawn logo drifts. They keep the category icon.
+  lesson above: a redrawn logo drifts. They get their first letter, see below.
   TILES NOW LEAD WITH MARKS (`marksFirst`) from the reader's OWN regional
   catalogue (`getRegionalPopularTemplates`), so a US reader is no longer
   offered DAZN in euros. Measured on the real modules: DACH gets Netflix,
@@ -1651,6 +1651,17 @@ last one left off without needing a recap typed out.
   THE SAME SCREENSHOT SHOWED "Another servi..." TRUNCATED on the first-run
   card, at the phone's system font size. The two action labels now wrap to two
   lines; not yet published.
+  THE OWNER CHOSE A LETTER OVER THE CATEGORY ICON, 2026-10-06. A service with
+  no mark now gets its first letter (`monogramFor` in `lib/brand-marks.ts`),
+  Ink Navy on the same white circle the marks use, 14.62:1, fixed size so
+  system font scaling cannot push it out of the circle. That is EVERY row
+  without a mark, app wide, not only the tiles: custom names included. The
+  category icon remains only for a name with nothing visible in it.
+  NO `\p{L}` IN IT ON PURPOSE: a Unicode property escape Hermes cannot parse
+  is a bundle syntax error that crashes every launch, so the helper compares
+  upper and lower case instead, and a test forbids the escape in that file.
+  Rendered beside the real marks in Chromium, both themes, before shipping.
+  Not yet published.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
