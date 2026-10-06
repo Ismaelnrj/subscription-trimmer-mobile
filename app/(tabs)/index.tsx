@@ -332,8 +332,7 @@ export default function DashboardScreen() {
             <MaterialCommunityIcons name="target" size={20} color={c.primary} />
             <View style={{ flex: 1, marginLeft: 10 }}>
               <Text style={styles.estimateBannerText}>
-                You guessed {estimateBanner.guess}. You actually have {estimateBanner.actual} recurring expense
-                {estimateBanner.actual !== 1 ? "s" : ""}.
+                {t("dashboard.youGuessed", { guess: estimateBanner.guess, actual: estimateBanner.actual, count: estimateBanner.actual })}
               </Text>
             </View>
             <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
@@ -361,8 +360,8 @@ export default function DashboardScreen() {
 
         {!isPremium && (
           <PremiumGate
-            title="Budget Goal & Progress Bar"
-            description="Set a monthly spending limit and get a visual warning when you're getting close."
+            title={t("accountSettings.premiumBudgetTitle")}
+            description={t("accountSettings.premiumBudgetDesc")}
           />
         )}
 
@@ -373,7 +372,7 @@ export default function DashboardScreen() {
                 <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
                 <Text style={styles.budgetAmount}>
                   {fmtTotal(monthlyTotal)}{" "}
-                  <Text style={styles.budgetOf}>of {fmtC(budgetGoal)}</Text>
+                  <Text style={styles.budgetOf}>{t("dashboard.budgetOf", { amount: fmtC(budgetGoal) })}</Text>
                 </Text>
               </View>
               <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
