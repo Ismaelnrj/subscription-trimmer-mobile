@@ -105,8 +105,6 @@ export function FirstRunCard({ verifyBanner }: Props) {
         </View>
       </LinearGradient>
 
-      {verifyBanner}
-
       <Text style={styles.sectionLabel}>{t("firstRun.popular")}</Text>
       <View style={styles.grid}>
         {tiles.map((tpl) => (
@@ -138,6 +136,11 @@ export function FirstRunCard({ verifyBanner }: Props) {
         <MaterialCommunityIcons name="shield-check-outline" size={16} color={c.success} />
         <Text style={styles.privacyText}>{t("firstRun.privacy")}</Text>
       </View>
+
+      {/* Below the tiles, not between them and the hero: on a real phone the
+          banner pushed the whole tile row under the fold, and the tiles are
+          the one thing this card exists to get tapped. */}
+      {verifyBanner ? <View style={styles.verifySlot}>{verifyBanner}</View> : null}
     </View>
   );
 }
@@ -203,6 +206,7 @@ function makeStyles(c: AppColors) {
     },
     actionText: { fontSize: 14, color: c.text, fontFamily: "Montserrat-SemiBold", flexShrink: 1 },
     privacyRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18, paddingHorizontal: 4 },
+    verifySlot: { marginTop: 18 },
     privacyText: { flex: 1, fontSize: 13, lineHeight: 18, color: c.textSecondary },
   });
 }
