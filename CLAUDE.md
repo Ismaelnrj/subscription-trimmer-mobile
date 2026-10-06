@@ -1521,6 +1521,17 @@ last one left off without needing a recap typed out.
   price. Next evidence: PostHog `onboarding_started` and
   `onboarding_completed` since 2026-10-01, which says whether installs opened
   the app at all.
+  SETTLED THE SAME DAY: THE "22 INSTALLS" NEVER HAPPENED. The ad ran on
+  zeely.ai, and 22 is ZEELY's own figure. PostHog `onboarding_started` on
+  2026-10-01 was 0 (5 since 29 Sep, all on 30 Sep and 4 Oct, the owner's own
+  publish and test days). Play Console > Base instalada read 12, 10, 11, 12
+  devices on 1 to 4 October, FLAT, so no install wave reached Google Play.
+  A NUMBER AN AD PLATFORM REPORTS ABOUT ITSELF IS NOT AN INSTALL. Play Console
+  and PostHog are the two sources; a figure neither confirms did not happen.
+  For Google Ads, link Play Console so the count comes from Play.
+  ALSO FROM THAT SCREEN: 30 accounts against 12 installed devices, so most
+  people who ever signed up have uninstalled. Retention, not the ad, is the
+  open problem. Crash rate 0.00% in production, so it is not crashes.
   `paid` 5 IS PROBABLY NOT REVENUE: until 2026-09-17 verify-premium trusted the
   posted isPremium, so test purchases set is_paid. Play Console Order
   management settles it. Language: de 0, en 1, unknown 29, so 29 accounts have
