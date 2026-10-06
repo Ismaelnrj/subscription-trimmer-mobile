@@ -1576,10 +1576,25 @@ last one left off without needing a recap typed out.
   NEW EVENTS: `first_run_action` (tile, other, paste; never which service)
   and `reminder_permission` (granted, denied, not_now). SUCCESS BAR: first
   session `subscription_added` from 33% of signups to at least 60%.
-  NOT YET PUBLISHED, and NOT SEEN ON A DEVICE: CI run 508 is green including
-  the typecheck, OTA IS ENOUGH per `needs_native_build.py 5c803d5c`. The same
-  publish carries `bfb399ce` (launch language order) and `afac9d16` (three
-  dashboard strings).
+  PUBLISHED AND CONFIRMED ON A REAL DEVICE, read off a screenshot of the Build
+  Info panel: `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1123d-88c7-714f-9c1c-572ddd9beaf6`, `Update published:
+  2026-10-06T17:23:05.031Z`, build 40, runtime 1.0.1, channel production.
+  DIFFERENT ID AND LATER than `01a10724-...` at 2026-10-04T13:39:48.239Z.
+  Timestamp cross-check: `9c0ab22f` was committed 16:47:24Z with nothing after
+  it, so the tree carried everything; the last client commit is `364e4995`,
+  which names the baseline. It also carried `bfb399ce` and `afac9d16`.
+  THE FIRST-RUN CARD WAS SEEN ON THE PHONE (owner's screenshot, an unverified
+  email account). Two things it showed:
+  THE TILE LOGOS ARE GENERIC CATEGORY ICONS, and so is every logo in the app:
+  `components/LogoImage.tsx` loads `logo.clearbit.com`, which HubSpot shut
+  down in December 2025, so every request fails and falls back to the
+  category icon. Nothing crashed, which is why nobody noticed. Only 11
+  catalogue rows carry a `domain` at all. Replacement is an OPEN DECISION for
+  the owner (bundled brand marks vs a third party logo service).
+  THE VERIFY BANNER PUSHED THE TILES BELOW THE FOLD, fixed in the next commit
+  by moving it under the tiles. Not yet published.
+  NOT YET MEASURED: the 60% first-session bar, which needs new signups.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
