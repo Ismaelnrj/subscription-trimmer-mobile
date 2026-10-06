@@ -107,13 +107,21 @@ export default function RootLayout() {
   useEffect(() => {
     const init = async () => {
       try {
+        /* LANGUAGE FIRST, before restoreToken. restoreToken calls /auth/me, and
+           the server stores that request's Accept-Language as users.language,
+           which is what the scheduled emails are written in. Loaded after it,
+           the header carried the DEVICE language, so somebody on an English
+           phone who chose German in Settings was re-recorded as English on
+           every launch and got English reminder and win-back emails.
+           Its failure is swallowed so it can never stop the session restore
+           below, which would leave the app on its splash. */
+        await loadLanguage().catch(() => {});
         const [, , done] = await Promise.all([
           restoreToken(),
           loadCurrency(),
           SecureStore.getItemAsync("onboarding_done"),
           loadMode(),
         ]);
-        await loadLanguage();
         fetchRates();
         setOnboardingDone(done === "true");
         requestNotificationPermission();
