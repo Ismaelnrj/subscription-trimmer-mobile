@@ -143,6 +143,17 @@ app.get('/mark.svg', (req, res) => {
   res.type('image/svg+xml').sendFile(path.join(__dirname, 'mark.svg'));
 });
 
+// The site's typeface, Montserrat, the same family the app ships, as Latin
+// woff2 subsets, rebuilt as backend/fonts/README.md says. Served from here
+// rather than Google Fonts: embedding those sends every visitor's IP to Google,
+// which a German court ruled unlawful without consent in 2022. The pattern is
+// an allowlist, so no request can name any other file in this directory.
+app.get('/fonts/:file', (req, res, next) => {
+  if (!/^Montserrat-(Regular|SemiBold|Bold|ExtraBold)\.woff2$/.test(req.params.file)) return next();
+  res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  res.type('font/woff2').sendFile(path.join(__dirname, 'fonts', req.params.file));
+});
+
 // Landing page assets and search-engine plumbing for subtrimio.com.
 app.get('/og.png', (req, res) => {
   res.set('Cache-Control', 'public, max-age=86400');

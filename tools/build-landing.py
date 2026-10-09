@@ -40,6 +40,27 @@ CANON = "https://www.subtrimio.com"   # www is what the CNAME actually serves;
 s, n = re.subn(r'data:image/png;base64,[A-Za-z0-9+/=]+', '/mark.svg', s)
 print(f"replaced {n} embedded PNGs with /mark.svg")
 
+# 18. the brand typeface. The handoff named Inter and never loaded it, so
+#    every visitor saw their own system font (Roboto, San Francisco, Segoe)
+#    and the site matched neither the app nor itself across devices. The app
+#    ships Montserrat, so the site does too, from backend/fonts on this same
+#    server: Latin subsets in woff2, about 32KB a weight against 280KB for the
+#    app's TTFs. Self hosted on purpose, never Google Fonts: LG Muenchen ruled
+#    in January 2022 that embedding them sends each visitor's IP to Google
+#    without consent, which is the opposite of what this page promises.
+#    Weights 400, 600, 700 and 800 are what the CSS asks for; the two 900
+#    rules fall back to 800. Rebuild the subsets with pyftsubset, see
+#    backend/fonts/README.md.
+FONT_FACES = "".join(
+    "@font-face { font-family: Montserrat; font-style: normal; "
+    f"font-weight: {w}; font-display: swap; "
+    f"src: url('/fonts/Montserrat-{n}.woff2') format('woff2'); }}\n"
+    for w, n in ((400, "Regular"), (600, "SemiBold"), (700, "Bold"), (800, "ExtraBold")))
+inter_rules = s.count("font-family: Inter,")
+assert inter_rules >= 10, f"expected the handoff's Inter rules, found {inter_rules}"
+s = s.replace("font-family: Inter,", "font-family: Montserrat,")
+s = s.replace("<style>", "<style>\n" + FONT_FACES, 1)
+
 # 2. search and share plumbing the handoff has no way to know about
 # __CANON_PATH__ and the og/schema strings are swapped per language further
 # down, so this block is written once and specialised twice.
@@ -559,6 +580,8 @@ de_out.write_text(de_page, encoding="utf-8")
 print(f"wrote {de_out}: {len(de_page):,} bytes, {hits} strings translated")
 
 s = en_page  # the assertions below check the page that is actually served at /
+assert "Inter," not in s and s.count("@font-face { font-family: Montserrat;") == 4
+print("checks passed: Montserrat self hosted in four weights, no Inter left")
 for probe in ("data:image/png", "/api/auth/signup", '<button class="auth-google"',
               "data-google-auth", "|| '/account'"):
     assert probe not in s, f"leftover: {probe}"

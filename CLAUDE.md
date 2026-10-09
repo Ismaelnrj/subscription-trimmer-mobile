@@ -4424,6 +4424,20 @@ last one left off without needing a recap typed out.
   no web app behind `/account` so login lands on the success panel
   instead, and the handoff's logo was a 1.5MB PNG inlined five times
   (7.6MB) now served once as `/mark.svg` at 786 bytes.
+- THE SITE NOW USES MONTSERRAT, THE APP'S TYPEFACE, 2026-10-09. The design
+  handoff named Inter and never loaded it, so every visitor saw their system
+  font (Roboto, San Francisco, Segoe). Transform 18 in `tools/build-landing.py`
+  swaps the family and adds four `@font-face` rules; the files are Latin woff2
+  subsets in `backend/fonts/` (about 32KB a weight), served by an allowlisted
+  `/fonts/:file` route with a one year immutable cache. Rebuild steps are in
+  `backend/fonts/README.md`, and `OFL.txt` beside them is the licence the SIL
+  OFL requires to travel with the files.
+  NEVER GOOGLE FONTS: LG Muenchen (January 2022) ruled that embedding them sends
+  visitor IPs to Google without consent. Self hosting is the reason this exists.
+  MEASURED in Chromium on both pages: the h1 resolves to Montserrat, weights
+  400, 700 and 800 load, no page scrolls sideways at 320, 360, 390 or 1280. A
+  few elements already overflowed their own boxes at 320px on the OLD page too,
+  so those are not from the font.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
