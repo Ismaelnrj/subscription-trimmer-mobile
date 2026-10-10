@@ -1680,7 +1680,17 @@ last one left off without needing a recap typed out.
   is a bundle syntax error that crashes every launch, so the helper compares
   upper and lower case instead, and a test forbids the escape in that file.
   Rendered beside the real marks in Chromium, both themes, before shipping.
-  Not yet published.
+  PUBLISHED THROUGH bf262721 AND CONFIRMED ON A REAL DEVICE (2026-10-10), read
+  off a screenshot of the Build Info panel: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a11658-3f72-7474-affe-88ec8fe11ca2`, `Update
+  published: 2026-10-07T12:30:44.594Z`, build 40, runtime 1.0.1, channel
+  production. DIFFERENT ID AND LATER than `01a11270-...` at
+  2026-10-06T18:19:05.228Z. Timestamp cross-check: `bf262721` was committed
+  2026-10-06T19:37:52Z and the next master commit, `33c1b727`, not until
+  2026-10-09, so the tree carried it. That one publish took the monogram
+  letters, the twelve restored marks and the wrapping first-run labels
+  (`dca7ad10`) to phones. `Check for updates` reads `You are on the latest
+  version.`
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
