@@ -2,6 +2,11 @@ import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
 import { identifyUser, resetAnalytics } from "./analytics";
 import { resetQueryCache } from "./query-client";
+import { isTransientFailure } from "./session-errors";
+
+/* The last user /auth/me returned, kept so a launch without a reachable server
+   can still open the app signed in. See restoreToken. */
+const CACHED_USER_KEY = "auth_user";
 
 interface User {
   id: number;
@@ -65,6 +70,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .catch(() => {});
     }
     if (user) identifyUser(user.id);
+    // Best effort either way: a failed write only costs the offline launch.
+    if (user) {
+      SecureStore.setItemAsync(CACHED_USER_KEY, JSON.stringify(user)).catch(() => {});
+    } else {
+      SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
+    }
     set({
       user,
       isAuthenticated: !!user,
@@ -95,6 +106,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     await SecureStore.deleteItemAsync("auth_token").catch(() => {});
     await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
+    await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
     resetAnalytics();
     /* Cancel the OS notification queue too. Nothing did, so account A's
        subscription names and amounts stayed scheduled to appear on the lock
@@ -121,10 +133,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // same identity check and analytics identify as every other path.
         get().setUser(res.data);
       }
-    } catch {
-      await SecureStore.deleteItemAsync("auth_token");
-      await SecureStore.deleteItemAsync("refresh_token");
-      set({ user: null, isAuthenticated: false });
+    } catch (error) {
+      /* Only a server that REFUSED the session ends it. This used to delete
+         both tokens on any error at all, so launching offline, or during the
+         minute a Railway deploy restarts the server, signed the person out.
+         On a transient failure the tokens stay, and the last known user opens
+         the app; screens then show their own offline errors, and the next
+         launch with a connection refreshes the user properly. */
+      if (isTransientFailure(error)) {
+        try {
+          const cached = await SecureStore.getItemAsync(CACHED_USER_KEY);
+          if (cached) get().setUser(JSON.parse(cached));
+        } catch {
+          // No usable copy: fall through to the login screen, tokens intact,
+          // so signing in again simply replaces them.
+        }
+      } else {
+        await SecureStore.deleteItemAsync("auth_token").catch(() => {});
+        await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
+        await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
+        set({ user: null, isAuthenticated: false });
+      }
     } finally {
       set({ isLoading: false });
     }

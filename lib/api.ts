@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Alert } from "react-native";
 import i18n from "./i18n";
+import { isTransientFailure, SESSION_UNVERIFIED, type RefreshOutcome } from "./session-errors";
 
 /* The API base URL, and what happens when it is not configured.
  *
@@ -123,23 +124,30 @@ async function retryRequest(error: any): Promise<any> {
   return Promise.reject(error);
 }
 
-let refreshPromise: Promise<string | null> | null = null;
+let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 // Exchanges the stored refresh token for a new access token (and rotates the
 // refresh token). Concurrent 401s share a single in-flight refresh call so we
 // don't fire off multiple refresh requests for one expired token.
-async function refreshAccessToken(): Promise<string | null> {
+//
+// It answers in three ways, not two. "rejected" means the server looked at the
+// refresh token and refused it, which ends the session. "unavailable" means the
+// call never got an answer about the token at all (offline, a timeout, a 5xx
+// while Railway restarts, a 429), which must NOT end it: this used to return
+// null for both, so an expired access token met by a flaky connection signed
+// the person out. See lib/session-errors.ts.
+async function refreshAccessToken(): Promise<RefreshOutcome> {
   if (!refreshPromise) {
-    refreshPromise = (async () => {
+    refreshPromise = (async (): Promise<RefreshOutcome> => {
       try {
         const refreshToken = await SecureStore.getItemAsync("refresh_token");
-        if (!refreshToken) return null;
-        const res = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken });
+        if (!refreshToken) return { kind: "rejected" };
+        const res = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken }, { timeout: 20000 });
         await SecureStore.setItemAsync("auth_token", res.data.token);
         await SecureStore.setItemAsync("refresh_token", res.data.refreshToken);
-        return res.data.token as string;
-      } catch {
-        return null;
+        return { kind: "refreshed", token: res.data.token as string };
+      } catch (error) {
+        return isTransientFailure(error) ? { kind: "unavailable" } : { kind: "rejected" };
       } finally {
         refreshPromise = null;
       }
@@ -167,10 +175,15 @@ apiClient.interceptors.response.use(
     const isRefreshCall = config?.url?.includes("/auth/refresh");
     if (error.response?.status === 401 && config && !config._retriedAfterRefresh && !isRefreshCall) {
       config._retriedAfterRefresh = true;
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        config.headers.Authorization = `Bearer ${newToken}`;
+      const outcome = await refreshAccessToken();
+      if (outcome.kind === "refreshed") {
+        config.headers.Authorization = `Bearer ${outcome.token}`;
         return apiClient(config);
+      }
+      if (outcome.kind === "unavailable") {
+        // Keep the session: nobody refused it, we just could not ask.
+        error[SESSION_UNVERIFIED] = true;
+        return Promise.reject(error);
       }
       await clearSessionAndSignOut();
       return Promise.reject(error);
