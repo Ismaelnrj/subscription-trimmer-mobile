@@ -6,11 +6,21 @@ export type CancellationGuide = {
 
 type Lang = "en" | "de";
 
-type LocalizedGuide = {
+export type LocalizedGuide = {
   steps: Record<Lang, string[]>;
-  url: string;
+  /* One URL, or one per language where the service runs a separate store per
+     country: a German reader sent to amazon.com lands in the wrong account. */
+  url: string | Record<Lang, string>;
   note?: Record<Lang, string>;
+  /* The date somebody checked these steps against the service's own help
+     pages, YYYY-MM-DD. Absent means never checked since it was written. The
+     public guide pages print it, so never set it without checking. */
+  verified?: string;
 };
+
+function urlFor(guide: LocalizedGuide, lang: Lang): string {
+  return typeof guide.url === "string" ? guide.url : guide.url[lang];
+}
 
 // Keys are lowercase match strings (checked via .includes()).
 // Quoted UI labels (e.g. "Manage plan") are kept in English in both
@@ -21,44 +31,44 @@ const GUIDES: Record<string, LocalizedGuide> = {
   netflix: {
     steps: {
       en: [
-        "Open netflix.com in a browser (cancellation requires desktop/mobile web, not the app).",
-        'Click your profile icon (top right) → "Account".',
-        'Under "Membership", tap "Cancel Membership".',
-        "Confirm the cancellation. You keep access until the end of your billing period.",
+        "Sign in at netflix.com in a browser. The Netflix app sends you to the website for this step.",
+        'Select your profile icon (top right) → "Account".',
+        'Under "Membership & Billing", select "Cancel Membership".',
+        'If Netflix offers a pause instead, choose to continue, then confirm with "Finish Cancellation".',
       ],
       de: [
-        "Öffne netflix.com in einem Browser (die Kündigung ist nur über die Desktop oder Mobile Website möglich, nicht über die App).",
-        'Tippe oben rechts auf dein Profilsymbol → "Account".',
-        'Tippe unter "Membership" auf "Cancel Membership".',
-        "Bestätige die Kündigung. Du behältst den Zugriff bis zum Ende deines Abrechnungszeitraums.",
+        "Melde dich in einem Browser auf netflix.com an. Die Netflix App leitet dich für diesen Schritt auf die Website weiter.",
+        'Wähle oben rechts dein Profilbild → "Konto".',
+        'Wähle im Bereich "Mitgliedschaft und Abrechnung" die Option "Mitgliedschaft kündigen".',
+        'Bietet Netflix stattdessen eine Pause an, fahre mit der Kündigung fort und bestätige mit "Kündigung abschließen".',
       ],
     },
     url: "https://www.netflix.com/cancelplan",
     note: {
-      en: "You can restart your membership at any time without losing your profile or viewing history.",
-      de: "Du kannst dein Abonnement jederzeit wieder aktivieren, ohne dein Profil oder deinen Verlauf zu verlieren.",
+      en: "You keep access until the end of your billing period and get a confirmation email. Deleting the app or signing out does not cancel. If you pay through Google Play, Apple or a TV or mobile provider, cancel there instead.",
+      de: "Du behältst den Zugang bis zum Ende deines Abrechnungszeitraums und bekommst eine Bestätigung per E-Mail. Die App zu löschen oder dich abzumelden kündigt nicht. Zahlst du über Google Play, Apple oder einen TV- oder Mobilfunkanbieter, kündigst du dort.",
     },
+    verified: "2026-10-11",
   },
   spotify: {
     steps: {
       en: [
-        "Go to spotify.com/account and log in.",
-        'Under "Your plan", click "Change plan".',
-        'Scroll to the bottom and select "Cancel Premium".',
-        'Click "Yes, Cancel" to confirm.',
+        "Sign in at spotify.com/account in a browser. Plan changes are not available inside the Spotify app.",
+        'Open "Manage your subscription".',
+        'Select "Cancel subscription" and confirm. Spotify may offer a discount or a pause first.',
       ],
       de: [
-        "Gehe zu spotify.com/account und melde dich an.",
-        'Klicke unter "Your plan" auf "Change plan".',
-        'Scrolle nach unten und wähle "Cancel Premium".',
-        'Klicke zur Bestätigung auf "Yes, Cancel".',
+        "Melde dich in einem Browser auf spotify.com/account an. In der Spotify App lässt sich das Abo nicht ändern.",
+        'Öffne "Abo verwalten".',
+        'Wähle "Abo kündigen" und bestätige. Spotify bietet dir vorher eventuell einen Rabatt oder eine Pause an.',
       ],
     },
-    url: "https://www.spotify.com/account/subscription/change/",
+    url: "https://www.spotify.com/account/",
     note: {
-      en: "You'll keep Premium until the end of your billing cycle, then revert to the free tier.",
-      de: "Du behältst Premium bis zum Ende deines Abrechnungszeitraums und wechselst danach automatisch zur kostenlosen Version.",
+      en: "Premium stays until your next billing date, then your account switches to Spotify Free and keeps your playlists. A free trial cancelled early ends at once. On Family or Duo only the plan manager can cancel. If the option is missing, you probably pay through a partner such as your mobile provider, Google Play or Apple: cancel there.",
+      de: "Premium bleibt bis zum nächsten Rechnungsdatum, danach wechselt dein Konto zu Spotify Free und deine Playlists bleiben erhalten. Ein kostenloses Probe-Abo endet bei Kündigung sofort. Bei Family oder Duo kann nur der Hauptnutzer kündigen. Fehlt die Option, zahlst du vermutlich über einen Partner wie deinen Mobilfunkanbieter, Google Play oder Apple: Kündige dort.",
     },
+    verified: "2026-10-11",
   },
   "apple tv": {
     steps: {
@@ -131,23 +141,24 @@ const GUIDES: Record<string, LocalizedGuide> = {
   disney: {
     steps: {
       en: [
-        "Go to disneyplus.com and log in.",
-        'Click your profile icon → "Account".',
-        'Under "Subscription", click "Cancel Subscription".',
-        "Follow the confirmation steps.",
+        "Sign in at disneyplus.com in a browser.",
+        'Select your profile icon (top right) → "Account".',
+        'Under "Subscription", select your plan, then "Cancel Subscription".',
+        "Confirm. Disney+ may offer a pause or ask whether you are sure first.",
       ],
       de: [
-        "Gehe zu disneyplus.com und melde dich an.",
-        'Klicke auf dein Profilsymbol → "Account".',
-        'Klicke unter "Subscription" auf "Cancel Subscription".',
-        "Folge den Bestätigungsschritten.",
+        "Melde dich in einem Browser auf disneyplus.com an.",
+        'Wähle oben rechts dein Profilbild → "Konto".',
+        'Wähle unter "Abo" dein Abo aus und dann "Abo kündigen".',
+        "Bestätige die Kündigung. Disney+ fragt eventuell nach oder bietet dir vorher eine Pause an.",
       ],
     },
     url: "https://www.disneyplus.com/account",
     note: {
-      en: "Includes Disney+, Hulu, and ESPN+ bundle cancellations from the same page.",
-      de: "Von dieser Seite aus kannst du auch Disney+, Hulu und ESPN+ Bundles kündigen.",
+      en: "Access continues until the end of the period you already paid for. Keep the confirmation email. If you pay through Google Play, Apple, Amazon or a TV provider, cancel there instead.",
+      de: "Der Zugang bleibt bis zum Ende des bereits bezahlten Zeitraums. Bewahre die Bestätigungsmail auf. Zahlst du über Google Play, Apple, Amazon oder einen TV-Anbieter, kündigst du dort.",
     },
+    verified: "2026-10-11",
   },
   hulu: {
     steps: {
@@ -186,36 +197,46 @@ const GUIDES: Record<string, LocalizedGuide> = {
   "amazon prime": {
     steps: {
       en: [
-        "Go to amazon.com and sign in.",
-        'Hover over "Account & Lists" → "Prime Membership".',
-        'Click "Manage membership" → "End Membership".',
-        "Choose whether to end immediately or at the next renewal date.",
+        "Sign in at amazon.com in a browser.",
+        'Open "Account & Lists" → "Prime Membership".',
+        'Select "Update, cancel and more" → "End membership".',
+        'Amazon shows offers on the way: select "Continue to cancel" on each, then choose whether Prime ends now or at the end of your billing period.',
       ],
       de: [
-        "Gehe zu amazon.com und melde dich an.",
-        'Fahre mit der Maus über "Account & Lists" → "Prime Membership".',
-        'Klicke auf "Manage membership" → "End Membership".',
-        "Wähle, ob die Mitgliedschaft sofort oder zum nächsten Verlängerungsdatum enden soll.",
+        "Melde dich in einem Browser auf amazon.de an.",
+        'Öffne "Konto und Listen" → "Meine Prime-Mitgliedschaft".',
+        'Wähle "Aktualisieren, kündigen und mehr" → "Mitgliedschaft beenden".',
+        'Amazon zeigt dir unterwegs Angebote: Wähle jeweils "Mit Kündigung fortfahren" und dann, ob Prime sofort oder zum Ende des Abrechnungszeitraums endet.',
       ],
     },
-    url: "https://www.amazon.com/mc",
+    url: { en: "https://www.amazon.com/mc", de: "https://www.amazon.de/gp/subs/primeclub/account/homepage.html" },
+    note: {
+      en: "Cancelling also ends Prime Video, which is part of Prime. Menu names change from time to time; the Prime Membership page is always reachable from Account & Lists.",
+      de: "Mit Prime endet auch Prime Video, denn es gehört zur Mitgliedschaft. Die Menünamen ändern sich gelegentlich, die Prime-Seite findest du aber immer über Konto und Listen.",
+    },
+    verified: "2026-10-11",
   },
   youtube: {
     steps: {
       en: [
-        "Open YouTube and tap your profile icon.",
-        'Go to "Purchases and memberships".',
-        "Tap the subscription you want to cancel.",
-        'Tap "Deactivate".',
+        "Open youtube.com/paid_memberships in a browser, or in the YouTube app select your profile picture → \"Paid memberships\".",
+        'Select your Premium membership → "Manage membership" → "Deactivate".',
+        'YouTube offers a pause first: select "Continue to cancel" instead.',
+        "Choose a reason and confirm.",
       ],
       de: [
-        "Öffne YouTube und tippe auf dein Profilsymbol.",
-        'Gehe zu "Purchases and memberships".',
-        "Tippe auf das Abonnement, das du kündigen möchtest.",
-        'Tippe auf "Deactivate".',
+        "Öffne youtube.com/paid_memberships in einem Browser, oder wähle in der YouTube App dein Profilbild → \"Kostenpflichtige Mitgliedschaften\".",
+        'Wähle deine Premium-Mitgliedschaft → "Mitgliedschaft verwalten" → "Deaktivieren".',
+        "YouTube bietet dir zuerst eine Pause an: Fahre stattdessen mit der Kündigung fort.",
+        "Wähle einen Grund und bestätige.",
       ],
     },
     url: "https://www.youtube.com/paid_memberships",
+    note: {
+      en: "Premium continues until the end of the billing period. If you were billed through Apple or Google Play, cancel in that account instead.",
+      de: "Premium läuft bis zum Ende des Abrechnungszeitraums weiter. Wurde über Apple oder Google Play abgerechnet, kündigst du dort.",
+    },
+    verified: "2026-10-11",
   },
   "microsoft 365": {
     steps: {
@@ -650,7 +671,14 @@ export function getCancellationGuide(name: string, lang: Lang = "en"): Cancellat
   const key = matchGuideKey(name);
   if (key) {
     const guide = GUIDES[key];
-    return { steps: guide.steps[lang], url: guide.url, note: guide.note?.[lang] };
+    return { steps: guide.steps[lang], url: urlFor(guide, lang), note: guide.note?.[lang] };
   }
-  return { steps: GENERIC_GUIDE.steps[lang], url: GENERIC_GUIDE.url, note: GENERIC_GUIDE.note?.[lang] };
+  return { steps: GENERIC_GUIDE.steps[lang], url: urlFor(GENERIC_GUIDE, lang), note: GENERIC_GUIDE.note?.[lang] };
+}
+
+/* The raw bilingual entry for one key, for tools/build-guides.mjs, which
+   turns the verified guides into public web pages. One source for the app
+   and the site, so a correction reaches both. */
+export function getLocalizedGuide(key: string): LocalizedGuide | null {
+  return Object.prototype.hasOwnProperty.call(GUIDES, key) ? GUIDES[key] : null;
 }

@@ -4527,6 +4527,32 @@ last one left off without needing a recap typed out.
   `#1F7A62` outline (5.05:1 on the card); and the two hero weights (700, 400,
   measured) are preloaded. Still failing that script ON PURPOSE: eyebrow
   labels on 8 of 9 sections, a taste call left for the owner.
+- PUBLIC CANCELLATION GUIDE PAGES, pilot of five, 2026-10-11: Netflix,
+  Spotify, Disney+, Amazon Prime, YouTube Premium, at `/cancel/<slug>` and
+  `/de/kuendigen/<slug>` plus an index each, linked from both landing footers
+  and listed in the sitemap. `tools/build-guides.mjs` generates them from
+  `lib/cancellation-guides.ts`, THE SAME DATA THE APP READS, so a correction
+  reaches both. Run it with `node --experimental-strip-types`.
+  ONLY GUIDES WITH A `verified` DATE CAN BE PUBLISHED and the build refuses
+  otherwise, because every page prints "Zuletzt geprüft am". The five were
+  checked that day against the services' own help pages where search reached
+  them (Netflix, Spotify, YouTube official; Disney+ and Amazon from several
+  independent guides) and rewritten with the GERMAN button labels a German
+  reader actually sees: the old data quoted English labels ("Cancel
+  Membership") in the German steps and sent German readers to amazon.com.
+  The amazon.de Prime URL comes from one source (heise), medium confidence.
+  THIS CHANGES THE APP TOO: the in-app guide for those five now shows the new
+  steps, so it rides the next `eas update`. `LocalizedGuide.url` may now be one
+  URL per language.
+  WHY: the people searching "Netflix kündigen" are exactly Trimio's user at the
+  moment of intent. Competitors already rank with such pages (subger.com,
+  cancelmanual.com), so expect the niche services to win before the big ones.
+  SUCCESS BAR: Search Console impressions after 3 to 4 weeks; at least 100 a
+  week by the end of November, else rethink the channel. Needs the site in
+  Google Search Console with the sitemap submitted, which only the owner can do.
+  NO IMPRESSUM EXISTS on the site, found while building these. An Austrian
+  business website needs one (ECG §5, MedienG §25). It needs the owner's real
+  name and address, so it cannot be written from here; flagged to the owner.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
