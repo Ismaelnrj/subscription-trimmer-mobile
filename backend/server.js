@@ -503,7 +503,7 @@ const ERROR_TEXT_DE = {
   'Invalid email or password': 'E-Mail-Adresse oder Passwort ist falsch.',
   'Name must be under 80 characters': 'Der Name darf höchstens 80 Zeichen lang sein.',
   'Name must be under 120 characters': 'Der Name darf höchstens 120 Zeichen lang sein.',
-  'Category must be under 40 characters': 'Die Kategorie darf höchstens 40 Zeichen lang sein.',
+  'Category must be under 100 characters': 'Die Kategorie darf höchstens 100 Zeichen lang sein.',
   'Invalid trial end date': 'Das Ende der Testphase ist kein gültiges Datum.',
   'Password must be at least 8 characters.': 'Das Passwort muss mindestens 8 Zeichen lang sein.',
   'Password must be 72 bytes or fewer. Accented characters and emoji count as more than one byte each.':
@@ -1746,8 +1746,11 @@ function toMonthly(price, billingCycle) {
    cap anywhere; and an unreadable trialEndDate reached Postgres and came back
    as a 500 instead of a 400 naming the field. */
 function validateSubscriptionFields(category, trialEndDate) {
-  if (category != null && (typeof category !== 'string' || category.trim().length > 40)) {
-    return 'Category must be under 40 characters';
+  /* 100, not the 40 the app's input now allows: custom categories had no cap
+     before, so a stored one may be longer, and refusing it here would stop
+     somebody editing a subscription they already have. */
+  if (category != null && (typeof category !== 'string' || category.trim().length > 100)) {
+    return 'Category must be under 100 characters';
   }
   if (trialEndDate && parseCalendarDateStrict(trialEndDate) === null) {
     return 'Invalid trial end date';

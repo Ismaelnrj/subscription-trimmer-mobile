@@ -1374,7 +1374,8 @@ export default function SubscriptionsScreen() {
                 <View style={styles.customCatRow}>
                   <TextInput
                     style={styles.customCatInput}
-                    placeholder="e.g. hobbies, work tools..."
+                    placeholder={t("subscriptions.customCategoryPlaceholder")}
+                    maxLength={40}
                     placeholderTextColor={c.placeholder}
                     autoFocus
                     value={customCatDraft}

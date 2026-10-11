@@ -56,7 +56,8 @@ describe("create and update validate the same fields", () => {
     // eslint-disable-next-line no-new-func
     const v = new Function(SRC.slice(start, end) + "; return validateSubscriptionFields;")();
     expect(v("streaming", null)).toBe(null);
-    expect(v("x".repeat(41), null)).toMatch(/Category/);
+    expect(v("x".repeat(100), null)).toBe(null);
+    expect(v("x".repeat(101), null)).toMatch(/Category/);
     expect(v(null, "2026-02-31")).toMatch(/trial/);
     expect(v(null, "2026-03-31")).toBe(null);
   });

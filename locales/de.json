@@ -156,6 +156,7 @@
     "noDate": "Nächste: -",
     "trialRequired": "Enddatum der Testphase erforderlich",
     "customCategory": "Benutzerdefiniert",
+    "customCategoryPlaceholder": "z. B. Hobbys, Arbeitstools",
     "errDeleteSub": "Abo konnte nicht gelöscht werden. Bitte versuche es erneut.",
     "errAddSub": "Abo konnte nicht hinzugefügt werden.",
     "errSaveChanges": "Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut.",

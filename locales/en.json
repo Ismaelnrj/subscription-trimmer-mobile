@@ -156,6 +156,7 @@
     "noDate": "Next: -",
     "trialRequired": "Trial end date required",
     "customCategory": "custom",
+    "customCategoryPlaceholder": "e.g. hobbies, work tools",
     "errDeleteSub": "Could not delete subscription. Please try again.",
     "errAddSub": "Could not add subscription.",
     "errSaveChanges": "Could not save changes. Please try again.",
