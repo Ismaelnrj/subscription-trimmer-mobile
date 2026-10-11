@@ -186,6 +186,53 @@ German locale was written to this rule and its punctuation choice is usually
 the right answer. Watch for one trap: German tolerates a comma splice where
 English needs a period, so a comma is not always the right port.
 
+## The landing page: four layout rules, measured in Chromium
+
+Taken on 2026-10-11 from the taste-skill project (Leonxlnx/taste-skill), which
+was read in full and deliberately NOT installed: its defaults are React,
+Tailwind and heavy motion, and its sibling skills pull photos and logos from
+third party CDNs, which this site self hosts its fonts to avoid. These four
+rules were the part worth keeping, because each one is a fact about the page
+rather than a taste.
+
+```bash
+node .claude/skills/trimio-design/scripts/check_landing.js
+node .claude/skills/trimio-design/scripts/check_landing.js backend/landing-de.html
+```
+
+It measures the GENERATED pages, both languages by default, in a real
+Chromium with Montserrat actually loaded from `backend/fonts/`. It refuses to
+measure (exit 2) if the font fails to load, because a fallback font gives the
+numbers of a different page. Exit 1 means a rule failed. Playwright and
+Chromium are preinstalled in cloud sessions; on another machine it exits 2 and
+says why. Fixes go into `tools/landing-source.html` or `tools/landing-de.json`
+and then `tools/build-landing.py`, never into the generated HTML.
+
+1. **The hero fits the first screen.** The headline and the first call to
+   action both end inside the viewport at 360x640, 390x844 and 1280x800. A
+   button below the fold is a button most visitors never see.
+2. **The hero lead is 20 words or fewer.** If the value cannot be said in 20
+   words, the value is unclear, not the limit too tight. German runs about a
+   fifth longer than English, so write the German to the limit, not the
+   English with a translation.
+3. **Eyebrow labels are rare.** An eyebrow is the small uppercase label with
+   letter spacing above a section heading (`.eyebrow` and `.kicker` here). One
+   on every section is the most recognisable template look there is. After a
+   section with one, the next two sections carry none. The script finds them
+   by how they look, not by class name, so a new class does not hide one.
+4. **Every multi column layout collapses on a phone.** At 320 and 360 wide the
+   page must not scroll sideways (that fails). Grids still running several
+   columns at 360 are listed for a person to look at, not failed, because
+   some are intentional: the rows inside the phone mockup are icon, name,
+   price, and that is correct.
+
+FIRST MEASUREMENT, 2026-10-11, before anything was changed: both pages pass
+collapse; both hero leads fail (25 words English, 24 German); both pages carry
+an eyebrow on 8 of 9 sections; and the GERMAN hero does not fit at 360x640
+(button ends at 793px) or at 1280x800 (button ends at 828px), so a German
+visitor on a laptop sees no signup button without scrolling. English fits at
+all three sizes.
+
 ## Store copy: count the head terms, do not read for them
 
 A Play short description does TWO jobs at once, discovery and conversion, and
