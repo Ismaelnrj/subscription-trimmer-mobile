@@ -1708,9 +1708,42 @@ last one left off without needing a recap typed out.
   MEASURED on Node type stripping against the real `api.ts` and
   `auth-store.ts` with stubbed storage and server: 10 of 10 scenarios pass, and
   the previous versions fail the six offline and deploy ones. CI run 526 green
-  with the typecheck. CLIENT ONLY, NOT YET PUBLISHED: three files
-  (`lib/api.ts`, `lib/auth-store.ts`, `lib/session-errors.ts`),
-  `needs_native_build.py bf262721` says OTA IS ENOUGH. It needs an `eas update`.
+  with the typecheck. CLIENT ONLY, NOT YET PUBLISHED: it rides the same `eas update` as the
+  2026-10-11 audit entry below.
+
+- AN AUDIT ON 2026-10-11 FOUND FIVE THINGS, all fixed in `5a1d7b35` and
+  `83d84bdf`, CI runs 530 and 531 green. The backend half is LIVE via Railway.
+  GOOGLE SIGN IN COULD HAND AN ACCOUNT TO A STRANGER. Registration does not
+  require verification, so anybody can create an account under somebody else's
+  address and pick its password. `/api/auth/google` linked onto that account
+  when the real owner later signed in with Google and KEPT the password, so the
+  stranger could read everything the owner tracked. An UNVERIFIED password and
+  its refresh token are now dropped on link; a VERIFIED one proved ownership
+  through the code email and stays.
+  A RESET CODE HAD NO PER ACCOUNT LIMIT, only the per IP limiter, so guesses
+  spread over many addresses were bounded only by the code's hour. Five wrong
+  guesses now burn it (`RESET_MAX_ATTEMPTS`, an in-memory Map, so a restart
+  forgets counts, which only ever helps a guesser by a few tries).
+  TURNING EMAIL REMINDERS BACK ON NEVER UNDID AN UNSUBSCRIBE. The footer link
+  sets `users.email_opt_out`, both mail queries filter on it, the unsubscribe
+  page tells people to switch reminders back on in the app, and nothing cleared
+  the flag. An explicit `emailReminders: true` now does.
+  `subscriptions.update` CAPPED NOTHING and category had no cap anywhere; an
+  unreadable `trialEndDate` came back as a 500. `validateSubscriptionFields`
+  runs on both. The category cap is 100 on the SERVER, not 40, because older
+  custom categories had no cap and refusing them would block editing an
+  existing row; the app's input stops at 40.
+  THE CSV EXPORT ADDED CURRENCIES TOGETHER, the deferred export item from the
+  2026-09-29 review. It now has a Currency column and one total per currency.
+  The custom category placeholder was a bare English string, now localised.
+  MEASURED by lifting the real handlers out of server.js onto a stub pool: 5 of
+  5 pass, and the previous file fails the reset, Google and opt out cases. A
+  real PostgreSQL was NOT used this time: the harness's `su postgres -c` script
+  was refused by a safety check, so the SQL itself is unexercised beyond CI.
+  CLIENT HALF NOT YET PUBLISHED, together with the offline session fix above:
+  `bf262721..83d84bdf` carries `app/(tabs)/subscriptions.tsx`, `lib/api.ts`,
+  `lib/auth-store.ts`, `lib/session-errors.ts` and both locale files, and
+  `needs_native_build.py bf262721` says OTA IS ENOUGH.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
