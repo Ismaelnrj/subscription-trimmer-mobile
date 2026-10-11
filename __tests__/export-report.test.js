@@ -22,12 +22,12 @@ const EXPORT = SRC.slice(SRC.indexOf("const exportReport"), SRC.indexOf("const h
 describe("the export total agrees with the rest of the app", () => {
   it("sums active subscriptions only", () => {
     expect(EXPORT).toMatch(/activeSubs\s*=\s*subscriptions\.filter/);
-    expect(EXPORT).toMatch(/monthlyTotal\s*=\s*activeSubs\.reduce/);
+    expect(EXPORT).toMatch(/for \(const s of activeSubs\)/);
   });
 
   it("does not reduce over every row any more", () => {
     const code = EXPORT.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
-    expect(/monthlyTotal\s*=\s*subscriptions\.reduce/.test(code)).toBe(false);
+    expect(/subscriptions\.reduce/.test(code)).toBe(false);
   });
 
   it("still exports the paused rows, and labels them", () => {
@@ -41,6 +41,22 @@ describe("the export total agrees with the rest of the app", () => {
   it("says which counts are which in the summary", () => {
     expect(EXPORT).toMatch(/# Active,/);
     expect(EXPORT).toMatch(/# Paused,/);
+  });
+});
+
+describe("the export never adds two currencies together", () => {
+  /* A row keeps the currency it was entered in, so one Monthly Total over raw
+     prices printed 15.99 EUR plus 9.99 USD as 25.98 of nothing. Fixed
+     2026-10-11: a Currency column, and one total per currency. */
+  it("carries a Currency column filled from the row", () => {
+    expect(EXPORT).toMatch(/"Price", "Currency"/);
+    expect(EXPORT).toMatch(/csvEscape\(rowCurrency\(s\)\)/);
+  });
+
+  it("groups the totals by currency rather than summing across them", () => {
+    expect(EXPORT).toMatch(/monthlyByCurrency/);
+    expect(EXPORT).toMatch(/# Monthly Total \(active \$\{code\}\)/);
+    expect(EXPORT).not.toMatch(/# Monthly Total \(active\),/);
   });
 });
 

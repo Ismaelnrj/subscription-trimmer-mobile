@@ -503,6 +503,8 @@ const ERROR_TEXT_DE = {
   'Invalid email or password': 'E-Mail-Adresse oder Passwort ist falsch.',
   'Name must be under 80 characters': 'Der Name darf höchstens 80 Zeichen lang sein.',
   'Name must be under 120 characters': 'Der Name darf höchstens 120 Zeichen lang sein.',
+  'Category must be under 40 characters': 'Die Kategorie darf höchstens 40 Zeichen lang sein.',
+  'Invalid trial end date': 'Das Ende der Testphase ist kein gültiges Datum.',
   'Password must be at least 8 characters.': 'Das Passwort muss mindestens 8 Zeichen lang sein.',
   'Password must be 72 bytes or fewer. Accented characters and emoji count as more than one byte each.':
     'Das Passwort darf höchstens 72 Byte lang sein. Umlaute und Emojis zählen jeweils als mehr als ein Byte.',
@@ -1739,6 +1741,20 @@ function toMonthly(price, billingCycle) {
    input carries no leading calendar date at all, behaviour is unchanged and
    only the isNaN check applies, so nothing that used to be accepted starts
    being refused. */
+/* The two fields create and update used to take on trust. create capped the
+   name and update did not, so a rename could store any length; category had no
+   cap anywhere; and an unreadable trialEndDate reached Postgres and came back
+   as a 500 instead of a 400 naming the field. */
+function validateSubscriptionFields(category, trialEndDate) {
+  if (category != null && (typeof category !== 'string' || category.trim().length > 40)) {
+    return 'Category must be under 40 characters';
+  }
+  if (trialEndDate && parseCalendarDateStrict(trialEndDate) === null) {
+    return 'Invalid trial end date';
+  }
+  return null;
+}
+
 function parseCalendarDateStrict(input) {
   const parsed = new Date(input);
   if (isNaN(parsed.getTime())) return null;
@@ -2246,7 +2262,24 @@ app.post('/api/auth/google', async (req, res) => {
       result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       user = result.rows[0];
       if (user) {
-        await pool.query('UPDATE users SET google_id = $1, is_verified = TRUE WHERE id = $2', [googleId, user.id]);
+        /* AN UNVERIFIED PASSWORD ON THIS ADDRESS WAS SET BY SOMEBODY WHO NEVER
+           PROVED THEY OWN IT. Registration does not require verification, so
+           anyone can create an account under another person's email and choose
+           its password. When the real owner later signs in with Google, this
+           links Google onto that account, and the stranger's password used to
+           keep working: they could read every subscription the owner then
+           tracked. Google has just proved ownership, so a password that never
+           did is dropped, along with any session it opened. A VERIFIED password
+           proved ownership through the code email, so it stays. */
+        if (!user.is_verified && user.password_hash) {
+          await pool.query(
+            'UPDATE users SET google_id = $1, is_verified = TRUE, password_hash = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2',
+            [googleId, user.id]
+          );
+          user.password_hash = null;
+        } else {
+          await pool.query('UPDATE users SET google_id = $1, is_verified = TRUE WHERE id = $2', [googleId, user.id]);
+        }
         user.google_id = googleId;
         user.is_verified = true;
       }
@@ -2484,6 +2517,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
+    resetAttempts.delete(user.id);
     recordLanguage(user.id, req);
     await sendPasswordResetEmail(email, code, languageOf(req));
     res.json({ success: true });
@@ -2491,6 +2525,9 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     handleError(err, res);
   }
 });
+
+const RESET_MAX_ATTEMPTS = 5;
+const resetAttempts = new Map();
 
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
@@ -2501,7 +2538,25 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (pwError) return res.status(400).json({ error: pwError });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
-    if (!user || !tokenMatches(user.reset_token, code)) return res.status(400).json({ error: 'Invalid or expired code' });
+    if (!user || !user.reset_token) return res.status(400).json({ error: 'Invalid or expired code' });
+    if (!tokenMatches(user.reset_token, code)) {
+      /* A WRONG GUESS COUNTS AGAINST THE CODE, NOT ONLY AGAINST THE IP. The rate
+         limiter is per address, so guesses spread across many addresses were
+         bounded only by the code's one hour life, and a six digit code is the
+         whole of what stands between a stranger and somebody's account. After
+         RESET_MAX_ATTEMPTS wrong guesses the code is burned and a new one has to
+         be requested, which emails the real owner. Held in memory: a restart
+         forgets the count, which only ever helps a guesser by a few tries. */
+      const tries = (resetAttempts.get(user.id) || 0) + 1;
+      if (tries >= RESET_MAX_ATTEMPTS) {
+        resetAttempts.delete(user.id);
+        await pool.query('UPDATE users SET reset_token = NULL, reset_expires = NULL WHERE id = $1', [user.id]);
+      } else {
+        resetAttempts.set(user.id, tries);
+      }
+      return res.status(400).json({ error: 'Invalid or expired code' });
+    }
+    resetAttempts.delete(user.id);
     if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
     const hash = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2', [hash, user.id]);
@@ -2907,6 +2962,8 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     if (typeof name !== 'string' || name.trim().length > 120) return res.status(400).json({ error: 'Name must be under 120 characters' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
+    const fieldError = validateSubscriptionFields(category, trialEndDate);
+    if (fieldError) return res.status(400).json({ error: fieldError });
 
     let billingDate = nextBillingDate(billingCycle);
     if (nextBillingDateInput) {
@@ -2981,8 +3038,11 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
     const price = roundToCents(parseFloat(req.body.price));
     if (!id) return res.status(400).json({ error: 'Subscription id required' });
     if (!name || req.body.price == null) return res.status(400).json({ error: 'Name and price required' });
+    if (typeof name !== 'string' || name.trim().length > 120) return res.status(400).json({ error: 'Name must be under 120 characters' });
     if (isNaN(price) || price <= 0 || price > 99999) return res.status(400).json({ error: 'Price must be a positive number under 99,999' });
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
+    const fieldError = validateSubscriptionFields(category, trialEndDate);
+    if (fieldError) return res.status(400).json({ error: fieldError });
 
     const check = await pool.query(
       'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
@@ -3616,6 +3676,15 @@ app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req
       'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4, email_reminders = $5, renewal_alert_days = $6 WHERE user_id = $7',
       [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders ?? false, safeRenewalAlertDays, req.userId]
     );
+    /* TURNING EMAIL REMINDERS BACK ON HAS TO UNDO THE UNSUBSCRIBE. The footer
+       link sets users.email_opt_out, both mail queries filter on it, and the
+       unsubscribe page tells people they can switch reminders back on in the
+       app. Nothing cleared the flag, so that switch did nothing: a Premium user
+       who had once unsubscribed paid for email reminders that never came. An
+       explicit true from the person is the consent the flag was waiting for. */
+    if (emailReminders === true) {
+      await pool.query('UPDATE users SET email_opt_out = FALSE WHERE id = $1', [req.userId]);
+    }
     res.json(trpc({ success: true }));
   } catch (err) {
     handleError(err, res);

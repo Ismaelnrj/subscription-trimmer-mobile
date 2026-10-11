@@ -699,7 +699,18 @@ export default function SubscriptionsScreen() {
        the point of an export, and a Status column now says which is which.
        Including them in the sum is what was wrong, not listing them. */
     const activeSubs = subscriptions.filter((s: any) => s.isActive !== false);
-    const monthlyTotal = activeSubs.reduce((sum: number, s: any) => sum + toMonthly(s.price, s.billingCycle), 0);
+    /* TOTALS PER CURRENCY, because a row keeps the currency it was entered in
+       and adding 15.99 EUR to 9.99 USD gives a number that is neither. The
+       export used to print one Monthly Total over raw prices, so any mixed list
+       produced a figure no statement would ever show, in a file people keep.
+       A row with no currency is in the base currency, the same reading the rest
+       of the app gives it. */
+    const rowCurrency = (s: any) => s.currency || baseCurrencyCode;
+    const monthlyByCurrency = new Map<string, number>();
+    for (const s of activeSubs) {
+      const code = rowCurrency(s);
+      monthlyByCurrency.set(code, (monthlyByCurrency.get(code) ?? 0) + toMonthly(s.price, s.billingCycle));
+    }
     const csvEscape = (v: string) => {
       let str = String(v);
       if (/^[=+\-@]/.test(str)) str = `'${str}`; // prevent formula injection in Excel/Sheets
@@ -715,10 +726,11 @@ export default function SubscriptionsScreen() {
     };
 
     const rows = [
-      ["Name", "Price", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost", "Status"].join(","),
+      ["Name", "Price", "Currency", "Billing Cycle", "Monthly Equivalent", "Category", "Next Billing Date", "Trial End Date", "Yearly Cost", "Status"].join(","),
       ...subscriptions.map((s: any) => [
         csvEscape(s.name),
         s.price.toFixed(2),
+        csvEscape(rowCurrency(s)),
         csvEscape(s.billingCycle),
         toMonthly(s.price, s.billingCycle).toFixed(2),
         csvEscape(s.category),
@@ -732,8 +744,10 @@ export default function SubscriptionsScreen() {
       // Both totals are active-only, so they match what the app shows. Naming
       // the counts separately is what makes the difference explicable to
       // somebody reading the file a month later.
-      `# Monthly Total (active),${monthlyTotal.toFixed(2)}`,
-      `# Yearly Total (active),${(monthlyTotal * 12).toFixed(2)}`,
+      ...[...monthlyByCurrency].flatMap(([code, monthly]) => [
+        `# Monthly Total (active ${code}),${monthly.toFixed(2)}`,
+        `# Yearly Total (active ${code}),${(monthly * 12).toFixed(2)}`,
+      ]),
       `# Subscriptions,${subscriptions.length}`,
       `# Active,${activeSubs.length}`,
       `# Paused,${subscriptions.length - activeSubs.length}`,
