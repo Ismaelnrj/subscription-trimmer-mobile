@@ -2,7 +2,7 @@
   "_note": "German legal copy, served at /de/nutzungsbedingungen and /de/datenschutz, and rendered in the app by app/terms-of-service.tsx and app/privacy-policy.tsx, which import this file directly. THIS FILE IS THE ONLY SOURCE: backend/server.js requires it and the app bundles it, so there is no generated copy to keep in step and nothing to regenerate. An earlier version of this note named tools/build-legal-de.py as the generator; no such script exists in the repo and none is needed. Section count and order must match the English, because tools/check-legal-sync.py compares them. Informal du throughout, matching the rest of Trimio: register does not affect enforceability, and switching to Sie only here would read as a different product. Compound hyphens are fine, only em and en dashes are barred.",
   "meta": {
     "termsTitle": "Trimio Nutzungsbedingungen",
-    "termsUpdated": "Gültig ab: 4. September 2026 · Zuletzt aktualisiert: 4. September 2026",
+    "termsUpdated": "Gültig ab: 4. September 2026 · Zuletzt aktualisiert: 11. Oktober 2026",
     "termsIntro": "Diese Nutzungsbedingungen regeln die Vereinbarung zwischen dir und Trimio. Bitte lies sie zusammen mit unserer Datenschutzrichtlinie, die erklärt, wie mit deinen Daten umgegangen wird.",
     "privacyTitle": "Trimio Datenschutzrichtlinie",
     "privacyUpdated": "Gültig ab: 27. April 2025 · Zuletzt aktualisiert: 4. September 2026",
@@ -83,7 +83,7 @@
     ],
     [
       "19. Anwendbares Recht",
-      "Für diese Bedingungen gilt österreichisches Recht unter Ausschluss seiner Kollisionsnormen und des UN-Kaufrechts. Wenn du Verbraucher bist, kannst du dich zusätzlich auf das zwingende Recht deines Wohnsitzlandes berufen und vor den Gerichten dieses Landes klagen. Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung unter ec.europa.eu/consumers/odr bereit."
+      "Für diese Bedingungen gilt österreichisches Recht unter Ausschluss seiner Kollisionsnormen und des UN-Kaufrechts. Wenn du Verbraucher bist, kannst du dich zusätzlich auf das zwingende Recht deines Wohnsitzlandes berufen und vor den Gerichten dieses Landes klagen."
     ],
     [
       "20. Kontakt",

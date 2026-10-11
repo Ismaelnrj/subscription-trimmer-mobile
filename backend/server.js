@@ -416,7 +416,7 @@ const TERMS_SECTIONS = [
   { title: "16. Liability", body: "Nothing in these Terms limits liability that cannot be limited by law, including liability for death or personal injury caused by negligence, for fraud, or under mandatory consumer protection or product liability rules. Subject to that, the Service is provided as it is, we are not liable for indirect or consequential loss, and we are not liable for a subscription charge you incurred because a reminder was late, missing, or based on a date entered incorrectly. Our total liability in any twelve month period is limited to the greater of the amount you paid us in that period or fifty euro." },
   { title: "17. Your Statutory Rights", body: "If you are a consumer, you keep all rights given to you by the mandatory law of your country of residence. Where these Terms conflict with such a right, that right prevails." },
   { title: "18. Changes to These Terms", body: "We may update these Terms as the Service develops or the law changes. If a change is material we will give you reasonable notice in the app or by email before it takes effect. Continuing to use the Service after that point means you accept the updated Terms. If you do not accept them, you may delete your account." },
-  { title: "19. Governing Law", body: "These Terms are governed by Austrian law, excluding its conflict of law rules and the UN Convention on Contracts for the International Sale of Goods. If you are a consumer, you may also rely on the mandatory law of your country of residence, and you may bring proceedings in the courts of that country. The European Commission provides an online dispute resolution platform at ec.europa.eu/consumers/odr." },
+  { title: "19. Governing Law", body: "These Terms are governed by Austrian law, excluding its conflict of law rules and the UN Convention on Contracts for the International Sale of Goods. If you are a consumer, you may also rely on the mandatory law of your country of residence, and you may bring proceedings in the courts of that country." },
   { title: "20. Contact", body: "Questions about these Terms are welcome at Trimio@subtrimio.com." },
 ];
 
@@ -528,7 +528,7 @@ app.get('/privacy-policy', (req, res) => {
 app.get('/terms', (req, res) => {
   res.set('Content-Type', 'text/html').send(legalPage(
     'Trimio Terms of Service',
-    'Effective date: September 4, 2026 \u00b7 Last updated: September 4, 2026',
+    'Effective date: September 4, 2026 \u00b7 Last updated: October 11, 2026',
     'These Terms of Service set out the agreement between you and Trimio. Please read them alongside our Privacy Policy, which explains how your information is handled.',
     TERMS_SECTIONS));
 });

@@ -54,3 +54,15 @@ describe("Impressum", () => {
     }
   });
 });
+
+describe("terms no longer point to the closed EU ODR platform", () => {
+  /* The EU shut the online dispute resolution platform on 20 July 2025
+     (Regulation (EU) 2024/3228), and the duty to link to it ended with it.
+     A dead link in the governing law section of the terms reads as terms
+     nobody maintains. All three copies are checked, since they must agree. */
+  it("in the served English, the in-app copy and the German", () => {
+    for (const f of [["backend", "server.js"], ["app", "terms-of-service.tsx"], ["backend", "legal-de.json"]]) {
+      expect(read(...f)).not.toMatch(/consumers\/odr/);
+    }
+  });
+});

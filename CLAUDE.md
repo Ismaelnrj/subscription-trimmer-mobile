@@ -4555,10 +4555,11 @@ last one left off without needing a recap typed out.
   `/legal-notice`, from `IMPRESSUM` in server.js with the address the owner
   gave, linked from every landing and guide footer and in the sitemap. If a
   Gewerbe or a UID is ever registered, add both there.
-  STALE AND NOT YET FIXED: terms section 19 (EN, DE and the app copy) points to
-  the EU online dispute resolution platform, which the EU shut down in July
-  2025. Remove that sentence in all three copies together, since
-  check-legal-sync.py compares them.
+  TERMS SECTION 19 POINTED TO THE EU ODR PLATFORM, shut down 20 July 2025
+  (Regulation (EU) 2024/3228), which also ended the duty to link it. Removed
+  from all three copies 2026-10-11, terms "last updated" moved to that date.
+  The in-app copy changes with the next `eas update`. The owner confirmed the
+  Impressum address is the right one to publish.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
