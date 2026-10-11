@@ -1692,6 +1692,26 @@ last one left off without needing a recap typed out.
   (`dca7ad10`) to phones. `Check for updates` reads `You are on the latest
   version.`
 
+- BEING OFFLINE NO LONGER SIGNS ANYBODY OUT, fixed 2026-10-11 in `c485074a`,
+  found by a review of the session path since retention is the open problem.
+  `restoreToken` deleted both tokens on ANY error from `/auth/me`, and the 401
+  interceptor read any failed refresh as a refused one, so launching offline,
+  with an expired access token on a flaky connection, or during the minute a
+  Railway deploy restarts the server (every push to master) sent the person to
+  the login screen with their session gone.
+  THE RULE IS `lib/session-errors.ts`: only an answer FROM the server refusing
+  the credentials (400, 401, 403, 404) ends a session. No response, a 5xx or a
+  429 keeps the tokens, and the last user `/auth/me` returned, kept in
+  SecureStore as `auth_user`, opens the app signed in. Every sign out path
+  deletes that key. A stale 401 whose refresh could not run is tagged
+  `SESSION_UNVERIFIED` so `restoreToken` does not read it as a refusal.
+  MEASURED on Node type stripping against the real `api.ts` and
+  `auth-store.ts` with stubbed storage and server: 10 of 10 scenarios pass, and
+  the previous versions fail the six offline and deploy ones. CI run 526 green
+  with the typecheck. CLIENT ONLY, NOT YET PUBLISHED: three files
+  (`lib/api.ts`, `lib/auth-store.ts`, `lib/session-errors.ts`),
+  `needs_native_build.py bf262721` says OTA IS ENOUGH. It needs an `eas update`.
+
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
   schedules them. Two jobs, "Trimio renewal reminders" POSTing
