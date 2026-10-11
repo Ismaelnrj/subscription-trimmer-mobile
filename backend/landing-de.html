@@ -408,7 +408,10 @@ img { display: block; max-width: 100%; }
   outline: none;
   transition: border .2s ease, box-shadow .2s ease;
 }
-.field input:focus { border-color: var(--mint); box-shadow: 0 0 0 4px rgba(85,198,163,.13); }
+/* The focus ring is deepened mint, not Soft Mint: #55C6A3 on white is 2.1:1,
+   under the 3:1 floor for a focus indicator, so keyboard users could not see
+   which field they were in. #1F7A62 on the paper card measures 5.05:1. */
+.field input:focus { border-color: #1F7A62; box-shadow: none; outline: 2px solid #1F7A62; outline-offset: 2px; }
 .field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .check-row { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; color: var(--slate); line-height: 1.45; }
 .check-row input { margin-top: 2px; accent-color: var(--mint); }
@@ -446,8 +449,12 @@ img { display: block; max-width: 100%; }
   .hero-actions .button { width: 100%; }
 }
 
+.hero h1 { font-size: clamp(48px, 5vw, 76px); }
+@media (max-width: 640px) { .hero h1 { font-size: clamp(38px, 11vw, 52px); } }
 </style>
 <noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
+  <link rel="preload" href="/fonts/Montserrat-Bold.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/Montserrat-Regular.woff2" as="font" type="font/woff2" crossorigin />
   <script>
   (function () {
     var KEY = 'phc_wFoqNGYxoY64mxQ5TMrJbME5KP3xii7GvTkvp7hs4q6P';
@@ -508,7 +515,7 @@ img { display: block; max-width: 100%; }
         <div class="hero-copy">
           <div class="eyebrow"><span class="pulse"></span> Klarheit über deine Abos, vor der Abbuchung</div>
           <h1>Sieh, was auf dich zukommt, <span>bevor abgebucht wird.</span></h1>
-          <p class="hero-lead">Trimio hält jede Verlängerung sichtbar und zeigt dir dann, wie du rauskommst: Schritt-für-Schritt-Anleitungen zum Kündigen für über 30 Dienste. Ohne Zugriff auf dein Bankkonto.</p>
+          <p class="hero-lead">Trimio zeigt dir jede Verlängerung rechtzeitig, dazu Schritt-für-Schritt-Anleitungen zum Kündigen für über 30 Dienste. Ohne Zugriff auf dein Bankkonto.</p>
           <div class="hero-actions">
             <button class="button button-dark" type="button" data-auth-open="signup">Konto erstellen</button>
             <a class="button button-outline" href="https://play.google.com/store/apps/details?id=com.trimio.app">Bei Google Play laden</a>

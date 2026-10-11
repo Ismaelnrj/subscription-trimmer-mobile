@@ -4515,6 +4515,18 @@ last one left off without needing a recap typed out.
   400, 700 and 800 load, no page scrolls sideways at 320, 360, 390 or 1280. A
   few elements already overflowed their own boxes at 320px on the OLD page too,
   so those are not from the font.
+- THE GERMAN SIGNUP BUTTON WAS BELOW THE FOLD, fixed 2026-10-11, found by
+  `check_landing.js` in the trimio-design skill on its first run. At 360x640
+  "Konto erstellen" ended at 765px and at 1280x800 at 796px, 4px from the
+  fold, because the German headline wrapped to six lines on a phone. German
+  only, a smaller hero h1 (`DE_HERO_CSS` in `tools/build-landing.py`); English
+  fit everywhere and kept its scale. Same commit: both hero leads cut to 20
+  words or fewer WITHOUT changing the message, so the positioning test's
+  variable (cancellation guides first) did not move; the input focus ring
+  went from Soft Mint (2.1:1, invisible to keyboard users) to a 2px
+  `#1F7A62` outline (5.05:1 on the card); and the two hero weights (700, 400,
+  measured) are preloaded. Still failing that script ON PURPOSE: eyebrow
+  labels on 8 of 9 sections, a taste call left for the owner.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.

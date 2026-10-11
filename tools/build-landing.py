@@ -60,6 +60,18 @@ inter_rules = s.count("font-family: Inter,")
 assert inter_rules >= 10, f"expected the handoff's Inter rules, found {inter_rules}"
 s = s.replace("font-family: Inter,", "font-family: Montserrat,")
 s = s.replace("<style>", "<style>\n" + FONT_FACES, 1)
+# Preload the two weights the hero draws with, measured in Chromium on
+# 2026-10-11: the h1 renders at 700 and the lead at 400. Without this the
+# browser only learns it needs them after parsing the CSS, so the headline
+# first paints in a fallback font and then jumps when Montserrat swaps in.
+# Only two: preloading all four would spend a visitor's bandwidth on weights
+# the first screen does not use. crossorigin is required for fonts even on
+# the same origin, or the preload is fetched twice.
+FONT_PRELOADS = "".join(
+    f'  <link rel="preload" href="/fonts/Montserrat-{n}.woff2" as="font" type="font/woff2" crossorigin />\n'
+    for n in ("Bold", "Regular"))
+assert s.count("</head>") == 1
+s = s.replace("</head>", FONT_PRELOADS + "</head>", 1)
 
 # 2. search and share plumbing the handoff has no way to know about
 # __CANON_PATH__ and the og/schema strings are swapped per language further
@@ -575,12 +587,25 @@ de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
 # German writes a decimal comma. The mockup prices are the only numbers on the
 # page, and 17.99 reads as a thousands separator to a German eye.
 de_page = re.sub(r'€(\d+)\.(\d\d)\b', r'€\1,\2', de_page)
+# The German headline runs about half again as long as the English one
+# ("Sieh, was auf dich zukommt, bevor abgebucht wird."), so at the English
+# sizes it wrapped to six lines on a phone and pushed "Konto erstellen" below
+# the first screen at 360x640 (ends 765px) and to within 4px of the fold at
+# 1280x800. Measured with check_landing.js in the trimio-design skill on
+# 2026-10-11. German only: the English hero fits at every size and keeps its
+# scale. Appended after the handoff's rules so it wins on equal specificity.
+DE_HERO_CSS = (
+    ".hero h1 { font-size: clamp(48px, 5vw, 76px); }\n"
+    "@media (max-width: 640px) { .hero h1 { font-size: clamp(38px, 11vw, 52px); } }\n")
+assert de_page.count("</style>") >= 1
+de_page = de_page.replace("</style>", DE_HERO_CSS + "</style>", 1)
 de_out = pathlib.Path("backend/landing-de.html")
 de_out.write_text(de_page, encoding="utf-8")
 print(f"wrote {de_out}: {len(de_page):,} bytes, {hits} strings translated")
 
 s = en_page  # the assertions below check the page that is actually served at /
 assert "Inter," not in s and s.count("@font-face { font-family: Montserrat;") == 4
+assert s.count('rel="preload" href="/fonts/Montserrat-') == 2, "hero font preloads missing"
 print("checks passed: Montserrat self hosted in four weights, no Inter left")
 for probe in ("data:image/png", "/api/auth/signup", '<button class="auth-google"',
               "data-google-auth", "|| '/account'"):
