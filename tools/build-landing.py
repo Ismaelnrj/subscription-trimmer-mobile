@@ -584,9 +584,19 @@ for en_href, de_href in (('/privacy-policy', '/de/datenschutz'),
 assert legal_links >= 2, f"expected legal links to rewrite, found {legal_links}"
 de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
                           "<title>Trimio | Wissen, bevor abgebucht wird</title>", 1)
-# German writes a decimal comma. The mockup prices are the only numbers on the
-# page, and 17.99 reads as a thousands separator to a German eye.
-de_page = re.sub(r'€(\d+)\.(\d\d)\b', r'€\1,\2', de_page)
+# German writes a decimal comma AND puts the symbol after the amount: 17,99 €,
+# which is also how the app's own notifications format it. "€17,99" fixed the
+# comma and kept the English symbol position until 2026-10-11. The space is
+# non-breaking so a narrow column never strands the € on its own line.
+de_page = re.sub(r'€(\d+)\.(\d\d)\b', '\\1,\\2&nbsp;€', de_page)
+# The demo buttons rewrite the price in JavaScript from data-price ("17.99"),
+# so the static fix above was undone by the first click: "€17.99 wird bald
+# fällig." Format it the German way there too.
+DE_DEMO_OLD = "`€${price} wird bald fällig."
+DE_DEMO_NEW = "`${price.replace('.', ',')}\\u00a0€ wird bald fällig."
+assert de_page.count(DE_DEMO_OLD) == 1, "German demo price template moved"
+de_page = de_page.replace(DE_DEMO_OLD, DE_DEMO_NEW)
+assert not re.search(r'€\s*\$?\{?\d', de_page) and "€${" not in de_page, "a German price still leads with €"
 # The German headline runs about half again as long as the English one
 # ("Sieh, was auf dich zukommt, bevor abgebucht wird."), so at the English
 # sizes it wrapped to six lines on a phone and pushed "Konto erstellen" below

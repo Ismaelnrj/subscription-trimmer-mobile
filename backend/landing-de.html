@@ -540,24 +540,24 @@ img { display: block; max-width: 100%; }
             </div>
             <div class="spend-card">
               <span>Nächste 30 Tage</span>
-              <strong>€42,47</strong>
+              <strong>42,47&nbsp;€</strong>
               <small>3 Verlängerungen stehen an</small>
             </div>
             <div class="renewal-list">
               <article>
                 <div class="service-badge">N</div>
                 <div><strong>Netflix</strong><span>Verlängert sich in 3 Tagen</span></div>
-                <b>€17,99</b>
+                <b>17,99&nbsp;€</b>
               </article>
               <article>
                 <div class="service-badge mint">S</div>
                 <div><strong>Spotify</strong><span>Verlängert sich in 7 Tagen</span></div>
-                <b>€11,99</b>
+                <b>11,99&nbsp;€</b>
               </article>
               <article>
                 <div class="service-badge cream">C</div>
                 <div><strong>Cloud-Speicher</strong><span>Verlängert sich in 18 Tagen</span></div>
-                <b>€12,49</b>
+                <b>12,49&nbsp;€</b>
               </article>
             </div>
           </div>
@@ -620,7 +620,7 @@ img { display: block; max-width: 100%; }
               <span>jetzt</span>
             </div>
             <h3 id="demoTitle">Netflix verlängert sich in 3 Tagen</h3>
-            <p id="demoText">€17,99 wird bald fällig. Du hast noch Zeit zu entscheiden.</p>
+            <p id="demoText">17,99&nbsp;€ wird bald fällig. Du hast noch Zeit zu entscheiden.</p>
             <div class="notification-actions"><span>Behalten</span><span>Ansehen</span></div>
           </div>
         </div>
@@ -759,7 +759,7 @@ demoButtons.forEach((button) => {
     const price = button.dataset.price;
     const days = button.dataset.days;
     demoTitle.textContent = `${service} verlängert sich in ${days} Tagen`;
-    demoText.textContent = `€${price} wird bald fällig. Du hast noch Zeit zu entscheiden.`;
+    demoText.textContent = `${price.replace('.', ',')}\u00a0€ wird bald fällig. Du hast noch Zeit zu entscheiden.`;
   });
 });
 
