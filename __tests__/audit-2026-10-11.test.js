@@ -62,3 +62,11 @@ describe("create and update validate the same fields", () => {
     expect(v(null, "2026-03-31")).toBe(null);
   });
 });
+
+describe("a long profile row wraps instead of running under its chevron", () => {
+  it("lets the label shrink and keeps a gap before the chevron", () => {
+    const P = fs.readFileSync(path.join(__dirname, "..", "app", "(tabs)", "profile.tsx"), "utf8");
+    expect(P).toMatch(/menuItemLabel: \{[^}]*flexShrink: 1/);
+    expect(P).toMatch(/menuItemLeft: \{[^}]*marginRight: 12/);
+  });
+});

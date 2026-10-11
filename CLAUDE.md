@@ -1740,10 +1740,24 @@ last one left off without needing a recap typed out.
   5 pass, and the previous file fails the reset, Google and opt out cases. A
   real PostgreSQL was NOT used this time: the harness's `su postgres -c` script
   was refused by a safety check, so the SQL itself is unexercised beyond CI.
-  CLIENT HALF NOT YET PUBLISHED, together with the offline session fix above:
-  `bf262721..83d84bdf` carries `app/(tabs)/subscriptions.tsx`, `lib/api.ts`,
-  `lib/auth-store.ts`, `lib/session-errors.ts` and both locale files, and
-  `needs_native_build.py bf262721` says OTA IS ENOUGH.
+  PUBLISHED THROUGH 70064c84 AND CONFIRMED ON A REAL DEVICE (2026-10-11), with
+  the offline session fix above, read off a screenshot of the Build Info panel:
+  `Embedded launch (no OTA applied): false`, `Update ID:
+  01a129e8-549e-7c9e-afad-7c04414f9109`, `Update published:
+  2026-10-11T07:40:54.302Z`, build 40, runtime 1.0.1, channel production, group
+  `b2b7c7a4-4ef3-412d-8f08-cdd0e85ef44c`. DIFFERENT ID AND LATER than
+  `01a11658-...`. Timestamp cross-check: `70064c84` was committed 07:18:52Z
+  with nothing after it, and the owner's `git rev-parse` read 70064c84. The last
+  client commit is `83d84bdf`.
+  THE CHECK FOR UPDATES BUTTON FAILED FIRST with `ExpoUpdates.fetchUpdateAsync
+  has been rejected, Caused by: Failed to download new update`, while
+  `update:list` showed the group clean. Two cold launches then applied it with
+  no republish, so the likeliest reading is the button racing the launch's own
+  background download. Not proven. If it recurs: two cold launches before
+  anything else, and republish only if the Update ID still has not moved.
+  ON THE SAME PHONE the Profile row "Refer a Friend, get up to 30 days free"
+  ran UNDER its chevron (the label had no flexShrink); fixed in the next
+  commit, not yet published.
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo

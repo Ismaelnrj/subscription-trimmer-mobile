@@ -225,8 +225,11 @@ function makeStyles(c: AppColors) {
       marginBottom: 8, flexDirection: "row", justifyContent: "space-between",
       alignItems: "center", borderWidth: 1, borderColor: c.primary,
     },
-    menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-    menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium" },
+    /* flexShrink on the label, or a long one runs under the chevron instead of
+       wrapping: "Refer a Friend, get up to 30 days free" did exactly that on a
+       real phone, and the German line is longer still. */
+    menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, marginRight: 12 },
+    menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", flexShrink: 1 },
     langToggle: { flexDirection: "row", gap: 6 },
     langChip: {
       paddingVertical: 5, paddingHorizontal: 12, borderRadius: 16,
