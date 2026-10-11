@@ -38,8 +38,8 @@ const PAGES = [
 ];
 
 const PATHS = {
-  en: { index: "/cancel", page: (s) => `/cancel/${s}`, home: "/", privacy: "/privacy-policy", terms: "/terms" },
-  de: { index: "/de/kuendigen", page: (s) => `/de/kuendigen/${s}`, home: "/de", privacy: "/de/datenschutz", terms: "/de/nutzungsbedingungen" },
+  en: { index: "/cancel", page: (s) => `/cancel/${s}`, home: "/", privacy: "/privacy-policy", terms: "/terms", imprint: "/legal-notice" },
+  de: { index: "/de/kuendigen", page: (s) => `/de/kuendigen/${s}`, home: "/de", privacy: "/de/datenschutz", terms: "/de/nutzungsbedingungen", imprint: "/impressum" },
 };
 
 const COPY = {
@@ -228,6 +228,7 @@ ${body}
         <a href="${p.privacy}">${c.privacy}</a>
         <a href="${p.terms}">${c.terms}</a>
         <a href="mailto:trimio@subtrimio.com">${c.contact}</a>
+        <a href="${p.imprint}">${lang === "de" ? "Impressum" : "Legal notice"}</a>
       </nav>
     </footer>
   </div>

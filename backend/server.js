@@ -377,6 +377,14 @@ app.get('/sitemap.xml', (req, res) => {
     + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/terms"/>`
     + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/de/nutzungsbedingungen"/>`
     + '</url>\n'
+    + `<url><loc>${SITE}/legal-notice</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/legal-notice"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/impressum"/>`
+    + '</url>\n'
+    + `<url><loc>${SITE}/impressum</loc>`
+    + `<xhtml:link rel="alternate" hreflang="en" href="${SITE}/legal-notice"/>`
+    + `<xhtml:link rel="alternate" hreflang="de" href="${SITE}/impressum"/>`
+    + '</url>\n'
     + guideSitemapEntries()
     + '</urlset>\n');
 });
@@ -469,6 +477,45 @@ ${body}
 </body>
 </html>`;
 }
+
+// Impressum and Offenlegung. An Austrian business website must name who runs
+// it with a postal address (ECG section 5) and its media owner (MedienG
+// section 25). German is the legally relevant version; /legal-notice says the
+// same in English. Added 2026-10-11 with the owner's details. If a trade
+// licence (Gewerbe) or VAT number (UID) is ever registered, both belong here
+// too, with the licensing authority.
+const IMPRESSUM = {
+  de: {
+    title: 'Impressum',
+    updated: 'Angaben gemäß § 5 ECG und Offenlegung gemäß § 25 MedienG \u00b7 Stand: 11. Oktober 2026',
+    intro: 'Diese Website und die App Trimio werden betrieben von:',
+    sections: [
+      { title: 'Betreiber und Medieninhaber', body: 'Ismael Naranjo, Grassigasse 7, 1140 Wien, Österreich' },
+      { title: 'Kontakt', body: 'E-Mail: trimio@subtrimio.com' },
+      { title: 'Unternehmensgegenstand', body: 'Entwicklung und Betrieb der App Trimio, mit der man Abonnements verwalten und an Verlängerungen erinnert werden kann.' },
+      { title: 'Grundlegende Richtung', body: 'Informationen über die App Trimio und Anleitungen zum Kündigen von Abonnements.' },
+    ],
+  },
+  en: {
+    title: 'Legal notice',
+    updated: 'Information under section 5 of the Austrian E-Commerce Act (ECG) and section 25 of the Austrian Media Act (MedienG) \u00b7 Updated: 11 October 2026',
+    intro: 'This website and the Trimio app are operated by:',
+    sections: [
+      { title: 'Operator and media owner', body: 'Ismael Naranjo, Grassigasse 7, 1140 Vienna, Austria' },
+      { title: 'Contact', body: 'Email: trimio@subtrimio.com' },
+      { title: 'Business purpose', body: 'Developing and operating the Trimio app, which helps people track their subscriptions and be reminded before renewals.' },
+      { title: 'Editorial line', body: 'Information about the Trimio app and guides to cancelling subscriptions.' },
+    ],
+  },
+};
+app.get('/impressum', (req, res) => {
+  const c = IMPRESSUM.de;
+  res.set('Content-Type', 'text/html').send(legalPage(c.title, c.updated, c.intro, c.sections, 'de'));
+});
+app.get('/legal-notice', (req, res) => {
+  const c = IMPRESSUM.en;
+  res.set('Content-Type', 'text/html').send(legalPage(c.title, c.updated, c.intro, c.sections, 'en'));
+});
 
 app.get('/privacy-policy', (req, res) => {
   res.set('Content-Type', 'text/html').send(legalPage(

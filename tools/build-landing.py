@@ -314,7 +314,7 @@ if (revealObserver && !prefersLessMotion) {
 # 10. the footer pointed at /privacy, which this server does not serve. It
 #     serves /privacy-policy. Relative so it works on any host.
 s = s.replace('<a href="https://www.subtrimio.com/privacy">Privacy</a>',
-              '<a href="/cancel">Cancellation guides</a><a href="/terms">Terms</a><a href="/privacy-policy">Privacy</a>')
+              '<a href="/cancel">Cancellation guides</a><a href="/terms">Terms</a><a href="/privacy-policy">Privacy</a><a href="/legal-notice">Legal notice</a>')
 # The footer link is also the only internal link into the guide pages
 # (tools/build-guides.mjs), which is how search engines find them besides the
 # sitemap. The German page rewrites it to /de/kuendigen below.
@@ -582,10 +582,11 @@ de_page = de_page.replace('<html lang="en"', '<html lang="de"', 1)
 legal_links = 0
 for en_href, de_href in (('/privacy-policy', '/de/datenschutz'),
                          ('/terms', '/de/nutzungsbedingungen'),
-                         ('/cancel', '/de/kuendigen')):
+                         ('/cancel', '/de/kuendigen'),
+                         ('/legal-notice', '/impressum')):
     legal_links += de_page.count(f'href="{en_href}"')
     de_page = de_page.replace(f'href="{en_href}"', f'href="{de_href}"')
-assert legal_links >= 3, f"expected legal links to rewrite, found {legal_links}"
+assert legal_links >= 4, f"expected legal links to rewrite, found {legal_links}"
 de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
                           "<title>Trimio | Wissen, bevor abgebucht wird</title>", 1)
 # German writes a decimal comma AND puts the symbol after the amount: 17,99 €,

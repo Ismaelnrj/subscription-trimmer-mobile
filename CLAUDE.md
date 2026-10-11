@@ -4550,9 +4550,15 @@ last one left off without needing a recap typed out.
   SUCCESS BAR: Search Console impressions after 3 to 4 weeks; at least 100 a
   week by the end of November, else rethink the channel. Needs the site in
   Google Search Console with the sitemap submitted, which only the owner can do.
-  NO IMPRESSUM EXISTS on the site, found while building these. An Austrian
-  business website needs one (ECG §5, MedienG §25). It needs the owner's real
-  name and address, so it cannot be written from here; flagged to the owner.
+  THE SITE HAD NO IMPRESSUM, found while building these, and has one since the
+  same day: `/impressum` (German, the legally relevant one) and
+  `/legal-notice`, from `IMPRESSUM` in server.js with the address the owner
+  gave, linked from every landing and guide footer and in the sitemap. If a
+  Gewerbe or a UID is ever registered, add both there.
+  STALE AND NOT YET FIXED: terms section 19 (EN, DE and the app copy) points to
+  the EU online dispute resolution platform, which the EU shut down in July
+  2025. Remove that sentence in all three copies together, since
+  check-legal-sync.py compares them.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
