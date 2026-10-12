@@ -1773,8 +1773,8 @@ last one left off without needing a recap typed out.
   labels and amazon.de), `app/terms-of-service.tsx` (ODR sentence removed) and
   `app/(tabs)/profile.tsx` (the referral row no longer runs under its chevron).
   `needs_native_build.py 70064c84` said OTA IS ENOUGH; CI run 559 green on the
-  exact commit. NOT YET EXERCISED: nobody has opened a rewritten guide on the
-  phone, so the German steps are confirmed shipped, not observed.
+  exact commit. THE GERMAN GUIDE WAS OPENED ON THE PHONE and reads
+  correctly (owner's report, 2026-10-12, not a screenshot).
 
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
