@@ -4610,6 +4610,19 @@ last one left off without needing a recap typed out.
   04:00 UTC, plus `workflow_dispatch` for a manual run. Green sends nothing, red
   is a GitHub email. GitHub pauses schedules in a public repo after 60 days
   without activity. LAYER 3, a scheduled Claude report, still needs its own yes.
+- THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
+  2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
+  nothing the app, site or eas update does depends on visibility; no secret is
+  in the repo (all of them live in Railway), so being readable is not a hole;
+  GitHub Actions minutes are unlimited while public and capped (about 2,000 a
+  month on a free plan) once private; GitHub pauses the weekly scheduled run
+  after 60 days without activity in a public repo; and GitHub PAGES IS SWITCHED
+  ON for this repo, which a free plan turns off if it goes private. What Pages
+  publishes was not readable from a sandbox (the API path is refused); the owner
+  is checking Settings > Pages. Nothing in app/, lib/ or backend/ links to a
+  github.io address. Visibility can be switched back and forth in Settings >
+  General > Danger Zone, but anything read, cloned or indexed while public stays
+  out there, so going private hides the future, not the past.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
