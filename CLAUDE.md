@@ -4580,6 +4580,11 @@ last one left off without needing a recap typed out.
   CI STEP "Generated site pages match their sources" rebuilds the landing pages
   and the guide pages and fails if backend/ changes, so the site cannot drift
   from its sources (or the guides from the app's data).
+  ITS FIRST RUN FOUND A REAL BUG: `tools/build-landing.py` checked a hardcoded
+  `/root/.claude/uploads/...` path first, and outside a root sandbox Python 3.12
+  raises PermissionError there, so the build only ever ran in these sessions.
+  It now always builds from `tools/landing-source.html` unless TRIMIO_HANDOFF
+  names another file.
   CI STEP "Landing page layout" runs `check_landing.js --ci` in Chromium with
   Playwright 1.56.1 installed by pnpm in /tmp: hero button above the fold,
   lead at most 20 words, no sideways scroll. `--ci` reports the eyebrow rule

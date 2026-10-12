@@ -13,20 +13,21 @@ toggle leaves Google with one page and half the content invisible to it.
 import json, re, pathlib
 
 # The handoff originally arrived as a session upload, which does not survive
-# the container. tools/landing-source.html is a committed copy with the five
-# inlined PNGs already stripped, so this stays runnable. The upload path is
-# still honoured when present, so a fresh handoff can be dropped in.
-UPLOAD = "/root/.claude/uploads/572e8a57-90e7-50e4-9543-30207f74f2cf/0064f5a7-trimiopremiumauthready.html"
+# the container. tools/landing-source.html is the committed copy with the five
+# inlined PNGs already stripped, and it is ALWAYS the source unless a fresh
+# handoff is named explicitly with TRIMIO_HANDOFF=<path>.
+#
+# This used to check a hardcoded /root/.claude/uploads/... path first. That
+# only worked in a sandbox running as root: on CI or the owner's machine,
+# Python 3.12 raises PermissionError on /root instead of answering "not there",
+# so the build crashed everywhere else. Found 2026-10-12 by the CI step that
+# rebuilds the site. It also meant the source could silently differ by machine,
+# which is exactly what that step exists to rule out.
+import os
 COMMITTED = "tools/landing-source.html"
-
-if pathlib.Path(UPLOAD).exists():
-    SRC = UPLOAD
-elif pathlib.Path(COMMITTED).exists():
-    SRC = COMMITTED
-else:
-    raise SystemExit(
-        f"No handoff found. Expected {COMMITTED} in the repo, or a fresh "
-        f"upload at {UPLOAD}.")
+SRC = os.environ.get("TRIMIO_HANDOFF") or COMMITTED
+if not pathlib.Path(SRC).is_file():
+    raise SystemExit(f"No handoff found at {SRC}.")
 print(f"source: {SRC}")
 s = pathlib.Path(SRC).read_text(encoding="utf-8")
 before = len(s)
