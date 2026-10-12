@@ -64,5 +64,30 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # The site pages are generated, so a source edited without regenerating
+      # leaves the live page saying something the source no longer says (and
+      # the cancel guides would then disagree with the app, which reads the
+      # same data). Rebuild both and fail if anything under backend/ moved.
+      - name: Generated site pages match their sources
+        run: |
+          python3 tools/build-landing.py > /dev/null
+          node --experimental-strip-types tools/build-guides.mjs 2>/dev/null
+          git diff --exit-code -- backend/
+
+      # Measures the landing pages in a real Chromium with the real font: the
+      # signup button inside the first screen at phone and laptop sizes, the
+      # hero lead at 20 words or fewer, and no sideways scroll at 320 and 360.
+      # It found the German button below the fold on its first run, which no
+      # test and no crash report could see. Playwright is installed with pnpm in
+      # /tmp, outside the repo and pinned, so the repo's package.json and
+      # lockfile are untouched.
+      - name: Landing page layout
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && echo '{"private":true}' > package.json
+          pnpm add playwright@1.56.1 --silent
+          ./node_modules/.bin/playwright install --with-deps chromium > /dev/null
+          cd "$GITHUB_WORKSPACE"
+          NODE_PATH=/tmp/pw/node_modules node .claude/skills/trimio-design/scripts/check_landing.js --ci
+
       - name: Lint
         run: pnpm lint

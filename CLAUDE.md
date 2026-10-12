@@ -4560,6 +4560,37 @@ last one left off without needing a recap typed out.
   from all three copies 2026-10-11, terms "last updated" moved to that date.
   The in-app copy changes with the next `eas update`. The owner confirmed the
   Impressum address is the right one to publish.
+- THE GUARDIAN, LAYER 1: CHECKS THAT RUN ON EVERY PUSH, added 2026-10-12. The
+  owner asked for something that watches the app instead of periodic audits,
+  and noted Sentry never saw these problems. It cannot: Sentry reports
+  CRASHES, and the recent defects (German button below the fold, a dead legal
+  link, English labels in German guides, a query safe only because of the
+  line above it) never threw anything. So the guardian checks RULES, in CI,
+  where a red run blocks the merge to master.
+  `__tests__/access-control-scan.test.js` parses every route in server.js:
+  every /api route needs authMiddleware unless listed in PUBLIC with a reason;
+  every signed in query on a user table passes req.userId, or is in DERIVED
+  with a reason; nothing reads a user id from the request; the secret guarded
+  routes compare in constant time. Stale allowlist entries fail too. Negative
+  tested: the old setCancelled re-read, a route without authMiddleware, and
+  `req.body.userId` each fail, naming the route. ITS FIRST RUN raised a false
+  alarm (an apostrophe in a comment made the parser read the next route into
+  verify-premium); it skips comments now, and a test fails if any route block
+  ever contains another route.
+  CI STEP "Generated site pages match their sources" rebuilds the landing pages
+  and the guide pages and fails if backend/ changes, so the site cannot drift
+  from its sources (or the guides from the app's data).
+  CI STEP "Landing page layout" runs `check_landing.js --ci` in Chromium with
+  Playwright 1.56.1 installed by pnpm in /tmp: hero button above the fold,
+  lead at most 20 words, no sideways scroll. `--ci` reports the eyebrow rule
+  as a note instead of failing, since that is an open taste call.
+  `cancel-guide-pages.test.js` fails when a published guide is past six months
+  since its check. ON PURPOSE, tied to today: when it goes red on an unrelated
+  commit, re-check that guide or unpublish it, never freeze the clock.
+  LAYER 2, NOT BUILT, needs the owner: Sentry on the BACKEND (only the app has
+  it, so server errors go nowhere but the Railway log) and an uptime ping on
+  /health from cron-job.org. LAYER 3, a scheduled Claude report, needs an
+  explicit yes under the scheduling rule above.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.

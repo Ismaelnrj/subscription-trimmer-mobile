@@ -54,6 +54,21 @@ describe("cancellation guide pages", () => {
     expect(en).toMatch(/Last checked \d{1,2} [A-Z][a-z]+ \d{4}/);
   });
 
+  it("no published guide is more than six months past its last check", () => {
+    /* DELIBERATELY TIED TO TODAY. Every page prints "last checked", and a
+       service changes its cancel flow without telling anybody, so a guide
+       older than six months is a public claim nobody stands behind. When this
+       fails on a commit that touched nothing here, that is the alarm working:
+       re-check the named guide against the service's help page and move its
+       verified date, or take it off PAGES in tools/build-guides.mjs. Do not
+       freeze the clock to make it pass. */
+    const SIX_MONTHS = 183 * 86400000;
+    const stale = manifest.guides
+      .filter((g) => Date.now() - Date.parse(g.lastmod + "T00:00:00Z") > SIX_MONTHS)
+      .map((g) => `${g.slug} last checked ${g.lastmod}`);
+    expect(stale).toEqual([]);
+  });
+
   it("the build refuses a guide without a checked date", () => {
     const build = read("tools", "build-guides.mjs");
     expect(build).toMatch(/has no verified date/);
