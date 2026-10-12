@@ -4616,10 +4616,15 @@ last one left off without needing a recap typed out.
   in the repo (all of them live in Railway), so being readable is not a hole;
   GitHub Actions minutes are unlimited while public and capped (about 2,000 a
   month on a free plan) once private; GitHub pauses the weekly scheduled run
-  after 60 days without activity in a public repo; and GitHub PAGES IS SWITCHED
-  ON for this repo, which a free plan turns off if it goes private. What Pages
-  publishes was not readable from a sandbox (the API path is refused); the owner
-  is checking Settings > Pages. Nothing in app/, lib/ or backend/ links to a
+  after 60 days without activity in a public repo; and GitHub PAGES IS OFF, unpublished
+  by the owner on 2026-10-12. It had served a game called WICK (not Trimio) at
+  ismaelnrj.github.io/subscription-trimmer-mobile/ from the `gh-pages` branch,
+  last touched 2026-06-09. That branch STILL EXISTS, deliberately: it is a May
+  snapshot of the project plus ~32,000 node_modules files, checked and carrying
+  no secrets (only Android's standard debug.keystore), served by nothing, and
+  harmless. Deleting it is fine whenever the owner says so; do not read it as
+  current code. The Pages API is refused through the sandbox proxy, so changes
+  there are the owner's to click. Nothing in app/, lib/ or backend/ links to a
   github.io address. Visibility can be switched back and forth in Settings >
   General > Danger Zone, but anything read, cloned or indexed while public stays
   out there, so going private hides the future, not the past.
