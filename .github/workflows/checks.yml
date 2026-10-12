@@ -3,6 +3,17 @@ name: Checks
 on:
   push:
   pull_request:
+  # WEEKLY RUN, with the owner's explicit yes on 2026-10-12 (CLAUDE.md, NEVER
+  # CREATE A SCHEDULED ANYTHING). Every check also runs once a week with no
+  # push, so a guide going stale or a time dependent rule breaking is caught
+  # even in a quiet week. Monday 04:00 UTC: 06:00 Vienna in summer, 05:00 in
+  # winter. A green run sends nothing; a red one is a GitHub email. No phone
+  # push from this repo's side. GitHub pauses schedules in a public repo after
+  # 60 days without activity; re-enable it in the Actions tab if that happens.
+  schedule:
+    - cron: "0 4 * * 1"
+  # The same run by hand: Actions tab > Checks > Run workflow.
+  workflow_dispatch:
 
 jobs:
   checks:

@@ -4592,10 +4592,24 @@ last one left off without needing a recap typed out.
   `cancel-guide-pages.test.js` fails when a published guide is past six months
   since its check. ON PURPOSE, tied to today: when it goes red on an unrelated
   commit, re-check that guide or unpublish it, never freeze the clock.
-  LAYER 2, NOT BUILT, needs the owner: Sentry on the BACKEND (only the app has
-  it, so server errors go nowhere but the Railway log) and an uptime ping on
-  /health from cron-job.org. LAYER 3, a scheduled Claude report, needs an
-  explicit yes under the scheduling rule above.
+  LAYER 2, BACKEND SENTRY, BUILT 2026-10-12 and OFF until the owner sets
+  SENTRY_DSN in Railway. `backend/instrument.js` is required before express and
+  reports from handleError (tagged with method and path only), the last failed
+  email attempt, a rolled back referral reward and a failed PostHog erasure.
+  `backend/sentry-scrub.js` decides what leaves: no bodies, no query strings,
+  no headers but accept-language, content-type and user-agent, no user or IP,
+  no breadcrumbs. Measured against the real @sentry/node 11.6.0 with a fake DSN
+  and the outgoing envelope captured: a request carrying a token, cookie, IP,
+  password, subscription name and price, and a console line with an email,
+  produced one event with none of them. `__tests__/server-sentry.test.js` pins
+  it and refuses a call site that passes an email or a user id.
+  STILL NOT BUILT: an uptime ping on /health from cron-job.org, the owner's to
+  set up.
+  THE WEEKLY CI RUN EXISTS, with the owner's explicit yes on 2026-10-12, which
+  is what the scheduling rule above requires: `schedule` in checks.yml, Monday
+  04:00 UTC, plus `workflow_dispatch` for a manual run. Green sends nothing, red
+  is a GitHub email. GitHub pauses schedules in a public repo after 60 days
+  without activity. LAYER 3, a scheduled Claude report, still needs its own yes.
 - GOOGLE SIGN IN is app only, by the owner's decision (2026-09), not a
   gap waiting to be filled. `POST /api/auth/google` serves the mobile
   token exchange; there is no browser redirect flow and none is wanted.
