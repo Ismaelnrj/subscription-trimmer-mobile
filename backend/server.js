@@ -1,3 +1,6 @@
+// FIRST, before express: server error reporting to Sentry, off unless
+// SENTRY_DSN is set. See backend/instrument.js and backend/sentry-scrub.js.
+const { reportServerError } = require('./instrument');
 const express = require('express');
 const path = require('path');
 const { Pool } = require('pg');
@@ -854,7 +857,11 @@ async function sendEmail(to, subject, html, opts = {}) {
     } catch (e) {
       const isLastAttempt = attempt === retries - 1;
       console.error(`Email send attempt ${attempt + 1}/${retries} failed:`, e.message);
-      if (isLastAttempt) throw e;
+      if (isLastAttempt) {
+        // A fresh error on purpose: Brevo's own message can quote the address.
+        reportServerError(new Error(`Email send failed after ${retries} attempts`), 'sendEmail');
+        throw e;
+      }
       await new Promise((resolve) => setTimeout(resolve, 1000 * 2 ** attempt));
     }
   }
@@ -1741,6 +1748,9 @@ async function reconcileEntitlementsFromRevenueCat(openIds) {
 // validation failures before reaching this.
 function handleError(err, res) {
   console.error(err);
+  // Method and path only: never the query string or the body.
+  const req = res && res.req;
+  reportServerError(err, req ? `${req.method} ${req.path}` : undefined);
   res.status(500).json({ error: 'Internal server error' });
 }
 
@@ -2164,6 +2174,7 @@ async function rewardReferral(referrerId, referredId) {
     return results;
   } catch (e) {
     await client.query('ROLLBACK').catch(() => {});
+    reportServerError(e, 'rewardReferral');
     /* SWALLOWED ON PURPOSE, and this is a real trade rather than laziness.
        Throwing would 500 the verification that triggered it, and the client
        would then retry into `if (user.is_verified) return ...`, which succeeds
@@ -2722,6 +2733,8 @@ async function deletePostHogPerson(userId) {
   } catch (e) {
     // Loud in the log, invisible to the caller: their account IS deleted.
     console.error(`PostHog erasure failed for user ${userId}, profile may remain:`, e.message);
+    // No user id in the report: the account is already gone, the log has it.
+    reportServerError(new Error(`PostHog erasure failed: ${e.message}`), 'deletePostHogPerson');
   }
 }
 
