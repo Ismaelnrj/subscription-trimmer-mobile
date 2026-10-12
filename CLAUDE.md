@@ -1759,6 +1759,23 @@ last one left off without needing a recap typed out.
   ran UNDER its chevron (the label had no flexShrink); fixed in the next
   commit, not yet published.
 
+- PUBLISHED THROUGH 6b536943 AND CONFIRMED ON A REAL DEVICE (2026-10-12), read
+  off a screenshot of the Build Info panel: `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a13089-4a2c-73f1-95a1-5177434ccd47`, `Update
+  published: 2026-10-12T14:34:26.220Z`, build 40, runtime 1.0.1, channel
+  production. DIFFERENT ID AND LATER than `01a129e8-...` at
+  2026-10-11T07:40:54.302Z. Timestamp cross-check: `6b536943` was committed
+  08:53:27Z with nothing after it on master, so the tree carried it. The last
+  client commit in the range is the profile row fix; `6b536943` itself is
+  CLAUDE.md only.
+  WHAT WENT OUT, three client files across `70064c84..6b536943`:
+  `lib/cancellation-guides.ts` (the five verified guides with German button
+  labels and amazon.de), `app/terms-of-service.tsx` (ODR sentence removed) and
+  `app/(tabs)/profile.tsx` (the referral row no longer runs under its chevron).
+  `needs_native_build.py 70064c84` said OTA IS ENOUGH; CI run 559 green on the
+  exact commit. NOT YET EXERCISED: nobody has opened a rewritten guide on the
+  phone, so the German steps are confirmed shipped, not observed.
+
 - THE DAILY EMAIL JOBS ARE SCHEDULED ON CRON-JOB.ORG AND RUNNING, read off the
   owner's screenshot of its dashboard on 2026-10-06. Nothing in this repo
   schedules them. Two jobs, "Trimio renewal reminders" POSTing
