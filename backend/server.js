@@ -1362,7 +1362,9 @@ async function verifyGoogleIdToken(idToken) {
 // like verification/reset codes) — lets the client stay signed in past 1h without
 // re-entering credentials, while a stolen access token only has a 1h window.
 async function issueTokens(userId) {
-  const accessToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  // HS256 named on both sides rather than left to the library default, so the
+  // signer and authMiddleware's verifier cannot drift apart on an upgrade.
+  const accessToken = jwt.sign({ userId }, JWT_SECRET, { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRY });
   const refreshToken = crypto.randomBytes(40).toString('hex');
   const expires = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
   await pool.query(
@@ -1655,7 +1657,11 @@ function authMiddleware(req, res, next) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    const decoded = jwt.verify(header.split(' ')[1], JWT_SECRET);
+    /* Pinned to HS256, the only algorithm this server signs with. jsonwebtoken
+       9 already refuses "none" and asymmetric algorithms for a string secret,
+       so this closes nothing open today; it stops a future library default or
+       a key type change from widening what a forged header can ask for. */
+    const decoded = jwt.verify(header.split(' ')[1], JWT_SECRET, { algorithms: ['HS256'] });
     req.userId = decoded.userId;
     next();
   } catch {
@@ -3306,7 +3312,12 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
        total to zero. */
     const alreadyCancelled = existing.rows[0].cancelled_at != null;
     if (cancelled === alreadyCancelled) {
-      const unchanged = await pool.query('SELECT * FROM subscriptions WHERE id = $1', [id]);
+      // Scoped like every other read here, even though the lookup above already
+      // proved ownership: the guarantee should not depend on statement order.
+      const unchanged = await pool.query(
+        'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
+        [id, req.userId]
+      );
       return res.json(trpc(formatSub(unchanged.rows[0])));
     }
 

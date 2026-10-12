@@ -167,8 +167,22 @@ describe("the source has no way back to a default", () => {
        code as missing. This project has now paid for that lesson three times:
        count brackets or avoid them, never match them with [^)]. */
     expect(SRC).toMatch(/jwt\.sign\(\{ userId \}, JWT_SECRET/);
-    expect(SRC).toMatch(/jwt\.verify\(.*, JWT_SECRET\)/);
+    expect(SRC).toMatch(/jwt\.verify\(.*, JWT_SECRET[,)]/);
     expect(SRC).not.toMatch(/jwt\.sign\([^)]*['"]subtrimmer/);
+  });
+});
+
+describe("the algorithm is pinned on both sides", () => {
+  /* Added 2026-10-12 after an access control audit. jsonwebtoken 9 already
+     refuses "none" for a string secret, so this pins what is true today and
+     keeps signer and verifier agreeing if the library default ever moves. */
+  it("signs with HS256 explicitly", () => {
+    expect(SRC).toMatch(/jwt\.sign\(\{ userId \}, JWT_SECRET, \{ algorithm: 'HS256'/);
+  });
+  it("every verify accepts HS256 and nothing else", () => {
+    const calls = SRC.split("\n").filter((l) => /jwt\.verify\(/.test(l));
+    expect(calls.length).toBeGreaterThan(0);
+    for (const l of calls) expect(l).toMatch(/algorithms: \['HS256'\] \}\)/);
   });
 });
 
