@@ -4627,6 +4627,22 @@ last one left off without needing a recap typed out.
   04:00 UTC, plus `workflow_dispatch` for a manual run. Green sends nothing, red
   is a GitHub email. GitHub pauses schedules in a public repo after 60 days
   without activity. LAYER 3, a scheduled Claude report, still needs its own yes.
+- LOGIN RATE LIMITING TIGHTENED, 2026-10-15, on the owner's request. Login and
+  sign up ALREADY had per IP limits (10 per 15 minutes); two gaps were closed.
+  LOGIN NOW HAS ITS OWN `loginLimiter` that counts only FAILED attempts
+  (`skipSuccessfulRequests`). It used to share `authLimiter` with register and
+  account deletion and counted successes, so people behind one mobile carrier
+  address (CGNAT) could lock each other out by signing in normally.
+  A PER ACCOUNT COUNTER, `loginFailures` beside the login handler: 10 wrong
+  passwords for one email inside 15 minutes refuses that email with 429,
+  whichever addresses the guesses came from. Counted for unknown emails too,
+  so a 429 reveals nothing; cleared by a success or a password reset; in
+  memory and capped at 10,000 entries. THE ACCEPTED TRADE: a stranger can lock
+  somebody out for 15 minutes; Google sign in and the reset still work.
+  Register keeps `authLimiter`, counting every attempt. Backend only, so it
+  went live with the Railway deploy and needs no `eas update`.
+  `__tests__/login-rate-limit.test.js` drives the real handler on a stub pool,
+  10 assertions; removing the lock check fails 2.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

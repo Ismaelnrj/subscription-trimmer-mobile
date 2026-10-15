@@ -343,7 +343,9 @@ describe("the unauthenticated token endpoints carry a ceiling", () => {
     // Adding two mounts must not have disturbed the existing list.
     for (const [route, limiter] of [
       ["/api/auth/register", "authLimiter"],
-      ["/api/auth/login", "authLimiter"],
+      // Its own instance since 2026-10-15, counting failures only; see
+      // login-rate-limit.test.js.
+      ["/api/auth/login", "loginLimiter"],
       ["/api/auth/forgot-password", "emailLimiter"],
       ["/api/auth/resend-verification", "emailLimiter"],
       ["/api/auth/verify-email", "codeLimiter"],

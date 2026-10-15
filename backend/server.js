@@ -702,8 +702,24 @@ const tokenLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+/* Login has its OWN instance and counts only FAILED attempts. Sharing
+   authLimiter meant registering, logging in and deleting an account all spent
+   one budget, and counting successes meant several people on one mobile
+   carrier address (CGNAT) could lock each other out just by signing in
+   normally. A guesser only ever fails, so skipping successes costs an attacker
+   nothing and spares real users. The per-ACCOUNT counter beside the login
+   handler covers the other gap: guesses spread across many addresses. */
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/google', tokenLimiter);
 app.use('/api/auth/refresh', tokenLimiter);
 app.use('/api/auth/forgot-password', emailLimiter);
@@ -2325,17 +2341,64 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+/* FAILED LOGINS COUNT AGAINST THE ACCOUNT, NOT ONLY AGAINST THE ADDRESS.
+   loginLimiter is per IP, so somebody guessing one person's password from many
+   addresses was bounded by nothing. After LOGIN_MAX_FAILURES wrong passwords for
+   one email inside LOGIN_LOCK_MS, that email is refused for the rest of the
+   window, with the same 429 text the IP limiter uses.
+   Counted by the typed email whether or not an account exists, so the refusal
+   reveals nothing about which addresses are registered.
+   The trade, accepted on purpose: a stranger can lock a real person out for 15
+   minutes by typing wrong passwords. Google sign in and the password reset both
+   still work, and a successful reset clears the count.
+   Held in memory, like resetAttempts: a restart forgets the counts, which only
+   ever gives a guesser a few more tries. Pruned so random addresses cannot grow
+   it without bound. */
+const LOGIN_MAX_FAILURES = 10;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
+const LOGIN_MAP_LIMIT = 10000;
+const loginFailures = new Map();
+
+function loginLocked(email, now = Date.now()) {
+  const entry = loginFailures.get(email);
+  if (!entry) return false;
+  if (now - entry.first >= LOGIN_LOCK_MS) {
+    loginFailures.delete(email);
+    return false;
+  }
+  return entry.count >= LOGIN_MAX_FAILURES;
+}
+
+function noteLoginFailure(email, now = Date.now()) {
+  const entry = loginFailures.get(email);
+  if (entry && now - entry.first < LOGIN_LOCK_MS) {
+    entry.count += 1;
+    return;
+  }
+  if (loginFailures.size >= LOGIN_MAP_LIMIT) {
+    for (const [key, value] of loginFailures) {
+      if (now - value.first >= LOGIN_LOCK_MS) loginFailures.delete(key);
+    }
+    // Still full of live entries: drop the oldest rather than grow.
+    if (loginFailures.size >= LOGIN_MAP_LIMIT) loginFailures.delete(loginFailures.keys().next().value);
+  }
+  loginFailures.set(email, { count: 1, first: now });
+}
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { password } = req.body;
     const email = req.body.email?.trim().toLowerCase();
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (loginLocked(email)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user || !user.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
+      noteLoginFailure(email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
+    loginFailures.delete(email);
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
     res.json({ token: accessToken, refreshToken, user: formatUser(user) });
@@ -2666,6 +2729,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
     const hash = await bcrypt.hash(newPassword, 10);
     await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2', [hash, user.id]);
+    loginFailures.delete(email);
     res.json({ success: true });
   } catch (err) {
     handleError(err, res);
