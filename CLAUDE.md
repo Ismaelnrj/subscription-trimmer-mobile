@@ -4639,8 +4639,10 @@ last one left off without needing a recap typed out.
   so a 429 reveals nothing; cleared by a success or a password reset; in
   memory and capped at 10,000 entries. THE ACCEPTED TRADE: a stranger can lock
   somebody out for 15 minutes; Google sign in and the reset still work.
-  Register keeps `authLimiter`, counting every attempt. Backend only, so it
-  went live with the Railway deploy and needs no `eas update`.
+  Register keeps `authLimiter`, counting every attempt. Backend only, so no
+  `eas update`. LIVE: the owner confirmed the Railway deploy green on
+  2026-10-15 (the deploy that boots the server carrying `4e661dd1`).
+  `marketing-links.md` holds the tagged Play and website links per channel.
   `__tests__/login-rate-limit.test.js` drives the real handler on a stub pool,
   10 assertions; removing the lock check fails 2.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
