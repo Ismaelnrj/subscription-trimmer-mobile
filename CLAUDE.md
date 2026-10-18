@@ -4567,6 +4567,10 @@ last one left off without needing a recap typed out.
   SUCCESS BAR: Search Console impressions after 3 to 4 weeks; at least 100 a
   week by the end of November, else rethink the channel. Needs the site in
   Google Search Console with the sitemap submitted, which only the owner can do.
+  DONE 2026-10-18 (owner's report, not a screenshot): Domain property
+  `subtrimio.com` verified by a TXT record in Squarespace (Host `@`, beside the
+  untouched `v=spf1` record), and `https://www.subtrimio.com/sitemap.xml`
+  submitted with status Correcto. The 3 to 4 week impressions clock starts here.
   THE SITE HAD NO IMPRESSUM, found while building these, and has one since the
   same day: `/impressum` (German, the legally relevant one) and
   `/legal-notice`, from `IMPRESSUM` in server.js with the address the owner
