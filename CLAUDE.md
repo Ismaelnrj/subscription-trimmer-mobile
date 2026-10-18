@@ -4711,12 +4711,19 @@ last one left off without needing a recap typed out.
   deleted and axios moved to 1.20.0 (lockfile diff is axios alone, its own
   dependencies unchanged), CI run 597 green with the typecheck. NOT YET
   PUBLISHED: it rides the next `eas update`, then a login and an add on the phone.
-  `needs_native_build.py` WILL SAY NATIVE BUILD REQUIRED for this range, and that
-  is the script being path based, not a native change: it flags ANY edit to
-  package.json or pnpm-lock.yaml. axios ships no android/ code, no Expo module
-  config and no react-native.config, so OTA is enough and runtimeVersion stays
-  1.0.1. Check the package for native code before believing that verdict on a
-  dependency bump.
+  THE SCRIPT USED TO CALL THAT BUMP A NATIVE BUILD, being path based: any edit
+  to package.json or pnpm-lock.yaml counted. FIXED THE SAME DAY at the owner's
+  request ("no mistakes, or fake alarms"): it now opens every package version
+  that changed in the lockfile (node_modules, else the registry tarball checked
+  against the lockfile's integrity hash) and calls it native only for Android
+  code, an Android Expo module config, a config plugin app.json loads, or a
+  package that writes the Android project at prebuild. What it cannot open is
+  CANNOT DECIDE, exit 2, never OTA. MEASURED ON REAL HISTORY: axios (twice) and
+  tRPC say OTA; async-storage, expo-localization, react-native-purchases,
+  native Google Sign-In and the PostHog addition all say NATIVE, each naming
+  the file that proves it. `test_needs_native_build.py` beside it pins 20 rules
+  in throwaway repos and runs in CI; four deliberate breaks of the script were
+  each caught.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

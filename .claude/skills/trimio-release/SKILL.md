@@ -34,6 +34,17 @@ python3 .claude/skills/trimio-release/scripts/preflight.py
 you name), classifies every changed file, and exits non-zero if a native build
 is required while `runtimeVersion` or `versionCode` has not moved with it.
 
+**DEPENDENCY CHANGES ARE JUDGED BY CONTENT, since 2026-10-18.** An edit to
+`package.json` or `pnpm-lock.yaml` used to count as native outright, which
+called a pure JavaScript axios bump a native build. Now every package version
+added or removed in the lockfile is opened (from `node_modules`, or its
+registry tarball checked against the lockfile hash) and is native only if it
+carries Android code, an Android Expo module config, a config plugin app.json
+loads, or is one of the packages that write the Android project at prebuild.
+A package it cannot open gives **CANNOT DECIDE, exit 2**, never OTA: run
+`pnpm install --frozen-lockfile` and try again. Its rules are pinned by
+`scripts/test_needs_native_build.py`, which CI runs on every push.
+
 **PASS IT THE RIGHT BASELINE, or it answers a different question than the one
 you asked.** Run bare it compares against the last versionCode BUMP, so it
 reports everything native that has changed since the last BUILD. That is the
