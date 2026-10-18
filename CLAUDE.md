@@ -4650,8 +4650,13 @@ last one left off without needing a recap typed out.
   POSTGRES service by mistake, which only restarted the database (clean crash
   recovery, nothing lost); it lives on the backend service now. No event has
   arrived yet, so the pipe is configured, not yet observed carrying one.
-  STILL NOT BUILT: an uptime ping on /health from cron-job.org, the owner's to
-  set up.
+  THE UPTIME PING IS LIVE SINCE 2026-10-18: cron-job.org job "Trimio uptime"
+  GETs `/health` every 5 minutes, emails after 2 consecutive failures and on
+  recovery (plus job disabled and TLS expiry), owner created it on request.
+  First run 200 OK in 1.31 s, read off the owner's screenshot. `/health` was
+  made to run `SELECT 1` with a 5 second timeout in `7324b7df` just before, so
+  a database outage answers 503 instead of a cheerful "ok".
+  `__tests__/health-check.test.js` drives the real handler on a stub pool.
   THE WEEKLY CI RUN EXISTS, with the owner's explicit yes on 2026-10-12, which
   is what the scheduling rule above requires: `schedule` in checks.yml, Monday
   04:00 UTC, plus `workflow_dispatch` for a manual run. Green sends nothing, red
@@ -4715,8 +4720,10 @@ last one left off without needing a recap typed out.
   changes what the next `eas update` ships, and may need a native build.
   DONE 2026-10-18 in `1ce1ff48`, with the owner's yes: `package-lock.json`
   deleted and axios moved to 1.20.0 (lockfile diff is axios alone, its own
-  dependencies unchanged), CI run 597 green with the typecheck. NOT YET
-  PUBLISHED: it rides the next `eas update`, then a login and an add on the phone.
+  dependencies unchanged), CI run 597 green with the typecheck. PUBLISHED
+  2026-10-18 and the owner reports sign in and adding a subscription work on
+  the phone. The Update ID was not captured, so the next publish compares
+  against `01a13089-...` until it is.
   THE SCRIPT USED TO CALL THAT BUMP A NATIVE BUILD, being path based: any edit
   to package.json or pnpm-lock.yaml counted. FIXED THE SAME DAY at the owner's
   request ("no mistakes, or fake alarms"): it now opens every package version
