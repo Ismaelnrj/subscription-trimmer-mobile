@@ -4669,6 +4669,23 @@ last one left off without needing a recap typed out.
   `marketing-links.md` holds the tagged Play and website links per channel.
   `__tests__/login-rate-limit.test.js` drives the real handler on a stub pool,
   10 assertions; removing the lock check fails 2.
+- FIVE VULNERABLE BACKEND DEPENDENCIES, fixed 2026-10-18 in `9ee6c0c8`, LIVE
+  (owner confirmed the Railway deploy green the same day). `npm audit` against
+  `backend/package-lock.json`, which the Dockerfile's `npm install` honours, so
+  production ran these: proxy-addr 2.0.7 (critical, IP spoofing via an
+  IPv4-mapped IPv6 trust subnet; this server trusts a hop count, so probably not
+  reachable), brace-expansion (high, DoS), qs, body-parser and express
+  (moderate, qs is the reachable one: a crafted query string). `npm audit fix`
+  moved exactly those five by patch or minor version, package.json unchanged,
+  audit 0. Measured by booting the real server on the new tree against
+  PostgreSQL: pages, guides, legal, sitemap, register, login, create, list,
+  auth refusal, funnel secret and the 413 body limit all as before.
+  AUDIT WITH THE LOCKFILE, NOT WITHOUT IT: the first run, on a fresh resolve
+  with no lockfile, reported 0 and would have closed the question wrongly.
+  NOTHING WATCHED FOR THIS, which is how five advisories sat unnoticed. The fix
+  is Dependabot alerts in GitHub (Settings > Code security), the owner's click.
+  The same day the owner was told the likeliest way in is their own accounts,
+  not the code: 2FA on GitHub, Railway, Play Console, Brevo and Squarespace.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
