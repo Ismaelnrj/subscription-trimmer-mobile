@@ -4692,6 +4692,21 @@ last one left off without needing a recap typed out.
   (`/dependabot/alerts` answers 403 to this integration), so they arrive as the
   owner's email or screenshot. Dependabot pull requests are NOT merged blind:
   a backend one deploys on merge, so each gets the boot test above first.
+  ITS FIRST SCAN SAID 177 (2 critical, 109 high), and almost none of it ships.
+  Triaged 2026-10-18 by auditing each lockfile in a scratch copy: the backend is
+  0; the root `pnpm-lock.yaml` and the stray `package-lock.json` (unused: Codemagic
+  and CI install with pnpm) carry the rest, so most alerts are COUNTED TWICE. Both
+  criticals and nearly every high sit in BUILD TOOLING that never reaches a phone
+  or Railway: shell-quote via the React Native CLI and react-devtools-core,
+  node-forge, undici and xmldom via the Expo CLI, plus jest, metro, babel and
+  postcss. Those clear with the next Expo SDK upgrade, which is a native build.
+  THE ONE RUNTIME PACKAGE IS axios 1.18.1 in `lib/api.ts` (fixed in 1.20.0). Its
+  advisories need the Node HTTP or fetch adapter, HTTP/2, data: URLs or a
+  polluted prototype; React Native uses the XHR adapter against one fixed HTTPS
+  host, so it is low risk. Bumping it is pure JS (OTA is enough) but it changes
+  the app's whole network layer, so it rides a publish and is checked on a device.
+  A DEPENDABOT PR ON THE ROOT PACKAGE IS NEVER MERGED FROM GITHUB'S BUTTON: it
+  changes what the next `eas update` ships, and may need a native build.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
