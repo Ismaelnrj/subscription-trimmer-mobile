@@ -4785,8 +4785,11 @@ last one left off without needing a recap typed out.
   `Trimio: Abo Tracker | Wissen, bevor abgebucht wird`, set in
   `tools/build-landing.py`. Its German title replace had been a SILENT NO-OP
   (it looked for the English tagline after landing-de.json had already
-  translated it) and asserts now. Search Console had been pointed at an old
-  Netlify privacy policy page; the owner corrected it to the live site.
+  translated it) and asserts now. The owner also found a Google console
+  website field (most likely Play Console's developer website) pointing at an
+  OLD NETLIFY PRIVACY POLICY page and corrected it to the live site. Check
+  Play Console > App content > Privacy policy too: it must be
+  `https://www.subtrimio.com/privacy-policy`, not the Netlify copy.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
