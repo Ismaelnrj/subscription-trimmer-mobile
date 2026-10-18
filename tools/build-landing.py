@@ -106,8 +106,8 @@ head = f'''  <link rel="canonical" href="{CANON}__CANON_PATH__" />
    "installUrl":"https://play.google.com/store/apps/details?id=com.trimio.app"}}
   </script>
 '''
-s = s.replace("  <title>Trimio | Know before you pay</title>\n",
-              "  <title>Trimio | Know before you pay</title>\n" + head, 1)
+s = s.replace("  <title>Trimio: Subscription Tracker | Know before you pay</title>\n",
+              "  <title>Trimio: Subscription Tracker | Know before you pay</title>\n" + head, 1)
 
 # 3. this backend's real routes and error shape
 s = s.replace("    signup: '/api/auth/signup',", "    signup: '/api/auth/register',")
@@ -588,8 +588,12 @@ for en_href, de_href in (('/privacy-policy', '/de/datenschutz'),
     legal_links += de_page.count(f'href="{en_href}"')
     de_page = de_page.replace(f'href="{en_href}"', f'href="{de_href}"')
 assert legal_links >= 4, f"expected legal links to rewrite, found {legal_links}"
-de_page = de_page.replace("<title>Trimio | Know before you pay</title>",
-                          "<title>Trimio | Wissen, bevor abgebucht wird</title>", 1)
+# The tagline in the title is already German by now (the landing-de.json pass
+# above), so match that form, and assert: a replace that finds nothing is silent.
+EN_TITLE_IN_DE = "<title>Trimio: Subscription Tracker | Wissen, bevor abgebucht wird</title>"
+assert EN_TITLE_IN_DE in de_page, "German title anchor not found"
+de_page = de_page.replace(EN_TITLE_IN_DE,
+                          "<title>Trimio: Abo Tracker | Wissen, bevor abgebucht wird</title>", 1)
 # German writes a decimal comma AND puts the symbol after the amount: 17,99 €,
 # which is also how the app's own notifications format it. "€17,99" fixed the
 # comma and kept the English symbol position until 2026-10-11. The space is

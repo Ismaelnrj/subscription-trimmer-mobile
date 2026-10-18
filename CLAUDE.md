@@ -4776,8 +4776,17 @@ last one left off without needing a recap typed out.
   businesses for "Trimio" (trimio.ai among them): that is a new domain with few
   links losing the bare word, not a conflict. TMview lists REGISTERED marks
   only, so unregistered prior use is not covered; low risk. Nobody holds the
-  mark, which also means nobody stops somebody else filing it: registering it
-  (DPMA or EUIPO) is the owner's call and has not been decided.
+  mark, which also means nobody stops somebody else filing it. REGISTERING IT
+  IS PARKED, owner's yes 2026-10-18: raise it again at the first paying
+  customer or about 100 active users, as a DPMA filing (about 290 EUR for up
+  to three classes: 9, 36, 42), not before.
+  THE PAGE TITLES NOW CARRY THE CATEGORY, same day, so Google can tell which
+  Trimio this is: `Trimio: Subscription Tracker | Know before you pay` and
+  `Trimio: Abo Tracker | Wissen, bevor abgebucht wird`, set in
+  `tools/build-landing.py`. Its German title replace had been a SILENT NO-OP
+  (it looked for the English tagline after landing-de.json had already
+  translated it) and asserts now. Search Console had been pointed at an old
+  Netlify privacy policy page; the owner corrected it to the live site.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
