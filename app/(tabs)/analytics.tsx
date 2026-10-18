@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../../lib/api";
-import { useFmt } from "../../lib/currency-store";
+import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
 import { DonutChart } from "../../components/DonutChart";
@@ -26,6 +26,7 @@ const WEEK_COUNT = 4;
 export default function AnalyticsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const fmtC = useFmt();
+  const { currency, rates, baseCurrencyCode } = useCurrencyStore();
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
@@ -74,11 +75,15 @@ export default function AnalyticsScreen() {
            drawing a bar for a week where nothing hits. */
         if (isPhantomOccurrence(sub, date, today)) continue;
         const weekIndex = Math.min(Math.floor((date.getDate() - 1) / 7), WEEK_COUNT - 1);
-        buckets[weekIndex] += sub.price;
+        /* Converted into the base currency first, the unit every total on this
+           screen is in. Adding raw prices made a 10 EUR and a 10 USD row one
+           bar of 20, which is neither. */
+        const price = Number(sub.price) || 0;
+        buckets[weekIndex] += sumMixedInBase({ [sub.currency || ""]: price }, rates, baseCurrencyCode, price);
       }
     }
     return buckets;
-  }, [subscriptions, today]);
+  }, [subscriptions, today, rates, baseCurrencyCode]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -107,7 +112,22 @@ export default function AnalyticsScreen() {
   }
 
   const budgetGoal = settings?.budgetGoal;
-  const monthly = summary?.monthlyTotal ?? 0;
+  /* The server's monthlyTotal and categoryBreakdown ADD RAW NUMBERS ACROSS
+     CURRENCIES, so a 10 EUR row and a 10 USD row read as 20. The per currency
+     parts convert once into the base currency here, exactly as the dashboard
+     already does, so the two screens agree. The raw fields remain the
+     fallback for an older server. */
+  const inBase = (byCurrency: Record<string, number> | undefined, fallback: number) =>
+    sumMixedInBase(byCurrency, rates, baseCurrencyCode, fallback);
+  const monthly = inBase(summary?.monthlyByCurrency, summary?.monthlyTotal ?? 0);
+  const yearly = summary?.monthlyByCurrency ? monthly * 12 : (summary?.yearlyTotal ?? 0);
+  /* A total that moved through an exchange rate is marked as an estimate, the
+     same test the dashboard uses: any part priced in another currency. */
+  const totalIsEstimate = isMixedCurrency(summary?.monthlyByCurrency, currency.code);
+  const fmtTotal = (n: number) => {
+    const text = fmtC(n);
+    return totalIsEstimate && !text.startsWith("~") ? `~${text}` : text;
+  };
 
   /* Six named slices, then Other.
    *
@@ -123,7 +143,10 @@ export default function AnalyticsScreen() {
    * It is not three. Three was tighter than the colours require and hid
    * categories people genuinely have. */
   const DONUT_SLICES = 6;
-  const sortedCategories = [...(summary?.categoryBreakdown ?? [])].sort((a: any, b: any) => b.amount - a.amount);
+  const sortedCategories = (summary?.categoryBreakdown ?? []).map((cat: any) => ({
+    ...cat,
+    amount: inBase(summary?.categoryByCurrency?.[cat.category], cat.amount),
+  })).sort((a: any, b: any) => b.amount - a.amount);
   const shownCount = isPremium ? DONUT_SLICES : 1;
   const visibleCategories = sortedCategories.slice(0, shownCount);
   const hiddenTotal = sortedCategories.slice(shownCount).reduce((sum: number, cat: any) => sum + cat.amount, 0);
@@ -147,20 +170,20 @@ export default function AnalyticsScreen() {
             style={styles.heroCard}
           >
             <Text style={styles.heroLabelOnGradient}>{t("analytics.totalSpending")}</Text>
-            <Text style={styles.heroValueOnGradient}>{fmtC(monthly)}</Text>
+            <Text style={styles.heroValueOnGradient}>{fmtTotal(monthly)}</Text>
             {budgetGoal != null && (
               <Text style={styles.heroBudgetOnGradient}>
-                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtC(budgetGoal - monthly) })}
+                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
               </Text>
             )}
           </LinearGradient>
         ) : (
           <View style={[styles.heroCard, styles.heroCardLight]}>
             <Text style={styles.heroLabel}>{t("analytics.totalSpending")}</Text>
-            <Text style={styles.heroValue}>{fmtC(monthly)}</Text>
+            <Text style={styles.heroValue}>{fmtTotal(monthly)}</Text>
             {budgetGoal != null && (
               <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 6 }}>
-                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtC(budgetGoal - monthly) })}
+                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
               </Text>
             )}
           </View>
@@ -170,7 +193,7 @@ export default function AnalyticsScreen() {
             projection is genuinely new information here. */}
         <View style={styles.yearlyCard}>
           <Text style={styles.summaryTitleCompact}>{t("analytics.yearlyProjection")}</Text>
-          <Text style={styles.summaryValueCompact}>{fmtC(summary?.yearlyTotal ?? 0)}</Text>
+          <Text style={styles.summaryValueCompact}>{fmtTotal(yearly)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>{t("analytics.spendingByCategory")}</Text>
@@ -190,7 +213,7 @@ export default function AnalyticsScreen() {
                     <View style={[styles.legendDot, { backgroundColor: getCategoryIcon(cat.category).color }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.legendName} numberOfLines={1}>{categoryLabel(cat.category)}</Text>
-                      <Text style={styles.legendAmount}>{fmtC(cat.amount)}/mo</Text>
+                      <Text style={styles.legendAmount}>{fmtTotal(cat.amount)}/mo</Text>
                     </View>
                   </View>
                 ))}
@@ -203,7 +226,7 @@ export default function AnalyticsScreen() {
                       <Text style={styles.legendName} numberOfLines={1}>
                         {t("analytics.otherCategories", { count: sortedCategories.length - shownCount })}
                       </Text>
-                      <Text style={styles.legendAmount}>{fmtC(hiddenTotal)}/mo</Text>
+                      <Text style={styles.legendAmount}>{fmtTotal(hiddenTotal)}/mo</Text>
                     </View>
                   </View>
                 )}
@@ -251,12 +274,12 @@ export default function AnalyticsScreen() {
             <View style={styles.summaryRow}>
               <View style={styles.statPair}>
                 <Text style={styles.statPairLabel}>{t("analytics.avgPerSub")}</Text>
-                <Text style={styles.statPairValue}>{fmtC(monthly / (summary?.activeSubscriptions ?? 1))}/mo</Text>
+                <Text style={styles.statPairValue}>{fmtTotal(monthly / (summary?.activeSubscriptions ?? 1))}/mo</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.statPair}>
                 <Text style={styles.statPairLabel}>{t("analytics.avgPerYear")}</Text>
-                <Text style={styles.statPairValue}>{fmtC((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}/yr</Text>
+                <Text style={styles.statPairValue}>{fmtTotal((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}/yr</Text>
               </View>
             </View>
           </View>

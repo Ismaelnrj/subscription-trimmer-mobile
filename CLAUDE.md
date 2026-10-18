@@ -4807,12 +4807,30 @@ last one left off without needing a recap typed out.
      the trial end, walked forward if already past; a typed date still wins.
   `__tests__/codex-review-2026-10-18.test.js`, 13 assertions on the real code,
   8 failing against `a578150b`.
-  TWO ARE WAITING ON THE OWNER, because they change scheduled behaviour (the
-  E02 rule above): phone reminders cover only the NEXT occurrence, so nothing
-  fires for later cycles until the app reopens; and a renewal added inside
-  the lead time gets no warning at all. The fifth, Stats still adding
-  currencies raw (the deferred slice of the 2026-09-29 review), is client side
-  and rides the next `eas update`.
+  THE OTHER TWO, AND STATS, BUILT THE SAME DAY with the owner's yes (they
+  change scheduled behaviour, so they were asked first). CLIENT ONLY, NOT YET
+  PUBLISHED: they need an `eas update`; `needs_native_build.py 1ce1ff48` says
+  OTA IS ENOUGH.
+  4. PHONE REMINDERS NOW COVER LATER PAYMENTS: the next ones within 62 days,
+     at most 4 per row (`REMINDER_HORIZON_DAYS`, `REMINDERS_PER_SUBSCRIPTION`
+     in `lib/notification-scheduler.ts`), from `getUpcomingOccurrences`, so
+     never a phantom before the stored date. Before, one occurrence was queued
+     and nothing fired for later cycles until the app reopened.
+  5. A RENEWAL INSIDE THE LEAD TIME falls back to 09:00 the day before
+     (`reminderFor`); if that has passed too, nothing. Never immediate, since
+     every run cancels and requeues the whole list.
+  MEASURED on Node type stripping with real date-fns 2.30.0, old against new,
+  frozen to Sat 17 Oct 10:00: monthly 1 reminder to 2, weekly 0 to 4, stale
+  stored date 0 to 2, due in 2 days with a 7 day lead 0 to 1 (the day
+  before); paused, push off and renewal alerts off unchanged.
+  `__tests__/reminder-horizon.test.js` needs real jest (CI only).
+  `notification-race.test.js`'s fixture is YEARLY now, so its counts still
+  describe the race and not the horizon.
+  STATS CONVERTS EACH CURRENCY before adding, from `monthlyByCurrency` and
+  `categoryByCurrency` the way the dashboard does, weekly bars included, and
+  marks a converted total with `~`. The CSV export was done 2026-10-11; the
+  alerts threshold comparison still compares one currency at a time on the
+  server, which is correct.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

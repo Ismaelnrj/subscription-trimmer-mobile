@@ -89,7 +89,8 @@ describe("the weekly spending chart only counts charges that happen", () => {
   it("holds today in a memo rather than reading it inline", () => {
     // Read inline, the bucket memo takes a new dependency every render.
     expect(src).toMatch(/const today = useMemo\(\(\) => new Date\(\), \[\]\)/);
-    expect(src).toMatch(/\}, \[subscriptions, today\]\)/);
+    // Membership: the memo also depends on the rates it converts with.
+    expect(src).toMatch(/\}, \[subscriptions, today[^\]]*\]\)/);
   });
 });
 

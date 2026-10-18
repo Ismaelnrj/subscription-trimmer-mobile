@@ -193,3 +193,30 @@ describe("a trial without a billing date is first charged when it ends", () => {
     expect(firstBillingDate({})).toBe("2026-11-18T00:00:00.000Z");
   });
 });
+
+/* Finding 5: Stats added raw prices across currencies while the dashboard
+   converted them, so the same data read two ways on two screens. Source
+   reading, because the screen is TypeScript; sumMixedInBase itself is pinned
+   behaviourally in currency-convert.test.ts. */
+describe("Stats converts each currency before adding, like the dashboard", () => {
+  const A = fs.readFileSync(path.join(__dirname, "..", "app", "(tabs)", "analytics.tsx"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+
+  it("the monthly total comes from the per currency parts", () => {
+    expect(A).toMatch(/inBase\(summary\?\.monthlyByCurrency, summary\?\.monthlyTotal \?\? 0\)/);
+  });
+
+  it("each category is converted from its own parts", () => {
+    expect(A).toMatch(/inBase\(summary\?\.categoryByCurrency\?\.\[cat\.category\], cat\.amount\)/);
+  });
+
+  it("each weekly bar adds converted prices, not raw ones", () => {
+    expect(A).not.toMatch(/buckets\[weekIndex\] \+= sub\.price/);
+    expect(A).toMatch(/buckets\[weekIndex\] \+= sumMixedInBase\(/);
+  });
+
+  it("a converted total is marked as an estimate", () => {
+    expect(A).toMatch(/isMixedCurrency\(summary\?\.monthlyByCurrency, currency\.code\)/);
+    expect(A).not.toMatch(/fmtC\(monthly\)|fmtC\(summary\?\.yearlyTotal/);
+  });
+});
