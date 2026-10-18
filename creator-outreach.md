@@ -121,3 +121,65 @@ Code: [dein Empfehlungscode aus der App, unter Freunde einladen]
 - **Stop** with that kind if it brings fewer than 10.
 - A creator's own reach screenshot is not an install. Only Play Console and the
   funnel count.
+
+## English version
+
+Use it only when an English speaking creator wins on fit. Their audience is
+probably more iPhone heavy than a German one, and Trimio is Android only, so
+weigh that before paying anything.
+
+**Message (Instagram DM):**
+
+```
+Hi [Name],
+
+I'm [Your name], and I built Trimio, an Android app against forgotten subscriptions. I really liked your Reel about [specific topic].
+
+Trimio reminds you before every renewal and shows step by step how to cancel more than 30 services. No bank login, no card details.
+
+Would you like to try it? You get Premium for free, and your followers get up to 30 days of Premium with your code.
+
+If you like it, I'd love an honest Reel or Story, clearly marked as an ad. [Optional: I'm happy to pay 100 € for a Reel.]
+
+No pressure, and thanks for reading!
+[Your name]
+```
+
+**Follow up after 5 days, then stop:**
+
+```
+Hi [Name], just checking whether you saw my message. If it isn't a fit right now, that's completely fine. Best, [Your name]
+```
+
+**Brief (once they say yes):**
+
+```
+Trimio, in short
+
+What it is
+An Android app that keeps all your subscriptions in one place and reminds you before every renewal. For more than 30 services it shows step by step how to cancel.
+
+What you can say
+Trimio never connects to your bank and never asks for card details.
+Paste a confirmation email and the form fills itself in.
+Free to start. Premium is a monthly plan, and Google Play shows the price in your currency.
+Android only, on Google Play.
+
+Please do NOT say
+"Your data never leaves your phone." It isn't true: your subscription list is stored on our server so it comes back after a reinstall.
+Prices for Netflix, Spotify and so on that you haven't checked yourself.
+Anything about iPhone. There is no iOS version yet.
+
+Ideas, if you want them
+Show a subscription you forgot about and what it cost you.
+Paste a real confirmation email and show the form filling itself in.
+Open the cancellation guide for a service your audience knows.
+Real screens please, no recreated ones.
+
+At the end
+"Trimio, free on Google Play. Link in my bio." And please mark it as an ad (#ad), as your platform and country require.
+
+Your link and your code
+Link: [personal link, see "Setting each creator up"]
+Code: [your referral code from the app, under Refer a Friend]
+```
