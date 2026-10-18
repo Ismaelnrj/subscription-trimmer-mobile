@@ -155,14 +155,25 @@ function jobs({ failTo = [] } = {}) {
     sent.push({ to, subject, html });
   };
   const handlers = {};
-  new Function('app', 'pool', 'crypto', 'sendEmail', 'unsubscribeUrlFor', 'handleError',
+  /* The clock is pinned through a `Date` parameter, which shadows the global
+     inside this function only, because the reminder job now walks a passed
+     billing date forward to today: against the real clock the fixture's
+     16 October stops being "due" the day after it passes. */
+  const RealDate = Date;
+  const FROZEN = RealDate.parse('2026-10-14T12:00:00.000Z');
+  class FrozenDate extends RealDate {
+    constructor(...a) { if (a.length === 0) super(FROZEN); else super(...a); }
+    static now() { return FROZEN; }
+  }
+  new Function('app', 'pool', 'crypto', 'sendEmail', 'unsubscribeUrlFor', 'handleError', 'Date',
     [fn('function secretMatches('), fn('function escapeHtml('),
+     fn('function addMonthsUTC('), fn('function advanceBillingDate('), fn('function startOfUtcDay('),
      konst('const EMAIL_FOOTER = {'), fn('function emailFooter('),
      konst('const REMINDER_EMAIL = {'), konst('const WIN_BACK_EMAIL = {'), konst('const CYCLE_NOUN = {'),
      fn('function formatEmailDate('), fn('function formatEmailPrice('),
      route('/api/trpc/reminders.sendEmailReminders'), route('/api/trpc/reminders.sendWinBackEmails')].join('\n')
   )({ post: (p, h) => { handlers[p] = h; } }, pool, crypto, sendEmail, (id) => `https://u/${id}`,
-    (e, res) => res.status(500).json({ error: String(e) }));
+    (e, res) => res.status(500).json({ error: String(e) }), FrozenDate);
   const run = async (p) => {
     const prev = process.env.CRON_SECRET;
     process.env.CRON_SECRET = 'S';

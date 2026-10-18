@@ -1385,9 +1385,18 @@ async function verifyGoogleIdToken(idToken) {
 // like verification/reset codes) — lets the client stay signed in past 1h without
 // re-entering credentials, while a stolen access token only has a 1h window.
 async function issueTokens(userId) {
+  /* A token minted for an UNVERIFIED password account carries `unv`, so
+     authMiddleware can check that the password which minted it still exists.
+     Google sign in drops an unverified password when it claims the address
+     (see /api/auth/google), and without this the stranger's access token kept
+     reading the owner's data for the rest of its hour. Only these tokens cost
+     a database read; every verified session stays a pure signature check. */
+  const who = await pool.query('SELECT is_verified, password_hash IS NOT NULL AS has_password FROM users WHERE id = $1', [userId]);
+  const claims = { userId };
+  if (who.rows[0] && !who.rows[0].is_verified && who.rows[0].has_password) claims.unv = true;
   // HS256 named on both sides rather than left to the library default, so the
   // signer and authMiddleware's verifier cannot drift apart on an upgrade.
-  const accessToken = jwt.sign({ userId }, JWT_SECRET, { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRY });
+  const accessToken = jwt.sign(claims, JWT_SECRET, { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRY });
   const refreshToken = crypto.randomBytes(40).toString('hex');
   const expires = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
   await pool.query(
@@ -1686,7 +1695,18 @@ function authMiddleware(req, res, next) {
        a key type change from widening what a forged header can ask for. */
     const decoded = jwt.verify(header.split(' ')[1], JWT_SECRET, { algorithms: ['HS256'] });
     req.userId = decoded.userId;
-    next();
+    if (!decoded.unv) return next();
+    /* Minted for an unverified password. If that password is gone, Google
+       claimed the address and dropped it, so this session belonged to whoever
+       registered the address without owning it: refuse it. A database failure
+       refuses too, since this path only exists to close an account takeover. */
+    pool.query('SELECT password_hash IS NOT NULL AS has_password FROM users WHERE id = $1', [decoded.userId])
+      .then(
+        (r) => (r.rows[0]?.has_password ? next() : res.status(401).json({ error: 'Invalid token' })),
+        // Second argument, not .catch: an error thrown later by the route
+        // itself must not be answered here as a second response.
+        () => res.status(401).json({ error: 'Invalid token' })
+      );
   } catch {
     res.status(401).json({ error: 'Invalid token' });
   }
@@ -3142,6 +3162,19 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
       const parsed = parseCalendarDateStrict(nextBillingDateInput);
       if (parsed === null) return res.status(400).json({ error: 'Invalid next billing date' });
       billingDate = parsed.toISOString();
+    } else if (trialEndDate) {
+      /* A trial is first charged when it ends, so with no date given that is
+         the first billing date. The default above is one cycle from TODAY,
+         which put a monthly trial ending 25 October at 18 November, so the
+         dashboard and the reminders named a charge 24 days late. A trial that
+         has already ended is walked forward to its next real charge. A date
+         the user typed always wins over this. */
+      const trialEnd = parseCalendarDateStrict(trialEndDate);
+      const today = startOfUtcDay();
+      billingDate = (trialEnd >= today
+        ? trialEnd
+        : advanceBillingDate(trialEnd, billingCycle, today, trialEnd.getUTCDate()).date
+      ).toISOString();
     }
 
     const userResult = await pool.query('SELECT is_paid, email, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
@@ -3895,16 +3928,35 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
     const in3Days = new Date(now.getTime() + 3 * 86400000);
 
     for (const user of usersResult.rows) {
-      const subsResult = await pool.query(
+      /* STALE DATES ARE WALKED FORWARD HERE, not only in alerts.list. That was
+         the one place a passed billing date ever advanced, and it only runs
+         when the app is opened, so a Premium user who stopped opening it got
+         one reminder email and then none: the stored date sat in the past and
+         never matched the window again. The advance is the same one
+         alerts.list does (to today, from the stored anchor), and it is
+         written back so the two paths agree. */
+      const candidates = await pool.query(
         `SELECT * FROM subscriptions
          WHERE user_id = $1
            AND is_active = TRUE
            AND cancelled_at IS NULL
-           AND next_billing_date BETWEEN $2 AND $3
-           -- skip anything already reminded for THIS billing date
-           AND (reminder_sent_for IS NULL OR reminder_sent_for <> next_billing_date)`,
-        [user.id, now.toISOString(), in3Days.toISOString()]
+           AND next_billing_date <= $2`,
+        [user.id, in3Days.toISOString()]
       );
+      const today = startOfUtcDay(now);
+      const due = [];
+      for (const s of candidates.rows) {
+        const stored = new Date(s.next_billing_date);
+        const { date: current, advanced } = advanceBillingDate(stored, s.billing_cycle, today, s.billing_anchor_day);
+        if (advanced) {
+          await pool.query('UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2', [current.toISOString(), s.id]);
+          s.next_billing_date = current;
+        }
+        // skip anything already reminded for THIS billing date
+        const remindedFor = s.reminder_sent_for ? new Date(s.reminder_sent_for).getTime() : null;
+        if (current >= now && current <= in3Days && remindedFor !== current.getTime()) due.push(s);
+      }
+      const subsResult = { rows: due };
       if (subsResult.rows.length === 0) continue;
 
       const lang = user.language === 'de' ? 'de' : 'en';

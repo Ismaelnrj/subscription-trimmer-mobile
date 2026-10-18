@@ -315,7 +315,7 @@ describe("one renewal sends one reminder email", () => {
   });
 
   it("skips a subscription already reminded for that exact date", () => {
-    expect(CRON).toMatch(/reminder_sent_for IS NULL OR reminder_sent_for <> next_billing_date/);
+    expect(CRON).toMatch(/remindedFor !== current\.getTime\(\)/);
   });
 
   it("marks only after the send succeeded", () => {

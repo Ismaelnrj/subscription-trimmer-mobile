@@ -4790,6 +4790,29 @@ last one left off without needing a recap typed out.
   OLD NETLIFY PRIVACY POLICY page and corrected it to the live site. Check
   Play Console > App content > Privacy policy too: it must be
   `https://www.subtrimio.com/privacy-policy`, not the Netlify copy.
+- A CODEX REVIEW OF `a578150b`, 2026-10-18, FIVE FINDINGS, ALL FIVE REAL when
+  checked against the code. Three fixed the same day in one backend commit,
+  LIVE via Railway, no app update needed:
+  1. GOOGLE CLAIMING AN UNVERIFIED ADDRESS left the stranger's ACCESS token
+     alive for up to an hour (the 2026-10-11 fix dropped only the password and
+     refresh token). `issueTokens` now adds `unv` to tokens minted for an
+     unverified password account, and `authMiddleware` refuses one whose
+     password is gone. No migration; only `unv` tokens cost a database read.
+  2. THE REMINDER EMAIL JOB NEVER ADVANCED A PASSED BILLING DATE (only
+     alerts.list did, which needs the app open), so a Premium user who stopped
+     opening the app got one email and then none. It now walks stale dates
+     forward with the same `advanceBillingDate` and writes them back.
+  3. A TRIAL WITH NO BILLING DATE was billed one cycle from TODAY (trial
+     ending 25 October saved as 18 November). The first billing date is now
+     the trial end, walked forward if already past; a typed date still wins.
+  `__tests__/codex-review-2026-10-18.test.js`, 13 assertions on the real code,
+  8 failing against `a578150b`.
+  TWO ARE WAITING ON THE OWNER, because they change scheduled behaviour (the
+  E02 rule above): phone reminders cover only the NEXT occurrence, so nothing
+  fires for later cycles until the app reopens; and a renewal added inside
+  the lead time gets no warning at all. The fifth, Stats still adding
+  currencies raw (the deferred slice of the 2026-09-29 review), is client side
+  and rides the next `eas update`.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

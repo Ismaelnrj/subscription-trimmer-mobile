@@ -166,7 +166,7 @@ describe("the source has no way back to a default", () => {
        class stops at the `)` inside split(), so that pattern reports correct
        code as missing. This project has now paid for that lesson three times:
        count brackets or avoid them, never match them with [^)]. */
-    expect(SRC).toMatch(/jwt\.sign\(\{ userId \}, JWT_SECRET/);
+    expect(SRC).toMatch(/jwt\.sign\(claims, JWT_SECRET/);
     expect(SRC).toMatch(/jwt\.verify\(.*, JWT_SECRET[,)]/);
     expect(SRC).not.toMatch(/jwt\.sign\([^)]*['"]subtrimmer/);
   });
@@ -177,7 +177,7 @@ describe("the algorithm is pinned on both sides", () => {
      refuses "none" for a string secret, so this pins what is true today and
      keeps signer and verifier agreeing if the library default ever moves. */
   it("signs with HS256 explicitly", () => {
-    expect(SRC).toMatch(/jwt\.sign\(\{ userId \}, JWT_SECRET, \{ algorithm: 'HS256'/);
+    expect(SRC).toMatch(/jwt\.sign\(claims, JWT_SECRET, \{ algorithm: 'HS256'/);
   });
   it("every verify accepts HS256 and nothing else", () => {
     const calls = SRC.split("\n").filter((l) => /jwt\.verify\(/.test(l));
