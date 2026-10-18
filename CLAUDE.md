@@ -4707,6 +4707,16 @@ last one left off without needing a recap typed out.
   the app's whole network layer, so it rides a publish and is checked on a device.
   A DEPENDABOT PR ON THE ROOT PACKAGE IS NEVER MERGED FROM GITHUB'S BUTTON: it
   changes what the next `eas update` ships, and may need a native build.
+  DONE 2026-10-18 in `1ce1ff48`, with the owner's yes: `package-lock.json`
+  deleted and axios moved to 1.20.0 (lockfile diff is axios alone, its own
+  dependencies unchanged), CI run 597 green with the typecheck. NOT YET
+  PUBLISHED: it rides the next `eas update`, then a login and an add on the phone.
+  `needs_native_build.py` WILL SAY NATIVE BUILD REQUIRED for this range, and that
+  is the script being path based, not a native change: it flags ANY edit to
+  package.json or pnpm-lock.yaml. axios ships no android/ code, no Expo module
+  config and no react-native.config, so OTA is enough and runtimeVersion stays
+  1.0.1. Check the package for native code before believing that verdict on a
+  dependency bump.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
