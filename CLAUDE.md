@@ -4770,6 +4770,14 @@ last one left off without needing a recap typed out.
   names Railway, Brevo, PostHog, Sentry and RevenueCat. Whether a DPA is in
   place with the other four has NOT been checked; most carry one in their terms
   or offer it from account settings. Not urgent, do not nag.
+- THE NAME STAYS TRIMIO, the owner's decision 2026-10-18, after a TMview search
+  (contains "TRIMIO", every EU office plus EM and WO, classes from 9) returned
+  NO ROWS, read off the owner's screenshot. Prompted by Google showing other
+  businesses for "Trimio" (trimio.ai among them): that is a new domain with few
+  links losing the bare word, not a conflict. TMview lists REGISTERED marks
+  only, so unregistered prior use is not covered; low risk. Nobody holds the
+  mark, which also means nobody stops somebody else filing it: registering it
+  (DPMA or EUIPO) is the owner's call and has not been decided.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
