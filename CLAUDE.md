@@ -4686,6 +4686,12 @@ last one left off without needing a recap typed out.
   is Dependabot alerts in GitHub (Settings > Code security), the owner's click.
   The same day the owner was told the likeliest way in is their own accounts,
   not the code: 2FA on GitHub, Railway, Play Console, Brevo and Squarespace.
+  BOTH DONE 2026-10-18. Dependabot alerts, malware alerts and security updates
+  are ON (read off the owner's screenshot; grouped updates left off on purpose).
+  2FA is on all five accounts (owner's report). A sandbox CANNOT list the alerts
+  (`/dependabot/alerts` answers 403 to this integration), so they arrive as the
+  owner's email or screenshot. Dependabot pull requests are NOT merged blind:
+  a backend one deploys on merge, so each gets the boot test above first.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
