@@ -297,8 +297,8 @@ offers, and it is the row that will show up in Play Console as
 2. **Mon, Wed, Fri, Sun:** the Short on YouTube, the same file as a Reel, and
    the matching story with the sticker.
 3. **Reply to every comment within a day.** A "which app is that" comment gets
-   the Play link in the reply on Instagram, where replies are not links either,
-   so point to the bio there too.
+   "Trimio, Link im Profil" as the answer, since a link in a comment cannot be
+   tapped on either platform.
 4. **Monday, ten minutes, numbers:** YouTube Studio views and the share still
    watching at three seconds per post; Play Console acquisition grouped by
    source; PostHog `$pageview` where the URL carries `utm_source`; and
