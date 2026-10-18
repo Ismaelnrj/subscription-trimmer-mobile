@@ -143,7 +143,7 @@
     "errSave": "Could not save changes. Please try again.",
     "errDelete": "Could not delete subscription. Please try again.",
     "errUpdate": "Could not update subscription. Please try again.",
-    "removedFromTrimio": "{{name}} removed. It was {{amount}} a year.",
+    "cancelledSaving": "{{name}} marked as cancelled. That is {{amount}} a year you keep.",
     "currencyMismatch": "This receipt is in {{receipt}}. The amount was entered as written, not converted to {{account}}.",
     "inviteFriendPrompt": "Know someone tracking theirs on paper?",
     "inviteFriend": "Invite a friend",

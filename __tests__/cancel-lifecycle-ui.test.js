@@ -23,7 +23,7 @@ describe("the delete dialog asks what happened instead of assuming", () => {
        cancelled the service, and the only thing on offer threw the row away
        along with any record of what they had been paying. */
     expect(SUBS).toMatch(/t\("subscriptions\.iCancelledIt"\)/);
-    expect(SUBS).toMatch(/setCancelledMutation\.mutate\(\{ id: sub\.id \}\)/);
+    expect(SUBS).toMatch(/setCancelledMutation\.mutate\(sub\)/);
   });
 
   it("keeps deleting available and still marked destructive", () => {
@@ -47,6 +47,41 @@ describe("the delete dialog asks what happened instead of assuming", () => {
        dialog covers both entry points without a new control. */
     const actions = SUBS.slice(SUBS.indexOf("<View style={styles.actionButtons}>"), SUBS.indexOf("</Swipeable>"));
     expect(actions).not.toMatch(/setCancelledMutation/);
+  });
+});
+
+describe("only cancelling celebrates a saving", () => {
+  /* The owner found it on the phone, 2026-10-18: "Delete" showed "you saved X a
+     year" while "I cancelled it" showed nothing. Backwards. Delete is how a
+     mistaken row goes away, so it saved nobody anything; cancelling is the
+     saving. */
+  const body = (name) => {
+    const i = SUBS.indexOf(`const ${name} = useMutation({`);
+    expect(i).toBeGreaterThan(-1);
+    return SUBS.slice(i, SUBS.indexOf("\n  });\n", i));
+  };
+
+  it("delete shows no savings toast and asks for no review", () => {
+    const del = body("deleteMutation");
+    expect(del).not.toMatch(/setRemovedCard|maybeShowReview/);
+  });
+
+  it("cancelling shows the saving and then the review prompt", () => {
+    const c = body("setCancelledMutation");
+    expect(c).toMatch(/setRemovedCard\(/);
+    expect(c).toMatch(/maybeShowReview\(5500\)/);
+  });
+
+  it("the saving is shown in the row's own currency", () => {
+    expect(SUBS).toMatch(/fmtC\(removedCard\.yearly, removedCard\.currency\)/);
+  });
+
+  it("the toast copy says cancelled, not removed, in both languages", () => {
+    for (const L of [EN, DE]) {
+      expect(L.subscriptions.cancelledSaving).toMatch(/\{\{name\}\}/);
+      expect(L.subscriptions.cancelledSaving).toMatch(/\{\{amount\}\}/);
+      expect(L.subscriptions.removedFromTrimio).toBeUndefined();
+    }
   });
 });
 

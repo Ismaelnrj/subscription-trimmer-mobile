@@ -143,7 +143,7 @@
     "errSave": "Änderungen konnten nicht gespeichert werden. Erneut versuchen.",
     "errDelete": "Abonnement konnte nicht gelöscht werden. Erneut versuchen.",
     "errUpdate": "Abonnement konnte nicht aktualisiert werden. Erneut versuchen.",
-    "removedFromTrimio": "{{name}} entfernt. Das waren {{amount}} im Jahr.",
+    "cancelledSaving": "{{name}} als gekündigt markiert. Das sind {{amount}} im Jahr, die du behältst.",
     "currencyMismatch": "Diese Quittung ist in {{receipt}}. Der Betrag wurde so übernommen, wie er dasteht, nicht in {{account}} umgerechnet.",
     "inviteFriendPrompt": "Kennst du jemanden, der seine Abos noch auf Papier verfolgt?",
     "inviteFriend": "Freund einladen",

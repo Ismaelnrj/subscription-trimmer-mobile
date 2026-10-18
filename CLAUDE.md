@@ -4808,9 +4808,16 @@ last one left off without needing a recap typed out.
   `__tests__/codex-review-2026-10-18.test.js`, 13 assertions on the real code,
   8 failing against `a578150b`.
   THE OTHER TWO, AND STATS, BUILT THE SAME DAY with the owner's yes (they
-  change scheduled behaviour, so they were asked first). CLIENT ONLY, NOT YET
-  PUBLISHED: they need an `eas update`; `needs_native_build.py 1ce1ff48` says
-  OTA IS ENOUGH.
+  change scheduled behaviour, so they were asked first). CLIENT ONLY;
+  `needs_native_build.py 1ce1ff48` said OTA IS ENOUGH. PUBLISHED THROUGH
+  e704336f AND CONFIRMED ON A REAL DEVICE (2026-10-18), read off a screenshot
+  of the Build Info panel: `Embedded launch (no OTA applied): false`, `Update
+  ID: 01a150a4-0578-7883-aba8-4aa01d4d5f01`, `Update published:
+  2026-10-18T20:11:29.016Z`, build 40, runtime 1.0.1, channel production.
+  DIFFERENT ID AND LATER than `01a1500e-...` at 17:27:53.858Z. Timestamp
+  cross-check: `e704336f` was committed 19:55:52Z with nothing after it on
+  master, so the tree carried it. NOT YET EXERCISED: a reminder firing for a
+  later cycle, or the day-before fallback, has not been seen arrive.
   4. PHONE REMINDERS NOW COVER LATER PAYMENTS: the next ones within 62 days,
      at most 4 per row (`REMINDER_HORIZON_DAYS`, `REMINDERS_PER_SUBSCRIPTION`
      in `lib/notification-scheduler.ts`), from `getUpcomingOccurrences`, so
@@ -4831,6 +4838,17 @@ last one left off without needing a recap typed out.
   marks a converted total with `~`. The CSV export was done 2026-10-11; the
   alerts threshold comparison still compares one currency at a time on the
   server, which is correct.
+- THE SAVINGS TOAST WAS ON THE WRONG BUTTON, fixed 2026-10-18, found by the
+  owner on the phone. In the delete dialog, "Delete" showed "Netflix removed.
+  It was X a year" plus the invite link and the review prompt, while "I
+  cancelled it" showed nothing. Backwards: delete is how a mistaken row goes
+  away, so it saved nobody anything, and cancelling is the saving. The toast
+  and the review prompt moved to `setCancelledMutation`, the copy is
+  `subscriptions.cancelledSaving` ("marked as cancelled ... a year you keep"),
+  and the yearly figure now carries the row's own currency, which the old
+  `fmtC(removedCard.yearly)` did not. Delete is quiet. Client only, needs an
+  `eas update`. `__tests__/cancel-lifecycle-ui.test.js`, 5 of 21 failing
+  against the previous code.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

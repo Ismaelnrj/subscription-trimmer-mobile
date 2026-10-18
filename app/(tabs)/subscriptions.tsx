@@ -100,7 +100,7 @@ export default function SubscriptionsScreen() {
   const [showEmailPaste, setShowEmailPaste] = useState(false);
   const [emailText, setEmailText] = useState("");
   const [loadingExamples, setLoadingExamples] = useState(false);
-  const [removedCard, setRemovedCard] = useState<{ name: string; yearly: number } | null>(null);
+  const [removedCard, setRemovedCard] = useState<{ name: string; yearly: number; currency?: string } | null>(null);
   const [currencyNotice, setCurrencyNotice] = useState<{ receipt: string; account: string } | null>(null);
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
@@ -118,8 +118,8 @@ export default function SubscriptionsScreen() {
 
   // Only ever one pending request, and the latest deadline wins.
   //
-  // Deleting a subscription asks for the prompt at 5.5s so the savings toast
-  // (which clears at 5s) is read first, but the delete also changes the list
+  // Marking a subscription cancelled asks for the prompt at 5.5s so the savings toast
+  // (which clears at 5s) is read first, but cancelling also changes the list
   // length, which re-runs the effect below and asks again at 4s. Racing them
   // meant the shorter one won and the prompt covered the toast it was
   // deliberately scheduled to follow.
@@ -324,18 +324,10 @@ export default function SubscriptionsScreen() {
   const deleteMutation = useMutation({
     mutationFn: async (sub: any) =>
       (await apiClient.post("/trpc/subscriptions.delete", { id: sub.id })).data.result.data,
-    onSuccess: (_data, sub) => {
-      invalidate();
-      const yearly = toMonthly(parseFloat(sub.price), sub.billingCycle) * 12;
-      setRemovedCard({ name: sub.name, yearly });
-      if (removedTimer.current) clearTimeout(removedTimer.current);
-      // Long enough to read the savings and tap the invite link before it goes away.
-      removedTimer.current = setTimeout(() => setRemovedCard(null), 5000);
-      // Cancelling a subscription is the clearest "this app just saved me
-      // money" moment there is, ask for a review right after the savings
-      // toast has had a chance to be seen.
-      maybeShowReview(5500);
-    },
+    /* Deleting is quiet on purpose. It is how somebody removes a row they added
+       by mistake, so "you saved X a year" there congratulates them on money that
+       was never being spent. The savings toast belongs to "I cancelled it". */
+    onSuccess: invalidate,
     onError: () => Alert.alert(t("common.error"), t("subscriptions.errDeleteSub")),
   });
 
@@ -350,10 +342,20 @@ export default function SubscriptionsScreen() {
      and gives its free tier slot back, and it stays as history so the app can
      say what stopping was worth. */
   const setCancelledMutation = useMutation({
-    mutationFn: async ({ id }: { id: number }) =>
-      (await apiClient.post("/trpc/subscriptions.setCancelled", { id, cancelled: true })).data.result.data,
-    onSuccess: () => {
+    mutationFn: async (sub: any) =>
+      (await apiClient.post("/trpc/subscriptions.setCancelled", { id: sub.id, cancelled: true })).data.result.data,
+    onSuccess: (_data, sub) => {
       invalidate();
+      // A row shows its own currency, so the yearly figure carries it too.
+      const yearly = toMonthly(parseFloat(sub.price), sub.billingCycle) * 12;
+      setRemovedCard({ name: sub.name, yearly, currency: sub.currency });
+      if (removedTimer.current) clearTimeout(removedTimer.current);
+      // Long enough to read the savings and tap the invite link before it goes away.
+      removedTimer.current = setTimeout(() => setRemovedCard(null), 5000);
+      // Cancelling a subscription is the clearest "this app just saved me
+      // money" moment there is, ask for a review right after the savings
+      // toast has had a chance to be seen.
+      maybeShowReview(5500);
       /* The cancelled list is a separate query, so invalidating the main list
          alone would leave the new entry missing until a cold start. */
       queryClient.invalidateQueries({ queryKey: ["cancelledSubscriptions"] });
@@ -566,7 +568,7 @@ export default function SubscriptionsScreen() {
     Alert.alert(t("subscriptions.removeTitle"), t("subscriptions.removeConfirm", { name: sub.name }), [
       { text: t("subscriptions.cancel"), style: "cancel" },
       { text: t("subscriptions.deleteForever"), style: "destructive", onPress: () => deleteMutation.mutate(sub) },
-      { text: t("subscriptions.iCancelledIt"), onPress: () => setCancelledMutation.mutate({ id: sub.id }) },
+      { text: t("subscriptions.iCancelledIt"), onPress: () => setCancelledMutation.mutate(sub) },
     ]);
   };
 
@@ -780,7 +782,7 @@ export default function SubscriptionsScreen() {
           <MaterialCommunityIcons name="check-circle-outline" size={22} color="#FFFFFF" />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.removedCardText}>
-              {t("subscriptions.removedFromTrimio", { amount: fmtC(removedCard.yearly), name: removedCard.name })}
+              {t("subscriptions.cancelledSaving", { amount: fmtC(removedCard.yearly, removedCard.currency), name: removedCard.name })}
             </Text>
             <TouchableOpacity
               onPress={() => {
