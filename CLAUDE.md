@@ -4722,8 +4722,15 @@ last one left off without needing a recap typed out.
   deleted and axios moved to 1.20.0 (lockfile diff is axios alone, its own
   dependencies unchanged), CI run 597 green with the typecheck. PUBLISHED
   2026-10-18 and the owner reports sign in and adding a subscription work on
-  the phone. The Update ID was not captured, so the next publish compares
-  against `01a13089-...` until it is.
+  the phone. CONFIRMED ON A REAL DEVICE, read off a screenshot of the Build
+  Info panel: `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1500e-4102-7e28-b435-67be2c089f5e`, `Update published:
+  2026-10-18T17:27:53.858Z`, build 40, runtime 1.0.1, channel production,
+  `You are on the latest version.` DIFFERENT ID AND LATER than `01a13089-...`
+  at 2026-10-12T14:34:26.220Z. Timestamp cross-check: `43e6c11d` was committed
+  16:48:21Z, before the publish, and `e6a46cff` at 18:03:56Z, after it, so the
+  tree carried everything through `43e6c11d`. The last client commit is
+  `1ce1ff48`, which names the baseline.
   THE SCRIPT USED TO CALL THAT BUMP A NATIVE BUILD, being path based: any edit
   to package.json or pnpm-lock.yaml counted. FIXED THE SAME DAY at the owner's
   request ("no mistakes, or fake alarms"): it now opens every package version
@@ -4737,6 +4744,26 @@ last one left off without needing a recap typed out.
   the file that proves it. `test_needs_native_build.py` beside it pins 20 rules
   in throwaway repos and runs in CI; four deliberate breaks of the script were
   each caught.
+- `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
+  Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
+  `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening
+  step and is not, for two measured reasons:
+  1. THE CA ROTATES. On every boot `wrapper.sh` regenerates the certificates,
+     ROOT CA INCLUDED, once the server certificate is within 30 days of expiry
+     (820 days by default). A pinned CA then refuses the new one, `initDB`
+     fails, the server exits 1, and with no healthcheck configured (there is no
+     railway.json) the broken deploy replaces the working one. That outage
+     would arrive roughly two years after setting the variable, with nothing
+     pointing at the cause.
+  2. THE HOSTNAME MUST BE IN THE CERTIFICATE. The SAN is `DNS:localhost` plus
+     `RAILWAY_PRIVATE_DOMAIN` only if the database's certificate was generated
+     after that line was added, and `rejectUnauthorized: true` checks the
+     hostname. A DATABASE_URL on the public proxy host never matches.
+  WHAT IT WOULD BUY: protection against an attacker already inside the Railway
+  project's private network. Not worth a self-inflicted outage. Revisit only
+  with a code change that surfaces the certificate's expiry (for example in the
+  boot log) so rotation is visible before it bites. If it is ever set and the
+  backend stops booting with a TLS error, deleting the variable restores it.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
