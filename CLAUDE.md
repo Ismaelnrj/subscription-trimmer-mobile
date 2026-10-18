@@ -4644,6 +4644,12 @@ last one left off without needing a recap typed out.
   password, subscription name and price, and a console line with an email,
   produced one event with none of them. `__tests__/server-sentry.test.js` pins
   it and refuses a call site that passes an email or a user id.
+  IT IS ON SINCE 2026-10-18, read off the backend deploy log the owner pasted:
+  `Sentry: server error reporting ON`. Its own Sentry project (Express, Error
+  monitoring only), separate from the app's. The DSN first went onto the
+  POSTGRES service by mistake, which only restarted the database (clean crash
+  recovery, nothing lost); it lives on the backend service now. No event has
+  arrived yet, so the pipe is configured, not yet observed carrying one.
   STILL NOT BUILT: an uptime ping on /health from cron-job.org, the owner's to
   set up.
   THE WEEKLY CI RUN EXISTS, with the owner's explicit yes on 2026-10-12, which
