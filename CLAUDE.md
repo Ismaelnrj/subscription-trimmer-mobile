@@ -1554,6 +1554,14 @@ last one left off without needing a recap typed out.
   WHAT IT SETTLES: at about two installs a month the positioning test cannot
   reach 300 visitors by 2026-10-20, and the first session success bar cannot be
   measured either. Traffic is the bottleneck, not copy or code.
+  LAST 28 DAYS (20 Sep to 17 Oct), same screen, same day: 139 impressions
+  (-81% on the 28 days before), 2 acquisitions, 2 first opens, 6 monthly active,
+  7 day retention 1. No custom range exists on that screen, so BEFORE is 90 days
+  minus 28: 2,701 impressions and 4 installs (0.15%); AFTER 139 and 2 (1.4%).
+  A tenfold rate on TWO installs, measured on impressions rather than visitors,
+  with the owner's own devices possibly among them: a weak positive sign, NOT a
+  result (about 1 in 30 by chance if nothing changed). Keep the new copy; read
+  store listing visitors when that report is found.
 - THE LAUNCH RECORDED THE DEVICE LANGUAGE, NOT THE CHOSEN ONE, fixed
   2026-10-06 in `bfb399ce`, found from that funnel's de 0 while the owner's own
   app runs German. `app/_layout.tsx` ran restoreToken (which calls /auth/me,
