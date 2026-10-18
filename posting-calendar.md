@@ -261,6 +261,12 @@ variables moving together tell you nothing about either.
 
 ## Where the links go, added 2026-10-18
 
+**WHAT IS ACTUALLY RUNNING, 2026-10-18 (owner's report):** the socials are run
+through Tryholo.ai, posting once or twice EVERY DAY, rather than the four
+batched posts a week planned above. Start date, platforms and per post views
+not yet recorded. Read the 8 November criteria below against that volume: at
+seven to fourteen posts a week, twelve posts is one week, not three.
+
 Written after the first real Play reading: about two installs a month, so
 traffic, not copy or code, is the bottleneck. The calendar above stays the plan.
 This section adds the one thing it left out, how a viewer gets from a post to
