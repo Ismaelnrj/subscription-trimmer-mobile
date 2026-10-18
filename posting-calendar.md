@@ -267,6 +267,17 @@ batched posts a week planned above. Start date, platforms and per post views
 not yet recorded. Read the 8 November criteria below against that volume: at
 seven to fourteen posts a week, twelve posts is one week, not three.
 
+**FIRST READING, 2026-10-18, Instagram profile screenshot:** 100 views in the
+last 30 days for the whole account; the visible posts read 8 to 26 views each.
+Mostly designed English graphics with mock phone screens, an AI generated person
+in one, bio link `linktr.ee/trimio.SubscriptionTracker` (untagged unless the
+Linktree buttons carry the tags). At that reach the posts are not being shown
+to anybody beyond the account itself, so hashtags are not the lever: format
+(Reels with a hook), language (German first, per this plan) and real screens
+are. Two mock screens price Netflix at 17.99 EUR and Spotify at 11.99 EUR,
+which the catalogue does not (15.99 Standard DACH, 12.99): a mock with
+invented prices is the "Trlmio" class wearing better clothes.
+
 Written after the first real Play reading: about two installs a month, so
 traffic, not copy or code, is the bottleneck. The calendar above stays the plan.
 This section adds the one thing it left out, how a viewer gets from a post to
