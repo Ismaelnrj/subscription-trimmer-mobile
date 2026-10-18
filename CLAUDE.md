@@ -4764,6 +4764,12 @@ last one left off without needing a recap typed out.
   with a code change that surfaces the certificate's expiry (for example in the
   boot log) so rotation is visible before it bites. If it is ever set and the
   backend stops booting with a TLS error, deleting the variable restores it.
+- RAILWAY DPA SIGNED, 2026-10-18 (owner's report, not a screenshot). Railway
+  hosts the database holding every account and subscription, so it is the
+  processor that matters most under GDPR Art. 28. The privacy policy already
+  names Railway, Brevo, PostHog, Sentry and RevenueCat. Whether a DPA is in
+  place with the other four has NOT been checked; most carry one in their terms
+  or offer it from account settings. Not urgent, do not nag.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
