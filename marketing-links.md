@@ -24,12 +24,18 @@ Copy these as they are. Written 2026-10-15. App id checked against
 
 ## 1. Straight to Play Store (posts and ads seen on phones)
 
+WHERE A LINK CAN BE TAPPED, which decides where these go. A link in a YouTube
+Shorts description or comment is NOT clickable (YouTube removed that in August
+2023), and an Instagram caption never was. So a Short or a Reel points people
+to the profile ("Link im Profil") and the clickable link lives in the YouTube
+channel links and the Instagram bio, section 2. Instagram stories can carry a
+tappable link sticker, which is the one per post Play link on Instagram.
+TikTok only allows a bio link from 1,000 followers or on a business account.
+
 | Channel | Link |
 |---|---|
-| Instagram reel or post | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dinstagram%26utm_medium%3Dpost%26utm_campaign%3Doct26 |
-| Instagram story | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dinstagram%26utm_medium%3Dstory%26utm_campaign%3Doct26 |
+| Instagram story (link sticker) | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dinstagram%26utm_medium%3Dstory%26utm_campaign%3Doct26 |
 | TikTok video | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dtiktok%26utm_medium%3Dpost%26utm_campaign%3Doct26 |
-| YouTube Shorts description | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dyoutube%26utm_medium%3Dpost%26utm_campaign%3Doct26 |
 | Reddit post or comment | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dreddit%26utm_medium%3Dpost%26utm_campaign%3Doct26 |
 | WhatsApp or friends | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dwhatsapp%26utm_medium%3Dshare%26utm_campaign%3Doct26 |
 | Meta paid ad | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dmeta%26utm_medium%3Dpaid%26utm_campaign%3Doct26 |
@@ -43,11 +49,13 @@ Copy these as they are. Written 2026-10-15. App id checked against
 | Instagram bio, German | https://www.subtrimio.com/de?utm_source=instagram&utm_medium=bio |
 | TikTok bio, English | https://www.subtrimio.com/?utm_source=tiktok&utm_medium=bio |
 | TikTok bio, German | https://www.subtrimio.com/de?utm_source=tiktok&utm_medium=bio |
-| YouTube channel | https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio |
+| YouTube channel links, English | https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio |
+| YouTube channel links, German | https://www.subtrimio.com/de?utm_source=youtube&utm_medium=bio |
 
 ## 3. Cancellation guides ("how to cancel X" content)
 
-Swap `tiktok` for the channel the post is on.
+Use these where a link CAN be tapped: Reddit, WhatsApp, an Instagram story
+sticker, or a pinned link in a YouTube channel. Swap `tiktok` for that channel.
 
 | Service | English | German |
 |---|---|---|

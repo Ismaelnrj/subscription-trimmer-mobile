@@ -256,3 +256,60 @@ One post clearing roughly 10,000 views organically. Boost that one. Only after
 a boosted clip also performs does the always on UAC test open, against the €200
 month the plan allows. Never both at once from a cold start, because two
 variables moving together tell you nothing about either.
+
+---
+
+## Where the links go, added 2026-10-18
+
+Written after the first real Play reading: about two installs a month, so
+traffic, not copy or code, is the bottleneck. The calendar above stays the plan.
+This section adds the one thing it left out, how a viewer gets from a post to
+the app, using the tagged links in `marketing-links.md`.
+
+**A link in a Short or a Reel cannot be tapped.** YouTube made links in Shorts
+descriptions and comments unclickable in August 2023, and Instagram captions
+never were. So every post ends by pointing at the profile, and the tagged links
+live where they work:
+
+| Place | What goes there | Tag |
+|---|---|---|
+| YouTube channel links, first link | `/de` landing page | youtube, bio |
+| YouTube channel links, second | `/de/kuendigen` guide index | youtube, bio |
+| Instagram bio | `/de` landing page | instagram, bio |
+| Instagram story, same day as each post | Play link as a link sticker | instagram, story |
+| Reddit, WhatsApp, a reply to a comment asking "which app" | Play link, or the matching guide page | reddit, whatsapp |
+
+**The ask at the end of every clip**, on screen for at least two seconds and
+spoken once, in the clip's language:
+
+> Trimio, kostenlos im Play Store. Link im Profil.
+> Trimio, free on Google Play. Link in bio.
+
+**One story per post.** After each Reel goes up, post a story with a frame from
+it and the Play link sticker. It is the only tappable per post link Instagram
+offers, and it is the row that will show up in Play Console as
+`instagram / story`.
+
+## The weekly routine
+
+1. **One filming session** for the four posts of the week, from the calendar
+   above. If Week 1 is already up, start from the first week that is not.
+2. **Mon, Wed, Fri, Sun:** the Short on YouTube, the same file as a Reel, and
+   the matching story with the sticker.
+3. **Reply to every comment within a day.** A "which app is that" comment gets
+   the Play link in the reply on Instagram, where replies are not links either,
+   so point to the bio there too.
+4. **Monday, ten minutes, numbers:** YouTube Studio views and the share still
+   watching at three seconds per post; Play Console acquisition grouped by
+   source; PostHog `$pageview` where the URL carries `utm_source`; and
+   `/api/admin/funnel` for new signups.
+
+## Success criteria, read on 2026-11-08 (three weeks, twelve posts)
+
+- **Continue** if any post passes 1,000 views AND there are at least 5 new
+  installs in the three weeks, against a baseline of about 2 a month.
+- **Change the hooks, not the channel,** if views are there but installs are not:
+  the post works and the ask does not.
+- **Change the format** if all twelve stay under 300 views: the hooks are not
+  stopping anybody, and more of the same will not either.
+- The paid track stays closed until one post clears 10,000 views, as above.
