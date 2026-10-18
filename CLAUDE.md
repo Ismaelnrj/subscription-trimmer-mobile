@@ -1542,6 +1542,18 @@ last one left off without needing a recap typed out.
   the command from chat AFTER the secret overwrites the clipboard, and without
   `-Raw` Windows PowerShell returns lines, not a string. Expect length 64.
 
+- PLAY CONSOLE, LAST 90 DAYS (20 Jul to 17 Oct 2026), read off the owner's
+  screenshot of Aumentar usuarios on 2026-10-18, metrics by device: 2,840
+  impressions (+817% on the previous 90 days), 6 acquisitions (-81%), 3 first
+  opens, 6 monthly active devices, 7 day retention 5. Impressions peaked around
+  140 a day in early August and have run near 10 a day since September.
+  2,840 impressions to 6 installs is 0.2%, and half of those installs never
+  opened the app. IMPRESSIONS ARE NOT STORE VISITORS: an impression is an
+  appearance in a list or search, so this is not the positioning test's metric.
+  That needs the store listing visitors and conversion rate report, still owed.
+  WHAT IT SETTLES: at about two installs a month the positioning test cannot
+  reach 300 visitors by 2026-10-20, and the first session success bar cannot be
+  measured either. Traffic is the bottleneck, not copy or code.
 - THE LAUNCH RECORDED THE DEVICE LANGUAGE, NOT THE CHOSEN ONE, fixed
   2026-10-06 in `bfb399ce`, found from that funnel's de 0 while the owner's own
   app runs German. `app/_layout.tsx` ran restoreToken (which calls /auth/me,
