@@ -55,7 +55,10 @@ const inDays = (n) => {
 
 // One subscription that produces BOTH a renewal and a trial reminder, because
 // the trial enqueue is the one that had no generation check in front of it.
-const SUBS = [{ id: 1, name: "Netflix", price: 15.99, nextBillingDate: inDays(30), trialEndDate: inDays(20) }];
+// YEARLY so exactly one renewal falls inside the scheduler's horizon: a monthly
+// row now queues its later cycles too (2026-10-18), which would change the
+// counts this file is about without touching the race it tests.
+const SUBS = [{ id: 1, name: "Netflix", price: 15.99, billingCycle: "yearly", nextBillingDate: inDays(30), trialEndDate: inDays(20) }];
 
 // The scheduler is fire-and-forget in places; let the microtask queue drain.
 const settle = async () => {

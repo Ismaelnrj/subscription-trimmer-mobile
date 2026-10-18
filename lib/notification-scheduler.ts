@@ -1,5 +1,5 @@
 import * as Notifications from "expo-notifications";
-import { livePlanned } from "./recurrence";
+import { getUpcomingOccurrences, livePlanned } from "./recurrence";
 import { CURRENCIES } from "./currencies";
 import { registerForPushNotificationsAsync } from "./notifications";
 import { parseLocalDate } from "./utils";
@@ -169,6 +169,39 @@ async function enqueue(
   return true;
 }
 
+/* LATER CYCLES ARE QUEUED TOO, not only the stored next payment. A reminder is
+   only rescheduled when the app runs, so with one occurrence queued somebody
+   who stopped opening the app got this month's warning and then nothing for
+   every renewal after it: the one moment the product exists for. The next few
+   payments within the horizon are queued now, from the same projection the
+   calendar draws (so never a phantom before the stored date), capped per row
+   so a weekly subscription cannot crowd out the rest. Android allows an app a
+   few hundred pending alarms; 4 per row stays far below that. */
+const REMINDER_HORIZON_DAYS = 62;
+const REMINDERS_PER_SUBSCRIPTION = 4;
+
+function renewalsToRemind(sub: any, now: Date): Date[] {
+  return getUpcomingOccurrences([sub], now, REMINDER_HORIZON_DAYS)
+    .slice(0, REMINDERS_PER_SUBSCRIPTION)
+    .map((o) => o.date);
+}
+
+/* The chosen lead time, or the day before when that has already passed. A
+   renewal added on Saturday that bills on Monday, with a three day lead, used
+   to get no warning at all. It now gets one at 09:00 on Sunday. Nothing fires
+   immediately, because every run cancels and requeues the whole list: an
+   immediate fallback would repeat on every refetch. If the day before has
+   passed too, there is no warning rather than a late one. */
+function reminderFor(billing: Date, leadDays: number, now: Date): { at: Date; daysBefore: number } | null {
+  for (const daysBefore of leadDays > 1 ? [leadDays, 1] : [leadDays]) {
+    const at = new Date(billing);
+    at.setDate(at.getDate() - daysBefore);
+    at.setHours(9, 0, 0, 0);
+    if (at > now) return { at, daysBefore };
+  }
+  return null;
+}
+
 export function scheduleRenewalReminders(
   subscriptions: any[],
   currencySymbol: string,
@@ -223,42 +256,34 @@ async function performSchedule(
          with the old account's names in it. */
       if (sessionGeneration !== myGeneration) return;
       if (!sub.nextBillingDate) continue;
-      const rawBilling = String(sub.nextBillingDate).slice(0, 10);
-      const billing = parseLocalDate(rawBilling);
 
       const amount = formatAmount(sub.price, sub.currency, currencySymbol);
-      const reminders = renewalRemindersOn
-        ? [{ daysBefore: leadDays, whenKey: LEAD_TIME_KEYS[leadDays] }]
-        : [];
 
-      for (const { daysBefore, whenKey } of reminders) {
-        const triggerDate = new Date(billing);
-        triggerDate.setDate(triggerDate.getDate() - daysBefore);
-        triggerDate.setHours(9, 0, 0, 0);
-
-        if (triggerDate > now) {
-          const when = i18n.t(whenKey);
-          const live = await enqueue(
-            {
-              content: {
-                title: i18n.t("notifications.reminders.renewTitle", { name: sub.name, when }),
-                /* The body carries the amount, so with an unparseable price there
-                   is nothing useful to say and the title already says what renews
-                   and when. Dropping the body beats printing NaN at somebody. */
-                body: amount
-                  ? i18n.t("notifications.reminders.renewBody", { amount, date: formatDate(billing) })
-                  : undefined,
-                data: { subscriptionId: sub.id },
-              },
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
+      for (const billing of renewalsToRemind(sub, now)) {
+        if (!renewalRemindersOn) break;
+        const reminder = reminderFor(billing, leadDays, now);
+        if (!reminder) continue;
+        const when = i18n.t(LEAD_TIME_KEYS[reminder.daysBefore]);
+        const live = await enqueue(
+          {
+            content: {
+              title: i18n.t("notifications.reminders.renewTitle", { name: sub.name, when }),
+              /* The body carries the amount, so with an unparseable price there
+                 is nothing useful to say and the title already says what renews
+                 and when. Dropping the body beats printing NaN at somebody. */
+              body: amount
+                ? i18n.t("notifications.reminders.renewBody", { amount, date: formatDate(billing) })
+                : undefined,
+              data: { subscriptionId: sub.id },
             },
-            myGeneration
-          );
-          // The session moved while that was in flight. Stop the whole run: the
-          // trial reminder below belongs to the same account.
-          if (!live) return;
-          scheduled.push(`${sub.name} (${daysBefore}d)`);
-        }
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+          },
+          myGeneration
+        );
+        // The session moved while that was in flight. Stop the whole run: the
+        // trial reminder below belongs to the same account.
+        if (!live) return;
+        scheduled.push(`${sub.name} (${reminder.daysBefore}d)`);
       }
 
       // Trial end reminder

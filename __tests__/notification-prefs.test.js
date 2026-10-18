@@ -99,7 +99,9 @@ describe("finding 4: the preference switches must reach the device", () => {
        ignored the answer and gave three warnings to somebody who asked for one. */
     const code = SCHEDULER.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, "");
     expect(/daysBefore: 7[\s\S]{0,120}daysBefore: 3[\s\S]{0,120}daysBefore: 1/.test(code)).toBe(false);
-    expect(SCHEDULER).toMatch(/daysBefore: leadDays/);
+    // The chosen lead time is tried first; the day before is only the fallback.
+    expect(SCHEDULER).toMatch(/reminderFor\(billing, leadDays, now\)/);
+    expect(SCHEDULER).toMatch(/leadDays > 1 \? \[leadDays, 1\] : \[leadDays\]/);
   });
 
   it("an absent preference means ON, not OFF", () => {
