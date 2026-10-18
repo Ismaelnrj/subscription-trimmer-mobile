@@ -4147,7 +4147,25 @@ app.get('/api/trpc/appVersion.check', (_, res) => {
 
 // ── Health ────────────────────────────────────────────────────────────────────
 
-app.get('/health', (_, res) => res.json({ status: 'ok' }));
+// The uptime ping on cron-job.org reads this, so a 200 has to mean the service
+// can do its job. Nothing here works without the database, and a process that
+// is up while Postgres is not would otherwise answer "ok" through the outage.
+// The timeout keeps a hung connection from hanging the ping as well.
+const HEALTH_DB_TIMEOUT_MS = 5000;
+app.get('/health', async (_, res) => {
+  let timer;
+  try {
+    await Promise.race([
+      pool.query('SELECT 1'),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), HEALTH_DB_TIMEOUT_MS); }),
+    ]);
+    res.json({ status: 'ok' });
+  } catch {
+    res.status(503).json({ status: 'error', database: 'unreachable' });
+  } finally {
+    clearTimeout(timer);
+  }
+});
 
 initDB()
   .then(() => app.listen(PORT, () => console.log(`Trimio backend running on port ${PORT}`)))
