@@ -769,6 +769,14 @@ if (process.env.DATABASE_URL) {
     ? 'verifying the server certificate against DATABASE_CA_CERT'
     : 'encrypted, certificate NOT verified (set DATABASE_CA_CERT to verify)');
 }
+/* Every call to a third party (Brevo, RevenueCat, PostHog) carries this
+   timeout. Without one, Node's fetch waits up to five minutes for headers, so a
+   hung provider holds the request, and in the daily email job every later
+   recipient, for that long. A timeout throws like any other network failure,
+   which each caller already handles: sendEmail retries, the RevenueCat lookup
+   answers 500 and writes nothing, the PostHog erasure is swallowed. */
+const OUTBOUND_TIMEOUT_MS = 10000;
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL
@@ -853,6 +861,7 @@ async function sendEmail(to, subject, html, opts = {}) {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS),
         body: JSON.stringify({
           sender: { name: 'Trimio', email: FROM_EMAIL },
           to: [{ email: to }],
@@ -1264,6 +1273,7 @@ async function updateBrevoContact(email, attributes) {
     const res = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
       method: 'PUT',
       headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS),
       body: JSON.stringify({ attributes }),
     });
     if (!res.ok) {
@@ -1732,6 +1742,7 @@ const REVENUECAT_PREMIUM_ENTITLEMENT = 'Trimio Premium';
 async function fetchPremiumEntitlementFromRevenueCat(openId) {
   const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(openId)}`, {
     headers: { Authorization: `Bearer ${REVENUECAT_SECRET_API_KEY}` },
+    signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`RevenueCat lookup failed with status ${res.status}`);
   const data = await res.json();
@@ -2799,7 +2810,7 @@ async function deletePostHogPerson(userId) {
   try {
     const found = await fetch(
       `${POSTHOG_API_HOST}/api/projects/${project}/persons/?distinct_id=${encodeURIComponent(userId)}`,
-      { headers: auth }
+      { headers: auth, signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS) }
     );
     if (!found.ok) throw new Error(`lookup ${found.status}`);
     const { results = [] } = await found.json();
@@ -2809,7 +2820,7 @@ async function deletePostHogPerson(userId) {
       // attached to the distinct id, which is the half that matters.
       const del = await fetch(
         `${POSTHOG_API_HOST}/api/projects/${project}/persons/${person.id}/?delete_events=true`,
-        { method: 'DELETE', headers: auth }
+        { method: 'DELETE', headers: auth, signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS) }
       );
       if (!del.ok) throw new Error(`delete ${del.status}`);
     }
@@ -3073,6 +3084,20 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
         if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, stillEntitled ? 'cancelling' : 'free');
       }
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
+      /* A LATE EXPIRATION MUST NOT CANCEL A CUSTOMER WHO HAS RESUBSCRIBED.
+         RevenueCat retries a failed delivery for hours, and every push to
+         master restarts this service, so an EXPIRATION can arrive AFTER the
+         INITIAL_PURCHASE of a new subscription. Applied blindly it writes
+         is_paid = false over somebody who is paying. So the event is treated
+         as a prompt and RevenueCat is asked, the same discipline as
+         CANCELLATION and TRANSFER: still entitled means the event is stale and
+         nothing is written. A failed lookup throws, answers 500 and is
+         retried. With no key there is nothing to ask, so it revokes as it
+         always did. */
+      if (REVENUECAT_SECRET_API_KEY && await fetchPremiumEntitlementFromRevenueCat(appUserId)) {
+        console.log(`[revenuecat] ${event.type} for ${appUserId} ignored: RevenueCat says the entitlement is active (stale or out of order delivery)`);
+        return res.json({ success: true });
+      }
       const result = await pool.query(
         "UPDATE users SET is_paid = false, cancelled_at = NULL, win_back_sent_at = NULL WHERE open_id = $1 RETURNING email",
         [appUserId]

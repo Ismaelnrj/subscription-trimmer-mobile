@@ -385,6 +385,47 @@ describe("SUBSCRIPTION_PAUSED is left alone on purpose", () => {
   });
 });
 
+describe("a late EXPIRATION does not cancel somebody who resubscribed", () => {
+  /* RevenueCat retries a failed delivery for hours and every deploy restarts
+     the server, so an EXPIRATION can land after the INITIAL_PURCHASE of a new
+     subscription. RevenueCat is asked before anything is revoked. */
+  const LATE = {
+    type: "EXPIRATION",
+    environment: "PRODUCTION",
+    app_user_id: "user-A",
+    entitlement_ids: ["Trimio Premium"],
+  };
+
+  it("keeps premium when RevenueCat says the entitlement is active", async () => {
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": true };
+    const r = await post(LATE);
+    expect(r.status).toBe(200);
+    expect(rows[0].is_paid).toBe(true);
+    expect(r.logs).toMatch(/stale or out of order/);
+  });
+
+  it("writes nothing and answers 500 when the lookup fails, so it is retried", async () => {
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": "THROW" };
+    const r = await post(LATE);
+    expect(r.status).toBe(500);
+    expect(rows[0].is_paid).toBe(true);
+  });
+
+  it("with no secret key there is nothing to ask, so it revokes as before", async () => {
+    rows = [{ open_id: "user-A", email: "a@example.com", is_paid: true }];
+    rcEntitlement = { "user-A": true };
+    REVENUECAT_SECRET_API_KEY = "";
+    try {
+      await post(LATE);
+    } finally {
+      REVENUECAT_SECRET_API_KEY = "rc-secret";
+    }
+    expect(rows[0].is_paid).toBe(false);
+  });
+});
+
 describe("the guards that were already right stay right", () => {
   it("rejects a wrong bearer token", async () => {
     const r = await post(TRANSFER_EVENT, "Bearer wrong-secret");
