@@ -4849,6 +4849,34 @@ last one left off without needing a recap typed out.
   `fmtC(removedCard.yearly)` did not. Delete is quiet. Client only, needs an
   `eas update`. `__tests__/cancel-lifecycle-ui.test.js`, 5 of 21 failing
   against the previous code.
+- A 54 ITEM "PRE-LAUNCH CHECKLIST" (an Instagram carousel the owner sent,
+  2026-10-20) WAS CHECKED AGAINST THE CODE. Two real gaps, both fixed in
+  `bacbf1d2`, CI run 626 green, LIVE via Railway, no app update:
+  A LATE EXPIRATION COULD CANCEL A PAYING CUSTOMER. RevenueCat retries failed
+  deliveries for hours and every deploy restarts the server, so an EXPIRATION
+  can land after a resubscription. The handler now asks RevenueCat first and
+  ignores the event if the entitlement is active; lookup failure answers 500.
+  Grants were left trusting the event on purpose: a late grant errs towards
+  the customer. NO OUTBOUND CALL HAD A TIMEOUT. All five fetches (Brevo send,
+  Brevo contact, RevenueCat, two PostHog) carry `OUTBOUND_TIMEOUT_MS` = 10 s
+  now; `__tests__/outbound-timeouts.test.js` scans for any fetch without it.
+  ALREADY COVERED, so nobody re-audits it: user scoping on every query (the
+  access-control scan, which is what RLS would buy), transactions on the
+  referral reward, server side validation, secrets only in Railway, webhook
+  auth in constant time, Dependabot, rate limits, indexes, a single LATERAL
+  query for the list, the connection pool, retry with backoff on email,
+  Sentry, the uptime ping, `/health` checking the database, startup migrations
+  that are IF NOT EXISTS, security headers, escaped HTML in every email and
+  page, token expiry (1 h access, 90 day rotated refresh), accessibility scan.
+  DOES NOT APPLY: prompt injection (no AI feature), SSRF, file uploads, signed
+  URLs, CSRF (bearer tokens, no cookies), mobile browser testing (native app).
+  OWNER ITEMS, NOT CODE: Railway database backups (check the Backups tab is on
+  and do one restore into a scratch database), a healthcheck path `/health` in
+  Railway > backend > Settings > Deploy so a broken deploy never takes traffic
+  (a dashboard click rather than a railway.json, because a config file
+  overrides dashboard settings this repo cannot see), and spending limits or
+  usage alerts on Railway. NOT WORTH IT YET: staging, feature flags, load
+  testing, audit logs, contract or end to end suites, dead letter queues.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
