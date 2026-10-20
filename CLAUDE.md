@@ -4846,9 +4846,18 @@ last one left off without needing a recap typed out.
   and the review prompt moved to `setCancelledMutation`, the copy is
   `subscriptions.cancelledSaving` ("marked as cancelled ... a year you keep"),
   and the yearly figure now carries the row's own currency, which the old
-  `fmtC(removedCard.yearly)` did not. Delete is quiet. Client only, needs an
-  `eas update`. `__tests__/cancel-lifecycle-ui.test.js`, 5 of 21 failing
-  against the previous code.
+  `fmtC(removedCard.yearly)` did not. Delete is quiet.
+  `__tests__/cancel-lifecycle-ui.test.js`, 5 of 21 failing against the
+  previous code. PUBLISHED THROUGH d2e880f8 AND CONFIRMED ON A REAL DEVICE
+  (2026-10-20), read off a screenshot of the Build Info panel: `Embedded
+  launch (no OTA applied): false`, `Update ID:
+  01a15aaf-2df8-74ba-a54e-56d9b3936f1b`, `Update published:
+  2026-10-20T18:59:52.440Z`, build 40, runtime 1.0.1, channel production.
+  DIFFERENT ID AND LATER than `01a150a4-...` at 2026-10-18T20:11:29.016Z.
+  Timestamp cross-check: `d2e880f8` was committed 15:28:15Z with nothing
+  after it on master. The last client commit is `ad6c3f06`, which names the
+  baseline; `needs_native_build.py e704336f` said OTA IS ENOUGH. The owner
+  reports the new behaviour works on the phone (their report, 2026-10-20).
 - A 54 ITEM "PRE-LAUNCH CHECKLIST" (an Instagram carousel the owner sent,
   2026-10-20) WAS CHECKED AGAINST THE CODE. Two real gaps, both fixed in
   `bacbf1d2`, CI run 626 green, LIVE via Railway, no app update:
