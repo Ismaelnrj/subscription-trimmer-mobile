@@ -130,6 +130,8 @@ describe('coverage, by scan', () => {
     'id and cancelled required', 'idToken required', 'Refresh token required',
     'Invalid token', 'Invalid or expired refresh token',
     'budgetGoal must be a positive number or null', 'alertThreshold must be a positive number',
+    'currency must be a supported code', 'currencySymbol must be a short string',
+    'customCategories must be up to 50 short strings',
     'since must be an ISO date, for example 2026-10-01T08:00:00Z',
     'Webhook not configured', 'Missing event', 'Missing event.app_user_id',
   ]);

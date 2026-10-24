@@ -4809,6 +4809,16 @@ last one left off without needing a recap typed out.
   fields `currency`, `currencySymbol` and `customCategories` are unvalidated,
   bounded only by the 100kb body limit and the caller's own row; the free tier
   count can be raced by parallel creates. None crosses accounts.
+  BOTH OF THOSE LAST TWO ARE FIXED, the owner's call the same day ("the free
+  tier using more than 5 is not something that we want"). The free cap race
+  was REAL: 10 parallel creates against the real server on PostgreSQL put 8
+  rows on a free account. `withSubscriptionLimitLock` now runs the count and
+  the insert (and a restore) in one transaction under a per user
+  `pg_advisory_xact_lock`, and the same 10 requests now stop at exactly 5.
+  Everything inside it goes through the checked out client, never pool.query,
+  or the lock covers nothing. settings.update now refuses a currency outside
+  SUPPORTED_CURRENCIES, a symbol over 5 characters, and more than 50 custom
+  categories or one over 100 characters. Backend only, live with the deploy.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening

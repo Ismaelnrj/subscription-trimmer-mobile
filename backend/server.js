@@ -754,15 +754,16 @@ app.use('/api/admin', adminLimiter);
  *
  * So the connection is ENCRYPTED but UNAUTHENTICATED, and the honest threat
  * model is: passive eavesdropping on the path is covered, active
- * man-in-the-middle is not. What limits that is the path, not the TLS. App and
- * database are in one Railway project and the URL Railway injects resolves on
- * its private network, so an attacker needs to already be inside it.
+ * man-in-the-middle is not. What limits that is the path, not the TLS. THIS
+ * DEPLOYMENT USES THE PUBLIC TCP PROXY (shuttle.proxy.rlwy.net), not the private
+ * network, which was tried on 2026-10-24 and did not resolve (see CLAUDE.md), so
+ * the path is Railway's edge rather than a private network. The database
+ * password, rotated that day, is what actually protects it.
  *
- * DATABASE_CA_CERT is the way to close the rest, and the reason this is not
- * simply left as a comment. Railway's CA is available from the Postgres service
- * itself; paste its PEM into that variable and this verifies properly, with no
- * code change. Unset, behaviour is exactly what it was, so nothing about the
- * running deployment changes today. */
+ * DATABASE_CA_CERT exists and is deliberately NOT set: Railway's CA rotates and
+ * the proxy host is not in the certificate, so pinning it would take the
+ * service down later (CLAUDE.md records the measurement). Unset, behaviour is
+ * exactly as described above. */
 const DATABASE_CA_CERT = process.env.DATABASE_CA_CERT;
 if (process.env.DATABASE_URL) {
   console.log('Postgres TLS:', DATABASE_CA_CERT
@@ -2101,6 +2102,32 @@ const FREE_SUBSCRIPTION_LIMIT = (() => {
 // tap or a retried request cannot hand out two free months. If the process
 // dies between the two statements the reward is lost rather than doubled,
 // which is the safer direction for this to fail in.
+/* THE FREE CAP HELD AGAINST ONE REQUEST AT A TIME, NOT AGAINST SEVERAL. The
+   count and the insert were separate statements, so parallel requests from one
+   account all read four rows and all inserted: a free account could hold more
+   than the limit by firing creates (or restores) at once. Both paths now run
+   their count and their write inside one transaction holding a per account
+   advisory lock, so a second request waits for the first to commit and then
+   counts its row. The lock is per USER, so nobody else's request ever waits.
+   `db` is the checked out client: a pool.query inside here would run on a
+   different connection, outside the lock, and protect nothing. */
+const SUBSCRIPTION_LIMIT_LOCK = 4242;
+async function withSubscriptionLimitLock(userId, fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SELECT pg_advisory_xact_lock($1::int, $2::int)', [SUBSCRIPTION_LIMIT_LOCK, userId]);
+    const out = await fn(client);
+    await client.query('COMMIT');
+    return out;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
 async function rewardReferral(referrerId, referredId) {
   const client = await pool.connect();
   try {
@@ -3204,6 +3231,10 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
 
     const userResult = await pool.query('SELECT is_paid, email, bonus_premium_until FROM users WHERE id = $1', [req.userId]);
     const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
+    /* Resolved before the lock: it reads settings, not the rows being counted. */
+    const anchorDay = new Date(billingDate).getUTCDate();
+    const currency = await resolveCurrency(req.userId, req.body.currency);
+    const outcome = await withSubscriptionLimitLock(req.userId, async (db) => {
     if (!isPaid) {
       /* CANCELLED ROWS DO NOT COUNT AGAINST THE FREE TIER, and this is the line
          that decides whether the feature is usable at all. A bare COUNT(*) means
@@ -3211,39 +3242,38 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
          would punish them for doing the exact thing it exists to make them do,
          and the history it keeps would be the thing blocking them. Cancelling
          has to give the slot back. */
-      const countResult = await pool.query(
+      const countResult = await db.query(
         'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
         [req.userId]
       );
       if (parseInt(countResult.rows[0].c) >= FREE_SUBSCRIPTION_LIMIT) {
-        return res.status(403).json({ error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT });
+        return { status: 403, body: { error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT } };
       }
     }
 
     if (!force) {
-      const dupResult = await pool.query(
+      const dupResult = await db.query(
         'SELECT id, name FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL AND LOWER(TRIM(name)) = LOWER(TRIM($2))',
         [req.userId, name]
       );
       if (dupResult.rows.length > 0) {
-        return res.status(409).json({ error: 'DUPLICATE_SUBSCRIPTION', existingName: dupResult.rows[0].name });
+        return { status: 409, body: { error: 'DUPLICATE_SUBSCRIPTION', existingName: dupResult.rows[0].name } };
       }
     }
 
-    /* Recorded at creation, when the intended day is known for certain: it is
-       the day the person picked, or today's day for a generated date. Reading
-       it back off next_billing_date later cannot tell a chosen 28th from a
-       31st that was clamped. */
-    const anchorDay = new Date(billingDate).getUTCDate();
-    /* Recorded at creation for the same reason as the anchor day: this is the
-       only moment the answer is known for certain. Afterwards the number is
-       just a number, and the client's global base currency follows whatever
-       the person last picked, so it cannot be reconstructed. */
-    const currency = await resolveCurrency(req.userId, req.body.currency);
-    const result = await pool.query(
+    /* anchorDay is recorded at creation, when the intended day is known for
+       certain: the day the person picked, or today's for a generated date.
+       Reading it back off next_billing_date later cannot tell a chosen 28th
+       from a clamped 31st. currency likewise: afterwards the number is just a
+       number, and the client's base currency follows whatever was last picked. */
+    const inserted = await db.query(
       'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day, currency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
       [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay, currency]
     );
+    return { row: inserted.rows[0] };
+    });
+    if (outcome.status) return res.status(outcome.status).json(outcome.body);
+    const result = { rows: [outcome.row] };
     /* The row's own currency, in the reader's number format and language, so a
        euro row reads "Netflix (15,99 € pro Monat) wurde hinzugefügt." See
        NOTIFICATION_TEXT for why the text is written here rather than keyed. */
@@ -3461,20 +3491,28 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
        rather than reimplementing the limit, and it reads the SAME code the client
        already understands, so an old build shows the upgrade prompt it has always
        shown for this. */
+    let restored = null;
     if (!cancelled) {
       const userResult = await pool.query(
         'SELECT is_paid, bonus_premium_until FROM users WHERE id = $1', [req.userId]
       );
       const isPaid = userResult.rows[0]?.is_paid || hasBonusPremium(userResult.rows[0] || {});
-      if (!isPaid) {
-        const countResult = await pool.query(
-          'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
-          [req.userId]
-        );
-        if (parseInt(countResult.rows[0].c) >= FREE_SUBSCRIPTION_LIMIT) {
-          return res.status(403).json({ error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT });
+      // Count and restore under the same lock as create, so parallel restores
+      // cannot each see room for one more.
+      restored = await withSubscriptionLimitLock(req.userId, async (db) => {
+        if (!isPaid) {
+          const countResult = await db.query(
+            'SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL',
+            [req.userId]
+          );
+          if (parseInt(countResult.rows[0].c) >= FREE_SUBSCRIPTION_LIMIT) return null;
         }
-      }
+        return db.query(
+          'UPDATE subscriptions SET cancelled_at = NULL WHERE id = $1 AND user_id = $2 RETURNING *',
+          [id, req.userId]
+        );
+      });
+      if (!restored) return res.status(403).json({ error: 'FREE_LIMIT_REACHED', limit: FREE_SUBSCRIPTION_LIMIT });
     }
 
     /* NOW() rather than a client-supplied date. The saved figure is a claim about
@@ -3492,10 +3530,7 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
           'UPDATE subscriptions SET cancelled_at = NOW() WHERE id = $1 AND user_id = $2 RETURNING *',
           [id, req.userId]
         )
-      : await pool.query(
-          'UPDATE subscriptions SET cancelled_at = NULL WHERE id = $1 AND user_id = $2 RETURNING *',
-          [id, req.userId]
-        );
+      : restored;
 
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
@@ -3618,6 +3653,20 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
     if (alertThreshold !== undefined && alertThreshold !== null && (typeof alertThreshold !== 'number' || !Number.isFinite(alertThreshold) || alertThreshold <= 0)) {
       return res.status(400).json({ error: 'alertThreshold must be a positive number' });
     }
+    /* The app only ever sends one of its nine currencies, a short symbol and a
+       short list of category names, so anything else came from a crafted
+       request. Refused rather than stored: the symbol is printed into emails
+       and push text, and these columns had no bound beyond the body limit. */
+    if (currency != null && (typeof currency !== 'string' || !SUPPORTED_CURRENCIES.has(currency.toUpperCase()))) {
+      return res.status(400).json({ error: 'currency must be a supported code' });
+    }
+    if (currencySymbol != null && (typeof currencySymbol !== 'string' || currencySymbol.length > 5)) {
+      return res.status(400).json({ error: 'currencySymbol must be a short string' });
+    }
+    if (customCategories != null && (!Array.isArray(customCategories) || customCategories.length > 50
+        || customCategories.some((c) => typeof c !== 'string' || c.length > 100))) {
+      return res.status(400).json({ error: 'customCategories must be up to 50 short strings' });
+    }
     /* budget_goal used to be an unconditional SET, sitting next to two columns
        that already used COALESCE. That made this endpoint a full replace for one
        field and a partial update for the others, and the asymmetry cost people
@@ -3646,7 +3695,7 @@ app.post('/api/trpc/settings.update', authMiddleware, async (req, res) => {
        WHERE user_id = $7`,
       [
         setsBudget, setsBudget ? (budgetGoal ?? null) : null,
-        currency || null, currencySymbol || null,
+        currency ? currency.toUpperCase() : null, currencySymbol || null,
         customCategories !== undefined ? JSON.stringify(customCategories) : null,
         alertThreshold !== undefined ? alertThreshold : null,
         req.userId,

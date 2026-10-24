@@ -45,11 +45,15 @@ const bonusSrc = slice("function hasBonusPremium", "\n}\n");
 const freeLimitSrc = slice("const FREE_SUBSCRIPTION_LIMIT = (() => {", "})();");
 const setCancelledSrc = slice("app.post('/api/trpc/subscriptions.setCancelled'", "\n});\n");
 const listCancelledSrc = slice("app.get('/api/trpc/subscriptions.cancelled'", "\n});\n");
+// The real lock helper, so a restore runs its count inside it as in production.
+const lockSrc = slice("const SUBSCRIPTION_LIMIT_LOCK", "\n}\n");
 
 // ── stubs the evaluated handlers close over ──────────────────────────────────
 let subs = [];
 let user = { is_paid: false, email: "a@b.c", bonus_premium_until: null };
 let brevoCalls = [];
+// Every statement a checked out client ran, so a test can see what was locked.
+let clientLog = [];
 
 const NOW = new Date("2026-09-22T12:00:00Z");
 
@@ -107,6 +111,16 @@ const pool = {
     }
     throw new Error("unexpected SQL: " + sql.replace(/\s+/g, " ").slice(0, 90));
   },
+  async connect() {
+    return {
+      query: async (sql, params) => {
+        clientLog.push(sql.replace(/\s+/g, " ").trim());
+        if (/^(BEGIN|COMMIT|ROLLBACK)$/.test(sql.trim()) || /pg_advisory_xact_lock/.test(sql)) return { rows: [] };
+        return pool.query(sql, params);
+      },
+      release() {},
+    };
+  },
 };
 
 const trpc = (data) => ({ result: { data } });
@@ -127,7 +141,7 @@ const app = {
 const authMiddleware = null;
 
 // eslint-disable-next-line no-eval
-eval(dateHelpers + roundSrc + bonusSrc + freeLimitSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
+eval(dateHelpers + roundSrc + bonusSrc + freeLimitSrc + lockSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
 
 function call(route, body) {
   let status = 200;
@@ -299,6 +313,23 @@ describe("the free tier cap must not punish you for cancelling", () => {
     subs.push(sub({ id: 8, cancelled_at: NOW.toISOString() }));
     const { status } = await call("/api/trpc/subscriptions.setCancelled", { id: 8, cancelled: false });
     expect(status).toBe(200);
+  });
+
+  it("counts and restores inside the per account lock, so parallel restores cannot both fit", async () => {
+    user = { is_paid: false, email: "a@b.c", bonus_premium_until: null };
+    subs = [1, 2, 3, 4].map((i) => sub({ id: i }));
+    subs.push(sub({ id: 5, cancelled_at: NOW.toISOString() }));
+    clientLog = [];
+    const { status } = await call("/api/trpc/subscriptions.setCancelled", { id: 5, cancelled: false });
+    expect(status).toBe(200);
+    const lock = clientLog.findIndex((q) => /pg_advisory_xact_lock/.test(q));
+    const count = clientLog.findIndex((q) => /SELECT COUNT/.test(q));
+    const write = clientLog.findIndex((q) => /UPDATE subscriptions SET cancelled_at = NULL/.test(q));
+    expect(clientLog[0]).toBe("BEGIN");
+    expect(lock).toBeGreaterThan(-1);
+    expect(count).toBeGreaterThan(lock);
+    expect(write).toBeGreaterThan(count);
+    expect(clientLog[clientLog.length - 1]).toBe("COMMIT");
   });
 
   it("cancelling is never capped, only restoring", async () => {
