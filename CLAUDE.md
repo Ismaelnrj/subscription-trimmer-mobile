@@ -4744,6 +4744,22 @@ last one left off without needing a recap typed out.
   the file that proves it. `test_needs_native_build.py` beside it pins 20 rules
   in throwaway repos and runs in CI; four deliberate breaks of the script were
   each caught.
+- THE BACKEND REACHES POSTGRES OVER THE PUBLIC TCP PROXY AND THE PRIVATE
+  ADDRESS DOES NOT WORK, found 2026-10-24 while hardening after Railway's
+  21 October security disclosure. Backend `DATABASE_URL` points at
+  `shuttle.proxy.rlwy.net:51484`. Two attempts to move it caused outages:
+  `${{Postgres.DATABASE_URL}}` resolved to an EMPTY STRING (the server exits
+  without one), and a hand-written `postgres.railway.internal:5432` answered
+  `getaddrinfo ENOTFOUND` on every attempt for 35 seconds, across repeated
+  restarts, although both services show private networking ready. Timing is
+  ruled out: `41ca209e` added a boot retry (10 attempts, 1 to 5 s apart, only on
+  ENOTFOUND, EAI_AGAIN, ECONNREFUSED, ETIMEDOUT, ECONNRESET) and it never
+  resolved. LIKELIEST CAUSE, NOT CONFIRMED: the two services are in different
+  projects or environments, since references and the private network only
+  span one. DO NOT TRY THE PRIVATE ADDRESS AGAIN without checking that first;
+  fixing it means moving the database, which is a backup and restore. The
+  retry stays: it is a no-op when the first attempt works. The protection that
+  matters after the disclosure is a new database password, not the route.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening
