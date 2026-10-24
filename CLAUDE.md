@@ -1826,11 +1826,12 @@ last one left off without needing a recap typed out.
   email address as a contact, plus the API key. Somebody with access is a data
   processor under GDPR who would need a written agreement, which a Fiverr gig
   is not.
-  WHAT BREVO STILL RECEIVES: the emails themselves, and two contact
-  attributes, `PLAN` and `SUB_COUNT`, from `updateBrevoContact`.
-  `__tests__/brevo-minimal-data.test.js` allows those two and nothing else.
-  Whether even those are worth keeping depends on whether Brevo campaigns are
-  ever used, which is the owner's call.
+  WHAT BREVO STILL RECEIVES: the emails themselves and NOTHING ELSE, since
+  2026-10-24 (owner's choice). The `PLAN` and `SUB_COUNT` contact sync is gone:
+  it fed campaigns that were never sent, and the rotated API key had no
+  Contacts permission, so it only logged 403s. `__tests__/brevo-minimal-data.test.js`
+  allows `/v3/smtp/email` as the only Brevo endpoint. The Brevo API key needs
+  Transactional email: All and nothing else.
   THE RENEWAL DIGEST IS GONE, removed in `e7bfcc41`. Until then every add, edit,
   pause, cancel and delete pushed that user's upcoming subscription NAMES,
   prices and dates into Brevo as `UPCOMING_RENEWALS`, `TOTAL_AMOUNT`,

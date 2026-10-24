@@ -231,16 +231,13 @@ describe("cancelling is a third state, not pause and not delete", () => {
     expect(status).toBe(404);
   });
 
-  /* REPLACED 2026-10-01, not patched. This used to assert that cancelling
-     pushed the renewal digest (subscription names, prices, dates) to Brevo as
-     well as the count. The digest fed a Brevo automation the account's plan
-     does not allow, so it shipped personal data for nothing and was removed;
-     a test whose name asserts that premise would tell the next reader it was
-     wanted. The count still goes. */
-  it("tells Brevo the count changed, and never sends a renewal digest", async () => {
+  /* REPLACED 2026-10-24. This used to assert the subscription count went to
+     Brevo. Nothing about a user's subscriptions goes to Brevo any more: the
+     contact sync fed campaigns that were never sent. */
+  it("sends nothing to Brevo when a subscription is cancelled", async () => {
     subs = [sub()];
     await call("/api/trpc/subscriptions.setCancelled", { id: 1, cancelled: true });
-    expect(brevoCalls.map((c) => c[0])).toEqual(["count"]);
+    expect(brevoCalls).toEqual([]);
   });
 });
 

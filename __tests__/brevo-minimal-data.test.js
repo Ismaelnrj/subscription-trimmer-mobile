@@ -12,9 +12,8 @@
  * ran, while the real reminder is sent from code. What a person pays for is
  * personal data, and some of it is sensitive.
  *
- * SOURCE READING, and the reason is the shape of the risk: the way this comes
- * back is somebody adding a new attribute to a contact sync, so the guard reads
- * every updateBrevoContact call and allows only the two attributes that remain.
+ * SOURCE READING. Since 2026-10-24 no contact data goes to Brevo at all, so
+ * the guard refuses any contact endpoint or sync helper coming back.
  * Comments are stripped first, because the explanation of the removal names
  * the attributes it removed.
  */
@@ -28,28 +27,23 @@ test('the comment strip removed something, so nothing below passes vacuously', (
   expect(code.length).toBeLessThan(raw.length);
 });
 
-test('only PLAN and SUB_COUNT are ever written to a Brevo contact', () => {
-  const calls = [...code.matchAll(/updateBrevoContact\(\s*\w+\s*,\s*\{([^}]*)\}/g)];
-  expect(calls.length).toBeGreaterThanOrEqual(2);
-  const keys = new Set();
-  for (const [, body] of calls) {
-    for (const [, k] of body.matchAll(/(\w+)\s*:/g)) keys.add(k);
+test('nothing is written to a Brevo contact at all', () => {
+  /* Since 2026-10-24 Brevo receives the emails and nothing else. The PLAN and
+     SUB_COUNT contact sync fed campaigns that were never sent. */
+  expect(code).not.toMatch(/api\.brevo\.com\/v3\/contacts/);
+  for (const name of ['updateBrevoContact', 'syncBrevoPlan', 'syncBrevoSubCount', 'syncSubCountToBrevo']) {
+    expect(code).not.toContain(name);
   }
-  expect([...keys].sort()).toEqual(['PLAN', 'SUB_COUNT']);
+});
+
+test('the only Brevo endpoint left is the transactional send', () => {
+  const hosts = [...code.matchAll(/https:\/\/api\.brevo\.com\/[^'"`\s]*/g)].map((m) => m[0]);
+  expect(hosts.length).toBeGreaterThanOrEqual(1);
+  expect([...new Set(hosts)]).toEqual(['https://api.brevo.com/v3/smtp/email']);
 });
 
 test('the renewal digest and everything that built it are gone', () => {
   for (const name of ['UPCOMING_RENEWALS', 'TOTAL_AMOUNT', 'NEXT_RENEWAL_DATE', 'syncNextRenewalToBrevo', 'RENEWAL_DIGEST_WINDOW_DAYS']) {
     expect(code).not.toContain(name);
   }
-});
-
-/* The other way it comes back: a contact sync that passes a whole object built
-   elsewhere, which the key scan above could not read. */
-test('every contact update passes a literal object the scan can read', () => {
-  const all = [...code.matchAll(/updateBrevoContact\(([^)]*)\)/g)].map((m) => m[1]);
-  const literal = [...code.matchAll(/updateBrevoContact\(\s*\w+\s*,\s*\{/g)];
-  // The function's own declaration is the only call-shaped match without an object.
-  expect(all.filter((a) => !/\{/.test(a))).toEqual(['email, attributes']);
-  expect(literal.length).toBe(all.length - 1);
 });

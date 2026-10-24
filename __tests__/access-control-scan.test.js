@@ -24,7 +24,7 @@
    a failure naming the route.
 
    Helper functions called with req.userId (recordLanguage, resolveCurrency,
-   syncSubCountToBrevo, ...) are outside the route blocks and not scanned; they
+   ...) are outside the route blocks and not scanned; they
    take the id as an argument and were read by hand in the same audit. */
 
 const fs = require("fs");

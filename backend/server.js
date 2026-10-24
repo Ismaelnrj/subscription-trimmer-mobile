@@ -1265,51 +1265,20 @@ function generateOpenId() {
   return 'u_' + crypto.randomBytes(16).toString('hex');
 }
 
-// Brevo contact attribute sync (PLAN, SUB_COUNT) — best-effort marketing
-// enrichment, never awaited by callers and never allowed to fail a request.
-async function updateBrevoContact(email, attributes) {
-  if (!email || !BREVO_API_KEY) return;
-  try {
-    const res = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
-      method: 'PUT',
-      headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS),
-      body: JSON.stringify({ attributes }),
-    });
-    if (!res.ok) {
-      console.error('[Brevo] Contact update failed for', email, res.status, await res.text());
-    }
-  } catch (err) {
-    console.error('[Brevo] Contact update error for', email, err.message);
-  }
-}
+/* NO CONTACT DATA GOES TO BREVO, removed 2026-10-24. Every signup, purchase
+   and add or delete used to update the user's Brevo contact with PLAN and
+   SUB_COUNT, for Brevo campaigns that were never sent. Brevo is the delivery
+   pipe for the emails this server writes and nothing else: the transactional
+   send below needs no contact record. __tests__/brevo-minimal-data.test.js
+   guards that no contact endpoint comes back. */
 
-function syncBrevoPlan(email, plan) {
-  updateBrevoContact(email, { PLAN: plan });
-}
-
-// Maps a RevenueCat product_id to a specific plan tier so Brevo campaigns
-// can target by plan (e.g. an annual-only upsell), not just premium/free.
+// Maps a RevenueCat product_id to a plan tier (monthly, annual, lifetime).
 function getPlanTierFromProductId(productId = '') {
   const id = productId.toLowerCase();
   if (id.includes('lifetime')) return 'lifetime';
   if (id.includes('annual') || id.includes('yearly')) return 'annual';
   if (id.includes('monthly')) return 'monthly';
   return 'premium';
-}
-
-function syncBrevoSubCount(email, count) {
-  updateBrevoContact(email, { SUB_COUNT: count });
-}
-
-
-// Fire-and-forget: recompute the user's subscription count and push it to
-// Brevo. Never awaited by callers so it can't slow down or fail their request.
-function syncSubCountToBrevo(userId, email) {
-  if (!email) return;
-  pool.query('SELECT COUNT(*) as c FROM subscriptions WHERE user_id = $1 AND cancelled_at IS NULL', [userId])
-    .then((result) => syncBrevoSubCount(email, parseInt(result.rows[0].c)))
-    .catch((err) => console.error('[Brevo] Sub count lookup failed for user', userId, err.message));
 }
 
 /* NO RENEWAL DIGEST GOES TO BREVO, and there used to be one. Until 2026-10-01
@@ -1784,7 +1753,6 @@ async function reconcileEntitlementsFromRevenueCat(openIds) {
        WHERE open_id = $2`,
       [isPremium, row.open_id]
     );
-    syncBrevoPlan(row.email, isPremium ? 'premium' : 'free');
     console.log(`[revenuecat] TRANSFER reconciled ${row.open_id}: is_paid=${isPremium}`);
   }
   return { checked: known.rows.length, skipped: openIds.length - known.rows.length };
@@ -2925,7 +2893,6 @@ app.post('/api/auth/verify-premium', authMiddleware, async (req, res) => {
        WHERE id = $2`,
       [isPremium, req.userId]
     );
-    syncBrevoPlan(user.email, isPremium ? 'premium' : 'free');
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     res.json({ success: true, user: formatUser(result.rows[0]) });
   } catch (err) {
@@ -3033,7 +3000,6 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       } else {
         console.log(`[revenuecat] ${event.type} granted premium to ${appUserId}`);
       }
-      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, getPlanTierFromProductId(event.product_id));
     } else if (affectsPremium && event.type === 'CANCELLATION') {
       /* CANCELLATION IS TWO DIFFERENT EVENTS WEARING ONE NAME, and the
          difference is worth money in both directions.
@@ -3068,7 +3034,6 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
            older behaviour, which errs towards the customer. Same as this
            branch always did, so an unset key is no worse than before. */
         console.error(`[revenuecat] CANCELLATION (${reason}) for ${appUserId} with no REVENUECAT_SECRET_API_KEY: cannot tell a refund from an unsubscribe, leaving access in place`);
-        if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'cancelling');
       } else {
         const stillEntitled = await fetchPremiumEntitlementFromRevenueCat(appUserId);
         if (!stillEntitled) {
@@ -3081,7 +3046,6 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
           await pool.query("UPDATE users SET is_paid = false WHERE open_id = $1", [appUserId]);
         }
         console.log(`[revenuecat] CANCELLATION (${reason}) for ${appUserId}: entitlement ${stillEntitled ? 'still active, access kept to period end' : 'ALREADY REVOKED, premium removed'}`);
-        if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, stillEntitled ? 'cancelling' : 'free');
       }
     } else if (affectsPremium && REVOKE_EVENTS.includes(event.type)) {
       /* A LATE EXPIRATION MUST NOT CANCEL A CUSTOMER WHO HAS RESUBSCRIBED.
@@ -3107,7 +3071,6 @@ app.post('/api/webhooks/revenuecat', async (req, res) => {
       } else {
         console.log(`[revenuecat] ${event.type} revoked premium for ${appUserId}`);
       }
-      if (result.rows[0]?.email) syncBrevoPlan(result.rows[0].email, 'free');
     } else {
       /* Deliberately no action, and deliberately logged. BILLING_ISSUE is a
          grace period rather than a loss of access, and an event carrying a
@@ -3255,7 +3218,6 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
         [req.userId, c.addedTitle, c.addedBody(name, formatEmailPrice(price, currency, currency, billingCycle, lang)), 'info']
       );
     }
-    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -3498,9 +3460,6 @@ app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res
           [id, req.userId]
         );
 
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    // Cancelling changes the tracked count. No renewal digest goes to Brevo.
-    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc(formatSub(result.rows[0])));
   } catch (err) {
     handleError(err, res);
@@ -3553,8 +3512,6 @@ app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
     );
     if (check.rows.length === 0) return res.status(404).json({ error: 'Subscription not found' });
     await pool.query('DELETE FROM subscriptions WHERE id = $1 AND user_id = $2', [id, req.userId]);
-    const userResult = await pool.query('SELECT email FROM users WHERE id = $1', [req.userId]);
-    syncSubCountToBrevo(req.userId, userResult.rows[0]?.email);
     res.json(trpc({ success: true }));
   } catch (err) {
     handleError(err, res);

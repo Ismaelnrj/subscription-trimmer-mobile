@@ -275,7 +275,7 @@ describe("CANCELLATION tells a refund apart from an unsubscribe", () => {
 
     expect(rows[0].is_paid).toBe(true);
     expect(rows[0].cancelled_at).toBe("set");
-    expect(r.brevo).toEqual([["a@example.com", "cancelling"]]);
+    expect(r.brevo).toEqual([]);
   });
 
   it("removes premium when the entitlement has already been revoked", async () => {
@@ -287,7 +287,7 @@ describe("CANCELLATION tells a refund apart from an unsubscribe", () => {
     const r = await post(cancellation("CUSTOMER_SUPPORT"));
 
     expect(rows[0].is_paid).toBe(false);
-    expect(r.brevo).toEqual([["a@example.com", "free"]]);
+    expect(r.brevo).toEqual([]);
   });
 
   it("does not branch on cancel_reason", async () => {
@@ -344,7 +344,7 @@ describe("CANCELLATION tells a refund apart from an unsubscribe", () => {
       const r = await post(cancellation("CUSTOMER_SUPPORT"));
       expect(r.status).toBe(200);
       expect(rows[0].is_paid).toBe(true);
-      expect(r.brevo).toEqual([["a@example.com", "cancelling"]]);
+      expect(r.brevo).toEqual([]);
     } finally {
       REVENUECAT_SECRET_API_KEY = saved;
     }

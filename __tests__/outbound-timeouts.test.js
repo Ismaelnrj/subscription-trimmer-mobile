@@ -24,7 +24,9 @@ describe("outbound calls time out", () => {
   for (let i = SRC.indexOf("await fetch("); i !== -1; i = SRC.indexOf("await fetch(", i + 1)) calls.push(callAt(i));
 
   it("finds the calls it is checking", () => {
-    expect(calls.length).toBeGreaterThanOrEqual(5);
+    // Four since 2026-10-24: Brevo send, RevenueCat, two PostHog. The Brevo
+    // contact update was removed with the contact sync.
+    expect(calls.length).toBeGreaterThanOrEqual(4);
   });
 
   it("every one passes a timeout signal", () => {
