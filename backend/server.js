@@ -4244,6 +4244,27 @@ app.get('/health', async (_, res) => {
   }
 });
 
-initDB()
+// Railway's private network can come up a moment after the container does, so
+// the first lookup of postgres.railway.internal answers ENOTFOUND and a single
+// attempt took the whole service down (2026-10-24). Only errors that mean "the
+// database is not reachable YET" are retried; anything else, a failing
+// migration included, still exits at once.
+const DB_BOOT_RETRYABLE = new Set(['ENOTFOUND', 'EAI_AGAIN', 'ECONNREFUSED', 'ETIMEDOUT', 'ECONNRESET']);
+const DB_BOOT_ATTEMPTS = 10;
+
+async function initDBWithRetry() {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await initDB();
+    } catch (err) {
+      if (!DB_BOOT_RETRYABLE.has(err && err.code) || attempt >= DB_BOOT_ATTEMPTS) throw err;
+      const waitMs = Math.min(attempt * 1000, 5000);
+      console.warn(`DB not reachable yet (${err.code}), attempt ${attempt}/${DB_BOOT_ATTEMPTS}, retrying in ${waitMs} ms`);
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+  }
+}
+
+initDBWithRetry()
   .then(() => app.listen(PORT, () => console.log(`Trimio backend running on port ${PORT}`)))
   .catch(err => { console.error('DB init failed:', err); process.exit(1); });
