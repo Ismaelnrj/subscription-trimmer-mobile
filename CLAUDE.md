@@ -4787,6 +4787,28 @@ last one left off without needing a recap typed out.
   POSTGRES_PASSWORD does not change the database's real password. That is
   correct, so change it inside psql FIRST, then the variable, then the
   backend's hand written DATABASE_URL, which is not a reference.
+- A DEEP SECURITY AUDIT, 2026-10-24, after the secret rotation. Every route
+  in server.js was read. Fixed in `f2e5452c`: the email VERIFICATION code had
+  no per account guess limit (only per IP), and verifying an address you do
+  not own is what lets a squatted password survive the owner's later Google
+  sign in, so five wrong guesses now burn it like the reset code; a PASSWORD
+  CHANGE now rotates the session (the old refresh token used to live 90 days)
+  and returns the new pair as `session`, which `app/account-settings.tsx`
+  stores; profile name capped at 80; CSV guard covers tab and CR. Measured by
+  booting the real server on PostgreSQL. The client half needs an `eas update`;
+  until then a phone that changes its password is signed out within an hour,
+  which is the safe direction.
+  CHECKED AND CLEAN: JWT pinned to HS256 with a required secret, hashed and
+  rotated refresh tokens, constant time compares on every secret, user scoping
+  (the access-control scan), webhook and cron auth, escaping in every email and
+  page, rate limits on every unauthenticated route, client tokens only in
+  SecureStore, no cleartext, no AsyncStorage.
+  KNOWN AND ACCEPTED: the Postgres connection runs over the PUBLIC proxy,
+  encrypted but unauthenticated, so the comment above the pool claiming the
+  private network is out of date (see the private address entry); settings
+  fields `currency`, `currencySymbol` and `customCategories` are unvalidated,
+  bounded only by the 100kb body limit and the caller's own row; the free tier
+  count can be raced by parallel creates. None crosses accounts.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening
