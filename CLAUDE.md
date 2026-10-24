@@ -4761,6 +4761,32 @@ last one left off without needing a recap typed out.
   fixing it means moving the database, which is a backup and restore. The
   retry stays: it is a no-op when the first attempt works. The protection that
   matters after the disclosure is a new database password, not the route.
+- EVERY SECRET WAS ROTATED, 2026-10-24, after Railway's 21 October security
+  disclosure said customer environment variables may have been exposed. All
+  owner's work in the dashboards, each step verified before the next:
+  database password (`\password postgres` typed in the Railway console, then
+  POSTGRES_PASSWORD and the backend DATABASE_URL, /health ok), BREVO_API_KEY
+  (Transactional email: All, nothing else; a sent email in the log),
+  REVENUECAT_SECRET_API_KEY (V1, since the backend calls /v1/subscribers;
+  Restore Purchase from a non-Premium account answered normally),
+  REVENUECAT_WEBHOOK_SECRET (RevenueCat header is `Bearer ` plus the secret,
+  Railway holds the secret alone; the test event answered 200 after a typo
+  gave 401 first), CRON_SECRET (Railway plus the `x-cron-secret` header on the
+  two email jobs; both test runs 200), JWT_SECRET (the app reloaded without a
+  new sign in) and POSTHOG_PERSONAL_API_KEY ("Trimio2", person:write, scoped
+  to the "Default project" inside the Trimio ORGANISATION, whose id matches
+  POSTHOG_PROJECT_ID). TRIMIO IS THE POSTHOG ORGANISATION, NOT A PROJECT.
+  NOT ROTATED, ON PURPOSE: GOOGLE_CLIENT_IDS (public by design) and the Sentry
+  DSN (can only submit events).
+  THE OLD KEYS WERE TO BE DELETED by the owner once each new one was proven:
+  the old Brevo key, the old RevenueCat secret key, and the PostHog key
+  "trimio-backend-erasure". Whether all three were deleted was not confirmed.
+  THE BREVO KEY HAS NO CONTACTS PERMISSION, which is why the contact sync was
+  removed the same day in `9d83ee85`.
+  THE RAILWAY PASSWORD STEP HAS ONE TRAP: Railway warns that changing
+  POSTGRES_PASSWORD does not change the database's real password. That is
+  correct, so change it inside psql FIRST, then the variable, then the
+  backend's hand written DATABASE_URL, which is not a reference.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening
