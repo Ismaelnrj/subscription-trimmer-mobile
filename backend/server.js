@@ -2532,6 +2532,11 @@ app.get('/api/auth/me', authMiddleware, async (req, res) => {
 app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
   try {
     const { name, currentPassword, newPassword } = req.body;
+    // The same cap registration applies; this path had none.
+    if (name != null && (typeof name !== 'string' || name.trim().length > 80)) {
+      return res.status(400).json({ error: 'Name must be under 80 characters' });
+    }
+    let session = null;
     const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -2549,6 +2554,13 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
       if (pwError) return res.status(400).json({ error: pwError });
       const hash = await bcrypt.hash(newPassword, 10);
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.userId]);
+      /* A NEW PASSWORD ENDS EVERY OTHER SESSION. Changing it is what somebody
+         does when they think the account is in someone else's hands, and the
+         old refresh token used to survive it for its full 90 days. issueTokens
+         overwrites the one stored refresh token, so whoever held the old one is
+         refused on their next refresh, and this device gets the new pair. */
+      session = await issueTokens(req.userId);
+      loginFailures.delete(user.email);
     }
 
     if (name !== undefined) {
@@ -2556,11 +2568,16 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
     }
 
     const updated = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
-    res.json(formatUser(updated.rows[0]));
+    // `session` only after a password change, so a name save still answers a
+    // plain user that the screen can store as is.
+    res.json(session ? { ...formatUser(updated.rows[0]), session: { token: session.accessToken, refreshToken: session.refreshToken } } : formatUser(updated.rows[0]));
   } catch (err) {
     handleError(err, res);
   }
 });
+
+const VERIFY_MAX_ATTEMPTS = 5;
+const verifyAttempts = new Map();
 
 app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
   try {
@@ -2583,7 +2600,26 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
       }
       return res.json({ success: true, user: formatUser(user) });
     }
-    if (!tokenMatches(user.verification_token, code)) return res.status(400).json({ error: 'Invalid code' });
+    // Burned after too many wrong guesses (below), or never issued.
+    if (!user.verification_token) return res.status(400).json({ error: 'Code expired. Request a new one.' });
+    if (!tokenMatches(user.verification_token, code)) {
+      /* A WRONG GUESS COUNTS AGAINST THE CODE, the same rule reset-password
+         has. codeLimiter is per IP, so guesses spread over many addresses were
+         bounded only by the code's 24 hours, and verifying an address you do
+         not own is what lets a squatted password survive the owner's later
+         Google sign in (see /api/auth/google). After VERIFY_MAX_ATTEMPTS wrong
+         guesses the code is burned and a new one has to be requested, which
+         goes to the real inbox. In memory, like resetAttempts. */
+      const tries = (verifyAttempts.get(user.id) || 0) + 1;
+      if (tries >= VERIFY_MAX_ATTEMPTS) {
+        verifyAttempts.delete(user.id);
+        await pool.query('UPDATE users SET verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
+      } else {
+        verifyAttempts.set(user.id, tries);
+      }
+      return res.status(400).json({ error: 'Invalid code' });
+    }
+    verifyAttempts.delete(user.id);
     if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
     await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
 
@@ -2744,6 +2780,7 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
+    verifyAttempts.delete(user.id);
     recordLanguage(user.id, req);
     await sendVerificationEmail(user.email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
     res.json({ success: true });
@@ -3528,7 +3565,8 @@ app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) =>
     const header = 'Name,Price,Billing Cycle,Category,Next Billing Date,Trial End Date\n';
     const csvCell = (value) => {
       let str = String(value ?? '');
-      if (/^[=+\-@]/.test(str)) str = `'${str}`; // prevent formula injection in Excel/Sheets
+      // Formula injection: the four OWASP lead characters plus tab and CR.
+      if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
       return `"${str.replace(/"/g, '""')}"`;
     };
     const rows = subs.map(s => [

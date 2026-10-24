@@ -15,6 +15,7 @@ import apiClient from "../lib/api";
 import { useTheme, AppColors } from "../lib/theme";
 import { sanitiseAmountInput } from "../lib/utils";
 import { signInWithGoogle } from "../lib/google-auth";
+import * as SecureStore from "expo-secure-store";
 
 export default function AccountSettingsScreen() {
   const router = useRouter();
@@ -71,7 +72,14 @@ export default function AccountSettingsScreen() {
 
   const passwordMutation = useMutation({
     mutationFn: async (data: any) => (await apiClient.patch("/auth/profile", data)).data,
-    onSuccess: () => {
+    onSuccess: async (data: any) => {
+      /* A password change ends every other session on the server and hands
+         this device a fresh pair. Without storing it, this device's next
+         refresh would be refused and sign the person out too. */
+      if (data?.session?.token && data?.session?.refreshToken) {
+        await SecureStore.setItemAsync("auth_token", data.session.token).catch(() => {});
+        await SecureStore.setItemAsync("refresh_token", data.session.refreshToken).catch(() => {});
+      }
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
       Alert.alert(t("accountSettings.done"), t("accountSettings.passwordChanged"));
     },
