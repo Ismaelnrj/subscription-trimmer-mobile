@@ -4819,14 +4819,19 @@ last one left off without needing a recap typed out.
   or the lock covers nothing. settings.update now refuses a currency outside
   SUPPORTED_CURRENCIES, a symbol over 5 characters, and more than 50 custom
   categories or one over 100 characters. Backend only, live with the deploy.
-- PUBLISHED THROUGH 67e08bc1 (2026-10-24), owner's report that the `eas
-  update` went through. NOT YET CONFIRMED ON A DEVICE: that needs a screenshot
-  of the Build Info panel with an Update ID different from
-  `01a15aaf-2df8-74ba-a54e-56d9b3936f1b` (the 2026-10-20 update). The one
+- PUBLISHED THROUGH 67e08bc1 AND CONFIRMED ON A REAL DEVICE (2026-10-24),
+  read off a screenshot of the Build Info panel on 2026-10-26: `Embedded
+  launch (no OTA applied): false`, `Update ID:
+  01a16e70-f1b8-7c94-a357-286a2d7518f6`, `Update published:
+  2026-10-24T15:04:18.104Z`, build 40, runtime 1.0.1, channel production,
+  `You are on the latest version.` DIFFERENT ID AND LATER than
+  `01a15aaf-...` at 2026-10-20T18:59:52.440Z. Timestamp cross-check:
+  `67e08bc1` was committed 14:55:54Z, before the publish, and `255026d5`
+  (CLAUDE.md only) at 15:05:02Z, after it, so the tree was 67e08bc1. The one
   client file is `app/account-settings.tsx`, the screen storing the rotated
   session after a password change; `needs_native_build.py d2e880f8` said OTA
-  IS ENOUGH. To exercise it: change the password in Account Settings, then
-  close and reopen the app after an hour; it should still be signed in.
+  IS ENOUGH. NOT YET EXERCISED: change the password in Account Settings, then
+  reopen the app over an hour later; it should still be signed in.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening
