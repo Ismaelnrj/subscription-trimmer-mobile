@@ -233,6 +233,27 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   else: the 35 shim-limited failures were identical before and after with no
   per-file delta. `.github/workflows/checks.yml` is now the only GitHub
   workflow, and it is the one that matters.
+- PENDING FOR THE NEXT NATIVE BUILD: the eMudhra CA compromise, recorded
+  2026-10-29 from a PostHog email titled "You should update OkHttp for your
+  Android build". The private keys of eight eMudhra intermediate CAs were
+  recoverable (a key generation flaw, reported 17 October 2026), so anyone
+  holding one could forge an HTTPS certificate for any host. React Native's
+  networking on Android goes through OkHttp, compiled into build 40, so on a
+  phone that trusts those intermediates a network attacker could impersonate
+  the Railway backend and read tokens and subscription data in transit.
+  WHY IT DID NOT GET ITS OWN BUILD (owner agreed): Google pushed a block
+  through Play Services, so Play installs are covered; the gap is phones
+  without Play Services or not yet updated, likely none of ~6 active devices.
+  An `eas update` cannot change OkHttp, and the owner's rule is OTA first.
+  WHAT TO DO IN THAT BUILD: bump OkHttp (nothing pins it today; check
+  `fix-gradle.sh`) to a version that distrusts the eight intermediates, and
+  bump runtimeVersion in the same commit, per the frozen runtimeVersion rule.
+  NOT VERIFIED: which OkHttp version actually fixes it. No OkHttp release note
+  for this incident was found on 2026-10-29, and one analysis says the fix
+  lives in the trust store rather than OkHttp, so check PostHog's recommended
+  version and OkHttp's changelog before pinning anything.
+  BUILD SOONER IF: a forged certificate is seen in use (Mozilla bug 2083449),
+  or users appear on phones without Google Play (Huawei, custom ROMs).
 
 ## Backend API convention
 
