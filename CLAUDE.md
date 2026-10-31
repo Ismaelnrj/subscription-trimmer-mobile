@@ -254,8 +254,15 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   Play Services phones were already covered by Google's own block, so this
   protects phones without Google Play, and is not urgent.
   CODEMAGIC BUILD 41 STARTED 2026-10-31 by the owner, from master at
-  `b88bef07`, runtimeVersion left at 1.0.1 as recommended. RESULT NOT YET
-  KNOWN. The proof the pin applied is the "Apply Gradle compatibility fixes"
+  `b88bef07`, runtimeVersion left at 1.0.1 as recommended. IT FINISHED THE
+  SAME DAY and the owner is uploading it to Play (their report), so dependency
+  resolution and `compileReleaseKotlin` both passed with the pin in place.
+  STILL NOT READ: the Fix 10 line below in the Codemagic log, and Build Info on
+  a phone running 41 (`Native build: 41`, `App version: 1.0.4`, with the same
+  Update ID a build 40 phone shows, since both run runtime 1.0.1).
+  Release notes drafted for 1.0.4 claim the OkHttp fix and the offline mode,
+  so read the Fix 10 line and run the airplane mode test before rolling out.
+  The proof the pin applied is the "Apply Gradle compatibility fixes"
   step printing `[10/10] ... OK — OkHttp pinned to 4.12.1`; a failure there or
   at dependency resolution names OkHttp, a failure at `compileReleaseKotlin`
   points at the Kotlin 2.0.21 pin instead. Once uploaded, versionCode 41 is
