@@ -233,27 +233,28 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   else: the 35 shim-limited failures were identical before and after with no
   per-file delta. `.github/workflows/checks.yml` is now the only GitHub
   workflow, and it is the one that matters.
-- PENDING FOR THE NEXT NATIVE BUILD: the eMudhra CA compromise, recorded
-  2026-10-29 from a PostHog email titled "You should update OkHttp for your
-  Android build". The private keys of eight eMudhra intermediate CAs were
-  recoverable (a key generation flaw, reported 17 October 2026), so anyone
-  holding one could forge an HTTPS certificate for any host. React Native's
-  networking on Android goes through OkHttp, compiled into build 40, so on a
-  phone that trusts those intermediates a network attacker could impersonate
-  the Railway backend and read tokens and subscription data in transit.
-  WHY IT DID NOT GET ITS OWN BUILD (owner agreed): Google pushed a block
-  through Play Services, so Play installs are covered; the gap is phones
-  without Play Services or not yet updated, likely none of ~6 active devices.
-  An `eas update` cannot change OkHttp, and the owner's rule is OTA first.
-  WHAT TO DO IN THAT BUILD: bump OkHttp (nothing pins it today; check
-  `fix-gradle.sh`) to a version that distrusts the eight intermediates, and
-  bump runtimeVersion in the same commit, per the frozen runtimeVersion rule.
-  NOT VERIFIED: which OkHttp version actually fixes it. No OkHttp release note
-  for this incident was found on 2026-10-29, and one analysis says the fix
-  lives in the trust store rather than OkHttp, so check PostHog's recommended
-  version and OkHttp's changelog before pinning anything.
-  BUILD SOONER IF: a forged certificate is seen in use (Mozilla bug 2083449),
-  or users appear on phones without Google Play (Huawei, custom ROMs).
+- BUILD 41 IS PREPARED, 2026-10-31 in `d49bef03`, for the eMudhra CA
+  compromise (a PostHog email, "You should update OkHttp for your Android
+  build"). The private keys of eight eMudhra intermediate CAs were recoverable,
+  so a network attacker holding one could impersonate the Railway host to a
+  phone that still trusts them. React Native's networking runs on OkHttp.
+  THE FIX IS OKHTTP 4.12.1, VERIFIED FROM OKHTTP'S OWN `changelog_4x.md`
+  ("Version 4.12.1, 2026-10-22: Block 8 compromised eMudhra intermediate
+  certificates"), not 5.x: same 4.x line React Native uses, same dependencies
+  as 4.12.0 (okio 3.6.0, kotlin-stdlib 1.8.21, read off the pom), so the Kotlin
+  2.0.21 pin is undisturbed. `fix-gradle.sh` Fix 10 forces okhttp,
+  okhttp-urlconnection and logging-interceptor to 4.12.1; run twice on a
+  scratch build.gradle it adds once and skips once.
+  versionCode 41, version 1.0.4. RUNTIMEVERSION STAYS 1.0.1, which
+  `needs_native_build.py` objects to and which is deliberate: the rule exists
+  so JS cannot reach a build missing native code it calls, and nothing in the
+  bundle calls OkHttp or any module build 40 lacks. Bumping it would cut every
+  build 40 phone off OTA updates until it updates from Play. The owner was told
+  and the call is theirs; if they want the bump, it is one line in app.json.
+  Play Services phones were already covered by Google's own block, so this
+  protects phones without Google Play, and is not urgent.
+  NOT YET BUILT. Codemagic is manual (no triggering block), so pushing does not
+  start one.
 
 ## Backend API convention
 
@@ -4853,6 +4854,58 @@ last one left off without needing a recap typed out.
   session after a password change; `needs_native_build.py d2e880f8` said OTA
   IS ENOUGH. NOT YET EXERCISED: change the password in Account Settings, then
   reopen the app over an hour later; it should still be signed in.
+- THE APP OPENS OFFLINE NOW, 2026-10-31 in `1f81b1e9`, the owner's request
+  ("does trimio work without internet?" It did not: a cold start with no
+  connection showed an error on every screen, since nothing was stored on the
+  phone). READ ONLY: adding and editing still need the server.
+  `lib/offline-cache.ts` writes an ALLOWLIST of queries (subscriptions list,
+  analytics summary, settings, notification preferences, alerts, cancelled) to
+  AsyncStorage one second after each success, stamped with the user id, and
+  `restoreToken` hydrates it before the splash lifts, online or offline.
+  WHOSE IT IS, which is the part that can go wrong: forgotten on logout, on a
+  refused session and on any change of account (`setUser` with a non-null
+  previous id); never restored into a different id; a write that loses a race
+  with sign out is taken back off disk; and a reset in progress is awaited
+  before hydrating (`cacheResetSettled` in `lib/query-client.ts`). Max age 30
+  days, `FORMAT` drops an incompatible copy.
+  `cacheTime` IS A DAY, not the default five minutes: an unobserved query is
+  garbage collected after cacheTime and the next write then drops it from disk.
+  SCREENS GATE ON `isLoadingError`, NOT `isError`, and that was a defect before
+  any of this: in react-query v4 `isError` is true when a REFETCH fails even
+  with data in hand, so a dropped connection replaced data already on screen
+  with an error. The four tabs show `components/OfflineNotice.tsx` ("No
+  connection. Showing your last saved data.") on `isRefetchError`.
+  AsyncStorage is LOADED LAZILY inside a try: CI run 653 caught a top level
+  import throwing in a suite that imports the auth store, and on a phone
+  without the native module the same import would crash every launch. It IS
+  in build 40 (added with PostHog on 2026-08-06), so OTA is enough.
+  MEASURED on Node type stripping against the real @tanstack/query-core 4.32.0
+  with only import specifiers rewritten, 19 of 19; `__tests__/offline-cache.test.js`
+  runs the same scenarios in CI (12 behavioural, passed in run 653).
+  NOT YET PUBLISHED.
+- AN AUDIT, 2026-10-31, `04c9193b` (app) and `0fe2b7e6` (backend), before
+  build 41. `__tests__/audit-2026-10-31.test.js`, 16 assertions, 14 failing
+  against `10fa537c` (the commit message says 15; 14 is the measured number).
+  THE BUILD INFO PANEL READ THE WRONG BUILD NUMBER, and the fix changes how a
+  publish is confirmed. `Constants.expoConfig` is the app.json of the running
+  UPDATE, so with app.json at versionCode 41 every build 40 phone taking the
+  next OTA would have read "Native build: 41", and the minimum version gate in
+  `UpdateAvailableModal` would have stopped asking those phones. Both now use
+  `nativeBuild()` in `lib/app-build.ts`, which reads the installed package via
+  expo-application (in build 40 through PostHog), inside a try. SO AFTER THE
+  NEXT PUBLISH, A BUILD 40 PHONE STILL SAYS 40 AND APP VERSION 1.0.3. That is
+  correct, not a failed update.
+  ALSO FIXED: notifications.updatePreferences is a partial update (absent keys
+  used to store NULL, switch email reminders off and reset a 7 day lead to 3);
+  the change password path shares the login failure counter (a stolen access
+  token could guess current passwords without limit); a transaction whose
+  ROLLBACK fails destroys its connection; verify-premium has the token limiter;
+  "Session expired" is localised; the price increase push respects the push
+  switch; a corrupt stored value can no longer fail the subscriptions list.
+  Backend measured over HTTP on PostgreSQL 16.
+  REVIEWED AND LEFT: four moderate npm advisories in the backend all come from
+  @sentry/node 11's build time bundler plugin (glob, minimatch), unreachable at
+  runtime; the only offered fix downgrades Sentry a major version.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening

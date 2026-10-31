@@ -17,7 +17,11 @@ on:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest. On 2026-10-31 ubuntu-latest moved to 26.04 and
+    # the Landing page layout step died installing Chromium: Playwright 1.56.1
+    # cannot install its system dependencies for an Ubuntu it does not know
+    # (run 655, every test green). Move this and the Playwright pin together.
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
