@@ -649,6 +649,37 @@ else
     echo "      WARN — $MANIFEST_FILE not found; skipping"
 fi
 
+# ── Fix 10: Pin OkHttp 4.12.1 (eMudhra certificate blocklist) ──────────────
+# React Native's networking, and therefore every request this app makes, goes
+# through OkHttp. On 2026-10-22 OkHttp 4.12.1 added a blocklist for the eight
+# eMudhra intermediate CA certificates whose private keys were recoverable,
+# so a forged certificate for the Railway host is refused even on a phone whose
+# own trust store has not been patched (no Google Play Services, or not yet
+# updated). Source: OkHttp's own changelog_4x.md, "Version 4.12.1".
+# Same 4.x line React Native already uses, and the same dependencies as 4.12.0
+# (okio 3.6.0, kotlin-stdlib 1.8.21), so it does not disturb the Kotlin 2.0.21
+# pin above. `force` only moves a module that is already in the graph, so it
+# adds nothing new. Nothing in the JS bundle calls OkHttp directly, which is why
+# this needs no runtimeVersion bump.
+echo "[10/10] android/build.gradle — pin OkHttp 4.12.1 (eMudhra blocklist) ..."
+
+if grep -q "okhttp:4.12.1" "$ANDROID/build.gradle" 2>/dev/null; then
+    echo "      SKIP — already present"
+else
+    cat >> "$ANDROID/build.gradle" << 'EOF'
+
+// OkHttp 4.12.1 blocks the eight compromised eMudhra intermediates (fix-gradle.sh Fix 10)
+allprojects {
+    configurations.all {
+        resolutionStrategy.force 'com.squareup.okhttp3:okhttp:4.12.1'
+        resolutionStrategy.force 'com.squareup.okhttp3:okhttp-urlconnection:4.12.1'
+        resolutionStrategy.force 'com.squareup.okhttp3:logging-interceptor:4.12.1'
+    }
+}
+EOF
+    echo "      OK   — OkHttp pinned to 4.12.1"
+fi
+
 echo ""
 echo "All fixes applied."
 echo ""
@@ -659,6 +690,7 @@ echo "    + AGP classpath pinned to 8.9.1 (was unversioned, resolved via BOM to 
 echo "    + Kotlin plugin pinned to 2.0.21 (was unversioned, resolved via BOM)"
 echo "    + allprojects { tasks.withType(KotlinCompile) { languageVersion = 2.0 } }"
 echo "    + allprojects { kotlin { compilerOptions { languageVersion = apiVersion = 2.0 } } } (for KSP)"
+echo "    + OkHttp forced to 4.12.1 (eMudhra certificate blocklist, Fix 10)"
 echo "  node_modules/**/*.gradle"
 echo "    + 'from components.release'  →  null-safe components.findByName()"
 echo "      (covers ExpoModulesCorePlugin.gradle + all individual expo modules)"
