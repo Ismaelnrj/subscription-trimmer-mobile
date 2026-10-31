@@ -253,8 +253,13 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   and the call is theirs; if they want the bump, it is one line in app.json.
   Play Services phones were already covered by Google's own block, so this
   protects phones without Google Play, and is not urgent.
-  NOT YET BUILT. Codemagic is manual (no triggering block), so pushing does not
-  start one.
+  CODEMAGIC BUILD 41 STARTED 2026-10-31 by the owner, from master at
+  `b88bef07`, runtimeVersion left at 1.0.1 as recommended. RESULT NOT YET
+  KNOWN. The proof the pin applied is the "Apply Gradle compatibility fixes"
+  step printing `[10/10] ... OK — OkHttp pinned to 4.12.1`; a failure there or
+  at dependency resolution names OkHttp, a failure at `compileReleaseKotlin`
+  points at the Kotlin 2.0.21 pin instead. Once uploaded, versionCode 41 is
+  spent whatever happens next.
 
 ## Backend API convention
 
@@ -4882,7 +4887,13 @@ last one left off without needing a recap typed out.
   MEASURED on Node type stripping against the real @tanstack/query-core 4.32.0
   with only import specifiers rewritten, 19 of 19; `__tests__/offline-cache.test.js`
   runs the same scenarios in CI (12 behavioural, passed in run 653).
-  NOT YET PUBLISHED.
+  PUBLISHED 2026-10-31 from master at `b88bef07` (owner's report: "the eas
+  update went through"), with the audit fixes below. NOT YET CONFIRMED ON A
+  DEVICE: that needs a screenshot of the Build Info panel with an Update ID
+  different from `01a16e70-...` (2026-10-24T15:04:18.104Z). Because of the
+  `nativeBuild()` fix in the same bundle, a build 40 phone should still read
+  Native build 40 and App version 1.0.3. Then the offline check: airplane mode,
+  force close, reopen, subscriptions shown with the notice.
 - AN AUDIT, 2026-10-31, `04c9193b` (app) and `0fe2b7e6` (backend), before
   build 41. `__tests__/audit-2026-10-31.test.js`, 16 assertions, 14 failing
   against `10fa537c` (the commit message says 15; 14 is the measured number).
