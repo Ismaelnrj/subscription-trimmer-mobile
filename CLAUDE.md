@@ -258,8 +258,13 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   SAME DAY and the owner is uploading it to Play (their report), so dependency
   resolution and `compileReleaseKotlin` both passed with the pin in place.
   STILL NOT READ: the Fix 10 line below in the Codemagic log, and Build Info on
-  a phone running 41 (`Native build: 41`, `App version: 1.0.4`, with the same
-  Update ID a build 40 phone shows, since both run runtime 1.0.1).
+  a phone running 41, which should say `Native build: 41`, `App version: 1.0.4`.
+  EXPECT `Embedded launch (no OTA applied): true` THERE, and it is not a failed
+  update: the 2026-10-31 OTA was published BEFORE build 41 was built, both from
+  `b88bef07`, and expo-updates runs the update with the newest commit time, so
+  a 41 phone prefers its own embedded copy of the same JS. It takes the next
+  `eas update` like any build 40 phone, since both ask for runtime 1.0.1.
+  (Medium confidence, from how expo-updates picks; read the panel to settle it.)
   Release notes drafted for 1.0.4 claim the OkHttp fix and the offline mode,
   so read the Fix 10 line and run the airplane mode test before rolling out.
   The proof the pin applied is the "Apply Gradle compatibility fixes"
