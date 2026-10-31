@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { OfflineNotice } from "../../components/OfflineNotice";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import apiClient from "../../lib/api";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
@@ -51,7 +52,10 @@ export default function CalendarScreen() {
   const [month, setMonth] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(() => new Date());
 
-  const { data: subscriptions = [], isLoading, isError } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: subscriptions = [], isLoading, isLoadingError: isError, isRefetchError: isStale } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
@@ -221,6 +225,7 @@ export default function CalendarScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
+          {isStale && <OfflineNotice />}
           <View style={styles.segmentRow}>
             {(["timeline", "calendar", "month"] as const).map((mode) => (
               <TouchableOpacity

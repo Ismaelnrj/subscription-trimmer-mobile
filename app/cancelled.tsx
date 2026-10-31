@@ -37,7 +37,10 @@ export default function CancelledScreen() {
   const categoryLabel = useCategoryLabel();
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data, isLoading, isLoadingError: isError, refetch } = useQuery({
     queryKey: ["cancelledSubscriptions"],
     queryFn: async () =>
       (await apiClient.get("/trpc/subscriptions.cancelled")).data.result.data as {

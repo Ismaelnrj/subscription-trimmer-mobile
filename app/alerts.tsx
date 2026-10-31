@@ -12,7 +12,10 @@ export default function AlertsScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
-  const { data: alerts = [], isLoading, isError, refetch, isRefetching } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: alerts = [], isLoading, isLoadingError: isError, refetch, isRefetching } = useQuery({
     queryKey: ["alerts", "list"],
     queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
   });

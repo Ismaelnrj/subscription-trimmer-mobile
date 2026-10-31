@@ -16,7 +16,10 @@ export default function NotificationsScreen() {
   const fmtD = useDateFormat();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: notifications = [], isLoading, isError, refetch: refetchHistory } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: notifications = [], isLoading, isLoadingError: isError, refetch: refetchHistory } = useQuery({
     queryKey: ["notifications", "history"],
     queryFn: async () => (await apiClient.get("/trpc/notifications.getHistory?limit=50")).data.result.data,
   });

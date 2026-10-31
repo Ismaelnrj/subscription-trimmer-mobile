@@ -15,6 +15,7 @@ import { useThemeStore } from "../lib/theme-store";
 import { prepareNotifications } from "../lib/notifications";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { initAnalytics, track } from "../lib/analytics";
+import { startOfflineCache } from "../lib/offline-cache";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
@@ -30,6 +31,10 @@ Sentry.init({
 });
 
 initAnalytics();
+
+/* Module level, so it is listening before the first query can succeed. The
+   restore half runs inside restoreToken, once the user is known. */
+startOfflineCache(() => useAuthStore.getState().user?.id ?? null);
 
 /* The error boundary is the last thing standing when everything else has
    failed, so it must never throw itself. It cannot use useTranslation (it is a

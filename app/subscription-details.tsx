@@ -31,7 +31,10 @@ export default function SubscriptionDetailsScreen() {
   const cycleLabel = useCycleLabel();
   const queryClient = useQueryClient();
 
-  const { data: subscriptions = [], isLoading, isError, refetch } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: subscriptions = [], isLoading, isLoadingError: isError, refetch } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });

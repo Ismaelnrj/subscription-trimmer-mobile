@@ -303,12 +303,12 @@ export default function InsightsScreen() {
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
-  const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs, isRefetching: subsRefetching } = useQuery<Sub[]>({
+  const { data: subscriptions = [], isLoading: subsLoading, isLoadingError: subsError, refetch: refetchSubs, isRefetching: subsRefetching } = useQuery<Sub[]>({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
   });
 
-  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary, isRefetching: summaryRefetching } = useQuery({
+  const { data: summary, isLoading: summaryLoading, isLoadingError: summaryError, refetch: refetchSummary, isRefetching: summaryRefetching } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });

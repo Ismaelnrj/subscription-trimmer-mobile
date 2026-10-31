@@ -82,7 +82,9 @@ describe("in-flight requests cannot repopulate the next account's cache", () => 
   });
 
   it("exports a single shared client", () => {
-    expect(QUERY).toMatch(/export const queryClient = new QueryClient\(\)/);
+    // Options are allowed (the offline copy needs a longer cacheTime); a second
+    // client anywhere else is not.
+    expect(QUERY).toMatch(/export const queryClient = new QueryClient\(/);
     const layout = read("app/_layout.tsx");
     expect(layout).not.toMatch(/new QueryClient\(\)/);
     expect(layout).toMatch(/from "\.\.\/lib\/query-client"/);

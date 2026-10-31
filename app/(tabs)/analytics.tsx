@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OfflineNotice } from "../../components/OfflineNotice";
 import apiClient from "../../lib/api";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
@@ -35,7 +36,10 @@ export default function AnalyticsScreen() {
   const { t } = useTranslation();
   const categoryLabel = useCategoryLabel();
 
-  const { data: summary, isLoading, isError, refetch } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: summary, isLoading, isLoadingError: isError, isRefetchError: isStale, refetch } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -162,6 +166,7 @@ export default function AnalyticsScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
+        {isStale && <OfflineNotice />}
         {isDark ? (
           <LinearGradient
             colors={["#245F52", "#2F8E71"]}

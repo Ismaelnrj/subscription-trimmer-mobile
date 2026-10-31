@@ -21,6 +21,7 @@ import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { useCycleLabel } from "../../lib/cycle-label";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
+import { OfflineNotice } from "../../components/OfflineNotice";
 import { track } from "../../lib/analytics";
 
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
@@ -48,7 +49,10 @@ export default function DashboardScreen() {
   const { t } = useTranslation();
 
   const cycleLabel = useCycleLabel();
-  const { data: summary, isLoading: summaryLoading, isError: summaryError, refetch: refetchSummary } = useQuery({
+  /* isLoadingError, not isError: a refetch that fails (offline, or the server
+     restarting) keeps the data it already had, the saved offline copy included,
+     and that data should stay on screen rather than be replaced by an error. */
+  const { data: summary, isLoading: summaryLoading, isLoadingError: summaryError, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -64,7 +68,7 @@ export default function DashboardScreen() {
     queryFn: async () => (await apiClient.get("/trpc/notifications.getPreferences")).data.result.data,
   });
 
-  const { data: subscriptions = [], isLoading: subsLoading, isError: subsError, refetch: refetchSubs } = useQuery({
+  const { data: subscriptions = [], isLoading: subsLoading, isLoadingError: subsError, isRefetchError: subsStale, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
     /* `notifPrefs ?? {}` was the bug here, and it is the SAME one
@@ -310,6 +314,7 @@ export default function DashboardScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
       <View style={styles.scrollContent}>
+        {subsStale && <OfflineNotice />}
         <Text style={styles.greetingText}>
           {greeting}{firstName ? `, ${firstName}` : ""}
         </Text>

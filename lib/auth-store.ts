@@ -2,6 +2,7 @@ import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
 import { identifyUser, resetAnalytics } from "./analytics";
 import { resetQueryCache } from "./query-client";
+import { forgetOfflineCache, restoreOfflineCache } from "./offline-cache";
 import { isTransientFailure } from "./session-errors";
 
 /* The last user /auth/me returned, kept so a launch without a reachable server
@@ -62,6 +63,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const previousId = get().user?.id ?? null;
     const nextId = user?.id ?? null;
     if (previousId !== nextId) {
+      /* Leaving an identity takes its saved offline copy with it. Arriving from
+         signed out (every launch) does not: that is exactly when the copy is
+         about to be restored, and it is stamped with the id it belongs to. */
+      if (previousId !== null) forgetOfflineCache();
       resetQueryCache();
       // Reminders belong to the session that scheduled them, so an identity
       // change has to clear the OS queue as well as the in-memory cache.
@@ -107,6 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await SecureStore.deleteItemAsync("auth_token").catch(() => {});
     await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
     await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
+    await forgetOfflineCache();
     resetAnalytics();
     /* Cancel the OS notification queue too. Nothing did, so account A's
        subscription names and amounts stayed scheduled to appear on the lock
@@ -132,6 +138,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Through setUser, not a bare set(), so restoring a session runs the
         // same identity check and analytics identify as every other path.
         get().setUser(res.data);
+        /* Before the splash lifts, so the first screen paints from the saved
+           copy while its own fetch is still in flight. */
+        if (res.data?.id != null) await restoreOfflineCache(res.data.id);
       }
     } catch (error) {
       /* Only a server that REFUSED the session ends it. This used to delete
@@ -143,7 +152,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (isTransientFailure(error)) {
         try {
           const cached = await SecureStore.getItemAsync(CACHED_USER_KEY);
-          if (cached) get().setUser(JSON.parse(cached));
+          if (cached) {
+            const user = JSON.parse(cached);
+            get().setUser(user);
+            /* The reason the copy exists: no server, so the screens would
+               otherwise open on an error. */
+            if (user?.id != null) await restoreOfflineCache(user.id);
+          }
         } catch {
           // No usable copy: fall through to the login screen, tokens intact,
           // so signing in again simply replaces them.
@@ -152,6 +167,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await SecureStore.deleteItemAsync("auth_token").catch(() => {});
         await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
         await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
+        await forgetOfflineCache();
         set({ user: null, isAuthenticated: false });
       }
     } finally {

@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
+import { OfflineNotice } from "../../components/OfflineNotice";
 import apiClient from "../../lib/api";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
@@ -173,7 +174,10 @@ export default function SubscriptionsScreen() {
     // someone on a dropped connection was told they had no subscriptions and
     // invited to load examples, which is the opposite of reassuring on the
     // screen that holds their money. Calendar already had this branch.
-    isError: subscriptionsError,
+    // isLoadingError rather than isError: a failed REFETCH keeps the list it
+    // had, the saved offline copy included, and the list should stay.
+    isLoadingError: subscriptionsError,
+    isRefetchError: subscriptionsStale,
   } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => {
@@ -872,6 +876,8 @@ export default function SubscriptionsScreen() {
               )}
             </View>
           )}
+
+          {subscriptionsStale && <OfflineNotice />}
 
           <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
             <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
