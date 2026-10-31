@@ -4,7 +4,7 @@ import { Stack } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Updates from "expo-updates";
-import Constants from "expo-constants";
+import { nativeBuild } from "../lib/app-build";
 import { useTheme, AppColors } from "../lib/theme";
 
 /* The canonical host, not the Railway one: the bare service hostname was
@@ -128,8 +128,8 @@ export default function HelpSupportScreen() {
           <Text style={styles.sectionTitle}>Build Info</Text>
           <View style={styles.contactCard}>
             <View style={{ padding: 16, gap: 6 }}>
-              <Text style={styles.debugText}>App version: {Constants.expoConfig?.version ?? "n/a"}</Text>
-              <Text style={styles.debugText}>Native build: {Constants.expoConfig?.android?.versionCode ?? "n/a"}</Text>
+              <Text style={styles.debugText}>App version: {nativeBuild().version ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Native build: {nativeBuild().versionCode ?? "n/a"}</Text>
               <Text style={styles.debugText}>Channel: {Updates.channel ?? "n/a"}</Text>
               <Text style={styles.debugText}>Runtime version: {Updates.runtimeVersion ?? "n/a"}</Text>
               <Text style={styles.debugText}>Embedded launch (no OTA applied): {String(Updates.isEmbeddedLaunch)}</Text>

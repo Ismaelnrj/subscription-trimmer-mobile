@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { dehydrate, hydrate } from "@tanstack/react-query";
 import type { DehydratedState, QueryKey } from "@tanstack/react-query";
 import { queryClient, cacheResetSettled } from "./query-client";
@@ -42,6 +41,31 @@ const PERSISTED_KEYS: QueryKey[] = [
   ["cancelledSubscriptions"],
 ];
 const PERSISTED = new Set(PERSISTED_KEYS.map((k) => JSON.stringify(k)));
+
+type Storage = {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+};
+
+/* Loaded on first use, not imported at the top. AsyncStorage's module throws
+   at import when its native half is missing, and this file is imported by the
+   auth store, which every screen imports: a top level import would turn a
+   missing native module into a crash on every launch instead of a feature that
+   quietly does nothing. It is in build 40, so this is belt and braces there,
+   and it is also what lets test suites import the auth store without a phone. */
+let storage: Storage | null | undefined;
+function getStorage(): Storage | null {
+  if (storage === undefined) {
+    try {
+      const mod = require("@react-native-async-storage/async-storage");
+      storage = (mod?.default ?? mod) || null;
+    } catch {
+      storage = null;
+    }
+  }
+  return storage ?? null;
+}
 
 export function isPersistedKey(queryKey: unknown): boolean {
   return Array.isArray(queryKey) && PERSISTED.has(JSON.stringify(queryKey));
@@ -118,14 +142,16 @@ async function writeNow(gen: number): Promise<void> {
   if (gen !== generation) return;
   const userId = getUserId();
   if (userId == null) return;
+  const store = getStorage();
+  if (!store) return;
   const state = snapshot();
   if (state.queries.length === 0) return;
-  await AsyncStorage.setItem(
+  await store.setItem(
     STORAGE_KEY,
     JSON.stringify({ format: FORMAT, userId, savedAt: Date.now(), state }),
   );
   // The session ended while that write was in flight: take it back off disk.
-  if (gen !== generation) await AsyncStorage.removeItem(STORAGE_KEY);
+  if (gen !== generation) await store.removeItem(STORAGE_KEY);
 }
 
 /* Deletes the copy and cancels any pending write. Called whenever the session
@@ -137,7 +163,7 @@ export async function forgetOfflineCache(): Promise<void> {
     timer = null;
   }
   try {
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    await getStorage()?.removeItem(STORAGE_KEY);
   } catch {
     // Nothing to do: the next write for a different user is refused on read
     // anyway, because the copy names the user it belongs to.
@@ -152,7 +178,9 @@ export async function restoreOfflineCache(userId: number): Promise<boolean> {
   try {
     await cacheResetSettled();
     const gen = generation;
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const store = getStorage();
+    if (!store) return false;
+    const raw = await store.getItem(STORAGE_KEY);
     if (!raw) return false;
     const saved = JSON.parse(raw);
     const usable =
@@ -164,7 +192,7 @@ export async function restoreOfflineCache(userId: number): Promise<boolean> {
       saved.state &&
       Array.isArray(saved.state.queries);
     if (!usable) {
-      await AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+      await store.removeItem(STORAGE_KEY).catch(() => {});
       return false;
     }
     // The session moved while the copy was being read.

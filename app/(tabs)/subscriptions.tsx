@@ -61,11 +61,22 @@ const REVIEW_KEY = "review_renewal_state_v2";
 const REVIEW_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 const REVIEW_MAX_ATTEMPTS = 3;
 
+type ReviewState = { lastShown: number; count: number; happy?: boolean };
+
+/* A corrupt stored value must not throw out of a tap handler. */
+function readReviewState(raw: string | null): ReviewState {
+  try {
+    const s = raw ? JSON.parse(raw) : null;
+    if (s && typeof s === "object" && typeof s.count === "number") return s;
+  } catch {
+    // Fall through to a fresh state.
+  }
+  return { lastShown: 0, count: 0 };
+}
+
 async function reviewEligible(): Promise<boolean> {
   const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-  const state: { lastShown: number; count: number; happy?: boolean } = raw
-    ? JSON.parse(raw)
-    : { lastShown: 0, count: 0 };
+  const state = readReviewState(raw);
   if (state.happy) return false;
   if (state.count >= REVIEW_MAX_ATTEMPTS) return false;
   if (state.lastShown && Date.now() - state.lastShown < REVIEW_COOLDOWN_MS) return false;
@@ -139,7 +150,7 @@ export default function SubscriptionsScreen() {
   const handleStarTap = async () => {
     setShowReviewPrompt(false);
     const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
+    const state = readReviewState(raw);
     await SecureStore.setItemAsync(
       REVIEW_KEY,
       JSON.stringify({ lastShown: Date.now(), count: state.count + 1, happy: true })
@@ -150,7 +161,7 @@ export default function SubscriptionsScreen() {
   const handleReviewLater = async () => {
     setShowReviewPrompt(false);
     const raw = await SecureStore.getItemAsync(REVIEW_KEY).catch(() => null);
-    const state = raw ? JSON.parse(raw) : { lastShown: 0, count: 0 };
+    const state = readReviewState(raw);
     // Don't count a "maybe later" against the lifetime attempt cap, only
     // record lastShown so the cooldown still prevents asking again right away.
     await SecureStore.setItemAsync(
@@ -184,22 +195,42 @@ export default function SubscriptionsScreen() {
       const data = (await apiClient.get("/trpc/subscriptions.list")).data.result.data;
       // Fire a local push for any subscription whose price increased in the last 30 days.
       // We only want to notify once per change, so we key by subscription id + changedAt.
+      /* Everything below is a side effect of the LIST fetch, so none of it may
+         be able to fail the list. A corrupt stored value used to throw out of
+         JSON.parse here, and the subscriptions screen then showed its load
+         error on every open, for good, with nothing wrong on the server. */
       const notifiedKey = "price_increase_notified";
       const raw = await SecureStore.getItemAsync(notifiedKey).catch(() => null);
-      const seen: string[] = raw ? JSON.parse(raw) : [];
+      let seen: string[] = [];
+      try {
+        const parsed = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(parsed)) seen = parsed.filter((x) => typeof x === "string");
+      } catch {
+        // Start over: at worst one price change is announced a second time.
+      }
+      /* The push switch applies here too. This notification ignored it, so
+         somebody who had turned push notifications OFF still got one. Not
+         loaded yet means wait, and nothing is marked seen, so the next fetch
+         with preferences in hand decides. Off means mark it seen and stay
+         quiet. Same rule as the reminder scheduler's callers. */
+      const prefs: any = queryClient.getQueryData(["notifications", "preferences"]);
+      if (!prefs) return data;
+      const pushOn = prefs.pushEnabled !== false;
       const newSeen = [...seen];
       for (const sub of data) {
         if (!sub.priceIncrease) continue;
         const key = `${sub.id}:${sub.priceIncrease.changedAt}`;
         if (!seen.includes(key)) {
-          sendLocalNotification(
-            t("notifications.priceUpTitle", { name: sub.name }),
-            t("notifications.priceUpBody", {
-              from: fmtC(sub.priceIncrease.from, sub.currency),
-              to: fmtC(sub.priceIncrease.to, sub.currency),
-              cycle: cycleLabel(sub.billingCycle),
-            })
-          );
+          if (pushOn) {
+            sendLocalNotification(
+              t("notifications.priceUpTitle", { name: sub.name }),
+              t("notifications.priceUpBody", {
+                from: fmtC(sub.priceIncrease.from, sub.currency),
+                to: fmtC(sub.priceIncrease.to, sub.currency),
+                cycle: cycleLabel(sub.billingCycle),
+              })
+            ).catch(() => {});
+          }
           newSeen.push(key);
         }
       }

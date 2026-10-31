@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import Constants from "expo-constants";
 import apiClient from "../lib/api";
+import { nativeBuild } from "../lib/app-build";
 import { useTheme, AppColors } from "../lib/theme";
 
 export function UpdateAvailableModal() {
@@ -19,7 +19,8 @@ export function UpdateAvailableModal() {
       .get("/trpc/appVersion.check")
       .then(({ data }) => {
         if (cancelled) return;
-        const currentVersionCode = Constants.expoConfig?.android?.versionCode ?? 0;
+        // The INSTALLED build, not the update's app.json: see lib/app-build.ts.
+        const currentVersionCode = nativeBuild().versionCode ?? 0;
         if (data?.minVersionCode > currentVersionCode) {
           if (data.updateUrl) setUpdateUrl(data.updateUrl);
           setVisible(true);

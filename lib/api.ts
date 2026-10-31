@@ -163,7 +163,18 @@ async function clearSessionAndSignOut() {
   const wasAuthenticated = useAuthStore.getState().isAuthenticated;
   useAuthStore.getState().setUser(null);
   if (wasAuthenticated) {
-    Alert.alert("Session expired", "You have been signed out. Please log in again.");
+    /* In the reader's language. This was the one hardcoded English alert left
+       in the app, shown at exactly the moment somebody is being put back on
+       the login screen. English stays as the fallback if i18n is unusable. */
+    let title = "Session expired";
+    let body = "You have been signed out. Please log in again.";
+    try {
+      title = i18n.t("common.sessionExpiredTitle", { defaultValue: title });
+      body = i18n.t("common.sessionExpiredBody", { defaultValue: body });
+    } catch {
+      // Keep the English.
+    }
+    Alert.alert(title, body);
   }
 }
 

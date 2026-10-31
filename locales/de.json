@@ -8,6 +8,8 @@
     "close": "Schließen",
     "tryAgain": "Erneut versuchen",
     "offlineSaved": "Keine Verbindung. Du siehst deine zuletzt gespeicherten Daten.",
+    "sessionExpiredTitle": "Sitzung abgelaufen",
+    "sessionExpiredBody": "Du wurdest abgemeldet. Bitte melde dich erneut an.",
     "back": "Zurück",
     "loading": "Laden...",
     "done": "Fertig",

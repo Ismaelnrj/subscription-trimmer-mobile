@@ -8,6 +8,8 @@
     "close": "Close",
     "tryAgain": "Try Again",
     "offlineSaved": "No connection. Showing your last saved data.",
+    "sessionExpiredTitle": "Session expired",
+    "sessionExpiredBody": "You have been signed out. Please log in again.",
     "back": "Back",
     "loading": "Loading...",
     "done": "Done",
