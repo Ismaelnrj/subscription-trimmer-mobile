@@ -36,7 +36,7 @@ function codeOf(text) {
 function rewardReferralSource() {
   const i = src.indexOf('async function rewardReferral(referrerId, referredId) {');
   expect(i).toBeGreaterThan(-1);
-  const j = src.indexOf('\n}\n', src.indexOf('client.release();', i));
+  const j = src.indexOf('\n}\n', src.indexOf('client.release(', i));
   expect(j).toBeGreaterThan(i);
   return src.slice(i, j);
 }
@@ -60,7 +60,7 @@ describe('rewardReferral is one transaction', () => {
   });
 
   it('releases the client in finally', () => {
-    expect(fn()).toMatch(/finally\s*\{[^}]*client\.release\(\)/);
+    expect(fn()).toMatch(/finally\s*\{[^}]*client\.release\((broken)?\)/);
   });
 
   it('locks both participants in a consistent order', () => {

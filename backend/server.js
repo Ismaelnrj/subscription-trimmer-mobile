@@ -722,6 +722,10 @@ app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/google', tokenLimiter);
 app.use('/api/auth/refresh', tokenLimiter);
+// Authenticated, but every call is a RevenueCat API request, so one account
+// looping on it spends Trimio's RevenueCat quota. The loose limiter is plenty
+// for a real purchase and its launch retry.
+app.use('/api/auth/verify-premium', tokenLimiter);
 app.use('/api/auth/forgot-password', emailLimiter);
 app.use('/api/auth/resend-verification', emailLimiter);
 app.use('/api/auth/verify-email', codeLimiter);
@@ -2114,6 +2118,7 @@ const FREE_SUBSCRIPTION_LIMIT = (() => {
 const SUBSCRIPTION_LIMIT_LOCK = 4242;
 async function withSubscriptionLimitLock(userId, fn) {
   const client = await pool.connect();
+  let broken;
   try {
     await client.query('BEGIN');
     await client.query('SELECT pg_advisory_xact_lock($1::int, $2::int)', [SUBSCRIPTION_LIMIT_LOCK, userId]);
@@ -2121,15 +2126,19 @@ async function withSubscriptionLimitLock(userId, fn) {
     await client.query('COMMIT');
     return out;
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    /* A ROLLBACK that fails means the connection itself is gone. Handing it
+       back to the pool would give the next request a dead connection, so it is
+       released WITH the error, which tells pg to destroy it instead. */
+    await client.query('ROLLBACK').catch((e) => { broken = e; });
     throw err;
   } finally {
-    client.release();
+    client.release(broken);
   }
 }
 
 async function rewardReferral(referrerId, referredId) {
   const client = await pool.connect();
+  let broken;
   try {
     await client.query('BEGIN');
 
@@ -2215,7 +2224,8 @@ async function rewardReferral(referrerId, referredId) {
     }
     return results;
   } catch (e) {
-    await client.query('ROLLBACK').catch(() => {});
+    // Destroyed rather than reused if even the ROLLBACK fails, as above.
+    await client.query('ROLLBACK').catch((err) => { broken = err; });
     reportServerError(e, 'rewardReferral');
     /* SWALLOWED ON PURPOSE, and this is a real trade rather than laziness.
        Throwing would 500 the verification that triggered it, and the client
@@ -2227,7 +2237,7 @@ async function rewardReferral(referrerId, referredId) {
     console.error('Referral reward failed, claim rolled back and left retryable:', e.message);
     return [];
   } finally {
-    client.release();
+    client.release(broken);
   }
 }
 
@@ -2570,8 +2580,19 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
 
     if (newPassword) {
       if (!currentPassword) return res.status(400).json({ error: 'Current password required' });
+      /* THE SAME GUESS LIMIT AS LOGIN, on the same counter. This is the same
+         secret, and it had no limit at all: somebody holding a stolen access
+         token, good for an hour, could try current passwords as fast as bcrypt
+         allowed, and the first right one let them set a new password and, via
+         the session rotation below, lock the owner out. Sharing loginFailures
+         means guesses here and at /login add up to one budget per account. */
+      const failureKey = user.email || `id:${user.id}`;
+      if (loginLocked(failureKey)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
       const valid = user.password_hash && (await bcrypt.compare(currentPassword, user.password_hash));
-      if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+      if (!valid) {
+        noteLoginFailure(failureKey);
+        return res.status(400).json({ error: 'Current password is incorrect' });
+      }
       /* The same rule registration and reset use. This call is the fix: the
          strength check was missing here and nowhere else, which made the
          authenticated path the weakest of the three. Checked AFTER the current
@@ -3932,11 +3953,13 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     const result = await pool.query('SELECT * FROM notification_preferences WHERE user_id = $1', [req.userId]);
     const p = result.rows[0];
+    // A NULL left by the old full-overwrite update reads as the column default,
+    // so the app never receives a value that is neither on nor off.
     res.json(trpc({
-      renewalAlerts: p.renewal_alerts,
-      spendingAlerts: p.spending_alerts,
-      weeklySummary: p.weekly_summary,
-      pushEnabled: p.push_enabled,
+      renewalAlerts: p.renewal_alerts ?? true,
+      spendingAlerts: p.spending_alerts ?? true,
+      weeklySummary: p.weekly_summary ?? true,
+      pushEnabled: p.push_enabled ?? true,
       emailReminders: p.email_reminders ?? false,
       renewalAlertDays: p.renewal_alert_days ?? 3,
     }));
@@ -3948,12 +3971,27 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
 app.post('/api/trpc/notifications.updatePreferences', authMiddleware, async (req, res) => {
   try {
     const { renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders, renewalAlertDays } = req.body;
+    /* A PARTIAL UPDATE, the same rule settings.update follows: a field that is
+       absent or not a boolean is left as it is. It used to be written straight
+       through, so a missing key stored NULL (which the app reads as neither on
+       nor off), a missing emailReminders switched email reminders OFF, and a
+       missing or unexpected renewalAlertDays reset somebody's seven day choice
+       to three. The app sends every field today; this is what keeps an older
+       or newer client from quietly rewriting the ones it did not mean to. */
+    const bool = (v) => (typeof v === 'boolean' ? v : null);
     const allowedRenewalAlertDays = [1, 3, 7];
-    const safeRenewalAlertDays = allowedRenewalAlertDays.includes(renewalAlertDays) ? renewalAlertDays : 3;
+    const safeRenewalAlertDays = allowedRenewalAlertDays.includes(renewalAlertDays) ? renewalAlertDays : null;
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
     await pool.query(
-      'UPDATE notification_preferences SET renewal_alerts = $1, spending_alerts = $2, weekly_summary = $3, push_enabled = $4, email_reminders = $5, renewal_alert_days = $6 WHERE user_id = $7',
-      [renewalAlerts, spendingAlerts, weeklySummary, pushEnabled, emailReminders ?? false, safeRenewalAlertDays, req.userId]
+      `UPDATE notification_preferences SET
+         renewal_alerts = COALESCE($1, renewal_alerts),
+         spending_alerts = COALESCE($2, spending_alerts),
+         weekly_summary = COALESCE($3, weekly_summary),
+         push_enabled = COALESCE($4, push_enabled),
+         email_reminders = COALESCE($5, email_reminders),
+         renewal_alert_days = COALESCE($6, renewal_alert_days)
+       WHERE user_id = $7`,
+      [bool(renewalAlerts), bool(spendingAlerts), bool(weeklySummary), bool(pushEnabled), bool(emailReminders), safeRenewalAlertDays, req.userId]
     );
     /* TURNING EMAIL REMINDERS BACK ON HAS TO UNDO THE UNSUBSCRIBE. The footer
        link sets users.email_opt_out, both mail queries filter on it, and the

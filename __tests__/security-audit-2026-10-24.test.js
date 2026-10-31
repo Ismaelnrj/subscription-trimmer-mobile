@@ -97,12 +97,14 @@ describe("a password change rotates the session", () => {
     const app = { patch: (_p, _mw, fn) => { handler = fn; } };
     new Function(
       "app", "pool", "authMiddleware", "bcrypt", "validatePassword", "issueTokens", "loginFailures", "formatUser", "handleError",
+      "loginLocked", "noteLoginFailure",
       handlerFrom("app.patch('/api/auth/profile'"),
     )(app, pool, null,
       { compare: async (pw, h) => h === "OLD" && pw === "Current1", hash: async (pw) => `NEW:${pw}` },
       () => null,
       async () => { rotated++; return { accessToken: "acc2", refreshToken: "ref2" }; },
-      new Map(), (u) => ({ id: u.id }), (e) => { throw e; });
+      new Map(), (u) => ({ id: u.id }), (e) => { throw e; },
+      () => false, () => {});
     return { patch: (body) => call(handler, { userId: 3, body }), rotated: () => rotated };
   }
 
