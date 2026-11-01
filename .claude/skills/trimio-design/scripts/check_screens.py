@@ -5,6 +5,7 @@
     check_screens.py --targets app/            touch targets only
     check_screens.py --type app/               type scale only
     check_screens.py --hex app/                hardcoded colours only
+    check_screens.py --forms app/              credential and code fields
 
 WHY THIS EXISTS. Every defect it looks for shipped, survived months, and was
 found by measuring rather than by looking:
@@ -185,7 +186,75 @@ def check_hex(path: pathlib.Path, src: str):
     return findings
 
 
-CHECKS = {"targets": check_targets, "type": check_type, "hex": check_hex}
+# What each kind of field must declare. autoComplete uses React Native's
+# cross platform names; on Android TextInput.js maps current-password to
+# password, new-password to password-new and one-time-code to sms-otp, which
+# are the native autofill hints (read from react-native v0.79.6 source,
+# TextInput.js and ReactTextInputManager.java, on 2026-11-01).
+FIELD_RULES = {
+    "password": {"autoComplete": ("current-password", "new-password", "password", "password-new")},
+    "email": {"autoComplete": ("email",), "keyboardType": ("email-address",), "autoCapitalize": ("none",)},
+    "code": {"autoComplete": ("one-time-code", "sms-otp")},
+}
+
+
+def field_kind(tag: str):
+    """What a TextInput holds, read from its own props.
+
+    Deliberately narrow, so it never guesses: a password is secureTextEntry, an
+    email is keyboardType email-address or a value named exactly like
+    `email` (so the paste box's `emailText` is not one), and a code is a
+    number pad bound to a value ending in `code` (so the referral code, which
+    is letters, is not one).
+    """
+    if "secureTextEntry" in tag:
+        return "password"
+    if 'keyboardType="email-address"' in tag or re.search(r"value=\{\w*[eE]mail\}", tag):
+        return "email"
+    if 'keyboardType="number-pad"' in tag and re.search(r"value=\{\w*[cC]ode\}", tag):
+        return "code"
+    return None
+
+
+def check_forms(path: pathlib.Path, src: str):
+    """Fields that hold a credential or a code and do not say so.
+
+    From Vercel's Web Interface Guidelines ("inputs need autocomplete", "use
+    the correct type", "never block paste"), translated to React Native.
+
+    WHY IT MATTERS HERE: Android's autofill, which is Google Password Manager
+    for most people, finds the email and password fields through these hints.
+    Until 2026-11-01 no field in this app carried one, so signing in on a new
+    phone meant typing both from memory, on the screen that decides whether a
+    lapsed user comes back at all.
+
+    A field with editable={false} is display only and skipped. contextMenuHidden
+    is reported on any field, because hiding the menu blocks paste, and pasting
+    a password from a manager or a code from an email is the normal way in.
+    """
+    findings = []
+    for m in re.finditer(r"<TextInput\b", src):
+        tag = opening_tag(src, m.start() + 1)
+        if not tag:
+            continue
+        line = line_of(src, m.start())
+        if "contextMenuHidden" in tag:
+            findings.append((line, "contextMenuHidden blocks paste, which is how a password "
+                                   "manager or a code from an email gets in"))
+        if "editable={false}" in tag:
+            continue
+        kind = field_kind(tag)
+        if not kind:
+            continue
+        for prop, allowed in FIELD_RULES[kind].items():
+            got = re.search(prop + r'="([^"]+)"', tag)
+            if not got or got.group(1) not in allowed:
+                have = f'{prop}="{got.group(1)}"' if got else f"no {prop}"
+                findings.append((line, f"{kind} field has {have}, wants {prop}=" + " or ".join(f'"{a}"' for a in allowed)))
+    return findings
+
+
+CHECKS = {"targets": check_targets, "type": check_type, "hex": check_hex, "forms": check_forms}
 
 
 def main() -> int:

@@ -255,8 +255,9 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   protects phones without Google Play, and is not urgent.
   CODEMAGIC BUILD 41 STARTED 2026-10-31 by the owner, from master at
   `b88bef07`, runtimeVersion left at 1.0.1 as recommended. IT FINISHED THE
-  SAME DAY and the owner is uploading it to Play (their report), so dependency
-  resolution and `compileReleaseKotlin` both passed with the pin in place.
+  SAME DAY, so dependency resolution and `compileReleaseKotlin` both passed
+  with the pin in place. 1.0.4 / VERSIONCODE 41 IS LIVE ON PLAY, 2026-11-01
+  (owner's report, not a screenshot of Play Console). versionCode 41 is spent.
   STILL NOT READ: the Fix 10 line below in the Codemagic log, and Build Info on
   a phone running 41, which should say `Native build: 41`, `App version: 1.0.4`.
   EXPECT `Embedded launch (no OTA applied): true` THERE, and it is not a failed
@@ -4906,6 +4907,9 @@ last one left off without needing a recap typed out.
   `nativeBuild()` fix in the same bundle, a build 40 phone should still read
   Native build 40 and App version 1.0.3. Then the offline check: airplane mode,
   force close, reopen, subscriptions shown with the notice.
+  THE AIRPLANE MODE TEST IS STILL OWED: the owner could not run it on
+  2026-11-01 and plans to on 2026-11-02. Until it is read on a phone, offline
+  mode is measured in code and CI and has never been seen working.
 - AN AUDIT, 2026-10-31, `04c9193b` (app) and `0fe2b7e6` (backend), before
   build 41. `__tests__/audit-2026-10-31.test.js`, 16 assertions, 14 failing
   against `10fa537c` (the commit message says 15; 14 is the measured number).
@@ -4929,6 +4933,36 @@ last one left off without needing a recap typed out.
   REVIEWED AND LEFT: four moderate npm advisories in the backend all come from
   @sentry/node 11's build time bundler plugin (glob, minimatch), unreachable at
   runtime; the only offered fix downgrades Sentry a major version.
+- TRIMIO-DESIGN GREW EIGHT RULES, 2026-11-01, from Vercel's Web Interface
+  Guidelines, read in full and NOT installed (its skill re-downloads its rules
+  from a URL on every run, unpinned, in a repo that deploys on push). The owner
+  sent an Instagram list of five "Claude Code plugins"; the other four were
+  declined, see the skill's own record. Only rules that apply here AND can be
+  measured were taken; each was negative tested.
+  ON THE SITE, `check_landing.js` now covers every guide page too, and adds
+  names, headings, focus (including inside the account dialog), reduced
+  motion, a German-left-in-English comparison, and a REPORTED layout shift
+  figure. Its first run found real defects on the German landing page, all
+  fixed, reaching the site with the Railway deploy of the push to master that
+  carries them (a deploy nobody here can watch): SEVEN screen reader labels and placeholders in
+  English ("Primary navigation", "Your password"...), plus "Your name" fixed by
+  hand an hour before; the floating hero card animating under reduced motion;
+  and the hero phone mockup read aloud as fake headings and "9:41", now
+  `role="img"` with its label.
+  IN THE APP, `check_screens.py --forms` and
+  `__tests__/form-autofill-and-ellipsis.test.js` (6 assertions, 5 failing
+  against `34ae5739`): none of the 25 text fields declared `autoComplete`, so
+  Android's password manager could not find the sign in fields. Twelve now do
+  (`email`, `current-password`, `new-password`, `one-time-code`), values read
+  from react-native v0.79.6 source. And 18 locale strings used "..." for "…";
+  the German search field also said "Ausgaben suchen" and now says "Abos
+  suchen…". CLIENT ONLY, NOT YET PUBLISHED: rides the next `eas update`.
+  After it lands, sign out and in once: Google should offer to save the
+  password, which is the observable proof.
+  The German landing page's layout shift on a slow load measured 0.244 against
+  Google's 0.1 (the hero re-wrapping when Montserrat arrives). Reported, not
+  fixed: `font-display: optional` would fix it at the cost of the system font
+  on a slow first visit, and with no field data at this traffic it can wait.
 - `DATABASE_CA_CERT` IS DELIBERATELY NOT SET, decided 2026-10-18 after reading
   Railway's own Postgres image (`railwayapp-templates/postgres-ssl`,
   `init-ssl.sh` and `wrapper.sh`). Pinning the CA looks like a free hardening

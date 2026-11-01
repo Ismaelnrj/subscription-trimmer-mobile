@@ -13,6 +13,12 @@ The dash rule. No dash, en dash or em dash as clause-separating punctuation.
 Hyphens inside compound words are fine ("E-Mail", "opt-out"), so this looks for
 a hyphen with whitespace around it, and for en/em dashes anywhere.
 
+The ellipsis rule, checked in the same pass: "…" (one character), never three
+full stops. From Vercel's Web Interface Guidelines, added 2026-11-01, when all
+18 loading and search strings in the two locale files used "...". One glyph
+cannot break across a line, and it is what a screen reader reads as a pause
+rather than as punctuation spelled out.
+
 Keywords. A Play short description does TWO jobs at once, discovery and
 conversion, and copy written for the second silently pays for the first. On
 2026-09-22 a proposed German line carried zero of Abo, Abos, Abonnement,
@@ -34,6 +40,7 @@ import re
 import sys
 
 CLAUSE_DASH = re.compile(r"[–—]|(?<=\s)-(?=\s)|\s-\s")
+THREE_DOTS = re.compile(r"\.\.\.")
 PLACEHOLDER = re.compile(r"\{\{(\w+)\}\}")
 # markdown structure that legitimately uses dashes
 MD_SKIP = re.compile(r"^\s*(\|.*\||[-*+]\s|#{1,6}\s|```|---\s*$|\s*-{3,})")
@@ -68,7 +75,7 @@ def check_json(path):
     with open(path, encoding="utf-8") as f:
         data = flatten(json.load(f))
     hits = [(k, v) for k, v in data.items()
-            if isinstance(v, str) and CLAUSE_DASH.search(v)]
+            if isinstance(v, str) and (CLAUSE_DASH.search(v) or THREE_DOTS.search(v))]
     print(f"\n{path}: {len(data)} strings, {len(hits)} violation(s)")
     for k, v in hits:
         print(f"  {k}")
@@ -87,7 +94,7 @@ def check_markdown(path):
             continue
         if in_fence or MD_SKIP.match(line):
             continue
-        if CLAUSE_DASH.search(line):
+        if CLAUSE_DASH.search(line) or THREE_DOTS.search(line):
             hits.append((n, line.strip()))
     print(f"\n{path}: {len(hits)} violation(s) in prose")
     for n, line in hits:

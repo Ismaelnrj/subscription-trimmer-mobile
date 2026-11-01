@@ -1,6 +1,6 @@
 ---
 name: trimio-design
-description: Trimio's brand palette, contrast floors, category colour constraints and copy rules, with scripts that measure rather than eyeball. Use this whenever work touches how Trimio looks or reads: picking or changing any colour, editing lib/theme.ts or lib/categories.ts, designing or reviewing a screen, building the Stats donut or any chart, writing or reviewing Play Store copy, in-app strings, locale files, video captions, ad copy or landing page text, reviewing a screenshot or promo video frame, or answering "does this look right". Also use it before saying any colour pairing is fine, because several Trimio colours fail contrast in ways that look acceptable to the eye.
+description: Trimio's brand palette, contrast floors, category colour constraints and copy rules, with scripts that measure rather than eyeball. Use this whenever work touches how Trimio looks or reads: picking or changing any colour, editing lib/theme.ts or lib/categories.ts, designing or reviewing a screen, building the Stats donut or any chart, writing or reviewing Play Store copy, in-app strings, locale files, video captions, ad copy or landing page text, reviewing a screenshot or promo video frame, or answering "does this look right". Also use it before saying any colour pairing is fine, because several Trimio colours fail contrast in ways that look acceptable to the eye. Also use it before adding or editing a text field (login, signup, password, codes), and before changing the landing page or the cancellation guide pages.
 ---
 
 # Trimio design and copy rules
@@ -41,6 +41,7 @@ python3 .claude/skills/trimio-design/scripts/check_screens.py app/ components/
 python3 .claude/skills/trimio-design/scripts/check_screens.py --targets app/
 python3 .claude/skills/trimio-design/scripts/check_screens.py --type app/
 python3 .claude/skills/trimio-design/scripts/check_screens.py --hex app/
+python3 .claude/skills/trimio-design/scripts/check_screens.py --forms app/
 ```
 
 Note the FULL path. Releases are run from the repo root, where a bare
@@ -62,9 +63,26 @@ deliberate. A hex that MATCHES a palette token is the more suspicious case, not
 the less, because a hardcoded `#142B3A` means dark mode renders ink navy where
 the theme would have sent something else.
 
-None of the three exits non-zero. A report that fails the build gets disabled,
+**forms** flags a text field that holds a credential or a code and does not
+say so. A password field (secureTextEntry) needs `autoComplete`
+`current-password` (sign in, confirming) or `new-password` (sign up, change);
+an email field needs `autoComplete="email"`, `keyboardType="email-address"` and
+`autoCapitalize="none"`; a numeric code field needs
+`autoComplete="one-time-code"`. Any field with `contextMenuHidden` is flagged,
+because that blocks paste. Android's autofill, Google Password Manager for most
+people, finds these fields ONLY through the hint: until 2026-11-01 none of the
+app's 25 fields carried one, so signing in on a new phone meant typing both
+from memory. The values are React Native's cross platform names, which
+TextInput.js maps on Android to `password`, `password-new` and `sms-otp`; that
+was read from the v0.79.6 source rather than remembered. An unknown value is
+not a crash there (it logs and switches autofill off for that field), but it
+silently does nothing, so use the names above.
+
+None of the four exits non-zero. A report that fails the build gets disabled,
 and this repo already has a workflow that was red on every push until nobody
-read red any more.
+read red any more. The forms rule is the exception that proves the point: it
+has no noise, so its gate is a test, `__tests__/form-autofill-and-ellipsis.test.js`,
+not this script's exit code.
 
 ## The theme's own contrast is a CI gate, not a habit
 
@@ -186,7 +204,13 @@ German locale was written to this rule and its punctuation choice is usually
 the right answer. Watch for one trap: German tolerates a comma splice where
 English needs a period, so a comma is not always the right port.
 
-## The landing page: four layout rules, measured in Chromium
+**The same pass enforces the ellipsis: "…", never "...".** One character cannot
+break across a line, and it is the form a screen reader treats as a pause. All
+18 loading and search strings in the two locale files used three full stops
+until 2026-11-01. `check_copy.py` reports both rules together, and
+`__tests__/form-autofill-and-ellipsis.test.js` gates the locale files in CI.
+
+## The site: landing and guide pages, measured in Chromium
 
 Taken on 2026-10-11 from the taste-skill project (Leonxlnx/taste-skill), which
 was read in full and deliberately NOT installed: its defaults are React,
@@ -232,6 +256,67 @@ an eyebrow on 8 of 9 sections; and the GERMAN hero does not fit at 360x640
 (button ends at 793px) or at 1280x800 (button ends at 828px), so a German
 visitor on a laptop sees no signup button without scrolling. English fits at
 all three sizes.
+
+### Six more rules, on every page including the guides (2026-11-01)
+
+Taken from Vercel's Web Interface Guidelines
+(`vercel-labs/web-interface-guidelines`, `command.md`, 104 rules), read in full
+and NOT installed as a skill. Its skill file tells the agent to download the
+rules afresh from that URL on every run, unpinned, which hands whoever controls
+the file a say in what runs in a repo that deploys on push. Most of the 104 are
+written for React web apps; these six apply to a static page and can be
+measured, so they live in `check_landing.js`, which now also covers every page
+under `backend/guides/`:
+
+5. **names.** Every form control has a label (a placeholder is not one), every
+   link and button has something a screen reader can say, every image has an
+   `alt` (empty is right for a decorative one). Content inside `role="img"` is
+   skipped, since a screen reader never reaches it. `aria-hidden` is NOT
+   skipped: the account dialog is aria-hidden while closed, and skipping it
+   meant the first draft never looked at the signup form and passed a copy
+   with a label removed.
+6. **headings.** One h1, no level skipped. The hero's phone mockup broke this
+   with a fake "Your upcoming" h3; it is now `role="img"` with a label, which
+   also stops a screen reader reading "9:41 ● ● ●" aloud.
+7. **focus.** Tab through the page, and through each account dialog mode
+   opened in turn, and every stop must look different from at rest: an
+   outline, or a changed shadow, border, background or text colour.
+   Transitions are switched off first so the end state is what gets read.
+8. **motion.** With the phone set to reduce motion, scrolled top to bottom,
+   nothing animates. The floating notification card ignored it until
+   2026-11-01; `tools/build-landing.py` now stops every animation and
+   transition under that setting, not only the scroll reveal.
+9. **shift.** Layout shift at 360x640 with every asset held back 150ms.
+   REPORTED, never failed: the number depends on the fallback font of the
+   machine measuring, and a phone's fallback is not the sandbox's. Measured
+   2026-11-01: German landing 0.244, English 0.032, guides at most 0.068,
+   against Google's good line of 0.1. The German one is the hero re-wrapping
+   when Montserrat replaces the fallback. The cheap fix is
+   `font-display: optional` on the two preloaded hero weights, at the cost of
+   the system font on a slow first visit; not done, since with no field data
+   at this traffic the trade is not yet worth making.
+10. **language.** The German twin of a page carries no label, placeholder,
+    alt, title or description identical to the English page's, counting only
+    strings of two words or more so "Name" and "Trimio" pass. Its first run
+    found SEVEN on the German landing page, every one a screen reader label or
+    placeholder ("Primary navigation", "Your password", "Trimio home"...), and
+    "Your name" had been fixed by hand an hour earlier. That is the bare
+    English JSX text node class again, on the web side: words nobody sees, so
+    nobody reads them in German.
+
+Negative tested against the real defects: the pages before the fix fail
+headings, motion and language; a copy with focus styles stripped fails focus on
+21 of 23 stops; a copy with one label removed fails names.
+
+### What else was looked at and left out (2026-11-01)
+
+From the same list of "Claude Code plugins for better websites": the taste
+skill and its image to code skill are the project already read and declined on
+2026-10-11 (above). Awesome DESIGN.md is a collection of OTHER companies'
+design systems written for an agent to copy; this skill is Trimio's own, and
+borrowing another brand's look is the opposite of what it is for. Playwright
+CLI adds nothing: every cloud session already has Playwright and Chromium, and
+this script and CI already drive them.
 
 ## Store copy: count the head terms, do not read for them
 
