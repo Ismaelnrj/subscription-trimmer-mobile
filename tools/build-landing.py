@@ -293,6 +293,10 @@ s = s.replace(
     ".reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }\n"
     "@media (prefers-reduced-motion: reduce) {\n"
     "  .reveal { opacity: 1; transform: none; transition: none; }\n"
+    # Everything else that moves, too: the hero's floating card ran its
+    # infinite float under reduced motion until 2026-11-01, which the
+    # motion check in trimio-design's check_landing.js now measures.
+    "  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }\n"
     "}")
 s = s.replace("</style>",
     "</style>\n"

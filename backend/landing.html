@@ -235,6 +235,7 @@ img { display: block; max-width: 100%; }
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 .delay-1 { transition-delay: .12s; }
@@ -525,7 +526,7 @@ img { display: block; max-width: 100%; }
           </div>
         </div>
 
-        <div class="hero-visual" aria-label="Trimio subscription reminder preview">
+        <div class="hero-visual" role="img" aria-label="Trimio subscription reminder preview">
           <div class="halo"></div>
           <div class="phone-frame">
             <div class="phone-top"><span>9:41</span><span>● ● ●</span></div>

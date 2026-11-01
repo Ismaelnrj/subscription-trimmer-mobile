@@ -235,6 +235,7 @@ img { display: block; max-width: 100%; }
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }
 .reveal.visible { opacity: 1; transform: translateY(0); }
 .delay-1 { transition-delay: .12s; }
@@ -494,8 +495,8 @@ img { display: block; max-width: 100%; }
 <body>
   <div class="page-shell">
     <header class="nav-wrap">
-      <nav class="nav container" aria-label="Primary navigation">
-        <a href="#top" class="brand" aria-label="Trimio home">
+      <nav class="nav container" aria-label="Hauptnavigation">
+        <a href="#top" class="brand" aria-label="Trimio-Startseite">
           <img src="/mark.svg" alt="" class="brand-icon" />
           <span>Trimio</span>
         </a>
@@ -527,7 +528,7 @@ img { display: block; max-width: 100%; }
           </div>
         </div>
 
-        <div class="hero-visual" aria-label="Trimio subscription reminder preview">
+        <div class="hero-visual" role="img" aria-label="Vorschau einer Abo-Erinnerung in Trimio">
           <div class="halo"></div>
           <div class="phone-frame">
             <div class="phone-top"><span>9:41</span><span>● ● ●</span></div>
@@ -607,7 +608,7 @@ img { display: block; max-width: 100%; }
             <p class="kicker light">Eine Erinnerung, die rechtzeitig kommt</p>
             <h2>Nützlich ist die Benachrichtigung, die kommt, bevor das Geld weg ist.</h2>
             <p>Wähle unten ein Abo. So sieht der Moment aus, für den es Trimio gibt.</p>
-            <div class="demo-buttons" role="group" aria-label="Subscription reminder demo">
+            <div class="demo-buttons" role="group" aria-label="Demo einer Abo-Erinnerung">
               <button data-service="Netflix" data-price="17.99" data-days="3" class="active">Netflix</button>
               <button data-service="Spotify" data-price="11.99" data-days="7">Spotify</button>
               <button data-service="Cloud-Speicher" data-price="12.49" data-days="18">Cloud</button>
@@ -689,7 +690,7 @@ img { display: block; max-width: 100%; }
 
       <section class="final-cta container reveal">
         <div class="final-cta-inner">
-          <img src="/mark.svg" alt="Trimio icon" />
+          <img src="/mark.svg" alt="Trimio-Symbol" />
           <p class="kicker">Wissen, bevor abgebucht wird</p>
           <h2>Denk einmal kurz über jedes Abo nach, bevor es sich verlängert.</h2>
           <p>Starte kostenlos mit bis zu fünf Abos.</p>
@@ -774,7 +775,7 @@ demoButtons.forEach((button) => {
       </div>
 
       <div class="auth-view" id="authView">
-        <div class="auth-tabs" aria-label="Account options">
+        <div class="auth-tabs" aria-label="Kontooptionen">
           <button class="auth-tab is-active" type="button" data-auth-tab="signup">Konto erstellen</button>
           <button class="auth-tab" type="button" data-auth-tab="login">Anmelden</button>
         </div>
@@ -819,7 +820,7 @@ demoButtons.forEach((button) => {
                 <label for="loginPasswort">Passwort</label>
                 <button class="link-button" type="button" data-forgot-password>Passwort vergessen?</button>
               </div>
-              <span class="pw-wrap"><input id="loginPasswort" name="password" type="password" autocomplete="current-password" placeholder="Your password" required /><button class="pw-toggle" type="button" data-pw-toggle="loginPasswort" aria-pressed="false" aria-label="Passwort anzeigen" title="Passwort anzeigen"><svg class="pw-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 5.1A9.9 9.9 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.6 4.4"/><path d="M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></span>
+              <span class="pw-wrap"><input id="loginPasswort" name="password" type="password" autocomplete="current-password" placeholder="Dein Passwort" required /><button class="pw-toggle" type="button" data-pw-toggle="loginPasswort" aria-pressed="false" aria-label="Passwort anzeigen" title="Passwort anzeigen"><svg class="pw-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="pw-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M3 3l18 18"/><path d="M10.6 5.1A9.9 9.9 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.6 4.4"/><path d="M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.6 9.6 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg></button></span>
             </div>
             <button class="button button-dark auth-submit" type="submit">Anmelden</button>
             <div class="auth-message" id="loginMessage" aria-live="polite"></div>
