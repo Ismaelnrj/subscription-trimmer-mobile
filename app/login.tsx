@@ -70,6 +70,7 @@ export default function LoginScreen() {
       <View style={styles.form}>
         <TextInput
           style={styles.input}
+          autoComplete="email"
           placeholder={t("login.emailPlaceholder")}
           placeholderTextColor={c.placeholder}
           keyboardType="email-address"
@@ -81,6 +82,7 @@ export default function LoginScreen() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.passwordInput}
+            autoComplete="current-password"
             placeholder={t("login.passwordPlaceholder")}
             placeholderTextColor={c.placeholder}
             secureTextEntry={!showPassword}

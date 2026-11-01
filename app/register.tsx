@@ -99,6 +99,7 @@ export default function RegisterScreen() {
         />
         <TextInput
           style={[styles.input, emailError ? styles.inputError : null]}
+          autoComplete="email"
           placeholder={t("register.emailPlaceholder")}
           placeholderTextColor={c.placeholder}
           keyboardType="email-address"
@@ -118,6 +119,7 @@ export default function RegisterScreen() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.passwordInput}
+            autoComplete="new-password"
             placeholder={t("register.passwordPlaceholder")}
             placeholderTextColor={c.placeholder}
             secureTextEntry={!showPassword}

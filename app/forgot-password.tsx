@@ -74,6 +74,7 @@ export default function ForgotPasswordScreen() {
           <Text style={styles.subtitle}>{t("forgotPassword.step1Subtitle")}</Text>
           <TextInput
             style={styles.input}
+            autoComplete="email"
             placeholder={t("forgotPassword.emailPlaceholder")}
             placeholderTextColor={c.placeholder}
             keyboardType="email-address"
@@ -96,6 +97,7 @@ export default function ForgotPasswordScreen() {
 
           <TextInput
             style={styles.codeInput}
+            autoComplete="one-time-code"
             value={code}
             onChangeText={(v) => setCode(v.replace(/[^0-9]/g, "").slice(0, 6))}
             placeholder={t("forgotPassword.codePlaceholder")}
@@ -108,6 +110,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.passwordWrapper}>
             <TextInput
               style={styles.passwordInput}
+              autoComplete="new-password"
               placeholder={t("forgotPassword.newPasswordPlaceholder")}
               placeholderTextColor={c.placeholder}
               secureTextEntry={!showPassword}

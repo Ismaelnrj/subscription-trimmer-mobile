@@ -75,6 +75,7 @@ export default function VerifyEmailScreen() {
 
         <TextInput
           style={styles.codeInput}
+          autoComplete="one-time-code"
           value={code}
           onChangeText={(t) => setCode(t.replace(/[^0-9]/g, "").slice(0, 6))}
           placeholder={t("verifyEmail.codePlaceholder")}

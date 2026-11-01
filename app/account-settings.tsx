@@ -316,13 +316,13 @@ export default function AccountSettingsScreen() {
           <View style={styles.card}>
             <Text style={styles.label}>{t("accountSettings.currentPassword")}</Text>
             <TextInput style={styles.input} value={currentPassword} onChangeText={setCurrentPassword}
-              placeholder={t("accountSettings.currentPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
+              placeholder={t("accountSettings.currentPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry autoComplete="current-password" />
             <Text style={styles.label}>{t("accountSettings.newPassword")}</Text>
             <TextInput style={styles.input} value={newPassword} onChangeText={setNewPassword}
-              placeholder={t("accountSettings.newPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
+              placeholder={t("accountSettings.newPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry autoComplete="new-password" />
             <Text style={styles.label}>{t("accountSettings.confirmPassword")}</Text>
             <TextInput style={styles.input} value={confirmPassword} onChangeText={setConfirmPassword}
-              placeholder={t("accountSettings.confirmPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry />
+              placeholder={t("accountSettings.confirmPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry autoComplete="new-password" />
             <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isLoading}>
               {passwordMutation.isLoading
                 ? <ActivityIndicator color="#FFFFFF" />
@@ -382,6 +382,7 @@ export default function AccountSettingsScreen() {
             ) : (
               <TextInput
                 style={styles.input}
+                autoComplete="current-password"
                 value={deletePassword}
                 onChangeText={setDeletePassword}
                 placeholder={t("accountSettings.deletePasswordPlaceholder")}
