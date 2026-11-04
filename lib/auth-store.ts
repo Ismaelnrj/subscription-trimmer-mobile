@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { identifyUser, resetAnalytics } from "./analytics";
 import { resetQueryCache } from "./query-client";
 import { forgetOfflineCache, restoreOfflineCache } from "./offline-cache";
+import { forgetPending, loadPending } from "./pending-subscriptions";
 import { isTransientFailure } from "./session-errors";
 
 /* The last user /auth/me returned, kept so a launch without a reachable server
@@ -66,7 +67,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       /* Leaving an identity takes its saved offline copy with it. Arriving from
          signed out (every launch) does not: that is exactly when the copy is
          about to be restored, and it is stamped with the id it belongs to. */
-      if (previousId !== null) forgetOfflineCache();
+      if (previousId !== null) {
+        forgetOfflineCache();
+        // Subscriptions waiting to be saved belong to the account that typed them.
+        forgetPending();
+      }
       resetQueryCache();
       // Reminders belong to the session that scheduled them, so an identity
       // change has to clear the OS queue as well as the in-memory cache.
@@ -113,6 +118,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
     await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
     await forgetOfflineCache();
+    await forgetPending();
     resetAnalytics();
     /* Cancel the OS notification queue too. Nothing did, so account A's
        subscription names and amounts stayed scheduled to appear on the lock
@@ -140,7 +146,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         get().setUser(res.data);
         /* Before the splash lifts, so the first screen paints from the saved
            copy while its own fetch is still in flight. */
-        if (res.data?.id != null) await restoreOfflineCache(res.data.id);
+        if (res.data?.id != null) {
+          await restoreOfflineCache(res.data.id);
+          // After the copy, so waiting entries land on top of the saved list.
+          await loadPending(res.data.id);
+        }
       }
     } catch (error) {
       /* Only a server that REFUSED the session ends it. This used to delete
@@ -157,7 +167,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             get().setUser(user);
             /* The reason the copy exists: no server, so the screens would
                otherwise open on an error. */
-            if (user?.id != null) await restoreOfflineCache(user.id);
+            if (user?.id != null) {
+              await restoreOfflineCache(user.id);
+              await loadPending(user.id);
+            }
           }
         } catch {
           // No usable copy: fall through to the login screen, tokens intact,
@@ -168,6 +181,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await SecureStore.deleteItemAsync("refresh_token").catch(() => {});
         await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
         await forgetOfflineCache();
+        await forgetPending();
         set({ user: null, isAuthenticated: false });
       }
     } finally {

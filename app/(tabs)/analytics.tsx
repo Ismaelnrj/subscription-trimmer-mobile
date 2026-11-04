@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import apiClient from "../../lib/api";
+import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
@@ -51,7 +52,7 @@ export default function AnalyticsScreen() {
 
   const { data: subscriptions = [] } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
   });
 
   /* Held in a useMemo with no dependencies rather than read inline, or the

@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
+import { fetchSubscriptionList } from "../lib/subscription-list";
 import { useTheme, AppColors } from "../lib/theme";
 import { useDateFormat } from "../lib/date-locale";
 import { parseApiDate } from "../lib/utils";
@@ -33,7 +34,7 @@ export default function NotificationPreferencesScreen() {
 
   const { data: subscriptions = [] } = useQuery<any[]>({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
     enabled: isPremium,
   });
 

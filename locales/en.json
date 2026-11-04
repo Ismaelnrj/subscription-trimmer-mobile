@@ -28,7 +28,9 @@
     "a11yHidePassword": "Hide password",
     "a11yDismiss": "Dismiss",
     "a11yBack": "Go back",
-    "a11yPremiumLocked": "Premium required"
+    "a11yPremiumLocked": "Premium required",
+    "pendingNotice_one": "{{count}} subscription is saved on this phone only and is not in your totals yet.",
+    "pendingNotice_other": "{{count}} subscriptions are saved on this phone only and are not in your totals yet."
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -189,7 +191,19 @@
     "removeConfirm": "If you cancelled {{name}}, keep it. Trimio adds up what you are no longer paying. Deleting removes it completely.",
     "deleteForever": "Delete",
     "iCancelledIt": "I cancelled it",
-    "limitCount": "{{used}} / {{limit}} subscriptions"
+    "limitCount": "{{used}} / {{limit}} subscriptions",
+    "savedOfflineTitle": "Saved on this phone",
+    "savedOfflineBody": "No connection right now. {{name}} is added to your account as soon as you are back online.",
+    "noConnection": "No connection. Try again when you are back online.",
+    "pendingTitle": "Waiting for a connection",
+    "pendingBody": "{{name}} is saved on this phone and is added to your account as soon as you are back online.",
+    "pendingRemove": "Remove",
+    "pendingBadge": "Not saved yet",
+    "refusedBadge": "Could not be saved",
+    "refusedTitle": "{{name}} could not be saved",
+    "refusedLimit": "The free plan covers {{limit}} subscriptions. Upgrade to add more, or remove this one.",
+    "refusedOther": "The server said: {{reason}}",
+    "a11yPending": "Status of {{name}}"
   },
   "profile": {
     "upgrade": "Upgrade",

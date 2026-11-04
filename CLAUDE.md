@@ -258,16 +258,19 @@ and hand live checks to the owner (Railway dashboard, or just load the site).
   SAME DAY, so dependency resolution and `compileReleaseKotlin` both passed
   with the pin in place. 1.0.4 / VERSIONCODE 41 IS LIVE ON PLAY, 2026-11-01
   (owner's report, not a screenshot of Play Console). versionCode 41 is spent.
-  STILL NOT READ: the Fix 10 line below in the Codemagic log, and Build Info on
-  a phone running 41, which should say `Native build: 41`, `App version: 1.0.4`.
-  EXPECT `Embedded launch (no OTA applied): true` THERE, and it is not a failed
-  update: the 2026-10-31 OTA was published BEFORE build 41 was built, both from
-  `b88bef07`, and expo-updates runs the update with the newest commit time, so
-  a 41 phone prefers its own embedded copy of the same JS. It takes the next
-  `eas update` like any build 40 phone, since both ask for runtime 1.0.1.
-  (Medium confidence, from how expo-updates picks; read the panel to settle it.)
-  Release notes drafted for 1.0.4 claim the OkHttp fix and the offline mode,
-  so read the Fix 10 line and run the airplane mode test before rolling out.
+  STILL NOT READ: the Fix 10 line below in the Codemagic log.
+  BUILD INFO ON A BUILD 41 PHONE WAS READ, 2026-11-04, off the owner's
+  screenshot: `App version: 1.0.4`, `Native build: 41`, `Channel: production`,
+  `Runtime version: 1.0.1`, `Embedded launch (no OTA applied): false`,
+  `Update ID: 01a19b10-41eb-7241-ad6f-ac7d4d1f070a`, `Update published:
+  2026-11-02T07:01:36.363Z`, `You are on the latest version.` So a 41 phone
+  takes updates on runtime 1.0.1 exactly like a build 40 one. THIS ENTRY HAD
+  PREDICTED `Embedded launch: true` and it was not tested by what happened: a
+  newer OTA was published (the 2026-11-02 one) before the panel was read, so
+  the phone ran that rather than its embedded copy. The prediction about the
+  2026-10-31 bundle is still unread and no longer matters.
+  Release notes drafted for 1.0.4 claim the OkHttp fix and the offline mode;
+  offline OPENING is now seen working on a phone, see the offline entry.
   The proof the pin applied is the "Apply Gradle compatibility fixes"
   step printing `[10/10] ... OK — OkHttp pinned to 4.12.1`; a failure there or
   at dependency resolution names OkHttp, a failure at `compileReleaseKotlin`
@@ -4901,15 +4904,71 @@ last one left off without needing a recap typed out.
   with only import specifiers rewritten, 19 of 19; `__tests__/offline-cache.test.js`
   runs the same scenarios in CI (12 behavioural, passed in run 653).
   PUBLISHED 2026-10-31 from master at `b88bef07` (owner's report: "the eas
-  update went through"), with the audit fixes below. NOT YET CONFIRMED ON A
-  DEVICE: that needs a screenshot of the Build Info panel with an Update ID
-  different from `01a16e70-...` (2026-10-24T15:04:18.104Z). Because of the
-  `nativeBuild()` fix in the same bundle, a build 40 phone should still read
-  Native build 40 and App version 1.0.3. Then the offline check: airplane mode,
-  force close, reopen, subscriptions shown with the notice.
-  THE AIRPLANE MODE TEST IS STILL OWED: the owner could not run it on
-  2026-11-01 and plans to on 2026-11-02. Until it is read on a phone, offline
-  mode is measured in code and CI and has never been seen working.
+  update went through"), with the audit fixes below. That bundle was never
+  read on a device and no longer needs to be: the 2026-11-02 update carries
+  everything in it and IS confirmed, on a build 41 phone (see the trimio-design
+  entry for the values). Still unread: a BUILD 40 phone, which after the
+  `nativeBuild()` fix should go on reading Native build 40 and App version 1.0.3.
+  OFFLINE OPENING WORKS ON A PHONE, 2026-11-04 (owner's report, build 41 with
+  the 2026-11-02 update): with no connection the app opened and showed the
+  subscriptions. What it could NOT do was add one, which the owner called the
+  whole point, and it was: see the offline adding entry below.
+- ADDING A SUBSCRIPTION WORKS OFFLINE, 2026-11-04, the owner's request ("they
+  are able to enter the app offline but also that they are able to add
+  subscriptions as well"). Before, the add form failed with "could not save"
+  and the entry was gone.
+  CREATES ONLY. A new row conflicts with nothing except the free limit and a
+  same-name row, both answered by the server when it is sent. Edits, pauses,
+  cancels and deletes still need a connection and now SAY "No connection"
+  rather than a generic failure; queuing those needs conflict rules for a row
+  that may have changed elsewhere.
+  HOW: `lib/pending-subscriptions.ts`. A create that fails with no answer, a
+  5xx or a 429 (`isTransientFailure`) is kept in AsyncStorage, stamped with the
+  user id, and merged into the list cache as a row with a negative id and
+  `pending: true`, so the list, the calendar, the free limit count and the
+  REMINDERS see it at once (`lib/reminders-from-cache.ts` reschedules with the
+  same skip-when-preferences-unloaded rule as the language store). Totals and
+  Stats come from the server and do not include it, so `PendingNotice` says so
+  on the dashboard and the list. It is sent on any real fetch succeeding, on
+  the app returning to the foreground, every 30 seconds while one waits, and
+  at launch. A refusal (free limit, same name, validation) stays on the row
+  with its reason and the person decides: Remove, Upgrade, Add anyway, Try
+  again. Signing out discards waiting entries, the same rule as the offline
+  copy, so one person's entries can never go out under another account.
+  EVERY LIST FETCH GOES THROUGH `lib/subscription-list.ts` NOW. Seven screens
+  fetched it themselves, and whichever fetched last would have dropped the
+  waiting rows. `__tests__/pending-subscriptions-wiring.test.js` fails on a
+  screen that requests `/trpc/subscriptions.list` any other way.
+  NEVER TWICE: `subscriptions.client_ref`, a unique partial index on
+  (user_id, client_ref), and a create whose ref exists returns THAT row, checked
+  inside the per-user lock and BEFORE the free limit and same-name checks. The
+  case it exists for is a request the server committed whose answer was lost.
+  Measured by booting the real server and the previous one on PostgreSQL 16:
+  the previous server refused that resend (409 duplicate, or 403 free limit
+  when it was the fifth row), which the phone would show as "could not be
+  saved" for an entry that WAS saved, and an "Add anyway" resend made TWO rows.
+  The new one answers 200 with the same id; 8 copies sent at once make one
+  row. A malformed ref is treated as absent, never refused. On a database
+  built and filled by the previous server the new one boots twice with every
+  row unchanged, and `pg_dump --schema-only` matches a fresh database's.
+  A BUG THE MEASUREMENT FOUND BEFORE IT SHIPPED: the send pass cleared its
+  in-progress marker in a `finally` inside an async IIFE. A pass with nothing to
+  send reaches that `finally` synchronously, before the assignment, so the
+  marker then held a settled promise forever and nothing was sent again until a
+  restart. It is cleared from outside the pass now and a test forbids the old
+  shape. The client's default billing date mirrors the server's: 100,800 cases
+  against the server's own functions lifted out of server.js, 0 differ.
+  MEASURED: 37 of 37 scenarios on Node type stripping with real
+  @tanstack/query-core 4.32.0 and zustand 4.4.1 (the old flush shape crashes
+  the run); `__tests__/pending-subscriptions.test.js` repeats them in CI;
+  `__tests__/client-ref.test.js` 7 of 7, all 7 failing against `ff77ee74`; the
+  wiring suite caught 8 of 8 planted defects.
+  ORDER OF ARRIVAL: the backend deploys with the push to master that carries
+  it; the app half needs an `eas update`. An installed build sends no ref and
+  behaves exactly as before. NOT YET PUBLISHED, and offline adding has not
+  been seen on a phone. To check after the publish: airplane mode, add a
+  subscription, see it marked "Not saved yet", turn the connection back on,
+  reopen the app, and it should be saved once.
 - AN AUDIT, 2026-10-31, `04c9193b` (app) and `0fe2b7e6` (backend), before
   build 41. `__tests__/audit-2026-10-31.test.js`, 16 assertions, 14 failing
   against `10fa537c` (the commit message says 15; 14 is the measured number).
@@ -4956,9 +5015,17 @@ last one left off without needing a recap typed out.
   (`email`, `current-password`, `new-password`, `one-time-code`), values read
   from react-native v0.79.6 source. And 18 locale strings used "..." for "…";
   the German search field also said "Ausgaben suchen" and now says "Abos
-  suchen…". CLIENT ONLY, NOT YET PUBLISHED: rides the next `eas update`.
-  After it lands, sign out and in once: Google should offer to save the
-  password, which is the observable proof.
+  suchen…". PUBLISHED 2026-11-02 and ON A PHONE, read off a screenshot of the
+  Build Info panel on a build 41 phone: `Update ID:
+  01a19b10-41eb-7241-ad6f-ac7d4d1f070a`, `Update published:
+  2026-11-02T07:01:36.363Z`, `Embedded launch (no OTA applied): false`.
+  DIFFERENT ID AND LATER than `01a16e70-...` at 2026-10-24T15:04:18.104Z.
+  Timestamp cross-check: `ff77ee74` was committed 2026-11-01T20:58:32Z with
+  nothing after it on master, so the tree carried it; the last client commit is
+  `7e84cfa0`, which names the baseline. The same bundle carried the offline
+  mode and the audit fixes of 2026-10-31.
+  NOT YET OBSERVED: sign out and in once; Google should offer to save the
+  password, which is the proof the autofill change works.
   The German landing page's layout shift on a slow load measured 0.244 against
   Google's 0.1 (the hero re-wrapping when Montserrat arrives). Reported, not
   fixed: `font-display: optional` would fix it at the cost of the system font

@@ -5,10 +5,11 @@ import { queryClient, cacheResetSettled } from "./query-client";
 /* A read-only copy of the last data the server sent, so opening the app with no
    connection shows your subscriptions instead of an error on every screen.
 
-   READ ONLY ON PURPOSE. Nothing here queues a write for later: adding, editing,
-   pausing and cancelling still need the server, and fail with their own error
-   exactly as before. Replaying writes made offline means conflict handling and
-   duplicate saves, which is a different and much larger feature.
+   THIS FILE ONLY READS. The one write that works offline, adding a
+   subscription, is kept by lib/pending-subscriptions.ts, which has its own
+   storage and its own rules (since 2026-11-04). Editing, pausing, cancelling
+   and deleting still need the server and say so when there is none: replaying
+   those means conflict rules for a row that may have changed elsewhere.
 
    WHAT IS KEPT is an allowlist of the screens worth opening offline, never the
    whole cache. Each entry is data the app already shows on screen.
@@ -118,7 +119,13 @@ export function snapshot(): DehydratedState {
       queryKey: q.queryKey,
       queryHash: q.queryHash,
       state: {
-        data: q.state.data,
+        /* Subscriptions still waiting to be saved are left out: their own store
+           (lib/pending-subscriptions.ts) is the one record of them and puts
+           them back after a restore. A second copy here would outlive them, a
+           row still marked waiting after it had been saved or removed. */
+        data: Array.isArray(q.state.data)
+          ? (q.state.data as unknown[]).filter((r) => !(r && typeof r === "object" && (r as { pending?: unknown }).pending === true))
+          : q.state.data,
         dataUpdateCount: 1,
         dataUpdatedAt: q.state.dataUpdatedAt,
         error: null,

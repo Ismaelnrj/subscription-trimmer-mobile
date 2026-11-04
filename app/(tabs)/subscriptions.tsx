@@ -10,6 +10,11 @@ import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import apiClient from "../../lib/api";
+import { fetchSubscriptionList } from "../../lib/subscription-list";
+import { addPending, removePending, retryPending, newClientRef, isPendingRow } from "../../lib/pending-subscriptions";
+import { rescheduleRemindersFromCache } from "../../lib/reminders-from-cache";
+import { isTransientFailure } from "../../lib/session-errors";
+import { PendingNotice } from "../../components/PendingNotice";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useCycleLabel, useCycleAdjective } from "../../lib/cycle-label";
@@ -192,7 +197,7 @@ export default function SubscriptionsScreen() {
   } = useQuery({
     queryKey: ["subscriptions", "list"],
     queryFn: async () => {
-      const data = (await apiClient.get("/trpc/subscriptions.list")).data.result.data;
+      const data = await fetchSubscriptionList();
       // Fire a local push for any subscription whose price increased in the last 30 days.
       // We only want to notify once per change, so we key by subscription id + changedAt.
       /* Everything below is a side effect of the LIST fetch, so none of it may
@@ -330,6 +335,18 @@ export default function SubscriptionsScreen() {
       shouldOfferReminderPrimer().then((offer) => { if (offer) setPrimerName(addedName); });
     },
     onError: (err: any, variables: any) => {
+      /* NO CONNECTION IS NOT A REFUSAL. The entry is kept on this phone and
+         sent when the connection is back (lib/pending-subscriptions.ts), so it
+         shows in the list, the calendar and the free limit count at once, and
+         gets its reminder now. The clientRef it already carries is what stops
+         the later send adding it twice if this request did reach the server. */
+      if (isTransientFailure(err) && user?.id != null && variables?.clientRef) {
+        addPending(user.id, variables);
+        closeModal();
+        rescheduleRemindersFromCache();
+        Alert.alert(t("subscriptions.savedOfflineTitle"), t("subscriptions.savedOfflineBody", { name: variables.name }));
+        return;
+      }
       const code = err.response?.data?.error;
       if (code === "FREE_LIMIT_REACHED") {
         closeModal();
@@ -353,7 +370,7 @@ export default function SubscriptionsScreen() {
     mutationFn: async (data: any) =>
       (await apiClient.post("/trpc/subscriptions.update", data)).data.result.data,
     onSuccess: () => { invalidate(); closeModal(); },
-    onError: () => Alert.alert(t("common.error"), t("subscriptions.errSaveChanges")),
+    onError: (err: any) => Alert.alert(t("common.error"), isTransientFailure(err) ? t("subscriptions.noConnection") : t("subscriptions.errSaveChanges")),
   });
 
   const deleteMutation = useMutation({
@@ -363,14 +380,14 @@ export default function SubscriptionsScreen() {
        by mistake, so "you saved X a year" there congratulates them on money that
        was never being spent. The savings toast belongs to "I cancelled it". */
     onSuccess: invalidate,
-    onError: () => Alert.alert(t("common.error"), t("subscriptions.errDeleteSub")),
+    onError: (err: any) => Alert.alert(t("common.error"), isTransientFailure(err) ? t("subscriptions.noConnection") : t("subscriptions.errDeleteSub")),
   });
 
   const setActiveMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) =>
       (await apiClient.post("/trpc/subscriptions.setActive", { id, isActive })).data.result.data,
     onSuccess: invalidate,
-    onError: () => Alert.alert(t("common.error"), t("subscriptions.errUpdateSub")),
+    onError: (err: any) => Alert.alert(t("common.error"), isTransientFailure(err) ? t("subscriptions.noConnection") : t("subscriptions.errUpdateSub")),
   });
 
   /* Marking something cancelled is NOT deleting it. The row leaves every total
@@ -395,7 +412,7 @@ export default function SubscriptionsScreen() {
          alone would leave the new entry missing until a cold start. */
       queryClient.invalidateQueries({ queryKey: ["cancelledSubscriptions"] });
     },
-    onError: () => Alert.alert(t("common.error"), t("subscriptions.errUpdateSub")),
+    onError: (err: any) => Alert.alert(t("common.error"), isTransientFailure(err) ? t("subscriptions.noConnection") : t("subscriptions.errUpdateSub")),
   });
 
   const onRefresh = async () => {
@@ -585,7 +602,9 @@ export default function SubscriptionsScreen() {
       trialEndDate, force, currency: baseCurrencyCode,
     };
     if (editingId !== null) { updateMutation.mutate({ id: editingId, ...data }); }
-    else { createMutation.mutate(data); }
+    // One ref per submission: it is what lets the server recognise a retry of
+    // this same entry, whether that is the offline queue or "Add anyway".
+    else { createMutation.mutate({ ...data, clientRef: newClientRef() }); }
   };
 
   /* THE MOMENT SOMEBODY REACHES FOR DELETE IS USUALLY THE MOMENT THEY CANCELLED
@@ -599,7 +618,39 @@ export default function SubscriptionsScreen() {
      ORDER IS DELIBERATE ON ANDROID, where a three button Alert maps the array to
      neutral, negative, positive in order. Keeping is LAST so it lands in the
      positive slot: the non destructive answer should be the easy one to hit. */
+  /* A ROW STILL WAITING TO BE SAVED has no server id yet, so nothing that
+     talks to the server about a row (edit, pause, cancel, delete) applies to
+     it. Removing it is local, and the only other thing to say is where it
+     stands: waiting for a connection, or refused, with the reason. */
+  const showPending = (sub: any) => {
+    const remove = { text: t("subscriptions.pendingRemove"), style: "destructive" as const, onPress: () => { removePending(sub.clientRef); rescheduleRemindersFromCache(); } };
+    const r = sub.refusal;
+    if (!r) {
+      Alert.alert(t("subscriptions.pendingTitle"), t("subscriptions.pendingBody", { name: sub.name }), [
+        remove,
+        { text: t("common.tryAgain"), onPress: () => retryPending(sub.clientRef) },
+        { text: t("common.close"), style: "cancel" },
+      ]);
+    } else if (r.code === "DUPLICATE_SUBSCRIPTION") {
+      Alert.alert(t("subscriptions.duplicateTitle"), t("subscriptions.duplicateMsg", { name: r.existingName ?? sub.name }), [
+        remove,
+        { text: t("subscriptions.addAnyway"), onPress: () => retryPending(sub.clientRef, { force: true }) },
+      ]);
+    } else if (r.code === "FREE_LIMIT_REACHED") {
+      Alert.alert(t("subscriptions.refusedTitle", { name: sub.name }), t("subscriptions.refusedLimit", { limit: r.limit ?? freeLimit }), [
+        remove,
+        { text: t("common.upgrade"), onPress: () => router.push("/upgrade") },
+      ]);
+    } else {
+      Alert.alert(t("subscriptions.refusedTitle", { name: sub.name }), t("subscriptions.refusedOther", { reason: r.code }), [
+        remove,
+        { text: t("common.tryAgain"), onPress: () => retryPending(sub.clientRef) },
+      ]);
+    }
+  };
+
   const confirmDelete = (sub: any) => {
+    if (isPendingRow(sub)) { showPending(sub); return; }
     Alert.alert(t("subscriptions.removeTitle"), t("subscriptions.removeConfirm", { name: sub.name }), [
       { text: t("subscriptions.cancel"), style: "cancel" },
       { text: t("subscriptions.deleteForever"), style: "destructive", onPress: () => deleteMutation.mutate(sub) },
@@ -909,6 +960,7 @@ export default function SubscriptionsScreen() {
           )}
 
           {subscriptionsStale && <OfflineNotice />}
+          <PendingNotice />
 
           <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
             <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
@@ -1026,7 +1078,7 @@ export default function SubscriptionsScreen() {
                   <TouchableOpacity
                     style={styles.cardInfo}
                     activeOpacity={0.7}
-                    onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                    onPress={() => (isPendingRow(sub) ? showPending(sub) : router.push(`/subscription-details?id=${sub.id}`))}
                   >
                     <Text style={styles.cardName}>{sub.name}</Text>
                     <Text style={styles.cardPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
@@ -1045,6 +1097,16 @@ export default function SubscriptionsScreen() {
                       {sub.isActive === false && (
                         <View style={styles.pausedBadge}>
                           <Text style={styles.pausedBadgeText}>{t("subscriptions.paused")}</Text>
+                        </View>
+                      )}
+                      {isPendingRow(sub) && (
+                        /* Refused reads in danger on its own danger ground:
+                           on the grey badge it measured 3.87:1, under the
+                           4.5:1 floor for 10px text. 4.63 light, 5.94 dark. */
+                        <View style={[styles.pausedBadge, sub.refusal && { backgroundColor: c.dangerLight }]}>
+                          <Text style={[styles.pausedBadgeText, sub.refusal && { color: c.danger }]}>
+                            {t(sub.refusal ? "subscriptions.refusedBadge" : "subscriptions.pendingBadge")}
+                          </Text>
                         </View>
                       )}
                       {trialDate && trialDaysLeft !== null && trialDaysLeft >= 0 && (
@@ -1075,6 +1137,22 @@ export default function SubscriptionsScreen() {
                       <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
                     </TouchableOpacity>
                   </TouchableOpacity>
+                  {isPendingRow(sub) ? (
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                      style={styles.iconButton}
+                      accessibilityRole="button"
+                      accessibilityLabel={t("subscriptions.a11yPending", { name: sub.name })}
+                      onPress={() => showPending(sub)}
+                    >
+                      <MaterialCommunityIcons
+                        name={sub.refusal ? "alert-circle-outline" : "cloud-upload-outline"}
+                        size={18}
+                        color={sub.refusal ? c.danger : c.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  ) : (
                   <View style={styles.actionButtons}>
                     <TouchableOpacity
                       style={styles.iconButton}
@@ -1108,6 +1186,7 @@ export default function SubscriptionsScreen() {
                       <MaterialCommunityIcons name="trash-can" size={18} color={c.danger} />
                     </TouchableOpacity>
                   </View>
+                  )}
                 </View>
                 </Swipeable>
               );

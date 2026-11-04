@@ -6,7 +6,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
-import apiClient from "../../lib/api";
+import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useDateFormat } from "../../lib/date-locale";
 import { useCycleLabel } from "../../lib/cycle-label";
@@ -57,7 +57,7 @@ export default function CalendarScreen() {
      and that data should stay on screen rather than be replaced by an error. */
   const { data: subscriptions = [], isLoading, isLoadingError: isError, isRefetchError: isStale } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
   });
 
   /* Fixed once per mount rather than read per render, so the memo below does

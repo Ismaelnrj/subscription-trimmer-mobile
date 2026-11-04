@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
+import { fetchSubscriptionList } from "../lib/subscription-list";
 import { useFmt, useCurrencyStore } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
@@ -305,7 +306,7 @@ export default function InsightsScreen() {
 
   const { data: subscriptions = [], isLoading: subsLoading, isLoadingError: subsError, refetch: refetchSubs, isRefetching: subsRefetching } = useQuery<Sub[]>({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
   });
 
   const { data: summary, isLoading: summaryLoading, isLoadingError: summaryError, refetch: refetchSummary, isRefetching: summaryRefetching } = useQuery({

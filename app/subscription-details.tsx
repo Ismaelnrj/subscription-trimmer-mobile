@@ -6,6 +6,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
+import { fetchSubscriptionList } from "../lib/subscription-list";
+import { isPendingRow, removePending } from "../lib/pending-subscriptions";
+import { rescheduleRemindersFromCache } from "../lib/reminders-from-cache";
 import { useFmt } from "../lib/currency-store";
 import { useDateFormat } from "../lib/date-locale";
 import { useCycleLabel } from "../lib/cycle-label";
@@ -36,7 +39,7 @@ export default function SubscriptionDetailsScreen() {
      and that data should stay on screen rather than be replaced by an error. */
   const { data: subscriptions = [], isLoading, isLoadingError: isError, refetch } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
   });
 
   const sub = (subscriptions as any[]).find((s) => String(s.id) === id);
@@ -56,6 +59,23 @@ export default function SubscriptionDetailsScreen() {
   });
 
   const confirmDelete = () => {
+    /* Still waiting to be saved, so there is no server row to delete: removing
+       it is local and needs no connection. */
+    if (isPendingRow(sub)) {
+      Alert.alert(t("subscriptions.pendingTitle"), t("subscriptions.pendingBody", { name: sub.name }), [
+        { text: t("subscriptions.cancel"), style: "cancel" },
+        {
+          text: t("subscriptions.pendingRemove"),
+          style: "destructive",
+          onPress: () => {
+            removePending(sub.clientRef);
+            rescheduleRemindersFromCache();
+            router.back();
+          },
+        },
+      ]);
+      return;
+    }
     Alert.alert(
       t("subscriptionDetails.deleteConfirmTitle", { name: sub.name }),
       t("subscriptionDetails.deleteConfirmMsg"),
@@ -118,6 +138,15 @@ export default function SubscriptionDetailsScreen() {
             </View>
           )}
 
+          {isPendingRow(sub) ? (
+            /* No server id yet, so editing waits until it is saved. */
+            <View style={styles.editButton}>
+              <MaterialCommunityIcons name="cloud-upload-outline" size={16} color={c.textSecondary} />
+              <Text style={[styles.editButtonText, { color: c.textSecondary, flexShrink: 1 }]}>
+                {t("subscriptions.pendingBody", { name: sub.name })}
+              </Text>
+            </View>
+          ) : (
           <TouchableOpacity
             style={styles.editButton}
             onPress={() => router.push(`/(tabs)/subscriptions?editId=${sub.id}`)}
@@ -125,6 +154,7 @@ export default function SubscriptionDetailsScreen() {
             <MaterialCommunityIcons name="pencil" size={16} color={c.primary} />
             <Text style={styles.editButtonText}>{t("subscriptionDetails.edit")}</Text>
           </TouchableOpacity>
+          )}
 
           <View style={styles.costRow}>
             <View style={styles.costCard}>

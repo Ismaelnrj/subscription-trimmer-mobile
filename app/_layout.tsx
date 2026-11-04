@@ -4,7 +4,7 @@ import * as SecureStore from "expo-secure-store";
 import * as Sentry from "@sentry/react-native";
 import { useFonts } from "expo-font";
 import { useEffect, useState, Component, ReactNode } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, AppState } from "react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "../lib/query-client";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -16,6 +16,8 @@ import { prepareNotifications } from "../lib/notifications";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { initAnalytics, track } from "../lib/analytics";
 import { startOfflineCache } from "../lib/offline-cache";
+import { startPendingSync } from "../lib/pending-subscriptions";
+import apiClient from "../lib/api";
 import { useTheme } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
@@ -35,6 +37,24 @@ initAnalytics();
 /* Module level, so it is listening before the first query can succeed. The
    restore half runs inside restoreToken, once the user is known. */
 startOfflineCache(() => useAuthStore.getState().user?.id ?? null);
+
+/* Subscriptions added with no connection are sent from here once one is back:
+   on any successful fetch, on returning to the app, and every 30 seconds while
+   one is waiting. See lib/pending-subscriptions.ts. */
+startPendingSync({
+  getUserId: () => useAuthStore.getState().user?.id ?? null,
+  post: async (payload) => (await apiClient.post("/trpc/subscriptions.create", payload)).data.result.data,
+  onSynced: () => {
+    queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+    queryClient.invalidateQueries({ queryKey: ["alerts"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+  },
+  // The same event an online add sends, flagged so the funnel can tell them apart.
+  onSaved: (saved: any) =>
+    track("subscription_added", { billing_cycle: saved?.billingCycle, category: saved?.category, queued: true }),
+  appState: AppState,
+});
 
 /* The error boundary is the last thing standing when everything else has
    failed, so it must never throw itself. It cannot use useTranslation (it is a

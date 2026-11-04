@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
+import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { livePlanned } from "../../lib/recurrence";
 import { daysUntil } from "../../lib/utils";
 import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
@@ -22,6 +23,7 @@ import { useCycleLabel } from "../../lib/cycle-label";
 import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
+import { PendingNotice } from "../../components/PendingNotice";
 import { track } from "../../lib/analytics";
 
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
@@ -70,7 +72,7 @@ export default function DashboardScreen() {
 
   const { data: subscriptions = [], isLoading: subsLoading, isLoadingError: subsError, isRefetchError: subsStale, refetch: refetchSubs } = useQuery({
     queryKey: ["subscriptions", "list"],
-    queryFn: async () => (await apiClient.get("/trpc/subscriptions.list")).data.result.data,
+    queryFn: fetchSubscriptionList,
     /* `notifPrefs ?? {}` was the bug here, and it is the SAME one
        lib/language-store.ts already carries a long comment about. The
        scheduler reads an absent preference as ON, with a three day lead,
@@ -315,6 +317,7 @@ export default function DashboardScreen() {
     >
       <View style={styles.scrollContent}>
         {subsStale && <OfflineNotice />}
+        <PendingNotice />
         <Text style={styles.greetingText}>
           {greeting}{firstName ? `, ${firstName}` : ""}
         </Text>

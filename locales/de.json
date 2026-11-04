@@ -28,7 +28,9 @@
     "a11yHidePassword": "Passwort verbergen",
     "a11yDismiss": "Ausblenden",
     "a11yBack": "Zurück",
-    "a11yPremiumLocked": "Premium erforderlich"
+    "a11yPremiumLocked": "Premium erforderlich",
+    "pendingNotice_one": "{{count}} Abo ist nur auf diesem Gerät gespeichert und noch nicht in deinen Summen.",
+    "pendingNotice_other": "{{count}} Abos sind nur auf diesem Gerät gespeichert und noch nicht in deinen Summen."
   },
   "tabs": {
     "dashboard": "Übersicht",
@@ -189,7 +191,19 @@
     "removeConfirm": "Wenn du {{name}} gekündigt hast, behalte es. Trimio rechnet zusammen, was du nicht mehr zahlst. Löschen entfernt es vollständig.",
     "deleteForever": "Löschen",
     "iCancelledIt": "Hab ich gekündigt",
-    "limitCount": "{{used}} / {{limit}} Abos"
+    "limitCount": "{{used}} / {{limit}} Abos",
+    "savedOfflineTitle": "Auf diesem Gerät gespeichert",
+    "savedOfflineBody": "Gerade keine Verbindung. {{name}} wird deinem Konto hinzugefügt, sobald du wieder online bist.",
+    "noConnection": "Keine Verbindung. Versuche es erneut, sobald du wieder online bist.",
+    "pendingTitle": "Wartet auf Verbindung",
+    "pendingBody": "{{name}} ist auf diesem Gerät gespeichert und wird deinem Konto hinzugefügt, sobald du wieder online bist.",
+    "pendingRemove": "Entfernen",
+    "pendingBadge": "Noch nicht gespeichert",
+    "refusedBadge": "Nicht gespeichert",
+    "refusedTitle": "{{name}} konnte nicht gespeichert werden",
+    "refusedLimit": "Der kostenlose Plan umfasst {{limit}} Abos. Mit einem Upgrade kannst du mehr hinzufügen, oder du entfernst dieses.",
+    "refusedOther": "Der Server meldet: {{reason}}",
+    "a11yPending": "Status von {{name}}"
   },
   "profile": {
     "upgrade": "Upgrade",

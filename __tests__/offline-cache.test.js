@@ -223,7 +223,7 @@ describe("the screens gate on isLoadingError, not isError", () => {
     const logout = auth.slice(auth.indexOf("logout: async"), auth.indexOf("restoreToken:"));
     expect(logout).toMatch(/forgetOfflineCache\(\)/);
     const setUser = auth.slice(auth.indexOf("setUser: (user)"), auth.indexOf("setLoading:"));
-    expect(setUser).toMatch(/if \(previousId !== null\) forgetOfflineCache\(\)/);
+    expect(setUser).toMatch(/if \(previousId !== null\) \{?\s*forgetOfflineCache\(\)/);
     const restore = auth.slice(auth.indexOf("restoreToken: async"));
     const refused = restore.slice(restore.indexOf("} else {"));
     expect(refused).toMatch(/forgetOfflineCache\(\)/);
