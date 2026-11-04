@@ -1568,6 +1568,16 @@ async function initDB() {
      matters rather than an index over the whole column. */
   await pool.query(`CREATE INDEX IF NOT EXISTS idx_subscriptions_user_cancelled
                     ON subscriptions(user_id) WHERE cancelled_at IS NULL`);
+  /* THE ENTRY'S OWN NAME FOR ITSELF, sent by the app with every create, so a
+     create sent twice is saved once. Added 2026-11-04 for subscriptions added
+     with no connection: the phone keeps them and sends them when it can, and
+     the dangerous case is a request the server COMMITTED whose answer never
+     came back, which the phone can only retry. Unique per user, and partial,
+     because every row written before this, and every create from a build that
+     does not send one, has none. No backfill: absent is correct for all of them. */
+  await pool.query(`ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS client_ref TEXT`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_subscriptions_user_client_ref
+                    ON subscriptions(user_id, client_ref) WHERE client_ref IS NOT NULL`);
   // The BACKFILL is deliberately further down, after user_settings is created.
   // It reads that table, and on a FRESH database this point is reached before
   // user_settings exists, so running it here throws `relation "user_settings"
@@ -2284,6 +2294,9 @@ function formatSub(s) {
        carried anyway so one shape serves both that endpoint and
        subscriptions.cancelled, rather than a second row type to keep in step. */
     cancelledAt: s.cancelled_at || null,
+    /* Lets the app match a subscription it kept while offline to the row the
+       server saved, so it is shown once. Null for every row it did not send. */
+    clientRef: s.client_ref || null,
   };
 }
 
@@ -3229,6 +3242,12 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     if (!['weekly', 'monthly', 'yearly'].includes(billingCycle)) return res.status(400).json({ error: 'Invalid billing cycle' });
     const fieldError = validateSubscriptionFields(category, trialEndDate);
     if (fieldError) return res.status(400).json({ error: fieldError });
+    /* Anything that is not a well formed ref is treated as absent rather than
+       refused: an entry the phone has kept for days must not be thrown back
+       over a field that only exists to make retrying safe. */
+    const clientRef = typeof req.body.clientRef === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(req.body.clientRef)
+      ? req.body.clientRef
+      : null;
 
     let billingDate = nextBillingDate(billingCycle);
     if (nextBillingDateInput) {
@@ -3256,6 +3275,16 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     const anchorDay = new Date(billingDate).getUTCDate();
     const currency = await resolveCurrency(req.userId, req.body.currency);
     const outcome = await withSubscriptionLimitLock(req.userId, async (db) => {
+    /* A RETRY OF A CREATE ALREADY SAVED gets the row it made, and this comes
+       BEFORE the limit and the same-name checks on purpose: the first attempt
+       may be the very row that filled the last free slot, or the row the
+       same-name check would now find, and either would refuse the retry of an
+       entry that is in fact saved. Inside the lock, so two copies sent at once
+       cannot both get past it; the unique index is the backstop. */
+    if (clientRef) {
+      const prior = await db.query('SELECT * FROM subscriptions WHERE user_id = $1 AND client_ref = $2', [req.userId, clientRef]);
+      if (prior.rows.length > 0) return { row: prior.rows[0], replay: true };
+    }
     if (!isPaid) {
       /* CANCELLED ROWS DO NOT COUNT AGAINST THE FREE TIER, and this is the line
          that decides whether the feature is usable at all. A bare COUNT(*) means
@@ -3288,12 +3317,14 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
        from a clamped 31st. currency likewise: afterwards the number is just a
        number, and the client's base currency follows whatever was last picked. */
     const inserted = await db.query(
-      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day, currency) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay, currency]
+      'INSERT INTO subscriptions (user_id, name, price, billing_cycle, category, next_billing_date, trial_end_date, billing_anchor_day, currency, client_ref) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+      [req.userId, name, price, billingCycle, category, billingDate, trialEndDate || null, anchorDay, currency, clientRef]
     );
     return { row: inserted.rows[0] };
     });
     if (outcome.status) return res.status(outcome.status).json(outcome.body);
+    // Already saved and already announced the first time: just the row.
+    if (outcome.replay) return res.json(trpc(formatSub(outcome.row)));
     const result = { rows: [outcome.row] };
     /* The row's own currency, in the reader's number format and language, so a
        euro row reads "Netflix (15,99 € pro Monat) wurde hinzugefügt." See
