@@ -283,14 +283,11 @@
     "later": "Vielleicht später"
   },
   "analytics": {
-    "monthlySpend": "Monatliche Ausgaben",
-    "yearlyProjection": "Jahresprognose",
     "spendingByCategory": "Ausgaben nach Kategorie",
     "summary": "Übersicht",
-    "activeNow": "Aktuell aktiv",
-    "totalAdded": "Gesamt hinzugefügt",
+    "activeNow": "Aktive Abos",
+    "totalAdded": "Insgesamt hinzugefügt",
     "avgPerSub": "Durchschnitt pro Abo",
-    "avgPerYear": "Durchschnitt pro Jahr",
     "noSpendingData": "Noch keine Ausgabendaten",
     "couldntLoad": "Analyse konnte nicht geladen werden.",
     "overBudget": "Budget überschritten",
@@ -298,12 +295,14 @@
     "hiddenCategories_one": "{{count}} weitere Kategorie ausgeblendet",
     "hiddenCategories_other": "{{count}} weitere Kategorien ausgeblendet",
     "hiddenCategoriesDesc": "Sieh die vollständige Aufschlüsselung deiner Ausgaben nach Kategorie.",
-    "totalSpending": "Gesamtausgaben",
     "weeklySpending": "Wöchentliche Ausgaben",
     "weeklySpendingDesc": "Sieh genau, in welchen Wochen deine Abos am stärksten zuschlagen, damit dich nichts überrascht.",
     "week": "Woche {{number}}",
     "otherCategories_one": "{{count}} weitere Kategorie",
-    "otherCategories_other": "{{count}} weitere Kategorien"
+    "otherCategories_other": "{{count}} weitere Kategorien",
+    "perMonth": "Pro Monat",
+    "perYearMeta": "{{amount}} im Jahr",
+    "share": "{{percent}} %"
   },
   "onboarding": {
     "slide1Title": "Alle Abos im Blick",

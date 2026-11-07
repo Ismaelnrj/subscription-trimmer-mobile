@@ -1,6 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,9 +9,8 @@ import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { PremiumGate } from "../../components/PremiumGate";
-import { DonutChart } from "../../components/DonutChart";
 import { WeeklyBarChart } from "../../components/WeeklyBarChart";
-import { useTheme, useIsDark, AppColors } from "../../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { getCategoryIcon } from "../../lib/categories";
 import { useCategoryLabel } from "../../lib/category-label";
@@ -32,7 +30,6 @@ export default function AnalyticsScreen() {
   const { user } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
-  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const categoryLabel = useCategoryLabel();
@@ -107,10 +104,10 @@ export default function AnalyticsScreen() {
   if (isError) {
     return (
       <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
         <Text style={styles.emptyStateText}>{t("analytics.couldntLoad")}</Text>
-        <TouchableOpacity style={{ marginTop: 16 }} onPress={onRefresh}>
-          <Text style={{ color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" }}>{t("common.tryAgain")}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRefresh} accessibilityRole="button">
+          <Text style={styles.retryText}>{t("common.tryAgain")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -155,10 +152,23 @@ export default function AnalyticsScreen() {
   const shownCount = isPremium ? DONUT_SLICES : 1;
   const visibleCategories = sortedCategories.slice(0, shownCount);
   const hiddenTotal = sortedCategories.slice(shownCount).reduce((sum: number, cat: any) => sum + cat.amount, 0);
-  const donutSegments = [
-    ...visibleCategories.map((cat: any) => ({ value: cat.amount, color: getCategoryIcon(cat.category).color })),
-    ...(hiddenTotal > 0 ? [{ value: hiddenTotal, color: c.border }] : []),
+  /* Each part's share of the whole, for the split bar and the rows under it.
+     The whole is every category, hidden ones included, so the shares add up to
+     the bar the reader sees. */
+  const categoryTotal = sortedCategories.reduce((sum: number, cat: any) => sum + cat.amount, 0);
+  const sharePct = (amount: number) => {
+    if (categoryTotal <= 0) return "";
+    const pct = (amount / categoryTotal) * 100;
+    return t("analytics.share", { percent: pct > 0 && pct < 1 ? "<1" : String(Math.round(pct)) });
+  };
+  /* The folded tail is a neutral, never a category colour. c.border was right
+     for a donut's track and is invisible as a segment (1.3:1 on the card). */
+  const restColor = c.textMuted;
+  const parts = [
+    ...visibleCategories.map((cat: any) => ({ key: cat.category, value: cat.amount, color: getCategoryIcon(cat.category).color })),
+    ...(hiddenTotal > 0 ? [{ key: "__rest", value: hiddenTotal, color: restColor }] : []),
   ];
+  const average = monthly / Math.max(1, summary?.activeSubscriptions ?? 1);
 
   return (
     <ScrollView
@@ -168,182 +178,160 @@ export default function AnalyticsScreen() {
     >
       <View style={styles.scrollContent}>
         {isStale && <OfflineNotice />}
-        {isDark ? (
-          <LinearGradient
-            colors={["#245F52", "#2F8E71"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.heroCard}
-          >
-            <Text style={styles.heroLabelOnGradient}>{t("analytics.totalSpending")}</Text>
-            <Text style={styles.heroValueOnGradient}>{fmtTotal(monthly)}</Text>
-            {budgetGoal != null && (
-              <Text style={styles.heroBudgetOnGradient}>
-                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
-              </Text>
-            )}
-          </LinearGradient>
-        ) : (
-          <View style={[styles.heroCard, styles.heroCardLight]}>
-            <Text style={styles.heroLabel}>{t("analytics.totalSpending")}</Text>
-            <Text style={styles.heroValue}>{fmtTotal(monthly)}</Text>
-            {budgetGoal != null && (
-              <Text style={{ fontSize: 12, color: monthly > budgetGoal ? c.danger : c.textSecondary, marginTop: 6 }}>
-                {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
-              </Text>
-            )}
-          </View>
-        )}
 
-        {/* Hero already covers the monthly figure -- only the yearly
-            projection is genuinely new information here. */}
-        <View style={styles.yearlyCard}>
-          <Text style={styles.summaryTitleCompact}>{t("analytics.yearlyProjection")}</Text>
-          <Text style={styles.summaryValueCompact}>{fmtTotal(yearly)}</Text>
+        {/* One figure leads, as on the dashboard. The yearly projection was a
+            card of its own and is a line under it now. */}
+        <View style={styles.summary}>
+          <Text style={styles.summaryLabel}>{t("analytics.perMonth")}</Text>
+          <Text style={styles.summaryValue}>{fmtTotal(monthly)}</Text>
+          <Text style={styles.summaryMeta}>{t("analytics.perYearMeta", { amount: fmtTotal(yearly) })}</Text>
+          {budgetGoal != null && (
+            <Text style={[styles.budgetLine, { color: monthly > budgetGoal ? c.danger : c.textSecondary }]}>
+              {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
+            </Text>
+          )}
         </View>
 
-        <Text style={styles.sectionTitle}>{t("analytics.spendingByCategory")}</Text>
+        {/* "Per month" is said once, here, rather than as "/Monat" on every
+            row, which pushed German category names into an ellipsis. */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionHeaderTitle}>{t("analytics.spendingByCategory")}</Text>
+          <Text style={styles.sectionHeaderNote}>{t("analytics.perMonth")}</Text>
+        </View>
 
         {(!summary?.categoryBreakdown || summary.categoryBreakdown.length === 0) ? (
-          <View style={styles.emptyStateCompact}>
-            <MaterialCommunityIcons name="chart-box-outline" size={28} color={c.border} style={{ marginBottom: 6 }} />
+          <View style={[styles.card, styles.emptyCard]}>
             <Text style={styles.emptyStateText}>{t("analytics.noSpendingData")}</Text>
           </View>
         ) : (
-          <View style={styles.donutCard}>
-            <View style={styles.donutRow}>
-              <DonutChart segments={donutSegments} trackColor={c.border} />
-              <View style={styles.legendColumn}>
-                {visibleCategories.map((cat: any) => (
-                  <View key={cat.category} style={styles.legendRow}>
-                    <View style={[styles.legendDot, { backgroundColor: getCategoryIcon(cat.category).color }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.legendName} numberOfLines={1}>{categoryLabel(cat.category)}</Text>
-                      <Text style={styles.legendAmount}>{fmtTotal(cat.amount)}{t("common.perMonthShort")}</Text>
-                    </View>
-                  </View>
-                ))}
-                {/* The donut already draws this slice; without the row it is
-                    an unexplained grey wedge. */}
-                {hiddenTotal > 0 && (
-                  <View style={styles.legendRow}>
-                    <View style={[styles.legendDot, { backgroundColor: c.border }]} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.legendName} numberOfLines={1}>
-                        {t("analytics.otherCategories", { count: sortedCategories.length - shownCount })}
-                      </Text>
-                      <Text style={styles.legendAmount}>{fmtTotal(hiddenTotal)}{t("common.perMonthShort")}</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
+          <View style={styles.card}>
+            {/* A thin split bar above rows that carry every name and figure,
+                which is the dataviz skill's form for a split read beside its
+                numbers. It replaced a donut: a donut is the weakest way to
+                compare parts, and its side legend truncated German names.
+                The rows are the readable copy, so the bar is hidden from a
+                screen reader rather than read twice. */}
+            <View style={styles.splitBar} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              {parts.map((part) => (
+                <View key={part.key} style={{ flex: part.value, backgroundColor: part.color }} />
+              ))}
             </View>
+            {visibleCategories.map((cat: any, i: number) => (
+              <View key={cat.category} style={[styles.row, i > 0 && styles.rowDivider]}>
+                <View style={[styles.swatch, { backgroundColor: getCategoryIcon(cat.category).color }]} />
+                <Text style={styles.rowTitle} numberOfLines={1}>{categoryLabel(cat.category)}</Text>
+                <Text style={styles.rowShare}>{sharePct(cat.amount)}</Text>
+                <Text style={styles.rowAmount}>{fmtTotal(cat.amount)}</Text>
+              </View>
+            ))}
+            {/* The bar already draws this part; without the row it is an
+                unexplained grey block. */}
+            {hiddenTotal > 0 && (
+              <View style={[styles.row, styles.rowDivider]}>
+                <View style={[styles.swatch, { backgroundColor: restColor }]} />
+                <Text style={styles.rowTitle} numberOfLines={1}>
+                  {t("analytics.otherCategories", { count: sortedCategories.length - shownCount })}
+                </Text>
+                <Text style={styles.rowShare}>{sharePct(hiddenTotal)}</Text>
+                <Text style={styles.rowAmount}>{fmtTotal(hiddenTotal)}</Text>
+              </View>
+            )}
           </View>
         )}
 
         {!isPremium && sortedCategories.length > 1 && (
-          <PremiumGate
-            title={t("analytics.hiddenCategories", { count: sortedCategories.length - 1 })}
-            description={t("analytics.hiddenCategoriesDesc")}
-          />
+          <View style={styles.gateGap}>
+            <PremiumGate
+              title={t("analytics.hiddenCategories", { count: sortedCategories.length - 1 })}
+              description={t("analytics.hiddenCategoriesDesc")}
+            />
+          </View>
         )}
 
-        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t("analytics.weeklySpending")}</Text>
+        {/* Without Premium the card below carries this title itself, so the
+            section heading would say it twice. */}
+        {isPremium && <Text style={styles.sectionTitle}>{t("analytics.weeklySpending")}</Text>}
         {isPremium ? (
-          <View style={styles.weeklyCard}>
+          <View style={[styles.card, styles.chartCard]}>
             <WeeklyBarChart
               values={weeklyBuckets}
               labels={weeklyBuckets.map((_, i) => t("analytics.week", { number: i + 1 }))}
+              formatValue={(n) => fmtTotal(n)}
               c={c}
             />
           </View>
         ) : (
-          <PremiumGate title={t("analytics.weeklySpending")} description={t("analytics.weeklySpendingDesc")} />
+          <View style={styles.gateAlone}>
+            <PremiumGate title={t("analytics.weeklySpending")} description={t("analytics.weeklySpendingDesc")} />
+          </View>
         )}
 
-        <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t("analytics.summary")}</Text>
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryRow}>
-            <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>{t("analytics.activeNow")}</Text>
-              <Text style={styles.statPairValue}>{summary?.activeSubscriptions ?? 0}</Text>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.statPair}>
-              <Text style={styles.statPairLabel}>{t("analytics.totalAdded")}</Text>
-              <Text style={styles.statPairValue}>{summary?.totalSubscriptions ?? 0}</Text>
-            </View>
+        <Text style={styles.sectionTitle}>{t("analytics.summary")}</Text>
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Text style={styles.rowTitle}>{t("analytics.activeNow")}</Text>
+            <Text style={styles.rowAmount}>{summary?.activeSubscriptions ?? 0}</Text>
           </View>
+          <View style={[styles.row, styles.rowDivider]}>
+            <Text style={styles.rowTitle}>{t("analytics.totalAdded")}</Text>
+            <Text style={styles.rowAmount}>{summary?.totalSubscriptions ?? 0}</Text>
+          </View>
+          {(summary?.activeSubscriptions ?? 0) > 0 && (
+            <View style={[styles.row, styles.rowDivider]}>
+              <Text style={styles.rowTitle}>{t("analytics.avgPerSub")}</Text>
+              <Text style={styles.rowAmount}>{fmtTotal(average)}{t("common.perMonthShort")}</Text>
+            </View>
+          )}
         </View>
-        {(summary?.activeSubscriptions ?? 0) > 0 && (
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <View style={styles.statPair}>
-                <Text style={styles.statPairLabel}>{t("analytics.avgPerSub")}</Text>
-                <Text style={styles.statPairValue}>{fmtTotal(monthly / (summary?.activeSubscriptions ?? 1))}{t("common.perMonthShort")}</Text>
-              </View>
-              <View style={styles.divider} />
-              <View style={styles.statPair}>
-                <Text style={styles.statPairLabel}>{t("analytics.avgPerYear")}</Text>
-                <Text style={styles.statPairValue}>{fmtTotal((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}{t("common.perYearShort")}</Text>
-              </View>
-            </View>
-          </View>
-        )}
       </View>
     </ScrollView>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
-    heroCard: { borderRadius: 20, padding: 24, marginBottom: 16 },
-    heroCardLight: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-    heroLabel: { fontSize: 13, color: c.textSecondary, marginBottom: 6 },
-    heroValue: { fontSize: 34, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.75)", marginBottom: 6 },
-    heroValueOnGradient: { fontSize: 34, fontWeight: "700", fontFamily: "Montserrat-Bold", color: "#FFFFFF" },
-    heroBudgetOnGradient: { fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 6 },
-    yearlyCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80, paddingHorizontal: space.xl },
+
+    summary: { marginBottom: space.s },
+    summaryLabel: { ...typeScale.caption, color: c.textSecondary },
+    summaryValue: { ...typeScale.display, color: c.text, marginTop: space.xs },
+    summaryMeta: { ...typeScale.body, color: c.textSecondary, marginTop: space.xs },
+    budgetLine: { ...typeScale.label, marginTop: space.s },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    sectionHeader: {
+      flexDirection: "row", alignItems: "baseline", justifyContent: "space-between",
+      gap: space.m, marginTop: space.xl, marginBottom: space.s,
     },
-    summaryCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border,
+    sectionHeaderTitle: { ...typeScale.heading, color: c.text, flexShrink: 1 },
+    sectionHeaderNote: { ...typeScale.caption, color: c.textSecondary },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    summaryRow: { flexDirection: "row", justifyContent: "space-between" },
-    summaryTitleCompact: {
-      fontSize: 11, color: c.textSecondary, marginBottom: 4,
-      textTransform: "uppercase", letterSpacing: 0.5,
+    emptyCard: { paddingVertical: space.xl, alignItems: "center" },
+    chartCard: { paddingTop: space.l, paddingBottom: space.m },
+    gateGap: { marginTop: space.m },
+    gateAlone: { marginTop: space.xl },
+
+    /* Thin split bar: 8px, fully rounded ends, a 2px gap in the card colour
+       between parts so neighbours never need to contrast with each other. */
+    splitBar: {
+      flexDirection: "row", height: 8, gap: 2, borderRadius: radius.pill,
+      overflow: "hidden", marginTop: space.l, marginBottom: space.m,
     },
-    summaryValueCompact: { fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    sectionTitle: {
-      fontSize: 16, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12, marginTop: 8,
-    },
-    donutCard: {
-      backgroundColor: c.card, borderRadius: 14, padding: 16, marginBottom: 8,
-      borderWidth: 1, borderColor: c.border,
-    },
-    donutRow: { flexDirection: "row", alignItems: "center", gap: 20 },
-    legendColumn: { flex: 1, gap: 12 },
-    legendRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-    legendDot: { width: 10, height: 10, borderRadius: 5 },
-    legendName: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, textTransform: "capitalize" },
-    legendAmount: { fontSize: 12, color: c.textSecondary, marginTop: 1 },
-    weeklyCard: {
-      backgroundColor: c.card, borderRadius: 14, padding: 16, marginBottom: 8,
-      borderWidth: 1, borderColor: c.border,
-    },
-    emptyState: { alignItems: "center", paddingVertical: 48 },
-    emptyStateCompact: { alignItems: "center", paddingVertical: 16 },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    statPair: { flex: 1 },
-    statPairLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 },
-    statPairValue: { fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    divider: { width: 1, backgroundColor: c.border, marginHorizontal: 12 },
+    row: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingVertical: space.m, gap: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    swatch: { width: 10, height: 10, borderRadius: radius.pill },
+    rowTitle: { ...typeScale.body, color: c.text, flex: 1 },
+    rowShare: { ...typeScale.caption, ...tabular, color: c.textSecondary, minWidth: 40, textAlign: "right" },
+    rowAmount: { ...typeScale.bodyStrong, ...tabular, color: c.text, minWidth: 64, textAlign: "right" },
+
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
+    retryButton: { marginTop: space.l, minHeight: 48, paddingHorizontal: space.xl, justifyContent: "center" },
+    retryText: { ...typeScale.bodyStrong, color: c.text },
   });
 }

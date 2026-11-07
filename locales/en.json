@@ -283,14 +283,11 @@
     "later": "Maybe later"
   },
   "analytics": {
-    "monthlySpend": "Monthly Spend",
-    "yearlyProjection": "Yearly Projection",
-    "spendingByCategory": "Spending by Category",
+    "spendingByCategory": "Spending by category",
     "summary": "Summary",
-    "activeNow": "Active Now",
-    "totalAdded": "Total Added (All Time)",
-    "avgPerSub": "Avg per Subscription",
-    "avgPerYear": "Avg per Year",
+    "activeNow": "Active subscriptions",
+    "totalAdded": "Added in total",
+    "avgPerSub": "Average per subscription",
     "noSpendingData": "No spending data yet",
     "couldntLoad": "Couldn't load analytics.",
     "overBudget": "Over budget",
@@ -298,12 +295,14 @@
     "hiddenCategories_one": "{{count}} more category hidden",
     "hiddenCategories_other": "{{count}} more categories hidden",
     "hiddenCategoriesDesc": "See your full spending breakdown by category and identify exactly where your money is going.",
-    "totalSpending": "Total Spending",
-    "weeklySpending": "Weekly Spending",
+    "weeklySpending": "Weekly spending",
     "weeklySpendingDesc": "See exactly which weeks your subscriptions hit hardest, so nothing catches you off guard.",
     "week": "Week {{number}}",
     "otherCategories_one": "{{count}} other category",
-    "otherCategories_other": "{{count}} other categories"
+    "otherCategories_other": "{{count}} other categories",
+    "perMonth": "Per month",
+    "perYearMeta": "{{amount}} a year",
+    "share": "{{percent}}%"
   },
   "onboarding": {
     "slide1Title": "Track every subscription",
