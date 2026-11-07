@@ -2040,6 +2040,47 @@ last one left off without needing a recap typed out.
   route answers 503). Both are fine for most checks and must be named when a
   change touches them.
 
+- A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
+  2026-11-07. This corrects every entry here saying a cloud session has no
+  node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
+  through the proxy (node_modules is gitignored). After it,
+  `python3 tools/typecheck.py` runs the PINNED compiler ("Typecheck clean
+  (typescript 5.3.3, pinned 5.3.3)") and `pnpm test` runs the whole suite (80
+  suites, 1069 tests in 17 s). Run both before pushing; CI stays the record.
+  SEEING THE APP: no Android emulator is possible here (no /dev/kvm, no binder
+  in /proc/filesystems, so neither the SDK emulator nor redroid), but the REAL
+  app renders in Chromium through react-native-web, real Montserrat included.
+  Recipe, all in a SCRATCH copy, never the repo: `git archive HEAD | tar -x`,
+  `pnpm install --frozen-lockfile`, `pnpm add react-native-web@0.20.0`, replace
+  `node_modules/expo-secure-store/build/ExpoSecureStore.web.js` (an empty object
+  upstream) with a localStorage stand in implementing get/set/deleteValueWithKey
+  Async and Sync, `CI=1 npx expo export --platform web --output-dir dist-web
+  --clear`, serve dist-web with an index.html fallback. Boot the real backend on
+  local PostgreSQL (entry above), register through the API, then in Playwright
+  `addInitScript` sets localStorage `ss_auth_token`, `ss_refresh_token`,
+  `ss_onboarding_done`=`true`, `ss_app_language`, `ss_theme_mode`,
+  `ss_selected_currency`, `ss_base_currency_code`, and `context.route` sends the
+  Railway host to 127.0.0.1:3000 with CORS headers added. 390x844 viewport.
+  WHAT IT CANNOT SHOW: prices on the purchase screen read "Price unavailable",
+  because RevenueCat runs in browser mode with no offerings. That is the
+  harness, not a bug. Shadows and the status bar differ slightly from Android.
+  The phone stays the final check.
+  THIRD PARTY "SCREENSHOT" TOOLS WERE LOOKED AT AND ARE NOT NEEDED.
+  `claude-show-your-work` draws images inside Ghostty or kitty on macOS and
+  Linux (the owner works in PowerShell on Windows, and this session is a cloud
+  one), updates itself daily from its author's repository and sends usage to
+  PostHog by default; its screenshots come from Playwright, which is already
+  here. Android MCP servers (mobile-mcp, mcp-android-emulator, adb-mcp) all
+  need adb plus a running emulator or device, which is the thing a sandbox
+  cannot have.
+  ITS FIRST RUN FOUND TWO DEFECTS, fixed the same day with
+  `__tests__/honest-labels.test.js` (5 of 5 failing before): the purchase
+  screen listed "AI Recommendations" / "KI-Empfehlungen" for rule based tips
+  (no model is called anywhere), now "Savings recommendations" /
+  "Sparempfehlungen"; and English dates used date-fns "P", so 3 February 2027
+  read "02/03/2027", which a European takes for 2 March. "PP" names the month
+  ("Feb 3, 2027", "3. Feb. 2027"). Client only, rides the next `eas update`.
+
 - `initDB` COULD NOT BUILD AN EMPTY DATABASE, found 2026-10-01 while measuring
   the funnel SQL against the real schema. FIXED THE SAME DAY, see the end of this
   entry. It ran
