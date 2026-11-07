@@ -159,6 +159,8 @@ Ob Streaming, Software, Fitnessstudio, Versicherung oder ein Probeabo, das du l�
 
 Trimio Premium
 
+Neue Konten bekommen 14 Tage Premium kostenlos, ohne Kartendaten. Danach wird nichts abgebucht: Du wählst einen Plan oder nutzt die kostenlose Version weiter.
+
 Mit Trimio Premium verwaltest du unbegrenzt viele Abonnements und bekommst zusätzlich Ausgabenanalysen nach Kategorie, E-Mail-Erinnerungen vor jeder Verlängerung, eigene Kategorien und den Export deiner Daten als CSV.
 
 Trimio wurde entwickelt, um dir mehr Klarheit über wiederkehrende Zahlungen zu geben, ohne unnötige Komplexität und ohne Bankzugang.

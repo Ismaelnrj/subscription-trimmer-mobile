@@ -76,7 +76,7 @@ STAY IN CONTROL
 • Sign in with email or Google, your choice
 
 FREE TO START
-Track your first subscriptions for free. Upgrade to Premium for unlimited subscriptions and full access to cost-saving insights: monthly, yearly, or a one-time lifetime purchase.
+New accounts get 14 days of Premium free, no card needed. Nothing is charged when it ends: you choose a plan, or carry on with the free version, where your first subscriptions stay free. Premium gives you unlimited subscriptions and full access to cost-saving insights: monthly, yearly, or a one-time lifetime purchase.
 
 Your data belongs to you. Trimio doesn't sell your personal information, and you can permanently delete your account and data at any time from within the app.
 ```

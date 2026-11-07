@@ -185,3 +185,36 @@ describe("copy", () => {
     expect(de.referFriend.bonusActive).toBe("Kostenloses Premium aktiv bis {{date}}");
   });
 });
+
+describe("the dashboard shows free Premium where a new user lands", () => {
+  const dashboard = code(read("app/(tabs)/index.tsx"));
+
+  it("on the first run too, not only once a subscription exists", () => {
+    expect(dashboard).toMatch(/\{isFirstRun && freePremiumRow && \(/);
+    expect(dashboard).toMatch(/<QuietRow r=\{freePremiumRow\} divider=\{false\}/);
+  });
+
+  it("during free Premium the budget row leads to the setting, not the paywall", () => {
+    expect(dashboard).toMatch(
+      /freeUntil && settings && settings\.budgetGoal == null\s*\?\s*\[\{ key: "budget",[^\]]*router\.push\("\/account-settings"\)/,
+    );
+  });
+});
+
+describe("every surface that names the trial length agrees with the server", () => {
+  /* The site, the store listings and this default must move together. A
+     PREMIUM_TRIAL_DAYS set in Railway is invisible here, so changing it there
+     means changing these too (CLAUDE.md says so beside the variable). */
+  const block = server.slice(server.indexOf("const PREMIUM_TRIAL_DAYS = (() => {"));
+  const days = Number(block.match(/if \(raw == null \|\| raw === ''\) return (\d+);/)[1]);
+
+  it("the default is the 14 days every surface promises", () => expect(days).toBe(14));
+  it("the site says it in both languages", () => {
+    expect(read("tools/landing-source.html")).toContain(`<span>${days} days of Premium free</span>`);
+    expect(JSON.parse(read("tools/landing-de.json"))[`${days} days of Premium free`]).toBe(`${days} Tage Premium kostenlos`);
+  });
+  it("both store listings say it", () => {
+    expect(read("store-listing-en.md")).toContain(`New accounts get ${days} days of Premium free`);
+    expect(read("store-listing-de.md")).toContain(`Neue Konten bekommen ${days} Tage Premium kostenlos`);
+  });
+});

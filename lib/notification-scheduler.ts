@@ -146,17 +146,19 @@ const LEAD_TIME_KEYS: Record<number, string> = {
 
 /** Enqueue one notification, session-aware on both sides of the await.
  *
- *  Returns false if the session moved while the OS was working, in which case
+ *  Returns null if the session moved while the OS was working, in which case
  *  the notification it just created is cancelled again by its identifier. The
  *  caller uses that answer to stop rather than carrying on to the next enqueue,
- *  which is the half the trial reminder was missing. */
+ *  which is the half the trial reminder was missing. Otherwise returns the
+ *  identifier, which the free Premium reminder keeps so it can be withdrawn
+ *  when the account stops being on free Premium. */
 async function enqueue(
   /* Derived from the function rather than naming the exported type, so it
      cannot drift if expo-notifications renames it at an SDK bump. */
   request: Parameters<typeof Notifications.scheduleNotificationAsync>[0],
   generation: number
-): Promise<boolean> {
-  if (sessionGeneration !== generation) return false;
+): Promise<string | null> {
+  if (sessionGeneration !== generation) return null;
   const id = await Notifications.scheduleNotificationAsync(request);
   if (sessionGeneration !== generation) {
     try {
@@ -164,9 +166,37 @@ async function enqueue(
     } catch {
       // Best effort. The sweep in cancelAllReminders is the other half.
     }
-    return false;
+    return null;
   }
-  return true;
+  return id;
+}
+
+/* FREE PREMIUM ENDING, the reverse trial's reminder (the owner's yes,
+   2026-11-07). Every new account gets 14 days of Premium with no card, and
+   nothing is charged when it ends, so this is not a warning about money: it
+   says when the free days stop, two days ahead at 09:00 (the day before when
+   that has passed, nothing when both have). A referral bonus ends the same way
+   and gets the same reminder, which is true of it too.
+
+   THE END DATE IS HELD HERE, set by the auth store whenever the user changes,
+   rather than passed by the three callers of scheduleRenewalReminders. Every
+   run starts by cancelling the whole queue, so a caller that forgot to pass
+   it would silently remove the reminder; this way none of them can.
+
+   WITHDRAWN AS SOON AS IT STOPS BEING TRUE. Buying a plan during the trial
+   turns freePremiumUntil to null, and a reminder saying "your free Premium
+   ends" must not then reach somebody who is paying, so the setter cancels it
+   by identifier at once instead of waiting for the next run. */
+let freePremiumEnd: string | null = null;
+let freePremiumNotificationId: string | null = null;
+const FREE_PREMIUM_LEAD_DAYS = 2;
+
+export function setFreePremiumEnd(end: string | null): void {
+  if (end === freePremiumEnd) return;
+  freePremiumEnd = end;
+  const id = freePremiumNotificationId;
+  freePremiumNotificationId = null;
+  if (id) Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
 }
 
 /* LATER CYCLES ARE QUEUED TOO, not only the stored next payment. A reminder is
@@ -307,6 +337,33 @@ async function performSchedule(
             myGeneration
           );
           if (!live) return;
+        }
+      }
+    }
+
+    /* Under the push switch like everything else here (the return above),
+       and deliberately not under renewalAlerts: it is about this app's own
+       Premium, not about a renewal. */
+    const freeEnd = freePremiumEnd;
+    if (freeEnd) {
+      const reminder = reminderFor(parseLocalDate(freeEnd.slice(0, 10)), FREE_PREMIUM_LEAD_DAYS, now);
+      if (reminder) {
+        const id = await enqueue(
+          {
+            content: {
+              title: i18n.t("notifications.reminders.freePremiumTitle", { count: reminder.daysBefore }),
+              body: i18n.t("notifications.reminders.freePremiumBody"),
+            },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+          },
+          myGeneration
+        );
+        if (!id) return;
+        // The account left free Premium while this was in flight.
+        if (freePremiumEnd !== freeEnd) {
+          Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+        } else {
+          freePremiumNotificationId = id;
         }
       }
     }

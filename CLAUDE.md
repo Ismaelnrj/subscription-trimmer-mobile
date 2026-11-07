@@ -2085,9 +2085,44 @@ last one left off without needing a recap typed out.
   21 checks, and the Google INSERT executed on the same database; see the
   header of `__tests__/reverse-trial.test.js`, 20 assertions, all failing
   against `10052c97`. Screens rendered in the web preview, both languages.
-  NOT BUILT, and both need the owner's yes first: a reminder before the trial
-  ends (scheduled behaviour, see NEVER CREATE A SCHEDULED ANYTHING), and
-  "14 days of Premium free" on the store listing or the landing page.
+  THE REMINDER AND THE PUBLIC CLAIM ARE BUILT, 2026-11-07, with the owner's
+  yes to both (the reminder is scheduled behaviour, so it was asked first).
+  THE REMINDER is one phone notification two days before free Premium ends,
+  at 09:00 (the day before if that has passed, never a late one), under the
+  push switch but not under renewal alerts, since it is not a renewal. The
+  auth store hands the end date to the scheduler (`setFreePremiumEnd`), so
+  none of the three callers of scheduleRenewalReminders can forget it, and it
+  is withdrawn by identifier the moment free Premium stops being true (a
+  purchase), never left to tell a paying user their free days end.
+  `__tests__/free-premium-reminder.test.js` drives the real scheduler, 10
+  assertions; three planted defects (wrong lead, no withdrawal, gated on
+  renewal alerts) were each caught.
+  THE SITE'S THIRD TRUST CHIP reads "14 days of Premium free" / "14 Tage
+  Premium kostenlos" instead of "Free to start". THE STORE LISTINGS carry it in
+  the FULL description only (English "FREE TO START" paragraph, German "Trimio
+  Premium" paragraph), pasted by the owner. NOT in the title or the short
+  description: Google's metadata policy bans price and promotional wording in
+  the title, icon and developer name ("free for limited time only" is its own
+  example) and says nothing about the short description, which carries the
+  ranking terms and is better left to them.
+  THE NUMBER 14 NOW LIVES IN FIVE PLACES: the server default, the site in both
+  languages and both listings. `reverse-trial.test.js` fails when they
+  disagree. A `PREMIUM_TRIAL_DAYS` set in Railway is invisible to it, so
+  changing the length there means changing the site and the listings too.
+  AN AUDIT BEFORE BUILDING THEM found two gaps, both fixed: the trial was
+  INVISIBLE ON THE FIRST RUN (the quiet card that says it only existed once a
+  subscription was added, so somebody who installed for the promise met no
+  sign of it), and nothing pointed a trial user at the BUDGET, the one Premium
+  feature that only draws once a goal exists, so during free Premium the
+  budget row leads to Account settings instead of the paywall. Checked and
+  fine: over the free limit after the trial the meter reads "8 / 5", every row
+  is kept and add is locked; Premium-only settings fall back cleanly (email
+  reminders stop on the server, the budget bar hides, Insights uses the
+  default threshold).
+  UNTIL THE NEXT `eas update`, a new account on an installed build gets the
+  trial with no word of it and Settings calls it "Premium Member / Manage
+  subscription". Harmless and short lived, which is why the publish should
+  follow the deploy closely.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds

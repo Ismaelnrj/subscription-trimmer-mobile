@@ -275,31 +275,23 @@ export default function DashboardScreen() {
     days <= 0 ? t("dashboard.dueToday") : days === 1 ? t("dashboard.dueTomorrow") : t("dashboard.dueInDays", { count: days });
   const dayMonth = i18n.language?.startsWith("de") ? "d. MMM" : "MMM d";
 
-  type MoreRow = {
-    key: string;
-    icon: string;
-    title: string;
-    meta?: string;
-    tag?: string;
-    tone?: string;
-    onPress: () => void;
-    onDismiss?: () => void;
-  };
   /* While free Premium runs (the reverse trial, a referral bonus), one quiet
      row says until when, leading to the plans. Only inside its last 30 days,
      so a referral balance of months does not sit there all season. */
   const freeUntil = freePremiumUntil(user);
   const freeDays = freeUntil ? daysUntil(freeUntil) : null;
-  const moreRows: MoreRow[] = [
-    ...(freeUntil && freeDays != null && freeDays <= 30
-      ? [{
+  const freePremiumRow: MoreRow | null =
+    freeUntil && freeDays != null && freeDays <= 30
+      ? {
           key: "freePremium",
           icon: "crown-outline",
           title: t("dashboard.freePremiumUntil", { date: fmtD(parseApiDate(freeUntil)!, "PP") }),
           meta: freeDays <= 0 ? t("dashboard.freePremiumEndsToday") : t("dashboard.freePremiumDaysLeft", { count: freeDays }),
           onPress: () => router.push("/upgrade"),
-        }]
-      : []),
+        }
+      : null;
+  const moreRows: MoreRow[] = [
+    ...(freePremiumRow ? [freePremiumRow] : []),
     ...(activeAlertCount > 0
       ? [{ key: "alerts", icon: "bell-outline", title: t("dashboard.alertsCount", { count: activeAlertCount }), tone: c.danger, onPress: () => router.push("/alerts") }]
       : []),
@@ -308,11 +300,20 @@ export default function DashboardScreen() {
       : []),
     ...(!isPremium
       ? [{ key: "budget", icon: "target", title: t("dashboard.budgetUpsell"), tag: t("upgrade.premium"), onPress: () => router.push("/upgrade") }]
-      : []),
+      /* DURING FREE PREMIUM THE SAME ROW LEADS TO THE SETTING ITSELF. A reverse
+         trial only sells what somebody actually tries, and the budget was the
+         one Premium feature nothing pointed a trial user at: the row above is
+         for the free tier, and the budget bar only draws once a goal exists.
+         Not shown to paying users, who chose not to set one. Waits for the
+         settings query, so it does not flash before a saved goal arrives. */
+      : freeUntil && settings && settings.budgetGoal == null
+        ? [{ key: "budget", icon: "target", title: t("dashboard.budgetUpsell"), onPress: () => router.push("/account-settings") }]
+        : []),
     ...(showInviteBanner
       ? [{ key: "invite", icon: "account-plus-outline", title: t("dashboard.inviteBannerCta"), meta: t("dashboard.inviteBannerText"), onPress: handleInviteBannerPress, onDismiss: dismissInviteBanner }]
       : []),
   ];
+
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -358,6 +359,15 @@ export default function DashboardScreen() {
             measurement behind it. The ordinary dashboard returns with the
             first subscription. */}
         {isFirstRun && <FirstRunCard verifyBanner={verifyBanner} />}
+        {/* FREE PREMIUM IS SAID ON THE FIRST RUN TOO. The store listing and the
+            site promise 14 days of Premium, and the quiet card that says it
+            only exists once a subscription is added, so somebody who installed
+            for that promise met no sign of it on the screen they land on. */}
+        {isFirstRun && freePremiumRow && (
+          <View style={[styles.card, styles.cardAfter]}>
+            <QuietRow r={freePremiumRow} divider={false} styles={styles} c={c} dismissLabel={t("common.a11yDismiss")} />
+          </View>
+        )}
 
         {!isFirstRun && (<>
         {/* THE MONEY LEADS. Redone 2026-11-07: the total used to be the fourth
@@ -463,36 +473,58 @@ export default function DashboardScreen() {
         {moreRows.length > 0 && (
           <View style={[styles.card, styles.cardAfter]}>
             {moreRows.map((r, i) => (
-              <TouchableOpacity key={r.key} style={[styles.row, i > 0 && styles.rowDivider]} onPress={r.onPress} activeOpacity={0.7}>
-                <MaterialCommunityIcons name={r.icon as any} size={22} color={r.tone ?? c.textSecondary} />
-                <View style={styles.rowText}>
-                  <Text style={[styles.rowTitle, r.tone ? { color: r.tone } : null]}>{r.title}</Text>
-                  {r.meta ? <Text style={styles.rowMeta}>{r.meta}</Text> : null}
-                </View>
-                {r.tag ? (
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>{r.tag}</Text>
-                  </View>
-                ) : null}
-                {r.onDismiss ? (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={t("common.a11yDismiss")}
-                    onPress={(e) => { e.stopPropagation(); r.onDismiss?.(); }}
-                    hitSlop={12}
-                  >
-                    <MaterialCommunityIcons name="close" size={18} color={c.textMuted} />
-                  </TouchableOpacity>
-                ) : (
-                  <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-                )}
-              </TouchableOpacity>
+              <QuietRow key={r.key} r={r} divider={i > 0} styles={styles} c={c} dismissLabel={t("common.a11yDismiss")} />
             ))}
           </View>
         )}
         </>)}
       </View>
     </ScrollView>
+  );
+}
+
+/* One quiet row of the dashboard's suggestions card. A component rather than a
+   render function, so the handlers it carries are props of a child and plainly
+   not called while rendering. */
+type MoreRow = {
+  key: string;
+  icon: string;
+  title: string;
+  meta?: string;
+  tag?: string;
+  tone?: string;
+  onPress: () => void;
+  onDismiss?: () => void;
+};
+
+function QuietRow({ r, divider, styles, c, dismissLabel }: {
+  r: MoreRow; divider: boolean; styles: ReturnType<typeof makeStyles>; c: AppColors; dismissLabel: string;
+}) {
+  return (
+    <TouchableOpacity style={[styles.row, divider && styles.rowDivider]} onPress={r.onPress} activeOpacity={0.7}>
+      <MaterialCommunityIcons name={r.icon as any} size={22} color={r.tone ?? c.textSecondary} />
+      <View style={styles.rowText}>
+        <Text style={[styles.rowTitle, r.tone ? { color: r.tone } : null]}>{r.title}</Text>
+        {r.meta ? <Text style={styles.rowMeta}>{r.meta}</Text> : null}
+      </View>
+      {r.tag ? (
+        <View style={styles.tag}>
+          <Text style={styles.tagText}>{r.tag}</Text>
+        </View>
+      ) : null}
+      {r.onDismiss ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={dismissLabel}
+          onPress={(e) => { e.stopPropagation(); r.onDismiss?.(); }}
+          hitSlop={12}
+        >
+          <MaterialCommunityIcons name="close" size={18} color={c.textMuted} />
+        </TouchableOpacity>
+      ) : (
+        <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+      )}
+    </TouchableOpacity>
   );
 }
 

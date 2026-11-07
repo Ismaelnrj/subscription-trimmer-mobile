@@ -574,7 +574,10 @@
       "renewTitle": "{{name}} wird {{when}} verlängert",
       "renewBody": "{{amount}} wird am {{date}} abgebucht.",
       "trialTitle": "Testphase von {{name}} endet morgen",
-      "trialBody": "Kündige jetzt, wenn {{amount}} nicht abgebucht werden soll."
+      "trialBody": "Kündige jetzt, wenn {{amount}} nicht abgebucht werden soll.",
+      "freePremiumTitle_one": "Dein kostenloses Premium endet morgen",
+      "freePremiumTitle_other": "Dein kostenloses Premium endet in {{count}} Tagen",
+      "freePremiumBody": "Wähle einen Plan, um es zu behalten, oder nutze die kostenlose Version weiter."
     }
   },
   "verifyEmail": {

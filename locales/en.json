@@ -574,7 +574,10 @@
       "renewTitle": "{{name}} renews {{when}}",
       "renewBody": "{{amount}} will be charged on {{date}}.",
       "trialTitle": "{{name}} trial ends tomorrow",
-      "trialBody": "Cancel now if you do not want to be charged {{amount}}."
+      "trialBody": "Cancel now if you do not want to be charged {{amount}}.",
+      "freePremiumTitle_one": "Your free Premium ends tomorrow",
+      "freePremiumTitle_other": "Your free Premium ends in {{count}} days",
+      "freePremiumBody": "Choose a plan to keep it, or carry on with the free version."
     }
   },
   "verifyEmail": {

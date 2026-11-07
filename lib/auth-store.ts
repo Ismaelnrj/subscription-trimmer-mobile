@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { freePremiumUntil } from "./premium-status";
 import * as SecureStore from "expo-secure-store";
 import { identifyUser, resetAnalytics } from "./analytics";
 import { resetQueryCache } from "./query-client";
@@ -93,6 +94,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user,
       isAuthenticated: !!user,
     });
+    /* The free Premium reminder reads its date from the scheduler, which every
+       scheduling run consults; see setFreePremiumEnd. Null on sign out, on a
+       purchase and once it has ended, which also withdraws a queued one. */
+    const freeEnd = freePremiumUntil(user);
+    import("./notification-scheduler")
+      .then((m) => m.setFreePremiumEnd(freeEnd))
+      .catch(() => {});
   },
 
   setLoading: (isLoading) => {
