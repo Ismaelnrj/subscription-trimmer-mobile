@@ -22,6 +22,7 @@ const REDONE = [
   { file: "app/(tabs)/analytics.tsx", keys: "analytics" },
   { file: "app/(tabs)/profile.tsx", keys: "profile" },
   { file: "app/(tabs)/calendar.tsx", keys: "calendar" },
+  { file: "app/insights.tsx", keys: "insights" },
 ];
 
 // Block and JSX comments may quote the tells they explain.

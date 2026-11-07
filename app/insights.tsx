@@ -9,7 +9,7 @@ import { fetchSubscriptionList } from "../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../lib/theme";
 import { STREAMING_KEYWORDS, FITNESS_KEYWORDS } from "../lib/categories";
 import { findTemplateByExactName, isPriceFresh } from "../lib/service-templates";
 import { daysUntil } from "../lib/utils";
@@ -266,7 +266,7 @@ export function buildTips(
     }
   }
 
-  // Switch monthly → yearly
+  // Switch monthly to yearly
   const monthlySubs = planned.filter(s => s.billingCycle === "monthly" && toBase(s.price, s.currency) >= 5);
   if (monthlySubs.length > 0) {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + toBase(s.price, s.currency) * 0.17, 0) * 12;
@@ -369,6 +369,12 @@ export default function InsightsScreen() {
   // Cap at the user's actual total spend, since real savings can never exceed that.
   const savingsPotential = isPremium ? Math.min(calcSavingsPotential(allTips), monthlyTotal) : 0;
 
+  /* A tip's colour comes from its priority and the theme, never from the hex
+     buildTips carries: those were fixed light-mode values, so a navy icon
+     vanished on the dark card and coral badge text measured 4.12:1. */
+  const toneOf = (tip: Tip) =>
+    tip.id === "all-good" ? c.success : tip.priority === "high" ? c.danger : tip.priority === "medium" ? c.warning : c.textSecondary;
+
   return (
     <>
       <Stack.Screen options={{ title: t("insights.screenTitle"), headerShown: true }} />
@@ -378,28 +384,15 @@ export default function InsightsScreen() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} colors={[c.primary]} tintColor={c.primary} />}
       >
         <View style={styles.content}>
-          <View style={styles.banner}>
-            <View style={styles.bannerLeft}>
-              <MaterialCommunityIcons name="lightbulb-on-outline" size={26} color={c.primary} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={styles.bannerTitle}>{t("insights.spendingSnapshot")}</Text>
-                <Text style={styles.bannerSub}>
-                  {t("insights.snapshot", { count: subscriptions.length, month: fmtC(monthlyTotal), year: fmtC(monthlyTotal * 12) })}
-                </Text>
-              </View>
-              {highCount > 0 && (
-                <View style={styles.alertBadge}>
-                  <Text style={styles.alertBadgeText}>{highCount}</Text>
-                </View>
-              )}
-            </View>
+          {/* What this screen is about, said once, open on the page: what you
+              track, then what you could keep. */}
+          <View style={styles.summary}>
+            <Text style={styles.summaryLabel}>{t("insights.spendingSnapshot")}</Text>
+            <Text style={styles.summaryMeta}>
+              {t("insights.snapshot", { count: subscriptions.length, month: fmtC(monthlyTotal), year: fmtC(monthlyTotal * 12) })}
+            </Text>
             {isPremium && savingsPotential > 0 && (
-              <View style={styles.savingsRow}>
-                <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
-                <Text style={styles.savingsText}>
-                  {t("insights.potential", { amount: fmtC(savingsPotential) })}
-                </Text>
-              </View>
+              <Text style={styles.savingsLine}>{t("insights.potential", { amount: fmtC(savingsPotential) })}</Text>
             )}
           </View>
 
@@ -409,85 +402,82 @@ export default function InsightsScreen() {
             </View>
           ) : isError ? (
             <View style={styles.empty}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={52} color={c.border} />
+              <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} />
               <Text style={styles.emptyTitle}>{t("insights.couldntLoad")}</Text>
               <Text style={styles.emptyText}>{t("insights.pullToRetry")}</Text>
             </View>
           ) : subscriptions.length === 0 ? (
             <View style={styles.empty}>
-              <MaterialCommunityIcons name="inbox-outline" size={52} color={c.border} />
+              <MaterialCommunityIcons name="inbox-outline" size={40} color={c.textMuted} />
               <Text style={styles.emptyTitle}>{t("insights.noSubsTitle")}</Text>
               <Text style={styles.emptyText}>{t("insights.noSubsDesc")}</Text>
-              <TouchableOpacity style={styles.addButton} onPress={() => router.push("/(tabs)/subscriptions")}>
+              <TouchableOpacity style={styles.addButton} onPress={() => router.push("/(tabs)/subscriptions")} accessibilityRole="button">
                 <Text style={styles.addButtonText}>{t("insights.addSub")}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
-              <Text style={styles.sectionLabel}>
-                {t("insights.recommendationCount", { count: tips.length })}
-                {highCount > 0 ? `, ${t("insights.needAttention", { count: highCount })}` : ""}
-              </Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t("insights.recommendationCount", { count: tips.length })}</Text>
+                {highCount > 0 && (
+                  <Text style={[styles.sectionNote, { color: c.danger }]}>{t("insights.needAttention", { count: highCount })}</Text>
+                )}
+              </View>
+
+              <View style={styles.card}>
+                {tips.map((tip, i) => {
+                  const tone = toneOf(tip);
+                  return (
+                    <TouchableOpacity
+                      key={tip.id}
+                      style={[styles.tipRow, i > 0 && styles.rowDivider]}
+                      onPress={() => setSelectedTip(tip)}
+                      activeOpacity={0.75}
+                      accessibilityRole="button"
+                      accessibilityHint={t("insights.tapToRead")}
+                    >
+                      <MaterialCommunityIcons name={tip.icon as any} size={20} color={tone} style={styles.tipIcon} />
+                      <View style={styles.tipBody}>
+                        <Text style={[styles.priority, { color: tip.priority === "low" ? c.textSecondary : tone }]}>
+                          {t(PRIORITY_LABEL_KEY[tip.priority])}
+                        </Text>
+                        <Text style={styles.tipTitle} numberOfLines={2}>{tip.title}</Text>
+                        <Text style={styles.tipDetail} numberOfLines={2}>{tip.detail}</Text>
+                        {tip.savingsHint && <Text style={styles.savingsHint}>{tip.savingsHint}</Text>}
+                      </View>
+                      <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
 
               {lockedCount > 0 && (
-                <PremiumGate
-                  title={t("insights.premiumGateTitle", { count: lockedCount })}
-                  description={t("insights.premiumGateDesc")}
-                />
+                <View style={styles.gateGap}>
+                  <PremiumGate
+                    title={t("insights.premiumGateTitle", { count: lockedCount })}
+                    description={t("insights.premiumGateDesc")}
+                  />
+                </View>
               )}
-
-              {tips.map(tip => (
-                <TouchableOpacity key={tip.id} style={[styles.card, { borderLeftColor: tip.color }]} onPress={() => setSelectedTip(tip)} activeOpacity={0.75}>
-                  <View style={styles.cardRow}>
-                    <View style={[styles.iconBox, { backgroundColor: tip.color + "18" }]}>
-                      <MaterialCommunityIcons name={tip.icon as any} size={22} color={tip.color} />
-                    </View>
-                    <View style={styles.cardBody}>
-                      <View style={styles.cardTitleRow}>
-                        <Text style={styles.cardTitle} numberOfLines={2}>{tip.title}</Text>
-                        <View style={[styles.badge, { backgroundColor: tip.color + "18" }]}>
-                          <Text style={[styles.badgeText, { color: tip.color }]}>
-                            {t(PRIORITY_LABEL_KEY[tip.priority])}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={styles.cardDetail} numberOfLines={2}>{tip.detail}</Text>
-                      {tip.savingsHint && (
-                        <View style={styles.savingsHintRow}>
-                          <MaterialCommunityIcons name="piggy-bank-outline" size={12} color={c.success} />
-                          <Text style={styles.savingsHintText}>{tip.savingsHint}</Text>
-                        </View>
-                      )}
-                    </View>
-                  </View>
-                  <Text style={styles.tapHint}>{t("insights.tapToRead")} →</Text>
-                </TouchableOpacity>
-              ))}
 
               <Modal visible={!!selectedTip} transparent animationType="slide" onRequestClose={() => setSelectedTip(null)}>
                 <Pressable style={styles.modalOverlay} onPress={() => setSelectedTip(null)}>
                   <Pressable style={styles.modalSheet} onPress={() => {}}>
                     {selectedTip && (
                       <>
+                        <View style={styles.sheetHandle} />
                         <View style={styles.modalHeader}>
-                          <View style={[styles.modalIconBox, { backgroundColor: selectedTip.color + "18" }]}>
-                            <MaterialCommunityIcons name={selectedTip.icon as any} size={28} color={selectedTip.color} />
-                          </View>
-                          <View style={[styles.badge, { backgroundColor: selectedTip.color + "18", alignSelf: "flex-start" }]}>
-                            <Text style={[styles.badgeText, { color: selectedTip.color }]}>
-                              {t(PRIORITY_LABEL_KEY[selectedTip.priority])}
-                            </Text>
-                          </View>
+                          <MaterialCommunityIcons name={selectedTip.icon as any} size={24} color={toneOf(selectedTip)} />
+                          <Text style={[styles.priority, { color: selectedTip.priority === "low" ? c.textSecondary : toneOf(selectedTip) }]}>
+                            {t(PRIORITY_LABEL_KEY[selectedTip.priority])}
+                          </Text>
                         </View>
                         <Text style={styles.modalTitle}>{selectedTip.title}</Text>
                         <Text style={styles.modalDetail}>{selectedTip.detail}</Text>
                         {selectedTip.savingsHint && (
-                          <View style={[styles.savingsHintRow, { marginTop: 16, marginBottom: 4 }]}>
-                            <MaterialCommunityIcons name="piggy-bank-outline" size={14} color={c.success} />
-                            <Text style={[styles.savingsHintText, { fontSize: 14 }]}>{selectedTip.savingsHint}</Text>
-                          </View>
+                          <Text style={[styles.savingsHint, styles.modalSavings]}>{selectedTip.savingsHint}</Text>
                         )}
-                        <TouchableOpacity style={[styles.modalClose, { backgroundColor: selectedTip.color }]} onPress={() => setSelectedTip(null)}>
+                        <TouchableOpacity style={styles.modalClose} onPress={() => setSelectedTip(null)} accessibilityRole="button">
                           <Text style={styles.modalCloseText}>{t("insights.gotIt")}</Text>
                         </TouchableOpacity>
                       </>
@@ -503,63 +493,61 @@ export default function InsightsScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, paddingBottom: 40 },
-    banner: {
-      backgroundColor: c.primaryLight, borderRadius: 12, padding: 16, marginBottom: 20,
-    },
-    bannerLeft: { flexDirection: "row", alignItems: "center" },
-    bannerTitle: { fontSize: 15, fontWeight: "700", color: c.text },
-    bannerSub: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
-    alertBadge: {
-      backgroundColor: c.danger, borderRadius: 12, minWidth: 24, height: 24,
-      justifyContent: "center", alignItems: "center", paddingHorizontal: 6,
-    },
-    alertBadgeText: { color: "#fff", fontSize: 12, fontWeight: "700" },
-    savingsRow: {
-      flexDirection: "row", alignItems: "center", gap: 5, marginTop: 10,
-      paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border,
-    },
-    savingsText: { fontSize: 13, fontWeight: "600", color: c.success },
+    content: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: space.xxl },
+
+    summary: { marginBottom: space.s },
+    summaryLabel: { ...typeScale.caption, color: c.textSecondary },
+    summaryMeta: { ...typeScale.bodyStrong, ...tabular, color: c.text, marginTop: space.xs },
+    savingsLine: { ...typeScale.label, color: c.success, marginTop: space.s },
+
     loading: { paddingTop: 60, alignItems: "center" },
-    empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: 24 },
-    emptyTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginTop: 16, marginBottom: 8 },
-    emptyText: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 22 },
+    empty: { alignItems: "center", paddingTop: 48, paddingHorizontal: space.xl },
+    emptyTitle: { ...typeScale.heading, color: c.text, marginTop: space.l, marginBottom: space.s, textAlign: "center" },
+    emptyText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
     addButton: {
-      marginTop: 20, backgroundColor: c.primary, borderRadius: 10,
-      paddingVertical: 12, paddingHorizontal: 32,
+      marginTop: space.xl, backgroundColor: c.text, borderRadius: radius.m,
+      minHeight: 48, paddingHorizontal: space.xxl, justifyContent: "center",
     },
-    addButtonText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-    sectionLabel: { fontSize: 13, color: c.textSecondary, fontWeight: "500", marginBottom: 12 },
+    addButtonText: { ...typeScale.bodyStrong, color: c.bg },
+
+    sectionHeader: {
+      flexDirection: "row", alignItems: "baseline", justifyContent: "space-between",
+      gap: space.m, marginTop: space.xl, marginBottom: space.s,
+    },
+    sectionTitle: { ...typeScale.heading, color: c.text, flexShrink: 1 },
+    sectionNote: { ...typeScale.label },
     card: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border, borderLeftWidth: 4,
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    cardRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-    iconBox: { width: 44, height: 44, borderRadius: 10, justifyContent: "center", alignItems: "center", flexShrink: 0 },
-    cardBody: { flex: 1 },
-    cardTitleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6, gap: 8 },
-    cardTitle: { fontSize: 14, fontWeight: "700", color: c.text, flex: 1 },
-    badge: { borderRadius: 6, paddingVertical: 2, paddingHorizontal: 7, flexShrink: 0 },
-    badgeText: { fontSize: 11, fontWeight: "600" },
-    cardDetail: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
-    savingsHintRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
-    savingsHintText: { fontSize: 12, fontWeight: "600", color: c.success },
-    tapHint: { fontSize: 11, color: c.textMuted, textAlign: "right", marginTop: 8 },
+    gateGap: { marginTop: space.l },
+    tipRow: { flexDirection: "row", alignItems: "flex-start", gap: space.m, paddingVertical: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    tipIcon: { marginTop: 2 },
+    tipBody: { flex: 1 },
+    priority: { ...typeScale.label, marginBottom: 2 },
+    tipTitle: { ...typeScale.bodyStrong, color: c.text },
+    tipDetail: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    savingsHint: { ...typeScale.label, color: c.success, marginTop: space.s },
+
     modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
     modalSheet: {
-      backgroundColor: c.card, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-      padding: 24, paddingBottom: 40,
+      backgroundColor: c.card, borderTopLeftRadius: radius.l, borderTopRightRadius: radius.l,
+      paddingHorizontal: space.xl, paddingTop: space.m, paddingBottom: 40,
     },
-    modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-    modalIconBox: { width: 52, height: 52, borderRadius: 14, justifyContent: "center", alignItems: "center" },
-    modalTitle: { fontSize: 18, fontWeight: "700", color: c.text, marginBottom: 12, lineHeight: 26 },
-    modalDetail: { fontSize: 15, color: c.textSecondary, lineHeight: 24 },
+    sheetHandle: { alignSelf: "center", width: 36, height: 4, borderRadius: radius.pill, backgroundColor: c.border, marginBottom: space.l },
+    modalHeader: { flexDirection: "row", alignItems: "center", gap: space.s, marginBottom: space.m },
+    modalTitle: { ...typeScale.title, color: c.text, marginBottom: space.m },
+    modalDetail: { ...typeScale.body, color: c.textSecondary },
+    modalSavings: { marginTop: space.l },
     modalClose: {
-      borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 24,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      alignItems: "center", justifyContent: "center", marginTop: space.xl,
     },
-    modalCloseText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    modalCloseText: { ...typeScale.bodyStrong, color: c.bg },
   });
 }
