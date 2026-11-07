@@ -10,7 +10,7 @@ import { fetchSubscriptionList } from "../lib/subscription-list";
 import { isPendingRow, removePending } from "../lib/pending-subscriptions";
 import { rescheduleRemindersFromCache } from "../lib/reminders-from-cache";
 import { useFmt } from "../lib/currency-store";
-import { useDateFormat } from "../lib/date-locale";
+import { useDateFormat, dayMonthPattern } from "../lib/date-locale";
 import { useCycleLabel } from "../lib/cycle-label";
 import { useTheme, useIsDark, AppColors } from "../lib/theme";
 import { LogoImage } from "../components/LogoImage";
@@ -28,7 +28,7 @@ export default function SubscriptionDetailsScreen() {
   const c = useTheme();
   const isDark = useIsDark();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmtC = useFmt();
   const fmtD = useDateFormat();
   const cycleLabel = useCycleLabel();
@@ -176,7 +176,7 @@ export default function SubscriptionDetailsScreen() {
             upcoming.map(({ date }, i) => (
               <View key={i} style={styles.renewalRow}>
                 <MaterialCommunityIcons name="calendar-check-outline" size={18} color={c.textSecondary} />
-                <Text style={styles.renewalDate}>{fmtD(date, "EEEE, MMMM d")}</Text>
+                <Text style={styles.renewalDate}>{fmtD(date, dayMonthPattern(i18n.language, { weekday: true }))}</Text>
                 <Text style={styles.renewalPrice}>{fmtC(sub.price, sub.currency)}</Text>
               </View>
             ))

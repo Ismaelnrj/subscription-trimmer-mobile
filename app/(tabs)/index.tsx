@@ -8,7 +8,7 @@ import apiClient from "../../lib/api";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { livePlanned } from "../../lib/recurrence";
 import { daysUntil, parseApiDate } from "../../lib/utils";
-import { useDateFormat } from "../../lib/date-locale";
+import { useDateFormat, dayMonthPattern } from "../../lib/date-locale";
 import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
 import { freePremiumUntil } from "../../lib/premium-status";
@@ -273,7 +273,7 @@ export default function DashboardScreen() {
     .slice(0, 4);
   const dueText = (days: number) =>
     days <= 0 ? t("dashboard.dueToday") : days === 1 ? t("dashboard.dueTomorrow") : t("dashboard.dueInDays", { count: days });
-  const dayMonth = i18n.language?.startsWith("de") ? "d. MMM" : "MMM d";
+  const dayMonth = dayMonthPattern(i18n.language);
 
   /* While free Premium runs (the reverse trial, a referral bonus), one quiet
      row says until when, leading to the plans. Only inside its last 30 days,

@@ -16,6 +16,18 @@ export function dateLocaleFor(language: string) {
   return language?.startsWith("de") ? de : enUS;
 }
 
+/* A DAY AND MONTH WITHOUT THE YEAR, in the order the reader's language writes
+   it. A locale changes the month NAME but not the ORDER a pattern spells out,
+   so "MMM d" rendered "Nov. 16" on a German screen, where German writes
+   "16. Nov.". The dashboard had its own switch for this; the calendar and the
+   details page did not. `weekday` adds the day name, `long` the full month. */
+export function dayMonthPattern(language: string | undefined, opts: { long?: boolean; weekday?: boolean } = {}): string {
+  const german = String(language ?? "").startsWith("de");
+  const month = opts.long || opts.weekday ? "MMMM" : "MMM";
+  const dayMonth = german ? `d. ${month}` : `${month} d`;
+  return opts.weekday ? `EEEE, ${dayMonth}` : dayMonth;
+}
+
 /** `const fmtD = useDateFormat()` then `fmtD(date, "EEEE, MMMM d")`.
 
     RETURNS "" FOR AN INVALID DATE, and that guard is not decoration. date-fns

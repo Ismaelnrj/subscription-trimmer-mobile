@@ -9,7 +9,7 @@ import { OfflineNotice } from "../../components/OfflineNotice";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
-import { useDateFormat } from "../../lib/date-locale";
+import { useDateFormat, dayMonthPattern } from "../../lib/date-locale";
 import { useCycleLabel } from "../../lib/cycle-label";
 import { useTheme, AppColors } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
@@ -219,7 +219,7 @@ export default function CalendarScreen() {
     if (days <= 0) return t("dashboard.dueToday");
     if (days === 1) return t("dashboard.dueTomorrow");
     if (days <= 6) return t("dashboard.dueInDays", { count: days });
-    return fmtD(date, "MMM d");
+    return fmtD(date, dayMonthPattern(i18n.language));
   };
 
   return (
@@ -306,7 +306,7 @@ export default function CalendarScreen() {
 
               <View style={styles.dayHeaderRow}>
                 <Text style={styles.sectionTitle}>
-                  {selectedDate ? fmtD(selectedDate, "EEEE, MMMM d") : t("calendar.selectDay")}
+                  {selectedDate ? fmtD(selectedDate, dayMonthPattern(i18n.language, { weekday: true })) : t("calendar.selectDay")}
                 </Text>
                 {selectedDayTotal > 0 && (
                   <Text style={styles.dayHeaderTotal}>{fmtC(selectedDayTotal)}</Text>
