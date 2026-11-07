@@ -87,7 +87,7 @@ describe('tiles lead with marks from the reader\'s own catalogue', () => {
   });
 
   it('the add form quick picks', () => {
-    expect(SUBS).toContain('marksFirst(getRegionalPopularTemplates(preferDach)).slice(0, 8)');
+    expect(SUBS).toContain('marksFirst(getRegionalPopularTemplates(preferDach)).slice(0, 6)');
     expect(SUBS).not.toContain('tpl.domain');
   });
 });

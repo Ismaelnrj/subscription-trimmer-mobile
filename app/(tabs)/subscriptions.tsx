@@ -1,5 +1,5 @@
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Switch,
   TextInput, Alert, RefreshControl, Share, ActivityIndicator, Platform, Animated, Linking,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
@@ -500,7 +500,7 @@ export default function SubscriptionsScreen() {
     [templateSearch, preferDach]
   );
   const quickPickTemplates = useMemo(
-    () => marksFirst(getRegionalPopularTemplates(preferDach)).slice(0, 8),
+    () => marksFirst(getRegionalPopularTemplates(preferDach)).slice(0, 6),
     [preferDach]
   );
 
@@ -1252,137 +1252,150 @@ export default function SubscriptionsScreen() {
       <Modal visible={showModal} animationType="slide" transparent onRequestClose={closeModal}>
         <View style={styles.modalOverlay}>
           <ScrollView keyboardShouldPersistTaps="handled">
+            {/* REDONE 2026-11-07 on the dashboard's scale. It was "Add Expense"
+                over five differently styled boxes and buttons before the first
+                field, fields labelled only by placeholders, and chips for the
+                cycle and the trial. Same state, same handlers, same order of
+                questions. */}
             <View style={styles.modalContent}>
+              <View style={styles.sheetHandle} />
               <Text style={styles.modalTitle}>
                 {editingId ? t("subscriptions.editExpenseTitle") : t("subscriptions.addExpenseTitle")}
               </Text>
 
               {!editingId && (
-                <View style={styles.quickAddSection}>
-                  <Text style={styles.quickAddSectionLabel}>{t("subscriptions.quickAdd")}</Text>
-
+                <>
+                  <Text style={styles.label}>{t("subscriptions.quickAdd")}</Text>
                   <View style={styles.quickPickRow}>
                     {quickPickTemplates.map((tpl) => (
-                      <TouchableOpacity key={tpl.id} style={styles.quickPickItem} onPress={() => applyTemplate(tpl)}>
-                        <LogoImage name={tpl.name} category={tpl.category} size={44} />
-                        <Text style={styles.quickPickLabel} numberOfLines={1}>{tpl.name}</Text>
+                      <TouchableOpacity
+                        key={tpl.id}
+                        style={styles.quickPickItem}
+                        onPress={() => applyTemplate(tpl)}
+                        accessibilityRole="button"
+                        accessibilityLabel={tpl.name}
+                      >
+                        <LogoImage name={tpl.name} category={tpl.category} size={36} />
+                        <Text style={styles.quickPickLabel} numberOfLines={2}>{tpl.name}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
 
-                  <TouchableOpacity
-                    style={styles.templatePickerButton}
-                    onPress={() => { setShowTemplatePicker(!showTemplatePicker); if (showTemplatePicker) setTemplateSearch(""); }}
-                  >
-                    <MaterialCommunityIcons name="apps" size={16} color={c.primary} />
-                    <Text style={styles.templatePickerButtonText}>
-                      {showTemplatePicker ? t("subscriptions.hideServices") : t("subscriptions.browseServices")}
-                    </Text>
-                    <MaterialCommunityIcons name={showTemplatePicker ? "chevron-up" : "chevron-down"} size={16} color={c.primary} />
-                  </TouchableOpacity>
+                  <View style={styles.formCard}>
+                    <TouchableOpacity
+                      style={styles.formRow}
+                      onPress={() => { setShowTemplatePicker(!showTemplatePicker); if (showTemplatePicker) setTemplateSearch(""); }}
+                    >
+                      <MaterialCommunityIcons name="magnify" size={20} color={c.textSecondary} />
+                      <Text style={styles.formRowText}>
+                        {showTemplatePicker ? t("subscriptions.hideServices") : t("subscriptions.browseServices")}
+                      </Text>
+                      <MaterialCommunityIcons name={showTemplatePicker ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
+                    </TouchableOpacity>
 
-                  {showTemplatePicker && (
-                    <View style={styles.templatePickerBox}>
-                      <TextInput
-                        style={styles.templateSearchInput}
-                        placeholder={t("subscriptions.searchServices")}
-                        placeholderTextColor={c.placeholder}
-                        value={templateSearch}
-                        onChangeText={setTemplateSearch}
-                        clearButtonMode="while-editing"
-                      />
-                      {!templateSearch && (
-                        <Text style={styles.templateSectionLabel}>{t("subscriptions.popularServices")}</Text>
-                      )}
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll} contentContainerStyle={styles.templateScrollContent}>
-                        {filteredTemplates.map((tpl) => (
-                          <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
-                            <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
-                            <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  )}
+                    {showTemplatePicker && (
+                      <View style={styles.formPanel}>
+                        <TextInput
+                          style={styles.input}
+                          placeholder={t("subscriptions.searchServices")}
+                          placeholderTextColor={c.placeholder}
+                          value={templateSearch}
+                          onChangeText={setTemplateSearch}
+                          clearButtonMode="while-editing"
+                        />
+                        {!templateSearch && (
+                          <Text style={styles.templateSectionLabel}>{t("subscriptions.popularServices")}</Text>
+                        )}
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll} contentContainerStyle={styles.templateScrollContent}>
+                          {filteredTemplates.map((tpl) => (
+                            <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
+                              <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
+                              <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
 
-                  <TouchableOpacity
-                    style={[styles.emailFillButton, { marginBottom: 0 }]}
-                    onPress={() => setShowEmailPaste(!showEmailPaste)}
-                  >
-                    <MaterialCommunityIcons name="email-fast-outline" size={16} color={c.primary} />
-                    <Text style={styles.emailFillButtonText}>
-                      {showEmailPaste ? t("subscriptions.hideAutoFill") : t("subscriptions.autoFillEmail")}
-                    </Text>
-                    <MaterialCommunityIcons
-                      name={showEmailPaste ? "chevron-up" : "chevron-down"}
-                      size={16}
-                      color={c.primary}
-                    />
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.formRow, styles.formRowDivider]}
+                      onPress={() => setShowEmailPaste(!showEmailPaste)}
+                    >
+                      <MaterialCommunityIcons name="email-fast-outline" size={20} color={c.textSecondary} />
+                      <Text style={styles.formRowText}>
+                        {showEmailPaste ? t("subscriptions.hideAutoFill") : t("subscriptions.autoFillEmail")}
+                      </Text>
+                      <MaterialCommunityIcons name={showEmailPaste ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
+                    </TouchableOpacity>
 
-                  {showEmailPaste && (
-                    <View style={[styles.emailPasteBox, { marginBottom: 0, marginTop: 12 }]}>
-                      <Text style={styles.emailPasteLabel}>{t("subscriptions.emailPasteLabel")}</Text>
-                      <TextInput
-                        style={styles.emailPasteInput}
-                        multiline
-                        numberOfLines={5}
-                        placeholder={t("subscriptions.emailPastePlaceholder")}
-                        placeholderTextColor={c.placeholder}
-                        value={emailText}
-                        onChangeText={(t) => {
-                          setEmailText(t);
-                          const parsed = parseSubscriptionEmail(t);
-                          /* The amount is taken exactly as the receipt wrote it
-                             and never converted. A rate is not known for the
-                             receipt's date, so converting would invent a number,
-                             and silently treating a dollar figure as euros is the
-                             error this used to make. Say so instead and let the
-                             person decide. */
-                          setCurrencyNotice(
-                            parsed.currency && parsed.currency !== currency.code
-                              ? { receipt: parsed.currency, account: currency.code }
-                              : null
-                          );
-                          setFormData((prev) => ({
-                            ...prev,
-                            name: parsed.name ?? "",
-                            price: sanitiseAmountInput(parsed.price ?? ""),
-                            billingCycle: parsed.billingCycle ?? prev.billingCycle,
-                          }));
-                        }}
-                        textAlignVertical="top"
-                      />
-                      {currencyNotice && (
-                        <View style={styles.currencyNotice}>
-                          <MaterialCommunityIcons name="information-outline" size={14} color={c.warning} />
-                          <Text style={styles.currencyNoticeText}>
-                            {t("subscriptions.currencyMismatch", {
-                              receipt: currencyNotice.receipt,
-                              account: currencyNotice.account,
-                            })}
-                          </Text>
-                        </View>
-                      )}
-                      {(formData.name || formData.price) && (
-                        <View style={styles.parsedPreview}>
-                          <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
-                          <Text style={styles.parsedPreviewText}>
-                            {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
-                            {/* Commas, not middle dots, and the cycle in words: this
-                                printed the raw API value, so German read "monthly". */}
-                            {formData.price ? `, ${baseCurrencyCode} ${formData.price}` : ""}
-                            {formData.billingCycle ? `, ${cycleAdjective(formData.billingCycle)}` : ""}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </View>
+                    {showEmailPaste && (
+                      <View style={styles.formPanel}>
+                        <Text style={styles.emailPasteLabel}>{t("subscriptions.emailPasteLabel")}</Text>
+                        <TextInput
+                          style={styles.emailPasteInput}
+                          multiline
+                          numberOfLines={5}
+                          placeholder={t("subscriptions.emailPastePlaceholder")}
+                          placeholderTextColor={c.placeholder}
+                          value={emailText}
+                          onChangeText={(t) => {
+                            setEmailText(t);
+                            const parsed = parseSubscriptionEmail(t);
+                            /* The amount is taken exactly as the receipt wrote it
+                               and never converted. A rate is not known for the
+                               receipt's date, so converting would invent a number,
+                               and silently treating a dollar figure as euros is the
+                               error this used to make. Say so instead and let the
+                               person decide. */
+                            setCurrencyNotice(
+                              parsed.currency && parsed.currency !== currency.code
+                                ? { receipt: parsed.currency, account: currency.code }
+                                : null
+                            );
+                            setFormData((prev) => ({
+                              ...prev,
+                              name: parsed.name ?? "",
+                              price: sanitiseAmountInput(parsed.price ?? ""),
+                              billingCycle: parsed.billingCycle ?? prev.billingCycle,
+                            }));
+                          }}
+                          textAlignVertical="top"
+                        />
+                        {currencyNotice && (
+                          <View style={styles.currencyNotice}>
+                            <MaterialCommunityIcons name="information-outline" size={16} color={c.warning} />
+                            <Text style={styles.currencyNoticeText}>
+                              {t("subscriptions.currencyMismatch", {
+                                receipt: currencyNotice.receipt,
+                                account: currencyNotice.account,
+                              })}
+                            </Text>
+                          </View>
+                        )}
+                        {(formData.name || formData.price) && (
+                          <View style={styles.parsedPreview}>
+                            <MaterialCommunityIcons name="check-circle" size={16} color={c.success} />
+                            <Text style={styles.parsedPreviewText}>
+                              {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
+                              {/* Commas, not middle dots, and the cycle in words: this
+                                  printed the raw API value, so German read "monthly".
+                                  The amount goes through fmtC like every other price,
+                                  rather than "EUR 13.99" as typed. */}
+                              {formData.price && !isNaN(parseFloat(formData.price)) ? `, ${fmtC(parseFloat(formData.price), baseCurrencyCode)}` : ""}
+                              {formData.billingCycle ? `, ${cycleAdjective(formData.billingCycle)}` : ""}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </>
               )}
 
+              <Text style={styles.label}>{t("subscriptions.nameLabel")}</Text>
               <TextInput
                 style={styles.input}
+                accessibilityLabel={t("subscriptions.nameLabel")}
                 placeholder={t("subscriptions.namePlaceholder")}
                 placeholderTextColor={c.placeholder}
                 value={formData.name}
@@ -1395,14 +1408,20 @@ export default function SubscriptionsScreen() {
                   }));
                 }}
               />
-              <TextInput
-                style={styles.input}
-                placeholder={t("subscriptions.pricePlaceholder", { currency: baseCurrencyCode })}
-                placeholderTextColor={c.placeholder}
-                keyboardType="decimal-pad"
-                value={formData.price}
-                onChangeText={(t) => setFormData({ ...formData, price: sanitiseAmountInput(t) })}
-              />
+
+              <Text style={styles.label}>{t("subscriptions.priceLabel")}</Text>
+              <View style={styles.priceField}>
+                <TextInput
+                  style={styles.priceInput}
+                  accessibilityLabel={t("subscriptions.priceLabel")}
+                  placeholder={t("subscriptions.pricePlaceholder")}
+                  placeholderTextColor={c.placeholder}
+                  keyboardType="decimal-pad"
+                  value={formData.price}
+                  onChangeText={(t) => setFormData({ ...formData, price: sanitiseAmountInput(t) })}
+                />
+                <Text style={styles.priceCurrency}>{baseCurrencyCode}</Text>
+              </View>
               {(() => {
                 const raw = parseFloat(formData.price);
                 if (!isNaN(raw) && raw > 0 && currency.code !== baseCurrencyCode) {
@@ -1418,49 +1437,43 @@ export default function SubscriptionsScreen() {
               })()}
 
               <Text style={styles.label}>{t("subscriptions.billingCycle")}</Text>
-              <View style={styles.chipRow}>
-                {BILLING_CYCLES.map((cycle) => (
-                  <TouchableOpacity
-                    key={cycle}
-                    style={[styles.chip, formData.billingCycle === cycle && styles.chipActive]}
-                    onPress={() => setFormData({ ...formData, billingCycle: cycle })}
-                  >
-                    <Text style={[styles.chipText, formData.billingCycle === cycle && styles.chipTextActive]}>
-                      {cycleAdjective(cycle)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              {/* A segmented control rather than chips: exactly one of three is
+                  always chosen. Chosen is ink, the same rule as the category
+                  chips below, never white on primary (4.02:1 in dark mode). */}
+              <View style={styles.segmented} accessibilityRole="radiogroup">
+                {BILLING_CYCLES.map((cycle) => {
+                  const on = formData.billingCycle === cycle;
+                  return (
+                    <TouchableOpacity
+                      key={cycle}
+                      style={[styles.segment, on && styles.segmentOn]}
+                      onPress={() => setFormData({ ...formData, billingCycle: cycle })}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: on }}
+                    >
+                      <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{cycleAdjective(cycle)}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
 
-              <TouchableOpacity
-                style={[styles.chip, styles.trialToggle, formData.isFreeTrial && styles.chipActive]}
-                onPress={() => setFormData({ ...formData, isFreeTrial: !formData.isFreeTrial })}
-              >
-                <MaterialCommunityIcons
-                  name={formData.isFreeTrial ? "checkbox-marked" : "checkbox-blank-outline"}
-                  size={16}
-                  color={formData.isFreeTrial ? "#FFFFFF" : c.textSecondary}
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>{t("subscriptions.isFreeTrialLabel")}</Text>
+                <Switch
+                  value={!!formData.isFreeTrial}
+                  onValueChange={(v) => setFormData({ ...formData, isFreeTrial: v })}
+                  accessibilityLabel={t("subscriptions.isFreeTrialLabel")}
+                  trackColor={{ false: c.textSecondary, true: c.success }}
+                  thumbColor={c.card}
                 />
-                {/* Opts out of chipText's textTransform: "capitalize". That
-                    transform exists for the CATEGORY chips, whose names arrive
-                    lowercase and want title casing. This chip is the only one
-                    carrying a whole sentence, and capitalising a sentence is
-                    wrong in English and actually ungrammatical in German, which
-                    capitalises nouns but not verbs, articles or adjectives:
-                    "Dies ist eine kostenlose Testphase" was rendering as "Dies
-                    Ist Eine Kostenlose Testphase". Every other chip is a single
-                    capitalised noun in both languages, so the transform is a
-                    no-op for them and only this one needed the exemption. */}
-                <Text style={[styles.chipText, styles.trialToggleText, formData.isFreeTrial && styles.chipTextActive]}>
-                  {t("subscriptions.isFreeTrialLabel")}
-                </Text>
-              </TouchableOpacity>
+              </View>
 
               {formData.isFreeTrial && (
                 <>
                   <Text style={styles.label}>{t("subscriptions.trialEndsOn")}</Text>
                   <TextInput
                     style={styles.input}
+                    accessibilityLabel={t("subscriptions.trialEndsOn")}
                     placeholder={t("subscriptions.datePlaceholder")}
                     placeholderTextColor={c.placeholder}
                     value={formData.trialEndDate}
@@ -1469,21 +1482,17 @@ export default function SubscriptionsScreen() {
                 </>
               )}
 
-              <Text style={styles.label}>
-                {t("subscriptions.category")}{isPremium && customCategories.length > 0 ? `  ✦ ${t("subscriptions.customCategory")}` : ""}
-              </Text>
+              <Text style={styles.label}>{t("subscriptions.category")}</Text>
               <View style={styles.chipRow}>
                 {allCategories.map((cat) => {
-                  const isCustom = !(DEFAULT_CATEGORIES as readonly string[]).includes(cat);
                   const isActive = formData.category === cat;
                   return (
                     <TouchableOpacity
                       key={cat}
-                      style={[
-                        styles.chip,
-                        isActive && (isCustom ? styles.chipCustomActive : styles.chipActive),
-                      ]}
+                      style={[styles.chip, isActive && styles.chipActive]}
                       onPress={() => setFormData({ ...formData, category: cat })}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
                     >
                       <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
                         {categoryLabel(cat)}
@@ -1525,18 +1534,19 @@ export default function SubscriptionsScreen() {
                 style={styles.moreOptionsButton}
                 onPress={() => setShowAdvanced(!showAdvanced)}
               >
-                <MaterialCommunityIcons name="tune-variant" size={16} color={c.textSecondary} />
+                <MaterialCommunityIcons name="tune-variant" size={20} color={c.textSecondary} />
                 <Text style={styles.moreOptionsButtonText}>
                   {showAdvanced ? t("subscriptions.hideMoreOptions") : t("subscriptions.moreOptions")}
                 </Text>
-                <MaterialCommunityIcons name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color={c.textSecondary} />
+                <MaterialCommunityIcons name={showAdvanced ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
               </TouchableOpacity>
 
               {showAdvanced && (
-                <View style={styles.moreOptionsBox}>
+                <View>
                   <Text style={styles.label}>{t("subscriptions.nextBillingDate")}</Text>
                   <TextInput
-                    style={[styles.input, { marginBottom: 0 }]}
+                    style={styles.input}
+                    accessibilityLabel={t("subscriptions.nextBillingDate")}
                     placeholder={t("subscriptions.datePlaceholder")}
                     placeholderTextColor={c.placeholder}
                     value={formData.nextBillingDate}
@@ -1618,6 +1628,37 @@ function makeStyles(c: AppColors) {
     premiumTag: { backgroundColor: c.primaryLight, borderRadius: radius.pill, paddingHorizontal: space.s, paddingVertical: 2 },
     // c.text, not c.primary: dark primary on primaryLight is 3.35:1.
     premiumTagText: { ...typeScale.caption, color: c.text },
+    sheetHandle: {
+      alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginBottom: space.l,
+    },
+    formCard: {
+      borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      backgroundColor: c.bg, paddingHorizontal: space.m,
+    },
+    formRow: { flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 52 },
+    formRowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    formRowText: { flex: 1, ...typeScale.bodyStrong, color: c.text },
+    formPanel: { paddingBottom: space.m },
+    priceField: {
+      flexDirection: "row", alignItems: "center", minHeight: 48, paddingHorizontal: space.m,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+    },
+    priceInput: { flex: 1, ...typeScale.body, ...tabular, color: c.text, paddingVertical: space.s },
+    priceCurrency: { ...typeScale.label, color: c.textSecondary, marginLeft: space.s },
+    segmented: {
+      flexDirection: "row", padding: 4, borderRadius: radius.m, gap: 4,
+      backgroundColor: c.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+    },
+    segment: { flex: 1, minHeight: 40, borderRadius: radius.s, alignItems: "center", justifyContent: "center" },
+    segmentOn: { backgroundColor: c.text },
+    segmentText: { ...typeScale.label, color: c.textSecondary },
+    segmentTextOn: { color: c.bg, fontFamily: "Montserrat-SemiBold" },
+    switchRow: {
+      flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 56, marginTop: space.l,
+      paddingHorizontal: space.m, borderRadius: radius.m, backgroundColor: c.bg,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+    },
+    switchLabel: { flex: 1, ...typeScale.body, color: c.text },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
@@ -1651,49 +1692,29 @@ function makeStyles(c: AppColors) {
     countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
     modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
     modalContent: {
-      backgroundColor: c.card, borderTopLeftRadius: 16, borderTopRightRadius: 16,
-      padding: 20, paddingBottom: 32,
+      backgroundColor: c.card, borderTopLeftRadius: radius.l, borderTopRightRadius: radius.l,
+      paddingHorizontal: space.xl, paddingTop: space.m, paddingBottom: space.xxl,
     },
-    modalTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 20 },
-    quickAddSection: {
-      backgroundColor: c.bg, borderRadius: 12, borderWidth: 1,
-      borderColor: c.border, padding: 14, marginBottom: 20,
-    },
-    quickAddSectionLabel: {
-      fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textMuted, textTransform: "uppercase",
-      letterSpacing: 0.5, marginBottom: 12,
-    },
+    modalTitle: { ...typeScale.title, color: c.text, marginBottom: space.l },
     moreOptionsButton: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      alignSelf: "flex-start", paddingVertical: 8, marginBottom: 4,
+      flexDirection: "row", alignItems: "center", gap: space.s, minHeight: 48, marginTop: space.l,
     },
-    moreOptionsButtonText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
-    moreOptionsBox: {
-      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
-      borderColor: c.border, padding: 12, marginBottom: 12,
-    },
+    moreOptionsButtonText: { flex: 1, ...typeScale.bodyStrong, color: c.text },
     input: {
-      borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,
-      paddingHorizontal: 12, marginBottom: 12, fontSize: 14, color: c.text,
-      backgroundColor: c.inputBg,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      paddingHorizontal: space.m, minHeight: 48, ...typeScale.body, color: c.text,
     },
-    label: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 6 },
-    priceHint: { fontSize: 12, color: c.primary, marginTop: -8, marginBottom: 12, marginLeft: 2 },
-    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+    label: { ...typeScale.label, color: c.textSecondary, marginTop: space.l, marginBottom: space.s },
+    priceHint: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    chipRow: { flexDirection: "row", flexWrap: "wrap", gap: space.s },
     chip: {
-      paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16,
-      backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
+      minHeight: 40, paddingHorizontal: space.m, borderRadius: radius.pill, justifyContent: "center",
+      backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
     },
-    chipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    trialToggle: {
-      flexDirection: "row", alignItems: "center", gap: 6,
-      alignSelf: "flex-start", marginBottom: 12,
-    },
-    trialToggleText: { textTransform: "none" },
-    chipCustomActive: { backgroundColor: "#142B3A", borderColor: "#142B3A" },
-    chipAdd: { backgroundColor: c.primaryLight, borderColor: c.primary },
-    chipText: { fontSize: 12, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", textTransform: "capitalize" },
-    chipTextActive: { color: "#FFFFFF" },
+    chipActive: { backgroundColor: c.text, borderColor: c.text },
+    chipAdd: { borderStyle: "dashed", borderColor: c.textSecondary },
+    chipText: { ...typeScale.label, color: c.text, textTransform: "capitalize" },
+    chipTextActive: { color: c.bg },
     customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
     customCatInput: {
       flex: 1, borderWidth: 1, borderColor: c.primary, borderRadius: 8,
@@ -1706,38 +1727,21 @@ function makeStyles(c: AppColors) {
     },
     customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     submitButton: {
-      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
-      alignItems: "center", marginTop: 8,
+      backgroundColor: c.primary, borderRadius: radius.m, minHeight: 52, marginTop: space.xl,
+      alignItems: "center", justifyContent: "center",
     },
-    submitButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    cancelButton: {
-      backgroundColor: c.border, borderRadius: 8, paddingVertical: 12,
-      alignItems: "center", marginTop: 8,
-    },
-    cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    emailFillButton: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
-      borderWidth: 1, borderColor: c.primary,
-    },
-    emailFillButtonText: { flex: 1, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
-    emailPasteBox: {
-      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
-      borderColor: c.primary, padding: 12, marginBottom: 14,
-    },
-    emailPasteLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 8, lineHeight: 17 },
+    submitButtonText: { ...typeScale.bodyStrong, color: "#FFFFFF" },
+    cancelButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: space.s },
+    cancelButtonText: { ...typeScale.bodyStrong, color: c.textSecondary },
+    emailPasteLabel: { ...typeScale.caption, color: c.textSecondary, marginBottom: space.s },
     emailPasteInput: {
-      fontSize: 13, color: c.text, minHeight: 100, borderWidth: 1,
-      borderColor: c.border, borderRadius: 6, padding: 10, backgroundColor: c.inputBg,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      padding: space.m, minHeight: 112, ...typeScale.body, color: c.text,
     },
-    currencyNotice: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 8 },
-    currencyNoticeText: { flex: 1, fontSize: 11, lineHeight: 15, color: c.text },
-    parsedPreview: {
-      flexDirection: "row", alignItems: "center", gap: 6,
-      marginTop: 8, backgroundColor: c.success + "18",
-      borderRadius: 6, padding: 8,
-    },
-    parsedPreviewText: { fontSize: 12, color: c.success, flex: 1, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
+    currencyNotice: { flexDirection: "row", gap: space.s, alignItems: "flex-start", marginTop: space.s },
+    currencyNoticeText: { flex: 1, ...typeScale.caption, color: c.warning },
+    parsedPreview: { flexDirection: "row", gap: space.s, alignItems: "center", marginTop: space.s },
+    parsedPreviewText: { flex: 1, ...typeScale.label, color: c.success },
     sortRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
     sortChip: {
       paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20,
@@ -1815,38 +1819,21 @@ function makeStyles(c: AppColors) {
       flexDirection: "row", gap: 10, marginBottom: 8,
     },
     reviewDismissText: { fontSize: 13, color: c.textMuted },
-    quickPickRow: {
-      flexDirection: "row", flexWrap: "wrap", gap: 12,
-      marginBottom: 14, justifyContent: "flex-start",
+    quickPickRow: { flexDirection: "row", flexWrap: "wrap", gap: space.s, marginBottom: space.l },
+    quickPickItem: {
+      flexBasis: "30%", flexGrow: 1, minHeight: 96, alignItems: "center", justifyContent: "center", gap: space.s,
+      paddingHorizontal: space.xs, paddingVertical: space.m, borderRadius: radius.m,
+      backgroundColor: c.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
     },
-    quickPickItem: { width: 60, alignItems: "center", gap: 4 },
-    quickPickLabel: { fontSize: 10, color: c.textSecondary, textAlign: "center" },
-    templatePickerButton: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
-      borderWidth: 1, borderColor: c.primary,
-    },
-    templatePickerButtonText: { flex: 1, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
-    templatePickerBox: {
-      backgroundColor: c.bg, borderRadius: 8, borderWidth: 1,
-      borderColor: c.primary, padding: 12, marginBottom: 14,
-    },
-    templateSearchInput: {
-      borderWidth: 1, borderColor: c.border, borderRadius: 8,
-      paddingVertical: 8, paddingHorizontal: 12, fontSize: 13,
-      color: c.text, backgroundColor: c.inputBg, marginBottom: 10,
-    },
-    templateSectionLabel: {
-      fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textMuted, textTransform: "uppercase",
-      letterSpacing: 0.5, marginBottom: 8,
-    },
+    quickPickLabel: { ...typeScale.caption, fontFamily: "Montserrat-Medium", color: c.text, textAlign: "center" },
+    templateSectionLabel: { ...typeScale.caption, color: c.textSecondary, marginTop: space.m, marginBottom: space.s },
     templateScroll: { flexGrow: 0 },
-    templateScrollContent: { gap: 8, paddingBottom: 4 },
+    templateScrollContent: { gap: space.s, paddingBottom: space.xs },
     templateChip: {
-      backgroundColor: c.card, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12,
-      borderWidth: 1, borderColor: c.border, minWidth: 100, maxWidth: 150,
+      backgroundColor: c.card, borderRadius: radius.m, paddingVertical: space.s, paddingHorizontal: space.m,
+      minHeight: 56, justifyContent: "center", borderWidth: 1, borderColor: c.border, minWidth: 112, maxWidth: 160,
     },
-    templateChipName: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 2 },
-    templateChipPrice: { fontSize: 11, color: c.primary, fontWeight: "500", fontFamily: "Montserrat-Medium" },
+    templateChipName: { ...typeScale.label, color: c.text, marginBottom: 2 },
+    templateChipPrice: { ...typeScale.caption, ...tabular, color: c.textSecondary },
   });
 }
