@@ -15,7 +15,7 @@ import {
   subMonths,
   format,
 } from "date-fns";
-import { AppColors } from "../lib/theme";
+import { AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useTranslation } from "react-i18next";
 import { useDateFormat, weekdayInitials, weekStartsOnFor, dateLocaleFor } from "../lib/date-locale";
 
@@ -245,20 +245,24 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
 
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { backgroundColor: c.card, borderRadius: 14, borderWidth: 1, borderColor: c.border, padding: 12 },
-    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
-    navButton: { padding: 6 },
-    monthLabel: { fontSize: 15, fontWeight: "700", color: c.text },
+    container: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.m, paddingVertical: space.s,
+    },
+    header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.xs },
+    navButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    monthLabel: { ...typeScale.heading, color: c.text },
     weekdayRow: { flexDirection: "row" },
-    weekdayLabel: { flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", color: c.textMuted, marginBottom: 4 },
+    weekdayLabel: { flex: 1, textAlign: "center", fontSize: 12, fontFamily: "Montserrat-Medium", color: c.textSecondary, marginBottom: space.xs },
     grid: { flexDirection: "row", flexWrap: "wrap" },
     cell: { width: `${100 / 7}%`, alignItems: "center", paddingVertical: 4 },
     dayCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-    dayCircleSelected: { backgroundColor: c.primary },
-    dayCircleToday: { borderWidth: 1, borderColor: c.primary },
-    dayText: { fontSize: 13, color: c.text },
+    /* Chosen is ink, the app wide rule: white on dark primary is 4.02:1. */
+    dayCircleSelected: { backgroundColor: c.text },
+    dayCircleToday: { borderWidth: 1.5, borderColor: c.text },
+    dayText: { fontSize: 13, fontFamily: "Montserrat-Medium", color: c.text },
     dayTextMuted: { color: c.textMuted },
-    dayTextSelected: { color: "#FFFFFF", fontWeight: "700" },
+    dayTextSelected: { color: c.bg, fontFamily: "Montserrat-Bold" },
     /* 23 = the dot row's 3 margin and 8 height, plus the amount's 1 margin and
        11 line height. Fixed rather than derived so an amount with no dots, or
        dots with no amount, still sit at the same y as everywhere else in the
@@ -284,7 +288,8 @@ function makeStyles(c: AppColors) {
        footnote to the grid above it. */
     legend: {
       flexDirection: "row", flexWrap: "wrap", columnGap: 12, rowGap: 6,
-      marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: c.border,
+      marginTop: space.s, paddingTop: space.m, paddingBottom: space.xs,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border,
     },
     /* maxWidth and the shrink below are for a CUSTOM category, which is
        whatever the user typed. A built-in name is one short word, but an item
@@ -302,6 +307,6 @@ function makeStyles(c: AppColors) {
        exactly as the user typed it and would otherwise sit lowercase beside
        eleven capitalised ones. c.text rather than textMuted for the same reason
        the day amount is: at 11px, 2.98:1 is not a legible label. */
-    legendName: { fontSize: 11, color: c.text, textTransform: "capitalize", flexShrink: 1 },
+    legendName: { fontSize: 12, color: c.text, textTransform: "capitalize", flexShrink: 1 },
   });
 }

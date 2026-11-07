@@ -10,8 +10,8 @@ import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } fr
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useDateFormat, dayMonthPattern } from "../../lib/date-locale";
-import { useCycleLabel } from "../../lib/cycle-label";
-import { useTheme, AppColors } from "../../lib/theme";
+import { useCycleAdjective } from "../../lib/cycle-label";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { MonthCalendarGrid } from "../../components/MonthCalendarGrid";
 import { LogoImage } from "../../components/LogoImage";
@@ -64,7 +64,7 @@ export default function CalendarScreen() {
   };
   const fmtCompact = (amount: number) => formatMoney(Math.round(convert(amount)), currency.symbol, 0, i18n.language);
   const fmtD = useDateFormat();
-  const cycleLabel = useCycleLabel();
+  const cycleAdjective = useCycleAdjective();
   const categoryLabel = useCategoryLabel();
   const [view, setView] = useState<ViewMode>("timeline");
   const [month, setMonth] = useState(() => new Date());
@@ -244,18 +244,25 @@ export default function CalendarScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
           {isStale && <OfflineNotice />}
-          <View style={styles.segmentRow}>
-            {(["timeline", "calendar", "month"] as const).map((mode) => (
-              <TouchableOpacity
-                key={mode}
-                style={[styles.segmentPill, view === mode && styles.segmentPillActive]}
-                onPress={() => setView(mode)}
-              >
-                <Text style={[styles.segmentText, view === mode && styles.segmentTextActive]}>
-                  {mode === "timeline" ? t("calendar.timeline") : mode === "calendar" ? t("calendar.calendarView") : t("calendar.month")}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          {/* A segmented control: exactly one view is always chosen. Chosen is
+              ink, never white on primary (4.02:1 in dark mode). */}
+          <View style={styles.segmented} accessibilityRole="radiogroup">
+            {(["timeline", "calendar", "month"] as const).map((mode) => {
+              const on = view === mode;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.segment, on && styles.segmentOn]}
+                  onPress={() => setView(mode)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: on }}
+                >
+                  <Text style={[styles.segmentText, on && styles.segmentTextOn]}>
+                    {mode === "timeline" ? t("calendar.timeline") : mode === "calendar" ? t("calendar.calendarView") : t("calendar.month")}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {isLoading ? (
@@ -265,30 +272,32 @@ export default function CalendarScreen() {
                state, telling people they had no upcoming payments when the
                request had simply failed. */
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
+              <MaterialCommunityIcons name="alert-circle-outline" size={36} color={c.textMuted} style={{ marginBottom: space.s }} />
               <Text style={styles.emptyStateText}>{t("calendar.couldntLoad")}</Text>
             </View>
           ) : view === "timeline" ? (
             upcoming.length === 0 ? (
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="calendar-blank-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
+                <MaterialCommunityIcons name="calendar-blank-outline" size={36} color={c.textMuted} style={{ marginBottom: space.s }} />
                 <Text style={styles.emptyStateText}>{t("calendar.noUpcoming")}</Text>
               </View>
             ) : (
-              upcoming.map(({ sub, date }, i) => (
-                <TouchableOpacity
-                  key={`${sub.id}-${date.toISOString()}-${i}`}
-                  style={styles.subCard}
-                  onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
-                >
-                  <LogoImage name={sub.name} category={sub.category} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={styles.subName}>{sub.name}</Text>
-                    <Text style={styles.subMeta}>{dueLabel(date)}</Text>
-                  </View>
-                  <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
-                </TouchableOpacity>
-              ))
+              <View style={styles.card}>
+                {upcoming.map(({ sub, date }, i) => (
+                  <TouchableOpacity
+                    key={`${sub.id}-${date.toISOString()}-${i}`}
+                    style={[styles.row, i > 0 && styles.rowDivider]}
+                    onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                  >
+                    <LogoImage name={sub.name} category={sub.category} />
+                    <View style={styles.rowText}>
+                      <Text style={styles.subName} numberOfLines={1}>{sub.name}</Text>
+                      <Text style={styles.subMeta}>{dueLabel(date)}</Text>
+                    </View>
+                    <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             )
           ) : view === "calendar" ? (
             <>
@@ -312,11 +321,8 @@ export default function CalendarScreen() {
                   nothing, and it competed with the add button for the same
                   strip of screen. */}
               <View style={styles.calendarActions}>
-                <TouchableOpacity
-                  style={[styles.todayButton, { backgroundColor: c.primaryLight }]}
-                  onPress={goToToday}
-                >
-                  <MaterialCommunityIcons name="calendar-today" size={15} color={c.primary} />
+                <TouchableOpacity style={styles.todayButton} onPress={goToToday} accessibilityRole="button">
+                  <MaterialCommunityIcons name="calendar-today" size={16} color={c.text} />
                   <Text style={styles.todayButtonText}>{t("calendar.today")}</Text>
                 </TouchableOpacity>
               </View>
@@ -336,49 +342,52 @@ export default function CalendarScreen() {
                       longer the last thing on the screen. At 32 it pushed the
                       rows below it out of the first glance. */}
                   <View style={[styles.emptyState, nextUp.length > 0 && styles.emptyStateCompact]}>
-                    <MaterialCommunityIcons name="calendar-blank-outline" size={40} color={c.border} style={{ marginBottom: 8 }} />
                     <Text style={styles.emptyStateText}>{t("calendar.noRenewals")}</Text>
                   </View>
                   {nextUp.length > 0 && (
                     <>
                       <Text style={styles.sectionTitle}>{t("calendar.nextUp")}</Text>
-                      {nextUp.map(({ sub, date }, i) => (
-                        <TouchableOpacity
-                          key={`next-${sub.id}-${date.toISOString()}-${i}`}
-                          style={styles.subCard}
-                          onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
-                        >
-                          <LogoImage name={sub.name} category={sub.category} />
-                          <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={styles.subName}>{sub.name}</Text>
-                            <Text style={styles.subMeta}>{dueLabel(date)}</Text>
-                          </View>
-                          <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
-                        </TouchableOpacity>
-                      ))}
+                      <View style={styles.card}>
+                        {nextUp.map(({ sub, date }, i) => (
+                          <TouchableOpacity
+                            key={`next-${sub.id}-${date.toISOString()}-${i}`}
+                            style={[styles.row, i > 0 && styles.rowDivider]}
+                            onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                          >
+                            <LogoImage name={sub.name} category={sub.category} />
+                            <View style={styles.rowText}>
+                              <Text style={styles.subName} numberOfLines={1}>{sub.name}</Text>
+                              <Text style={styles.subMeta}>{dueLabel(date)}</Text>
+                            </View>
+                            <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
                     </>
                   )}
                 </>
               ) : (
-                selectedDaySubs.map((sub: any, i: number) => (
-                  <TouchableOpacity
-                    key={`${sub.id}-${i}`}
-                    style={styles.subCard}
-                    onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
-                  >
-                    <LogoImage name={sub.name} category={sub.category} />
-                    <View style={{ flex: 1, marginLeft: 12 }}>
-                      <Text style={styles.subName}>{sub.name}</Text>
-                      <Text style={styles.subMeta}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
-                    </View>
-                    <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
-                  </TouchableOpacity>
-                ))
+                <View style={styles.card}>
+                  {selectedDaySubs.map((sub: any, i: number) => (
+                    <TouchableOpacity
+                      key={`${sub.id}-${i}`}
+                      style={[styles.row, i > 0 && styles.rowDivider]}
+                      onPress={() => router.push(`/subscription-details?id=${sub.id}`)}
+                    >
+                      <LogoImage name={sub.name} category={sub.category} />
+                      <View style={styles.rowText}>
+                        <Text style={styles.subName} numberOfLines={1}>{sub.name}</Text>
+                        <Text style={styles.subMeta}>{cycleAdjective(sub.billingCycle)}</Text>
+                      </View>
+                      <Text style={styles.subPrice}>{fmtC(sub.price, sub.currency)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               )}
             </>
           ) : (
-            <View style={styles.monthSummaryCard}>
-              <View style={styles.monthSummaryHeader}>
+            <>
+              <View style={styles.monthHeader}>
                 <TouchableOpacity
                   onPress={() => setMonth(subMonths(month, 1))}
                   style={styles.navButton}
@@ -387,7 +396,7 @@ export default function CalendarScreen() {
                 >
                   <MaterialCommunityIcons name="chevron-left" size={22} color={c.text} />
                 </TouchableOpacity>
-                <Text style={styles.monthSummaryTitle}>{t("calendar.monthSummary", { month: fmtD(month, "MMMM") })}</Text>
+                <Text style={styles.monthTitle}>{fmtD(month, "MMMM yyyy")}</Text>
                 <TouchableOpacity
                   onPress={() => setMonth(addMonths(month, 1))}
                   style={styles.navButton}
@@ -398,22 +407,29 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.monthSummaryTotal}>{fmtSum(monthSummary.total, monthSummary.all)}</Text>
+              {/* One open figure, as on the dashboard and Stats, then rows.
+                  Two columns truncated the highest charge's name. */}
+              <View style={styles.monthSummary}>
+                <Text style={styles.monthSummaryLabel}>{t("calendar.monthTotal")}</Text>
+                <Text style={styles.monthSummaryTotal}>{fmtSum(monthSummary.total, monthSummary.all)}</Text>
+              </View>
 
-              <View style={styles.monthSummaryStatsRow}>
-                <View style={styles.monthSummaryStat}>
-                  <Text style={styles.monthSummaryStatLabel}>{t("calendar.payments")}</Text>
-                  <Text style={styles.monthSummaryStatValue}>{monthSummary.count}</Text>
+              <View style={styles.card}>
+                <View style={styles.row}>
+                  <Text style={styles.statLabel}>{t("calendar.payments")}</Text>
+                  <Text style={styles.subPrice}>{monthSummary.count}</Text>
                 </View>
                 {monthSummary.highest && (
-                  <View style={styles.monthSummaryStat}>
-                    <Text style={styles.monthSummaryStatLabel}>{t("calendar.highest")}</Text>
-                    <Text style={styles.monthSummaryStatValue} numberOfLines={1}>{monthSummary.highest.name}</Text>
-                    <Text style={styles.monthSummaryStatSub}>{fmtC(monthSummary.highest.price, monthSummary.highest.currency)}</Text>
+                  <View style={[styles.row, styles.rowDivider]}>
+                    <View style={styles.rowText}>
+                      <Text style={styles.statLabel}>{t("calendar.highest")}</Text>
+                      <Text style={styles.subMeta} numberOfLines={1}>{monthSummary.highest.name}</Text>
+                    </View>
+                    <Text style={styles.subPrice}>{fmtC(monthSummary.highest.price, monthSummary.highest.currency)}</Text>
                   </View>
                 )}
               </View>
-            </View>
+            </>
           )}
         </View>
       </ScrollView>
@@ -422,54 +438,57 @@ export default function CalendarScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
-    segmentRow: {
-      flexDirection: "row", gap: 4, marginBottom: 16,
-      backgroundColor: c.card, borderRadius: 10, padding: 4,
-      borderWidth: 1, borderColor: c.border,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.l, paddingBottom: FAB_SCROLL_CLEARANCE },
+    segmented: {
+      flexDirection: "row", padding: 4, borderRadius: radius.m, gap: 4, marginBottom: space.l,
+      backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
     },
-    segmentPill: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
-    segmentPillActive: { backgroundColor: c.primary },
-    segmentText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
-    segmentTextActive: { color: "#FFFFFF" },
-    sectionTitle: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginTop: 20, marginBottom: 10 },
-    dayHeaderRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 },
+    segment: { flex: 1, minHeight: 40, borderRadius: radius.s, alignItems: "center", justifyContent: "center" },
+    segmentOn: { backgroundColor: c.text },
+    segmentText: { ...typeScale.label, color: c.textSecondary },
+    segmentTextOn: { color: c.bg, fontFamily: "Montserrat-SemiBold" },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s, flexShrink: 1 },
+    dayHeaderRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.m },
     /* The day list showed each price and never their sum, so the one number a
        person actually wants from a day, what it costs them, had to be added up
        in their head. */
-    dayHeaderTotal: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginTop: 20, marginBottom: 10 },
-    emptyState: { alignItems: "center", paddingVertical: 32 },
-    emptyStateCompact: { paddingVertical: 20 },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    subCard: {
-      flexDirection: "row", alignItems: "center",
-      backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 10,
-      borderWidth: 1, borderColor: c.border,
+    dayHeaderTotal: { ...typeScale.heading, ...tabular, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    emptyState: { alignItems: "center", paddingVertical: space.xxl },
+    emptyStateCompact: { paddingVertical: space.l },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
+
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    subName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
-    subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    subPrice: { fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    navButton: { padding: 6 },
-    monthSummaryCard: { backgroundColor: c.card, borderRadius: 14, borderWidth: 1, borderColor: c.border, padding: 20 },
-    monthSummaryHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
-    monthSummaryTitle: { fontSize: 15, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    monthSummaryTotal: { fontSize: 34, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginBottom: 20 },
-    monthSummaryStatsRow: { flexDirection: "row", gap: 16 },
-    monthSummaryStat: { flex: 1 },
-    monthSummaryStatLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
-    monthSummaryStatValue: { fontSize: 16, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    monthSummaryStatSub: { fontSize: 13, color: c.textSecondary, marginTop: 2 },
-    calendarActions: { flexDirection: "row", marginTop: 12 },
-    // In the flow now, so it needs no shadow to lift it off the content and
-    // no white on navy: it is a quiet secondary action beside the calendar,
-    // not a second floating button competing with the add button.
+    row: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingVertical: space.m, gap: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    rowText: { flex: 1 },
+    subName: { ...typeScale.bodyStrong, color: c.text },
+    subMeta: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    subPrice: { ...typeScale.bodyStrong, ...tabular, color: c.text },
+    statLabel: { ...typeScale.body, color: c.text, flex: 1 },
+
+    navButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    monthTitle: { ...typeScale.heading, color: c.text },
+    monthSummary: { marginTop: space.m, marginBottom: space.xl },
+    monthSummaryLabel: { ...typeScale.caption, color: c.textSecondary },
+    monthSummaryTotal: { ...typeScale.display, color: c.text, marginTop: space.xs },
+
+    calendarActions: { flexDirection: "row", marginTop: space.m },
+    // A quiet secondary action beside the calendar, not a second floating
+    // button competing with the add button.
     todayButton: {
-      flexDirection: "row", alignItems: "center", gap: 6,
-      paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20,
+      flexDirection: "row", alignItems: "center", gap: space.s, minHeight: 40,
+      paddingHorizontal: space.l, borderRadius: radius.pill,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card,
     },
-    todayButtonText: { color: c.primary, fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    todayButtonText: { ...typeScale.label, color: c.text },
   });
 }

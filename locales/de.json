@@ -262,7 +262,6 @@
     "calendarView": "Kalender",
     "month": "Monat",
     "noUpcoming": "Keine anstehenden Zahlungen",
-    "monthSummary": "{{month}} Zusammenfassung",
     "payments": "Zahlungen",
     "highest": "Höchste",
     "today": "Heute",
@@ -275,7 +274,8 @@
     "a11yDayRenewals_other": "{{date}}, {{count}} Verlängerungen",
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} Verlängerung, {{total}}",
     "a11yDayRenewalsTotal_other": "{{date}}, {{count}} Verlängerungen, {{total}} insgesamt",
-    "a11yLegend": "Punktfarben in diesem Monat: {{categories}}"
+    "a11yLegend": "Punktfarben in diesem Monat: {{categories}}",
+    "monthTotal": "Fällig in diesem Monat"
   },
   "review": {
     "title": "Gefällt dir Trimio?",

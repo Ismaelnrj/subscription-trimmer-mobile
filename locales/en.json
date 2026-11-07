@@ -262,7 +262,6 @@
     "calendarView": "Calendar",
     "month": "Month",
     "noUpcoming": "No upcoming payments",
-    "monthSummary": "{{month}} Summary",
     "payments": "Payments",
     "highest": "Highest",
     "today": "Today",
@@ -275,7 +274,8 @@
     "a11yDayRenewals_other": "{{date}}, {{count}} renewals",
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} renewal, {{total}}",
     "a11yDayRenewalsTotal_other": "{{date}}, {{count}} renewals, {{total}} total",
-    "a11yLegend": "Dot colours this month: {{categories}}"
+    "a11yLegend": "Dot colours this month: {{categories}}",
+    "monthTotal": "Due this month"
   },
   "review": {
     "title": "Enjoying Trimio?",
