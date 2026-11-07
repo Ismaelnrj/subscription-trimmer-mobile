@@ -2049,11 +2049,13 @@ last one left off without needing a recap typed out.
   both themes, before and after, and each held for the owner's yes on the
   direction. Same logic, new layout, no new libraries (so OTA only), palette
   unchanged.
-  THE DASHBOARD IS DONE AND WAITING ON THAT YES. It sits on
-  `claude/calendar-dot-4riizs` AND MUST NOT BE MERGED TO MASTER UNTIL THE
-  OWNER APPROVES IT, even though CI is green: the standing merge rule covers
-  finished work, and a taste call is not finished until the owner makes it.
-  Once they say yes, merge and record it here.
+  THE DASHBOARD IS APPROVED, 2026-11-07 ("looks better and premium, so
+  yes"), and merged to master through `bd438333`. NOT YET PUBLISHED: it is
+  client only and rides the next `eas update`. The process stands for every
+  next screen: each one stays on the branch, CI green or not, until the owner
+  says yes to the rendered before and after, because a taste call is not
+  finished until the owner makes it. Every redone screen also joins the
+  `REDONE` list in `__tests__/redesign-tells.test.js`.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
@@ -4260,6 +4262,16 @@ last one left off without needing a recap typed out.
   (2026-11-07), so it reads 47% after the change and 44% before it.
   "Premium costs less than one coffee a month" (`upgrade.costNote`) is
   borderline at €3.99 and true of the yearly plan at €2.08; left as is.
+  THE PLAY CONSOLE CHANGE IS THE OWNER'S AND NOT YET DONE as of 2026-11-07
+  (owner: "I need to do this first. But yes."). Until it is, Play still
+  charges 2.99 and 19.99, and the badge correctly reads 44%.
+  THE TRIAL MODEL IS A REVERSE TRIAL, the owner's choice on 2026-11-07 on
+  the recommendation: every new account gets 14 days of Premium with no card
+  and drops back to the free tier unless it subscribes. Not a Google Play
+  trial, so nothing changes in Play Console for it. Success bar: at least 1
+  in 15 new accounts subscribes within 30 days of signing up; if none of the
+  next 30 new accounts does, the next step is a hard paywall with an honest,
+  priced Google Play trial.
 
 - THE EMAIL PASTE PARSER WAS ENGLISH SHAPED, fixed 2026-09-22, and it is the
   finding that most contradicts this file's own story about the product. The
