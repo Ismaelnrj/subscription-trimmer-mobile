@@ -115,7 +115,7 @@ export default function ReferAFriendScreen() {
                 <View style={styles.bonusCard}>
                   <MaterialCommunityIcons name="crown" size={22} color={c.success} />
                   <Text style={styles.bonusText}>
-                    {t("referFriend.bonusActive", { date: fmtD(new Date(bonusPremiumUntil!), "P") })}
+                    {t("referFriend.bonusActive", { date: fmtD(new Date(bonusPremiumUntil!), "PP") })}
                   </Text>
                 </View>
               )}

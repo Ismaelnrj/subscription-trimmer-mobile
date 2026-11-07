@@ -1085,7 +1085,7 @@ export default function SubscriptionsScreen() {
                     {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
                     <Text style={styles.cardDate}>
                       {nextDate
-                        ? t("subscriptions.next", { date: fmtD(nextDate, "P") })
+                        ? t("subscriptions.next", { date: fmtD(nextDate, "PP") })
                         : t("subscriptions.noDate")}
                     </Text>
                     <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>

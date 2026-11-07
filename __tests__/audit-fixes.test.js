@@ -23,7 +23,7 @@ describe("the renewal date on a subscription card names the right day", () => {
 
   it("renders the card date through parseApiDate", () => {
     expect(src).toMatch(/const nextDate = parseApiDate\(sub\.nextBillingDate\)/);
-    expect(src).toMatch(/t\("subscriptions\.next", \{ date: fmtD\(nextDate, "P"\) \}\)/);
+    expect(src).toMatch(/t\("subscriptions\.next", \{ date: fmtD\(nextDate, "PP"\) \}\)/);
   });
 
   it("falls back to the no-date string rather than rendering Invalid Date", () => {

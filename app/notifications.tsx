@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
                 <View style={styles.notificationContent}>
                   <Text style={styles.notificationTitle}>{n.title}</Text>
                   <Text style={styles.notificationMessage}>{n.message}</Text>
-                  <Text style={styles.notificationTime}>{fmtD(new Date(n.createdAt), "P")}</Text>
+                  <Text style={styles.notificationTime}>{fmtD(new Date(n.createdAt), "PP")}</Text>
                   {!n.read && (
                     <View style={styles.notificationActions}>
                       <TouchableOpacity style={styles.actionButton} onPress={() => markAsReadMutation.mutate(n.id)}>
