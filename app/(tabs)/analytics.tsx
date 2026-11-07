@@ -219,7 +219,7 @@ export default function AnalyticsScreen() {
                     <View style={[styles.legendDot, { backgroundColor: getCategoryIcon(cat.category).color }]} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.legendName} numberOfLines={1}>{categoryLabel(cat.category)}</Text>
-                      <Text style={styles.legendAmount}>{fmtTotal(cat.amount)}/mo</Text>
+                      <Text style={styles.legendAmount}>{fmtTotal(cat.amount)}{t("common.perMonthShort")}</Text>
                     </View>
                   </View>
                 ))}
@@ -232,7 +232,7 @@ export default function AnalyticsScreen() {
                       <Text style={styles.legendName} numberOfLines={1}>
                         {t("analytics.otherCategories", { count: sortedCategories.length - shownCount })}
                       </Text>
-                      <Text style={styles.legendAmount}>{fmtTotal(hiddenTotal)}/mo</Text>
+                      <Text style={styles.legendAmount}>{fmtTotal(hiddenTotal)}{t("common.perMonthShort")}</Text>
                     </View>
                   </View>
                 )}
@@ -280,12 +280,12 @@ export default function AnalyticsScreen() {
             <View style={styles.summaryRow}>
               <View style={styles.statPair}>
                 <Text style={styles.statPairLabel}>{t("analytics.avgPerSub")}</Text>
-                <Text style={styles.statPairValue}>{fmtTotal(monthly / (summary?.activeSubscriptions ?? 1))}/mo</Text>
+                <Text style={styles.statPairValue}>{fmtTotal(monthly / (summary?.activeSubscriptions ?? 1))}{t("common.perMonthShort")}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.statPair}>
                 <Text style={styles.statPairLabel}>{t("analytics.avgPerYear")}</Text>
-                <Text style={styles.statPairValue}>{fmtTotal((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}/yr</Text>
+                <Text style={styles.statPairValue}>{fmtTotal((monthly / (summary?.activeSubscriptions ?? 1)) * 12)}{t("common.perYearShort")}</Text>
               </View>
             </View>
           </View>

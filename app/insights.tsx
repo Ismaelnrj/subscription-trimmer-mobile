@@ -359,9 +359,7 @@ export default function InsightsScreen() {
               <View style={{ marginLeft: 12, flex: 1 }}>
                 <Text style={styles.bannerTitle}>{t("insights.spendingSnapshot")}</Text>
                 <Text style={styles.bannerSub}>
-                  {subscriptions.length} subscription{subscriptions.length !== 1 ? "s" : ""}
-                  {"  ·  "}{fmtC(monthlyTotal)}/mo
-                  {"  ·  "}{fmtC(monthlyTotal * 12)}/yr
+                  {t("insights.snapshot", { count: subscriptions.length, month: fmtC(monthlyTotal), year: fmtC(monthlyTotal * 12) })}
                 </Text>
               </View>
               {highCount > 0 && (
@@ -402,8 +400,8 @@ export default function InsightsScreen() {
           ) : (
             <>
               <Text style={styles.sectionLabel}>
-                {tips.length} recommendation{tips.length !== 1 ? "s" : ""}
-                {highCount > 0 ? `  ·  ${highCount} need${highCount === 1 ? "s" : ""} attention` : ""}
+                {t("insights.recommendationCount", { count: tips.length })}
+                {highCount > 0 ? `, ${t("insights.needAttention", { count: highCount })}` : ""}
               </Text>
 
               {lockedCount > 0 && (
