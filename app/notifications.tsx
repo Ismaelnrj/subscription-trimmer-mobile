@@ -5,7 +5,7 @@ import { Stack } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useDateFormat } from "../lib/date-locale";
 
 export default function NotificationsScreen() {
@@ -57,7 +57,7 @@ export default function NotificationsScreen() {
       case "renewal_alert": return c.warning;
       case "expensive_alert": return c.danger;
       case "payment_received": return c.success;
-      default: return c.primary;
+      default: return c.textSecondary;
     }
   };
 
@@ -71,7 +71,7 @@ export default function NotificationsScreen() {
       >
         <View style={styles.scrollContent}>
           {unreadCount > 0 && (
-            <TouchableOpacity style={styles.markAllButton} onPress={() => markAsReadMutation.mutate(undefined)}>
+            <TouchableOpacity style={styles.markAllButton} onPress={() => markAsReadMutation.mutate(undefined)} accessibilityRole="button">
               <Text style={styles.markAllButtonText}>{t("notifications.markAllRead")}</Text>
             </TouchableOpacity>
           )}
@@ -80,34 +80,40 @@ export default function NotificationsScreen() {
             <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 48 }} />
           ) : isError ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
+              <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>{t("notifications.couldntLoad")}</Text>
             </View>
           ) : notifications.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="bell-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
+              <MaterialCommunityIcons name="bell-outline" size={40} color={c.textMuted} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>{t("notifications.noNotifications")}</Text>
             </View>
           ) : (
-            notifications.map((n: any) => (
-              <View key={n.id} style={[styles.notificationCard, !n.read && styles.notificationCardUnread]}>
-                <View style={styles.notificationIcon}>
-                  <MaterialCommunityIcons name={getIcon(n.type) as any} size={20} color={getIconColor(n.type)} />
-                </View>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationTitle}>{n.title}</Text>
-                  <Text style={styles.notificationMessage}>{n.message}</Text>
-                  <Text style={styles.notificationTime}>{fmtD(new Date(n.createdAt), "PP")}</Text>
-                  {!n.read && (
-                    <View style={styles.notificationActions}>
-                      <TouchableOpacity style={styles.actionButton} onPress={() => markAsReadMutation.mutate(n.id)}>
-                        <Text style={styles.actionButtonText}>{t("notifications.markRead")}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))
+            /* One grouped card. Unread is a dot and a stronger title, not a
+               tinted card with a coloured left edge, and tapping an unread
+               row marks it read: the 11px "Mark read" button it replaces was
+               a target a few dp tall. */
+            <View style={styles.card}>
+              {notifications.map((n: any, i: number) => (
+                <TouchableOpacity
+                  key={n.id}
+                  style={[styles.row, i > 0 && styles.rowDivider]}
+                  onPress={() => { if (!n.read) markAsReadMutation.mutate(n.id); }}
+                  disabled={n.read}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !!n.read }}
+                  accessibilityHint={!n.read ? t("notifications.markRead") : undefined}
+                >
+                  <MaterialCommunityIcons name={getIcon(n.type) as any} size={20} color={getIconColor(n.type)} style={styles.icon} />
+                  <View style={styles.rowText}>
+                    <Text style={[styles.title, !n.read && styles.titleUnread]}>{n.title}</Text>
+                    <Text style={styles.message}>{n.message}</Text>
+                    <Text style={styles.time}>{fmtD(new Date(n.createdAt), "PP")}</Text>
+                  </View>
+                  {!n.read && <View style={styles.unreadDot} accessibilityElementsHidden />}
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>
@@ -115,35 +121,28 @@ export default function NotificationsScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    notificationCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row", gap: 12,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.l, paddingBottom: space.xxl },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    notificationCardUnread: {
-      backgroundColor: c.primaryLight, borderLeftWidth: 4, borderLeftColor: c.primary,
-    },
-    notificationIcon: {
-      width: 40, height: 40, borderRadius: 8, backgroundColor: c.primaryLight,
-      justifyContent: "center", alignItems: "center",
-    },
-    notificationContent: { flex: 1 },
-    notificationTitle: { fontSize: 14, fontWeight: "600", color: c.text, marginBottom: 4 },
-    notificationMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 18, marginBottom: 4 },
-    notificationTime: { fontSize: 11, color: c.textMuted },
-    notificationActions: { flexDirection: "row", gap: 8, marginTop: 8 },
-    actionButton: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4, backgroundColor: c.border },
-    actionButtonText: { fontSize: 11, fontWeight: "600", color: c.primary },
-    markAllButton: {
-      backgroundColor: c.primaryLight, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 16,
-      marginBottom: 16, alignItems: "center",
-    },
-    markAllButtonText: { fontSize: 13, fontWeight: "600", color: c.primary },
-    emptyState: { alignItems: "center", paddingVertical: 48 },
-    emptyStateIcon: { marginBottom: 12 },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    row: { flexDirection: "row", alignItems: "flex-start", gap: space.m, paddingVertical: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    icon: { marginTop: 2 },
+    rowText: { flex: 1 },
+    title: { ...typeScale.body, color: c.text },
+    titleUnread: { ...typeScale.bodyStrong },
+    message: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    time: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    unreadDot: { width: 8, height: 8, borderRadius: radius.pill, backgroundColor: c.text, marginTop: 7 },
+    markAllButton: { alignSelf: "flex-end", minHeight: 48, justifyContent: "center", paddingHorizontal: space.xs, marginBottom: space.xs },
+    markAllButtonText: { ...typeScale.label, color: c.text },
+    emptyState: { alignItems: "center", paddingVertical: 48, paddingHorizontal: space.xl },
+    emptyStateIcon: { marginBottom: space.m },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
   });
 }

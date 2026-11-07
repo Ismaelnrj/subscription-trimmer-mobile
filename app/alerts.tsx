@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export default function AlertsScreen() {
   const router = useRouter();
@@ -48,21 +48,11 @@ export default function AlertsScreen() {
       ? t(`alerts.severity_${severity}`)
       : severity;
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "high": return c.danger;
-      case "medium": return c.warning;
-      default: return "#3B82F6";
-    }
-  };
-
-  const getSeverityBg = (severity: string) => {
-    switch (severity) {
-      case "high": return c.dangerLight;
-      case "medium": return c.warningLight;
-      default: return "#DBEAFE";
-    }
-  };
+  /* From the theme, never fixed hex: low severity was Tailwind blue
+     (#3B82F6 on a #DBEAFE badge), off palette in light and a pale block on
+     the dark card. */
+  const toneOf = (severity: string) =>
+    severity === "high" ? c.danger : severity === "medium" ? c.warning : c.textSecondary;
 
   return (
     <>
@@ -77,43 +67,47 @@ export default function AlertsScreen() {
             <ActivityIndicator size="large" color={c.primary} style={{ marginTop: 48 }} />
           ) : isError ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={styles.emptyStateIcon} />
+              <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>{t("alerts.couldntLoad")}</Text>
             </View>
           ) : alerts.length === 0 ? (
             <View style={styles.emptyState}>
-              <MaterialCommunityIcons name="check-circle" size={48} color={c.success} style={styles.emptyStateIcon} />
+              <MaterialCommunityIcons name="check-circle-outline" size={40} color={c.success} style={styles.emptyStateIcon} />
               <Text style={styles.emptyStateText}>{t("alerts.allClear")}</Text>
             </View>
           ) : (
-            alerts.map((alert: any) => {
-              const col = getSeverityColor(alert.severity);
-              const bg = getSeverityBg(alert.severity);
-              return (
-                <View key={alert.id} style={[styles.alertCard, { borderLeftColor: col }]}>
-                  <View style={styles.alertHeader}>
-                    <MaterialCommunityIcons name={getAlertIcon(alert.type)} size={20} color={col} />
-                    <Text style={styles.alertTitle}>{alert.title}</Text>
-                    <View style={[styles.alertBadge, { backgroundColor: bg }]}>
-                      <Text style={[styles.alertBadgeText, { color: col }]}>
-                        {severityLabel(alert.severity)}
-                      </Text>
+            /* One grouped card. A row about a subscription opens THAT
+               subscription; it used to offer "View Subscription", which went
+               to the whole list. The title already names the service. */
+            <View style={styles.card}>
+              {alerts.map((alert: any, i: number) => {
+                const tone = toneOf(alert.severity);
+                const body = (
+                  <>
+                    <MaterialCommunityIcons name={getAlertIcon(alert.type)} size={20} color={tone} style={styles.icon} />
+                    <View style={styles.rowText}>
+                      <Text style={[styles.severity, { color: tone }]}>{severityLabel(alert.severity)}</Text>
+                      <Text style={styles.alertTitle}>{alert.title}</Text>
+                      <Text style={styles.alertMessage}>{alert.message}</Text>
                     </View>
-                  </View>
-                  <Text style={styles.alertMessage}>{alert.message}</Text>
-                  {alert.subscriptionName && (
-                    <View style={styles.alertAction}>
-                      <Text style={{ fontSize: 12, color: c.textSecondary, marginBottom: 8 }}>
-                        {t("alerts.service")} <Text style={{ fontWeight: "600" }}>{alert.subscriptionName}</Text>
-                      </Text>
-                      <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-                        <Text style={styles.actionButtonText}>{t("alerts.viewSubscription")}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              );
-            })
+                  </>
+                );
+                return alert.subscriptionId ? (
+                  <TouchableOpacity
+                    key={alert.id}
+                    style={[styles.row, i > 0 && styles.rowDivider]}
+                    onPress={() => router.push(`/subscription-details?id=${alert.subscriptionId}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${severityLabel(alert.severity)}. ${alert.title}. ${alert.message}`}
+                  >
+                    {body}
+                    <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} style={styles.icon} />
+                  </TouchableOpacity>
+                ) : (
+                  <View key={alert.id} style={[styles.row, i > 0 && styles.rowDivider]}>{body}</View>
+                );
+              })}
+            </View>
           )}
         </View>
       </ScrollView>
@@ -121,24 +115,24 @@ export default function AlertsScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    alertCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderLeftWidth: 4, borderWidth: 1, borderColor: c.border,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: space.xxl },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    alertHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
-    alertTitle: { fontSize: 14, fontWeight: "600", color: c.text, flex: 1, marginLeft: 8 },
-    alertBadge: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4, marginLeft: 8 },
-    alertBadgeText: { fontSize: 11, fontWeight: "600" },
-    alertMessage: { fontSize: 13, color: c.textSecondary, lineHeight: 18 },
-    alertAction: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: c.border },
-    actionButton: { backgroundColor: c.border, borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12, alignItems: "center" },
-    actionButtonText: { fontSize: 12, fontWeight: "600", color: c.primary },
-    emptyState: { alignItems: "center", paddingVertical: 48 },
-    emptyStateIcon: { marginBottom: 12 },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    row: { flexDirection: "row", alignItems: "flex-start", gap: space.m, paddingVertical: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    icon: { marginTop: 2 },
+    rowText: { flex: 1 },
+    severity: { ...typeScale.label, marginBottom: 2 },
+    alertTitle: { ...typeScale.bodyStrong, color: c.text },
+    alertMessage: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    emptyState: { alignItems: "center", paddingVertical: 48, paddingHorizontal: space.xl },
+    emptyStateIcon: { marginBottom: space.m },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
   });
 }
