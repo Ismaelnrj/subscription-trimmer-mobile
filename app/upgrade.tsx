@@ -65,16 +65,19 @@ export default function UpgradeScreen() {
   const serverLimit = Number(settings?.freeSubscriptionLimit);
   const freeLimit = Number.isFinite(serverLimit) && serverLimit >= 1 ? serverLimit : FREE_LIMIT_FALLBACK;
 
+  /* Checked against the code 2026-11-07. Trial tracking is FREE: nothing gates
+     the trial switch or its reminder, on the phone or the server, so this
+     table must not sell it as Premium. "Priority support" is gone: one address,
+     the same for everybody, so there was no queue to be first in. */
   const FEATURES = [
     { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions", { count: freeLimit }), premium: t("upgrade.premium_unlimited") },
     { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: t("upgrade.premium_fullBreakdown") },
     { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: t("upgrade.premium_allInsights") },
     { icon: "target",              label: t("upgrade.feat_budget"),         free: "—",                             premium: "✓" },
-    { icon: "clock-alert-outline", label: t("upgrade.feat_trial"),          free: "—",                             premium: "✓" },
+    { icon: "clock-alert-outline", label: t("upgrade.feat_trial"),          free: "✓",                             premium: "✓" },
     { icon: "tag-multiple",        label: t("upgrade.feat_customCat"),      free: "—",                             premium: "✓" },
     { icon: "file-chart",          label: t("upgrade.feat_export"),         free: "—",                             premium: "✓" },
     { icon: "email-fast-outline",  label: t("upgrade.feat_email"),          free: "—",                             premium: "✓" },
-    { icon: "headset",             label: t("upgrade.feat_support"),        free: "—",                             premium: "✓" },
   ];
 
   /* THIS SCREEN NEVER NAMES A PRICE GOOGLE PLAY DID NOT GIVE IT.
