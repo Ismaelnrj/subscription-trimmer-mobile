@@ -8,16 +8,20 @@ without opening a browser, and three of its numbers turned out to be wrong.
 ## App title
 
 ```
-Trimio: Abo Tracker & Kosten
+Trimio: Subscription Tracker
 ```
 
-28/30. Do NOT change it. It is indexed, and the positioning test in
-`store-listing-positioning-test.md` moves ONE variable. There is a tempting
-30/30 alternative recorded there; it is a separate, later test.
+28/30, READ OFF PLAY CONSOLE on 2026-11-07 (the owner's screenshot of the
+default en-US listing). Until then this file named the GERMAN title here,
+`Trimio: Abo Tracker & Kosten`, so the file and the live listing disagreed and
+nobody had checked. Treat the rest of this file the same way: it is the
+intended text, and the live listing is the one to read before editing it.
+Do NOT change the title. It is indexed, and a change resets signal already
+paid for in time.
 
-NOTE THAT THE TITLE ALREADY CARRIES Abo, Tracker AND Kosten, at the highest
-weight Play applies. That is why the short descriptions should not spend
-characters re-buying those three.
+NOTE THAT THE TITLE ALREADY CARRIES Subscription AND Tracker, at the highest
+weight Play applies. That is why the short description should not spend
+characters re-buying those two.
 
 ---
 
