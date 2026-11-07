@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, AccessibilityInfo } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
@@ -8,7 +8,7 @@ import { formatMoney } from "../../lib/currencies";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
-import { useFmt, useCurrencyStore } from "../../lib/currency-store";
+import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useDateFormat, dayMonthPattern } from "../../lib/date-locale";
 import { useCycleLabel } from "../../lib/cycle-label";
 import { useTheme, AppColors } from "../../lib/theme";
@@ -44,7 +44,24 @@ export default function CalendarScreen() {
      for cents, and "15.99" against "16" tells a reader nothing extra about
      whether a day is heavy. Converts before rounding, so the rounding happens
      in the currency the number is displayed in. */
-  const { currency, convert } = useCurrencyStore();
+  const { currency, convert, rates, baseCurrencyCode } = useCurrencyStore();
+  /* One row's price in the base currency, the unit every total on this screen
+     is in. The grid's day amounts, the selected day's total, the month total
+     and the month's highest charge all added raw prices, so a 49 EUR row and a
+     24.99 USD row made one total of 73.99 "euros", and a dollar price could
+     outrank a larger euro one. Same fix as the dashboard and Stats. */
+  const inBase = useCallback((sub: any) => {
+    const price = Number(sub.price) || 0;
+    return sumMixedInBase({ [sub.currency || ""]: price }, rates, baseCurrencyCode, price);
+  }, [rates, baseCurrencyCode]);
+  /* A sum that moved through an exchange rate is marked as an estimate, the
+     dashboard's test: any part priced in another currency. */
+  const fmtSum = (amount: number, subs: any[]) => {
+    const byCurrency: Record<string, number> = {};
+    for (const sub of subs) byCurrency[sub.currency || ""] = 1;
+    const text = fmtC(amount);
+    return isMixedCurrency(byCurrency, currency.code) && !text.startsWith("~") ? `~${text}` : text;
+  };
   const fmtCompact = (amount: number) => formatMoney(Math.round(convert(amount)), currency.symbol, 0, i18n.language);
   const fmtD = useDateFormat();
   const cycleLabel = useCycleLabel();
@@ -114,10 +131,10 @@ export default function CalendarScreen() {
   const dayTotals = useMemo(() => {
     const map = new Map<string, number>();
     occurrencesByDay.forEach((subs, key) =>
-      map.set(key, subs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0))
+      map.set(key, subs.reduce((sum: number, sub: any) => sum + inBase(sub), 0))
     );
     return map;
-  }, [occurrencesByDay]);
+  }, [occurrencesByDay, inBase]);
 
   /* The today circle pulses forever while the screen is open. For anyone who
      has asked their phone to reduce motion, that is exactly the kind of thing
@@ -174,7 +191,7 @@ export default function CalendarScreen() {
   }, [occurrencesByDay, categoryLabel]);
 
   const selectedDaySubs = selectedDate ? occurrencesByDay.get(dayKey(selectedDate)) ?? [] : [];
-  const selectedDayTotal = selectedDaySubs.reduce((sum: number, sub: any) => sum + (sub.price ?? 0), 0);
+  const selectedDayTotal = selectedDaySubs.reduce((sum: number, sub: any) => sum + inBase(sub), 0);
 
   const upcoming = useMemo(
     () => getUpcomingOccurrences(planned, new Date(), TIMELINE_WINDOW_DAYS),
@@ -204,10 +221,10 @@ export default function CalendarScreen() {
   const monthSummary = useMemo(() => {
     const all: any[] = [];
     for (const subs of occurrencesByDay.values()) all.push(...subs);
-    const total = all.reduce((sum, sub) => sum + sub.price, 0);
-    const highest = all.reduce((max: any, sub: any) => (sub.price > (max?.price ?? -1) ? sub : max), null);
-    return { total, count: all.length, highest };
-  }, [occurrencesByDay]);
+    const total = all.reduce((sum, sub) => sum + inBase(sub), 0);
+    const highest = all.reduce((max: any, sub: any) => (max === null || inBase(sub) > inBase(max) ? sub : max), null);
+    return { total, count: all.length, highest, all };
+  }, [occurrencesByDay, inBase]);
 
   const goToToday = () => {
     setMonth(new Date());
@@ -309,7 +326,7 @@ export default function CalendarScreen() {
                   {selectedDate ? fmtD(selectedDate, dayMonthPattern(i18n.language, { weekday: true })) : t("calendar.selectDay")}
                 </Text>
                 {selectedDayTotal > 0 && (
-                  <Text style={styles.dayHeaderTotal}>{fmtC(selectedDayTotal)}</Text>
+                  <Text style={styles.dayHeaderTotal}>{fmtSum(selectedDayTotal, selectedDaySubs)}</Text>
                 )}
               </View>
 
@@ -381,7 +398,7 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.monthSummaryTotal}>{fmtC(monthSummary.total)}</Text>
+              <Text style={styles.monthSummaryTotal}>{fmtSum(monthSummary.total, monthSummary.all)}</Text>
 
               <View style={styles.monthSummaryStatsRow}>
                 <View style={styles.monthSummaryStat}>
