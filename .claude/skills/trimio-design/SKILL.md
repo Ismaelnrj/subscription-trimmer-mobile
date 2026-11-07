@@ -84,6 +84,49 @@ read red any more. The forms rule is the exception that proves the point: it
 has no noise, so its gate is a test, `__tests__/form-autofill-and-ellipsis.test.js`,
 not this script's exit code.
 
+## Redesigning a screen: the generated look, and how to tell (2026-11-07)
+
+The owner's brief for the redesign: the app "looks AI generated" and must look
+"expensive, premium and professional". Two GitHub skills were read in full for
+it and NEITHER IS INSTALLED, for the same reason as the Vercel rules above:
+
+- `anthropics/skills` `frontend-design` (read at `2c5958e`). Web focused, but
+  its list of what generated interfaces cluster on is the most precise
+  description of the owner's complaint there is. The rules taken from it:
+  1. **No middle dots joining meta text** ("A · B · C"). Use a comma, a
+     preposition ("a year for 5 subscriptions") or two lines.
+  2. **No arrow appended to link or button text.** A chevron icon carries
+     "goes somewhere" in this app, as the View all row already does.
+  3. **No all caps labels, no eyebrow above every heading.** Same rule as the
+     site's, now for the app.
+  4. **Not the card kit:** identical rounded cards, one radius on everything,
+     the same soft grey shadow under each. Cards here are hairline bordered
+     with no shadow, and a card exists only to group rows.
+  5. **Spend boldness in one place.** One element per screen leads (the
+     dashboard's monthly total, in `type.display`); everything around it is
+     quiet. "Remove one accessory" before calling a screen done.
+  6. **Copy:** the button names the action, the toast repeats the button's
+     verb, an empty state says what to do next.
+  Rules 1 and 2 are text and are GATED: `__tests__/redesign-tells.test.js`
+  scans every screen in its `REDONE` list. Add each screen there when its
+  redesign lands. The rest are a review, done on the rendered screen.
+  ITS OWN FIRST RUN FOUND THREE TELLS IN THE FIRST REDESIGNED SCREEN, written
+  by the same session that later read the list: two middle dots and an arrow
+  on the dashboard. Check a screen against this list BEFORE showing it.
+  ONE TELL IS THE BRAND AND STAYS: a warm cream ground near `#F4F1EA` is
+  trait one on that list, and Trimio's Warm White is `#F7F6F1`. The palette is
+  the brief, so it wins; the cure is everything else on this list.
+- `nextlevelbuilder/ui-ux-pro-max-skill` (read at `b7d5353`). A searchable
+  database of styles and palettes for generating a design system from
+  nothing, which Trimio does not need, plus a React Native file of generic
+  coding advice. Its `references/pro-rules.md` app checklist overlaps what
+  this skill already measures (contrast, 48dp targets, safe areas, a 4/8 point
+  rhythm, one icon family). Its search script was not run: a safety check
+  refused executing code from outside the repo.
+
+The scale every redone screen takes its numbers from is `space`, `radius`,
+`type` and `tabular` in `lib/theme.ts`. A number off that scale is a decision.
+
 ## The theme's own contrast is a CI gate, not a habit
 
 `__tests__/theme-contrast.test.js` computes the WCAG ratio of every

@@ -308,7 +308,8 @@ export default function DashboardScreen() {
     <TouchableOpacity style={styles.verifyBanner} onPress={() => router.push("/verify-email")}>
       <MaterialCommunityIcons name="email-alert" size={20} color={c.warning} />
       <Text style={styles.verifyBannerText}>{t("dashboard.verifyEmail")}</Text>
-      <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")} →</Text>
+      <Text style={styles.verifyBannerLink}>{t("dashboard.verifyLink")}</Text>
+      <MaterialCommunityIcons name="chevron-right" size={18} color={c.warning} />
     </TouchableOpacity>
   ) : null;
 
@@ -430,7 +431,7 @@ export default function DashboardScreen() {
               <LogoImage name={sub.name} category={sub.category} size={36} />
               <View style={styles.rowText}>
                 <Text style={styles.rowTitle} numberOfLines={1}>{sub.name}</Text>
-                <Text style={styles.rowMeta}>{dueText(days)} · {fmtD(date, dayMonth)}</Text>
+                <Text style={styles.rowMeta}>{dueText(days)}, {fmtD(date, dayMonth)}</Text>
               </View>
               <Text style={styles.rowAmount}>{fmtC(sub.price, sub.currency)}</Text>
             </TouchableOpacity>
