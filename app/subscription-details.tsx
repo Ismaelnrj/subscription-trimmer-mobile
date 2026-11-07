@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { useTranslation } from "react-i18next";
@@ -11,8 +10,8 @@ import { isPendingRow, removePending } from "../lib/pending-subscriptions";
 import { rescheduleRemindersFromCache } from "../lib/reminders-from-cache";
 import { useFmt } from "../lib/currency-store";
 import { useDateFormat, dayMonthPattern } from "../lib/date-locale";
-import { useCycleLabel } from "../lib/cycle-label";
-import { useTheme, useIsDark, AppColors } from "../lib/theme";
+import { useCycleAdjective } from "../lib/cycle-label";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../lib/theme";
 import { LogoImage } from "../components/LogoImage";
 import { getUpcomingOccurrences } from "../lib/recurrence";
 
@@ -26,12 +25,11 @@ export default function SubscriptionDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const c = useTheme();
-  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t, i18n } = useTranslation();
   const fmtC = useFmt();
   const fmtD = useDateFormat();
-  const cycleLabel = useCycleLabel();
+  const cycleAdjective = useCycleAdjective();
   const queryClient = useQueryClient();
 
   /* isLoadingError, not isError: a refetch that fails (offline, or the server
@@ -99,9 +97,9 @@ export default function SubscriptionDetailsScreen() {
   if (isError) {
     return (
       <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="cloud-off-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <MaterialCommunityIcons name="cloud-off-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
         <Text style={styles.emptyStateText}>{t("subscriptionDetails.couldntLoad")}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()} accessibilityRole="button">
           <Text style={styles.retryButtonText}>{t("subscriptionDetails.retry")}</Text>
         </TouchableOpacity>
       </View>
@@ -111,7 +109,7 @@ export default function SubscriptionDetailsScreen() {
   if (!sub) {
     return (
       <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+        <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
         <Text style={styles.emptyStateText}>{t("subscriptionDetails.notFound")}</Text>
       </View>
     );
@@ -124,47 +122,35 @@ export default function SubscriptionDetailsScreen() {
       <Stack.Screen options={{ title: sub.name }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
-          {isDark ? (
-            <LinearGradient colors={["#245F52", "#2F8E71"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-              <LogoImage name={sub.name} category={sub.category} size={56} />
-              <Text style={styles.heroNameOnGradient}>{sub.name}</Text>
-              <Text style={styles.heroPriceOnGradient}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
-            </LinearGradient>
-          ) : (
-            <View style={[styles.hero, styles.heroLight]}>
-              <LogoImage name={sub.name} category={sub.category} size={56} />
-              <Text style={styles.heroName}>{sub.name}</Text>
-              <Text style={styles.heroPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
+          {/* Open on the page, like every redone screen: the mark, the name,
+              then the one figure this screen is about. The dark mode gradient
+              (#245F52 to #2F8E71) was off palette. */}
+          <View style={styles.header}>
+            <LogoImage name={sub.name} category={sub.category} size={48} />
+            <View style={styles.headerText}>
+              <Text style={styles.name} numberOfLines={2}>{sub.name}</Text>
+              <Text style={styles.cycle}>{cycleAdjective(sub.billingCycle)}</Text>
             </View>
-          )}
+          </View>
+          <Text style={styles.price}>{fmtC(sub.price, sub.currency)}</Text>
 
-          {isPendingRow(sub) ? (
-            /* No server id yet, so editing waits until it is saved. */
-            <View style={styles.editButton}>
-              <MaterialCommunityIcons name="cloud-upload-outline" size={16} color={c.textSecondary} />
-              <Text style={[styles.editButtonText, { color: c.textSecondary, flexShrink: 1 }]}>
-                {t("subscriptions.pendingBody", { name: sub.name })}
-              </Text>
-            </View>
-          ) : (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => router.push(`/(tabs)/subscriptions?editId=${sub.id}`)}
-          >
-            <MaterialCommunityIcons name="pencil" size={16} color={c.primary} />
-            <Text style={styles.editButtonText}>{t("subscriptionDetails.edit")}</Text>
-          </TouchableOpacity>
-          )}
-
-          <View style={styles.costRow}>
-            <View style={styles.costCard}>
-              <Text style={styles.costLabel}>{t("subscriptionDetails.monthly")}</Text>
-              <Text style={styles.costValue}>{fmtC(monthly)}</Text>
-            </View>
-            <View style={styles.costCard}>
-              <Text style={styles.costLabel}>{t("subscriptionDetails.yearly")}</Text>
-              <Text style={styles.costValue}>{fmtC(monthly * 12)}</Text>
-            </View>
+          {/* Derived from ONE row, so it is in that row's currency. Formatted
+              without it, a 24.99 USD row was read as the base currency and
+              converted a second time. Only the figure the cycle does not
+              already state is shown. */}
+          <View style={styles.card}>
+            {sub.billingCycle !== "monthly" && (
+              <View style={styles.row}>
+                <Text style={styles.rowLabel}>{t("subscriptionDetails.monthly")}</Text>
+                <Text style={styles.rowValue}>{fmtC(monthly, sub.currency)}</Text>
+              </View>
+            )}
+            {sub.billingCycle !== "yearly" && (
+              <View style={[styles.row, sub.billingCycle !== "monthly" && styles.rowDivider]}>
+                <Text style={styles.rowLabel}>{t("subscriptionDetails.yearly")}</Text>
+                <Text style={styles.rowValue}>{fmtC(monthly * 12, sub.currency)}</Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.sectionTitle}>{t("subscriptionDetails.upcomingRenewals")}</Text>
@@ -173,93 +159,106 @@ export default function SubscriptionDetailsScreen() {
               <Text style={styles.emptyStateText}>{t("subscriptionDetails.noUpcoming")}</Text>
             </View>
           ) : (
-            upcoming.map(({ date }, i) => (
-              <View key={i} style={styles.renewalRow}>
-                <MaterialCommunityIcons name="calendar-check-outline" size={18} color={c.textSecondary} />
-                <Text style={styles.renewalDate}>{fmtD(date, dayMonthPattern(i18n.language, { weekday: true }))}</Text>
-                <Text style={styles.renewalPrice}>{fmtC(sub.price, sub.currency)}</Text>
-              </View>
-            ))
+            <View style={styles.card}>
+              {upcoming.map(({ date }, i) => (
+                <View key={i} style={[styles.row, i > 0 && styles.rowDivider]}>
+                  <Text style={styles.rowLabel}>{fmtD(date, dayMonthPattern(i18n.language, { weekday: true }))}</Text>
+                  <Text style={styles.rowValue}>{fmtC(sub.price, sub.currency)}</Text>
+                </View>
+              ))}
+            </View>
           )}
 
-          <TouchableOpacity style={styles.reminderRow} onPress={() => router.push("/notification-preferences")}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.reminderTitle}>{t("subscriptionDetails.reminders")}</Text>
-              <Text style={styles.reminderDesc}>{t("subscriptionDetails.remindersDesc")}</Text>
-            </View>
-            <Text style={styles.reminderManage}>{t("subscriptionDetails.manage")}</Text>
-          </TouchableOpacity>
-
-          <Text style={[styles.sectionTitle, styles.dangerTitle]}>{t("subscriptionDetails.dangerZone")}</Text>
-          <TouchableOpacity style={styles.deleteButton} onPress={confirmDelete} disabled={deleteMutation.isLoading}>
-            {deleteMutation.isLoading ? (
-              <ActivityIndicator color={c.danger} />
+          <View style={[styles.card, styles.cardAfter]}>
+            {isPendingRow(sub) ? (
+              /* No server id yet, so editing waits until it is saved. */
+              <View style={styles.row}>
+                <MaterialCommunityIcons name="cloud-upload-outline" size={20} color={c.textSecondary} />
+                <Text style={[styles.rowLabel, styles.pendingText]}>{t("subscriptions.pendingBody", { name: sub.name })}</Text>
+              </View>
             ) : (
-              <>
-                <MaterialCommunityIcons name="trash-can-outline" size={18} color={c.danger} />
-                <Text style={styles.deleteButtonText}>{t("subscriptionDetails.deleteSubscription")}</Text>
-              </>
+              <TouchableOpacity
+                style={styles.row}
+                onPress={() => router.push(`/(tabs)/subscriptions?editId=${sub.id}`)}
+                accessibilityRole="button"
+              >
+                <MaterialCommunityIcons name="pencil-outline" size={20} color={c.textSecondary} />
+                <Text style={styles.rowLabel}>{t("subscriptionDetails.edit")}</Text>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.row, styles.rowDivider]}
+              onPress={() => router.push("/notification-preferences")}
+              accessibilityRole="button"
+              accessibilityHint={t("subscriptionDetails.remindersDesc")}
+            >
+              <MaterialCommunityIcons name="bell-outline" size={20} color={c.textSecondary} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle}>{t("subscriptionDetails.reminders")}</Text>
+                <Text style={styles.rowSub}>{t("subscriptionDetails.remindersDesc")}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.card, styles.cardAfter]}>
+            <TouchableOpacity
+              style={styles.row}
+              onPress={confirmDelete}
+              disabled={deleteMutation.isLoading}
+              accessibilityRole="button"
+            >
+              {deleteMutation.isLoading ? (
+                <ActivityIndicator color={c.danger} />
+              ) : (
+                <>
+                  <MaterialCommunityIcons name="trash-can-outline" size={20} color={c.danger} />
+                  <Text style={[styles.rowLabel, { color: c.danger }]}>{t("subscriptionDetails.deleteSubscription")}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    hero: { borderRadius: 20, padding: 24, alignItems: "center", marginBottom: 12 },
-    heroLight: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
-    heroName: { fontSize: 20, fontWeight: "700", color: c.text, marginTop: 12 },
-    heroPrice: { fontSize: 14, color: c.textSecondary, marginTop: 4 },
-    heroNameOnGradient: { fontSize: 20, fontWeight: "700", color: "#FFFFFF", marginTop: 12 },
-    heroPriceOnGradient: { fontSize: 14, color: "rgba(255,255,255,0.8)", marginTop: 4 },
-    editButton: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-      alignSelf: "center", paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20,
-      backgroundColor: c.primaryLight, marginBottom: 20,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: space.xxl },
+    loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80, backgroundColor: c.bg },
+
+    header: { flexDirection: "row", alignItems: "center", gap: space.m },
+    headerText: { flex: 1 },
+    name: { ...typeScale.title, color: c.text },
+    cycle: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    price: { ...typeScale.display, color: c.text, marginTop: space.l, marginBottom: space.l },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    editButtonText: { fontSize: 13, fontWeight: "600", color: c.primary },
-    costRow: { flexDirection: "row", gap: 12, marginBottom: 20 },
-    costCard: {
-      flex: 1, backgroundColor: c.card, borderRadius: 12, padding: 14,
-      borderWidth: 1, borderColor: c.border,
-    },
-    costLabel: { fontSize: 12, color: c.textSecondary, marginBottom: 4 },
-    costValue: { fontSize: 18, fontWeight: "700", color: c.text },
-    sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text, marginBottom: 10 },
-    dangerTitle: { color: c.danger, marginTop: 20 },
-    emptyState: { paddingVertical: 16 },
-    emptyStateText: { fontSize: 13, color: c.textSecondary, textAlign: "center", paddingHorizontal: 32 },
+    cardAfter: { marginTop: space.xl },
+    row: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingVertical: space.m, gap: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    rowLabel: { ...typeScale.body, color: c.text, flex: 1 },
+    rowValue: { ...typeScale.bodyStrong, ...tabular, color: c.text },
+    rowText: { flex: 1 },
+    rowTitle: { ...typeScale.body, color: c.text },
+    rowSub: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    pendingText: { color: c.textSecondary },
+
+    emptyState: { paddingVertical: space.l },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center", paddingHorizontal: space.xxl },
     retryButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
-      paddingHorizontal: 24, marginTop: 16,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      paddingHorizontal: space.xl, marginTop: space.l, justifyContent: "center",
     },
-    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    renewalRow: {
-      flexDirection: "row", alignItems: "center", gap: 10,
-      backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 8,
-      borderWidth: 1, borderColor: c.border,
-    },
-    renewalDate: { flex: 1, fontSize: 13, color: c.text },
-    renewalPrice: { fontSize: 13, fontWeight: "600", color: c.text },
-    reminderRow: {
-      flexDirection: "row", alignItems: "center", gap: 12,
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginTop: 12,
-      borderWidth: 1, borderColor: c.border,
-    },
-    reminderTitle: { fontSize: 14, fontWeight: "600", color: c.text },
-    reminderDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    reminderManage: { fontSize: 13, fontWeight: "600", color: c.primary },
-    deleteButton: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-      backgroundColor: c.dangerLight, borderRadius: 12, padding: 14,
-      borderWidth: 1, borderColor: c.dangerBorder,
-    },
-    deleteButtonText: { fontSize: 14, fontWeight: "600", color: c.danger },
+    retryButtonText: { ...typeScale.bodyStrong, color: c.bg },
   });
 }

@@ -706,14 +706,12 @@
     "addSubscription": "Abo hinzufügen"
   },
   "subscriptionDetails": {
-    "monthly": "Monatlich",
-    "yearly": "Jährlich",
+    "monthly": "Pro Monat",
+    "yearly": "Pro Jahr",
     "upcomingRenewals": "Anstehende Verlängerungen",
     "noUpcoming": "Keine anstehenden Verlängerungen gefunden",
     "reminders": "Erinnerungen",
-    "remindersDesc": "Erinnerungen werden für alle Abos zentral in den Benachrichtigungseinstellungen verwaltet.",
-    "manage": "Verwalten",
-    "dangerZone": "Gefahrenzone",
+    "remindersDesc": "Gilt für alle Abos, einstellbar unter Benachrichtigungen.",
     "deleteSubscription": "Abo löschen",
     "deleteConfirmTitle": "{{name}} löschen?",
     "deleteConfirmMsg": "Das kann nicht rückgängig gemacht werden.",
