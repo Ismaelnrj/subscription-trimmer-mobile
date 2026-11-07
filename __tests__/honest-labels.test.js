@@ -47,6 +47,48 @@ describe("no claim of AI the app does not have", () => {
   });
 });
 
+describe("the yearly saving is worked out from Play's prices, never written in", () => {
+  /* "Save 44%" was a string. True of 2.99 and 19.99, false the day the Play
+     price changed (3.99 and 24.99 save 47%), and Play rounds each country's
+     price on its own, so no fixed figure is right everywhere. */
+  const src = read("app/upgrade.tsx");
+  const head = "const yearlySaving = (): number | null => {";
+  const start = src.indexOf(head);
+  const body = src.slice(start + head.length, src.indexOf("\n  };", start));
+  // Missing function: every assertion below fails by name rather than the suite failing to load.
+  const yearlySaving = start > 0 ? new Function("packages", "PRODUCT_IDS", body) : () => undefined;
+  const IDS = { monthly: "m", yearly: "y" };
+  const pkgs = (m, y) => [
+    ...(m == null ? [] : [{ product: { identifier: "m", price: m } }]),
+    ...(y == null ? [] : [{ product: { identifier: "y", price: y } }]),
+  ];
+
+  it("the function exists and is what the yearly badge reads", () => {
+    expect(start).toBeGreaterThan(0);
+    expect(src).toMatch(/badge: saving !== null \? t\("upgrade\.savePercent", \{ percent: saving \}\) : undefined/);
+  });
+
+  it("gives the real saving, rounded down", () => {
+    expect(yearlySaving(pkgs(2.99, 19.99), IDS)).toBe(44);
+    expect(yearlySaving(pkgs(3.99, 24.99), IDS)).toBe(47);
+  });
+
+  it("claims nothing without both real prices, or without a saving", () => {
+    expect(yearlySaving(pkgs(3.99, null), IDS)).toBeNull();
+    expect(yearlySaving(pkgs(null, 24.99), IDS)).toBeNull();
+    expect(yearlySaving([], IDS)).toBeNull();
+    expect(yearlySaving(pkgs(3.99, 47.88), IDS)).toBeNull();
+    expect(yearlySaving(pkgs(0, 24.99), IDS)).toBeNull();
+  });
+
+  it("no purchase screen string carries a fixed percentage", () => {
+    for (const lang of ["en", "de"]) {
+      const hits = strings(JSON.parse(read(`locales/${lang}.json`)).upgrade).filter(([, v]) => /\d\s?%/.test(v));
+      expect([lang, hits]).toEqual([lang, []]);
+    }
+  });
+});
+
 describe("no date a reader can take for another day", () => {
   it("no screen formats a date with the numeric short pattern", () => {
     const offenders = ["app", "components"]

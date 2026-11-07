@@ -99,9 +99,26 @@ export default function UpgradeScreen() {
       : { text: t("upgrade.priceUnavailable"), real: false };
   };
 
+  /* THE YEARLY SAVING IS WORKED OUT FROM PLAY'S OWN PRICES, never written in.
+     It used to be the string "Save 44%", which was true of 2.99 and 19.99 and
+     nothing else: the day the Play price moved, the purchase screen would state
+     a saving the prices beside it did not add up to, and Play rounds each
+     country's price separately, so one fixed figure cannot be right
+     everywhere anyway. Rounded DOWN so it never claims more than the real
+     difference, and absent whenever either real price is, the same rule as the
+     prices themselves. */
+  const yearlySaving = (): number | null => {
+    const monthly = packages.find((p) => p.product.identifier === PRODUCT_IDS.monthly)?.product.price;
+    const yearly = packages.find((p) => p.product.identifier === PRODUCT_IDS.yearly)?.product.price;
+    if (typeof monthly !== "number" || typeof yearly !== "number" || !(monthly > 0) || !(yearly > 0)) return null;
+    const percent = Math.floor((1 - yearly / (monthly * 12)) * 100);
+    return percent >= 1 ? percent : null;
+  };
+  const saving = yearlySaving();
+
   const PLANS: { key: PlanKey; label: string; price: PlanPrice; sub: string; badge?: string }[] = [
     { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly"),  sub: t("upgrade.perMonth") },
-    { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly"),   sub: t("upgrade.perYear"),   badge: t("upgrade.save44") },
+    { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly"),   sub: t("upgrade.perYear"),   badge: saving !== null ? t("upgrade.savePercent", { percent: saving }) : undefined },
     { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime"), sub: t("upgrade.oneTime"),   badge: t("upgrade.bestValue") },
   ];
 

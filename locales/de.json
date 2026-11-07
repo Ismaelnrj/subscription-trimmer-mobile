@@ -341,7 +341,7 @@
     "perMonth": "pro Monat",
     "perYear": "pro Jahr",
     "oneTime": "einmalig, für immer",
-    "save44": "44% sparen",
+    "savePercent": "{{percent}}% sparen",
     "bestValue": "Bestes Angebot",
     "whatsIncluded": "Was ist enthalten",
     "free": "Kostenlos",
