@@ -95,7 +95,7 @@ describe('an empty dashboard shows the first-run card instead of zeros', () => {
     expect(DASH).toContain('const isFirstRun = subscriptions.length === 0;');
     expect(DASH).toContain('{isFirstRun && <FirstRunCard verifyBanner={verifyBanner} />}');
     const wrapped = DASH.slice(DASH.indexOf('{!isFirstRun && (<>'), DASH.indexOf('</>)}'));
-    for (const piece of ['<PremiumGate', 'styles.heroCard', 'dashboard.quickActions', 'dashboard.recentExpenses']) {
+    for (const piece of ['styles.summaryValue', 'dashboard.upcoming', 'styles.rowAmount', 'moreRows.map']) {
       expect(wrapped).toContain(piece);
     }
   });

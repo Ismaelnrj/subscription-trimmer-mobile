@@ -24,7 +24,8 @@ describe('the first screen after signup', () => {
   it('the free Premium card reads its copy from the locale', () => {
     expect(DASH).not.toContain('Budget Goal & Progress Bar');
     expect(DASH).not.toMatch(/description="Set a monthly spending limit/);
-    expect(DASH).toContain('title={t("accountSettings.premiumBudgetTitle")}');
+    /* Since 2026-11-07 the free budget offer is one quiet row, not a card. */
+    expect(DASH).toContain('title: t("dashboard.budgetUpsell")');
   });
 
   it('the estimate banner is translated and pluralised by i18next', () => {
@@ -35,11 +36,11 @@ describe('the first screen after signup', () => {
 
   it('the budget card says "of" in the reader\'s language', () => {
     expect(DASH).not.toMatch(/>of \{fmtC/);
-    expect(DASH).toContain('t("dashboard.budgetOf", { amount: fmtC(budgetGoal) })');
+    expect(DASH).toContain('t("dashboard.remainingOf", { amount: fmtTotal(budgetGoal - monthlyTotal), goal: fmtC(budgetGoal) })');
   });
 
   it('both locales carry the keys with the same tokens, in the _one/_other form the app uses', () => {
-    for (const k of ['youGuessed_one', 'youGuessed_other', 'budgetOf']) {
+    for (const k of ['youGuessed_one', 'youGuessed_other', 'remainingOf', 'budgetUpsell', 'yearAndActive_one', 'yearAndActive_other', 'alertsCount_one', 'alertsCount_other']) {
       expect(typeof en[k]).toBe('string');
       expect(typeof de[k]).toBe('string');
       expect(tokens(de[k])).toEqual(tokens(en[k]));

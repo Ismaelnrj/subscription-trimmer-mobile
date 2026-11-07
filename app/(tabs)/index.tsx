@@ -1,5 +1,4 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Animated, Easing } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
@@ -8,13 +7,13 @@ import * as SecureStore from "expo-secure-store";
 import apiClient from "../../lib/api";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { livePlanned } from "../../lib/recurrence";
-import { daysUntil } from "../../lib/utils";
+import { daysUntil, parseApiDate } from "../../lib/utils";
+import { useDateFormat } from "../../lib/date-locale";
 import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
-import { PremiumGate } from "../../components/PremiumGate";
 import { FirstRunCard } from "../../components/FirstRunCard";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
-import { useTheme, useIsDark, AppColors } from "../../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
 import { LogoImage } from "../../components/LogoImage";
@@ -30,25 +29,18 @@ const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
 const ESTIMATE_BANNER_SHOWN_KEY = "estimate_banner_shown";
 const INVITE_BANNER_DISMISSED_UNTIL_KEY = "invite_banner_dismissed_until";
 
-function toMonthly(price: number, cycle: string) {
-  if (cycle === "weekly") return (price * 52) / 12;
-  if (cycle === "yearly") return price / 12;
-  return price;
-}
-
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<"monthly" | "yearly">("monthly");
   const [recoBannerDismissed, setRecoBannerDismissed] = useState(true);
   const [inviteBannerDismissed, setInviteBannerDismissed] = useState(true);
   const [estimateBanner, setEstimateBanner] = useState<{ guess: number; actual: number } | null>(null);
   const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
   const c = useTheme();
-  const isDark = useIsDark();
+  const fmtD = useDateFormat();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const cycleLabel = useCycleLabel();
   /* isLoadingError, not isError: a refetch that fails (offline, or the server
@@ -123,7 +115,6 @@ export default function DashboardScreen() {
   const isPremium = user?.isPaid ?? false;
   const isLoading = summaryLoading || subsLoading;
   const isError = summaryError || subsError;
-  const recentSubs = subscriptions.slice(0, 3);
 
   const budgetGoal = settings?.budgetGoal;
   /* `summary.monthlyTotal` ADDS RAW NUMBERS ACROSS CURRENCIES, so a 10 EUR row
@@ -155,7 +146,6 @@ export default function DashboardScreen() {
   const budgetPct = Math.min(budgetRaw, 100);
   const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
   const budgetStatus = budgetRaw >= 100 ? t("dashboard.overBudget") : budgetRaw >= 80 ? t("dashboard.gettingClose") : t("dashboard.onTrack");
-  const budgetStatusIcon = budgetRaw >= 80 ? "alert-circle-outline" : "check-circle-outline";
 
   const activeSubIds = new Set((subscriptions as any[]).map((s) => s.id));
   const activeAlertCount = (alerts as any[]).filter(
@@ -271,18 +261,43 @@ export default function DashboardScreen() {
   const greeting = greetingHour < 12 ? t("dashboard.goodMorning") : greetingHour < 18 ? t("dashboard.goodAfternoon") : t("dashboard.goodEvening");
   const firstName = user?.name?.trim().split(/\s+/)[0];
 
-  const nextSub = planned
-    .filter((s) => s.nextBillingDate)
-    .sort((a, b) => new Date(a.nextBillingDate).getTime() - new Date(b.nextBillingDate).getTime())[0];
+  /* The next charges in date order. Paused rows are already out (`planned`),
+     and a row whose date cannot be read is left out rather than shown with a
+     wrong one. parseApiDate, never new Date(): the day must not move west of
+     UTC (see lib/utils.ts). */
+  const upcoming = planned
+    .map((sub) => ({ sub, date: parseApiDate(sub.nextBillingDate), days: daysUntil(sub.nextBillingDate) }))
+    .filter((x): x is { sub: any; date: Date; days: number } => x.date != null && x.days != null)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .slice(0, 4);
+  const dueText = (days: number) =>
+    days <= 0 ? t("dashboard.dueToday") : days === 1 ? t("dashboard.dueTomorrow") : t("dashboard.dueInDays", { count: days });
+  const dayMonth = i18n.language?.startsWith("de") ? "d. MMM" : "MMM d";
 
-  const nextSubDueLabel = (() => {
-    if (!nextSub) return null;
-    const days = daysUntil(nextSub.nextBillingDate);
-    if (days == null) return null;   // unreadable date, so no badge rather than a wrong one
-    if (days <= 0) return t("dashboard.dueToday");
-    if (days === 1) return t("dashboard.dueTomorrow");
-    return t("dashboard.dueInDays", { count: days });
-  })();
+  type MoreRow = {
+    key: string;
+    icon: string;
+    title: string;
+    meta?: string;
+    tag?: string;
+    tone?: string;
+    onPress: () => void;
+    onDismiss?: () => void;
+  };
+  const moreRows: MoreRow[] = [
+    ...(activeAlertCount > 0
+      ? [{ key: "alerts", icon: "bell-outline", title: t("dashboard.alertsCount", { count: activeAlertCount }), tone: c.danger, onPress: () => router.push("/alerts") }]
+      : []),
+    ...(showRecoBanner
+      ? [{ key: "tips", icon: "lightbulb-on-outline", title: t("dashboard.waysToSave", { count: recoTips.length }), onPress: () => router.push("/insights"), onDismiss: dismissRecoBanner }]
+      : []),
+    ...(!isPremium
+      ? [{ key: "budget", icon: "target", title: t("dashboard.budgetUpsell"), tag: t("upgrade.premium"), onPress: () => router.push("/upgrade") }]
+      : []),
+    ...(showInviteBanner
+      ? [{ key: "invite", icon: "account-plus-outline", title: t("dashboard.inviteBannerCta"), meta: t("dashboard.inviteBannerText"), onPress: handleInviteBannerPress, onDismiss: dismissInviteBanner }]
+      : []),
+  ];
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -318,24 +333,9 @@ export default function DashboardScreen() {
       <View style={styles.scrollContent}>
         {subsStale && <OfflineNotice />}
         <PendingNotice />
-        <Text style={styles.greetingText}>
+        <Text style={styles.greeting}>
           {greeting}{firstName ? `, ${firstName}` : ""}
         </Text>
-
-        {nextSub && (
-          <View style={styles.nextPaymentCard}>
-            <LogoImage name={nextSub.name} category={nextSub.category} size={40} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.nextPaymentLabel}>{t("dashboard.nextPayment")}</Text>
-              <Text style={styles.nextPaymentName}>{nextSub.name} · {fmtC(nextSub.price, nextSub.currency)}</Text>
-            </View>
-            {nextSubDueLabel && (
-              <View style={styles.nextPaymentBadge}>
-                <Text style={styles.nextPaymentBadgeText}>{nextSubDueLabel}</Text>
-              </View>
-            )}
-          </View>
-        )}
 
         {/* NOTHING ADDED YET: one focused card instead of a dashboard of zeros,
             an upsell and a warning. See components/FirstRunCard.tsx for the
@@ -344,382 +344,190 @@ export default function DashboardScreen() {
         {isFirstRun && <FirstRunCard verifyBanner={verifyBanner} />}
 
         {!isFirstRun && (<>
+        {/* THE MONEY LEADS. Redone 2026-11-07: the total used to be the fourth
+            card down, under a Premium upsell and behind a monthly/yearly
+            toggle, so the one number this app exists for was the least
+            visible thing on its first screen. Both figures now show at once and
+            nothing sits above them. */}
+        <View style={styles.summary}>
+          <Text style={styles.summaryLabel}>{t("dashboard.thisMonth")}</Text>
+          <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            {fmtTotal(monthlyTotal)}
+          </Text>
+          <Text style={styles.summaryMeta}>
+            {t("dashboard.yearAndActive", { amount: fmtTotal(displayYearly), count: summary?.activeSubscriptions ?? 0 })}
+          </Text>
+
+          {isPremium && budgetGoal != null && (
+            <View style={styles.budget}>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
+              </View>
+              <View style={styles.budgetFooter}>
+                <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
+                <Text style={styles.budgetRemaining}>
+                  {budgetRaw >= 100
+                    ? t("dashboard.overLimit", { amount: fmtTotal(monthlyTotal - budgetGoal) })
+                    : t("dashboard.remainingOf", { amount: fmtTotal(budgetGoal - monthlyTotal), goal: fmtC(budgetGoal) })}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+
         {verifyBanner}
 
         {estimateBanner && (
-          <View style={styles.estimateBanner}>
-            <MaterialCommunityIcons name="target" size={20} color={c.primary} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.estimateBannerText}>
-                {t("dashboard.youGuessed", { guess: estimateBanner.guess, actual: estimateBanner.actual, count: estimateBanner.actual })}
-              </Text>
-            </View>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={() => setEstimateBanner(null)} style={{ padding: 4 }}>
-              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
+          <View style={[styles.card, styles.note]}>
+            <MaterialCommunityIcons name="target" size={20} color={c.textSecondary} />
+            <Text style={styles.noteText}>
+              {t("dashboard.youGuessed", { guess: estimateBanner.guess, actual: estimateBanner.actual, count: estimateBanner.actual })}
+            </Text>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={() => setEstimateBanner(null)} hitSlop={12}>
+              <MaterialCommunityIcons name="close" size={18} color={c.textMuted} />
             </TouchableOpacity>
-          </View>
-        )}
-
-        {showRecoBanner && (
-          <View style={styles.recoBanner}>
-            <MaterialCommunityIcons name="lightbulb-on" size={20} color={c.success} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.recoBannerTitle}>
-                {t("dashboard.waysToSave", { count: recoTips.length })}
-              </Text>
-              <Text style={styles.recoBannerText} onPress={() => router.push("/insights")}>
-                {t("dashboard.seeRecommendations")} →
-              </Text>
-            </View>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={dismissRecoBanner} style={{ padding: 4 }}>
-              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {!isPremium && (
-          <PremiumGate
-            title={t("accountSettings.premiumBudgetTitle")}
-            description={t("accountSettings.premiumBudgetDesc")}
-          />
-        )}
-
-        {isPremium && budgetGoal != null && (
-          <View style={[styles.budgetCard, { borderLeftColor: budgetColor }]}>
-            <View style={styles.budgetRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.budgetLabel}>{t("dashboard.monthlyBudget")}</Text>
-                <Text style={styles.budgetAmount}>
-                  {fmtTotal(monthlyTotal)}{" "}
-                  <Text style={styles.budgetOf}>{t("dashboard.budgetOf", { amount: fmtC(budgetGoal) })}</Text>
-                </Text>
-              </View>
-              <View style={[styles.budgetPctBadge, { backgroundColor: budgetColor + "22" }]}>
-                <Text style={[styles.budgetPctText, { color: budgetColor }]}>{Math.round(budgetPct)}%</Text>
-              </View>
-            </View>
-
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
-            </View>
-
-            <View style={styles.budgetFooter}>
-              <View style={styles.budgetStatusRow}>
-                <MaterialCommunityIcons name={budgetStatusIcon as any} size={13} color={budgetColor} />
-                <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
-              </View>
-              <Text style={styles.budgetRemaining}>
-                {budgetRaw >= 100
-                  ? t("dashboard.overLimit", { amount: fmtTotal(monthlyTotal - budgetGoal) })
-                  : t("dashboard.remaining", { amount: fmtTotal(budgetGoal - monthlyTotal) })}
-              </Text>
-            </View>
           </View>
         )}
 
         {trialsSoon.length > 0 && (
-          <View style={styles.trialsSection}>
-            <View style={styles.trialsSectionHeader}>
-              <MaterialCommunityIcons name="clock-alert-outline" size={15} color={c.warning} />
-              <Text style={styles.trialsSectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
-            </View>
-            {trialsSoon.map((sub: any) => {
-              // trialsSoon already filtered these to a readable date in range.
-              const days = daysUntil(sub.trialEndDate) ?? 0;
-              const urgency = days <= 3 ? c.danger : c.warning;
-              return (
-                <View key={sub.id} style={[styles.trialCard, { borderLeftColor: urgency }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.trialName}>{sub.name}</Text>
-                    <Text style={styles.trialCharge}>
-                      {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price, sub.currency), cycle: cycleLabel(sub.billingCycle) })}
-                    </Text>
-                  </View>
-                  <View style={[styles.trialBadge, { backgroundColor: urgency + "22" }]}>
-                    <Text style={[styles.trialBadgeText, { color: urgency }]}>
+          <>
+            <Text style={styles.sectionTitle}>{t("dashboard.trialsEndingSoon")}</Text>
+            <View style={styles.card}>
+              {trialsSoon.map((sub: any, i: number) => {
+                // trialsSoon already filtered these to a readable date in range.
+                const days = daysUntil(sub.trialEndDate) ?? 0;
+                const urgency = days <= 3 ? c.danger : c.warning;
+                return (
+                  <TouchableOpacity key={sub.id} style={[styles.row, i > 0 && styles.rowDivider]} onPress={() => router.push(`/subscription-details?id=${sub.id}`)}>
+                    <LogoImage name={sub.name} category={sub.category} size={36} />
+                    <View style={styles.rowText}>
+                      <Text style={styles.rowTitle} numberOfLines={1}>{sub.name}</Text>
+                      <Text style={styles.rowMeta}>
+                        {t("dashboard.chargedOnExpiry", { amount: fmtC(sub.price, sub.currency), cycle: cycleLabel(sub.billingCycle) })}
+                      </Text>
+                    </View>
+                    <Text style={[styles.rowAside, { color: urgency }]}>
                       {days === 0 ? t("dashboard.today") : t("dashboard.daysLeft", { count: days })}
                     </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
         )}
 
-        <View style={styles.toggleRow}>
-          {(["monthly", "yearly"] as const).map((mode) => (
-            <TouchableOpacity
-              key={mode}
-              style={[styles.togglePill, viewMode === mode && styles.togglePillActive]}
-              onPress={() => setViewMode(mode)}
-            >
-              <Text style={[styles.toggleText, viewMode === mode && styles.toggleTextActive]}>
-                {mode === "monthly" ? t("dashboard.monthly") : t("dashboard.yearly")}
-              </Text>
+        {/* The next charges in date order, in the calendar timeline's row: logo,
+            name, when, and the amount in the row's own currency on the right. */}
+        <Text style={styles.sectionTitle}>{t("dashboard.upcoming")}</Text>
+        <View style={styles.card}>
+          {upcoming.length === 0 && (
+            <View style={styles.row}>
+              <Text style={styles.rowMeta}>{t("dashboard.noUpcomingPayments")}</Text>
+            </View>
+          )}
+          {upcoming.map(({ sub, date, days }, i) => (
+            <TouchableOpacity key={sub.id} style={[styles.row, i > 0 && styles.rowDivider]} onPress={() => router.push(`/subscription-details?id=${sub.id}`)}>
+              <LogoImage name={sub.name} category={sub.category} size={36} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle} numberOfLines={1}>{sub.name}</Text>
+                <Text style={styles.rowMeta}>{dueText(days)} · {fmtD(date, dayMonth)}</Text>
+              </View>
+              <Text style={styles.rowAmount}>{fmtC(sub.price, sub.currency)}</Text>
             </TouchableOpacity>
           ))}
-        </View>
-
-        {isDark ? (
-          <LinearGradient
-            colors={["#245F52", "#2F8E71"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.heroCard, styles.heroCardGradientBorder]}
-          >
-            <View style={styles.heroIconOnGradient}>
-              <MaterialCommunityIcons name="credit-card" size={22} color="#FFFFFF" />
-            </View>
-            <Text style={styles.heroValueOnGradient}>{fmtTotal(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
-            <Text style={styles.heroLabelOnGradient}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
-          </LinearGradient>
-        ) : (
-          <View style={styles.heroCard}>
-            <View style={styles.heroIcon}>
-              <MaterialCommunityIcons name="credit-card" size={22} color={c.primary} />
-            </View>
-            <Text style={styles.heroValue}>{fmtTotal(viewMode === "monthly" ? monthlyTotal : displayYearly)}</Text>
-            <Text style={styles.heroLabel}>{viewMode === "monthly" ? t("dashboard.totalThisMonth") : t("dashboard.totalThisYear")}</Text>
-          </View>
-        )}
-
-        {/* The hero card above already shows one of these two totals (whichever
-            the toggle has selected) -- only show the other one here instead of
-            repeating it in a smaller box right below. */}
-        <View style={styles.secondaryStatCard}>
-          <View style={styles.statIcon}>
-            <MaterialCommunityIcons name="chart-line" size={18} color={c.primary} />
-          </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.secondaryStatValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-              {fmtTotal(viewMode === "monthly" ? displayYearly : monthlyTotal)}
-            </Text>
-            <Text style={styles.statLabel}>{viewMode === "monthly" ? t("dashboard.yearly") : t("dashboard.monthly")}</Text>
-          </View>
-        </View>
-
-        {/* Lighter-weight status row -- these are counts to glance at, not
-            money figures, so they don't need full elevated card treatment. */}
-        <View style={styles.statusRow}>
-          <View style={styles.statusPill}>
-            <MaterialCommunityIcons name="check-circle" size={14} color={c.primary} />
-            <Text style={styles.statusPillText}>{summary?.activeSubscriptions ?? 0} {t("dashboard.active")}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.statusPill, activeAlertCount > 0 && styles.statusPillAlert]}
-            onPress={() => router.push("/alerts")}
-          >
-            <MaterialCommunityIcons name="alert-circle" size={14} color={activeAlertCount > 0 ? c.danger : c.textSecondary} />
-            <Text style={[styles.statusPillText, activeAlertCount > 0 && { color: c.danger, fontWeight: "700", fontFamily: "Montserrat-Bold" }]}>
-              {activeAlertCount} {t("dashboard.alerts")}
-            </Text>
+          <TouchableOpacity style={[styles.row, styles.rowDivider]} onPress={() => router.push("/(tabs)/subscriptions")}>
+            <Text style={styles.rowLink}>{t("dashboard.viewAllSubscriptions")}</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
           </TouchableOpacity>
         </View>
 
-        {showInviteBanner && (
-          <TouchableOpacity style={styles.inviteBanner} onPress={handleInviteBannerPress} activeOpacity={0.8}>
-            <MaterialCommunityIcons name="account-plus" size={20} color={c.primary} />
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.inviteBannerText}>{t("dashboard.inviteBannerText")}</Text>
-              <Text style={styles.inviteBannerCta}>{t("dashboard.inviteBannerCta")} →</Text>
-            </View>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={(e) => { e.stopPropagation(); dismissInviteBanner(); }} style={{ padding: 4 }}>
-              <MaterialCommunityIcons name="close" size={18} color={c.textSecondary} />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
-
-        <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/(tabs)/subscriptions")}>
-          <Text style={styles.actionButtonText}>{t("dashboard.addExpense")}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionButtonOutline}
-          onPress={() => router.push("/insights")}
-        >
-          <Text style={styles.actionButtonOutlineText}>{t("dashboard.viewRecommendations")}</Text>
-        </TouchableOpacity>
-
-        <Text style={[styles.sectionTitle, { marginTop: 24 }]}>{t("dashboard.recentExpenses")}</Text>
-        {recentSubs.length === 0 ? (
-          <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="inbox" size={40} color={c.border} style={{ marginBottom: 8 }} />
-            <Text style={styles.emptyStateText}>{t("dashboard.emptyExpenses")}</Text>
-          </View>
-        ) : (
-          recentSubs.map((sub: any) => {
-            const monthly = sub.billingCycle === "yearly"
-              ? sub.price / 12
-              : sub.billingCycle === "weekly"
-              ? (sub.price * 52) / 12
-              : null;
-            return (
-              <TouchableOpacity key={sub.id} style={styles.subCard} onPress={() => router.push("/(tabs)/subscriptions")}>
-                <LogoImage name={sub.name} category={sub.category} />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.subName}>{sub.name}</Text>
-                  <Text style={styles.subMeta}>
-                    {viewMode === "yearly"
-                      ? `${fmtC(toMonthly(sub.price, sub.billingCycle) * 12)} / ${cycleLabel("yearly")}`
-                      : `${fmtC(sub.price, sub.currency)} / ${cycleLabel(sub.billingCycle)}${monthly != null ? `  ·  ${fmtC(monthly)} / ${cycleLabel("monthly")}` : ""}`
-                    }
-                  </Text>
+        {/* Everything that is a suggestion rather than a fact, together and
+            quiet, after the facts. These were five differently coloured
+            banners and an amber upsell card stacked above the total. */}
+        {moreRows.length > 0 && (
+          <View style={[styles.card, styles.cardAfter]}>
+            {moreRows.map((r, i) => (
+              <TouchableOpacity key={r.key} style={[styles.row, i > 0 && styles.rowDivider]} onPress={r.onPress} activeOpacity={0.7}>
+                <MaterialCommunityIcons name={r.icon as any} size={22} color={r.tone ?? c.textSecondary} />
+                <View style={styles.rowText}>
+                  <Text style={[styles.rowTitle, r.tone ? { color: r.tone } : null]}>{r.title}</Text>
+                  {r.meta ? <Text style={styles.rowMeta}>{r.meta}</Text> : null}
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
+                {r.tag ? (
+                  <View style={styles.tag}>
+                    <Text style={styles.tagText}>{r.tag}</Text>
+                  </View>
+                ) : null}
+                {r.onDismiss ? (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={t("common.a11yDismiss")}
+                    onPress={(e) => { e.stopPropagation(); r.onDismiss?.(); }}
+                    hitSlop={12}
+                  >
+                    <MaterialCommunityIcons name="close" size={18} color={c.textMuted} />
+                  </TouchableOpacity>
+                ) : (
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+                )}
               </TouchableOpacity>
-            );
-          })
+            ))}
+          </View>
         )}
-
-        <TouchableOpacity style={styles.viewAllLink} onPress={() => router.push("/(tabs)/subscriptions")}>
-          <Text style={styles.viewAllLinkText}>{t("dashboard.viewAllSubscriptions")} →</Text>
-        </TouchableOpacity>
         </>)}
       </View>
     </ScrollView>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: FAB_SCROLL_CLEARANCE },
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    greetingText: { fontSize: 22, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 16 },
-    nextPaymentCard: {
-      flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
-      padding: 14, marginBottom: 16, borderWidth: 1, borderColor: c.border,
+    greeting: { ...typeScale.label, color: c.textSecondary, marginBottom: space.xs },
+
+    summary: { marginBottom: space.xl },
+    summaryLabel: { ...typeScale.caption, color: c.textSecondary },
+    summaryValue: { ...typeScale.display, ...tabular, color: c.text, marginTop: space.xs },
+    summaryMeta: { ...typeScale.body, ...tabular, color: c.textSecondary, marginTop: space.xs },
+    budget: { marginTop: space.l },
+    progressTrack: { height: 6, borderRadius: radius.pill, backgroundColor: c.border, overflow: "hidden" },
+    progressFill: { height: 6, borderRadius: radius.pill },
+    budgetFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: space.s },
+    budgetStatus: { ...typeScale.label },
+    budgetRemaining: { ...typeScale.caption, ...tabular, color: c.textSecondary },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    nextPaymentLabel: { fontSize: 12, color: c.textSecondary },
-    nextPaymentName: { fontSize: 15, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginTop: 2 },
-    nextPaymentBadge: { backgroundColor: c.primaryLight, borderRadius: 20, paddingVertical: 5, paddingHorizontal: 10 },
-    nextPaymentBadgeText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
-    viewAllLink: { alignItems: "center", paddingVertical: 14 },
-    viewAllLinkText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.primary },
+    cardAfter: { marginTop: space.xl },
+    row: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingVertical: space.m, gap: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    rowText: { flex: 1 },
+    rowTitle: { ...typeScale.bodyStrong, color: c.text },
+    rowMeta: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    rowAmount: { ...typeScale.bodyStrong, ...tabular, color: c.text },
+    rowAside: { ...typeScale.label },
+    rowLink: { ...typeScale.bodyStrong, color: c.text, flex: 1 },
+    tag: { backgroundColor: c.primaryLight, borderRadius: radius.pill, paddingHorizontal: space.s, paddingVertical: 2 },
+    tagText: { ...typeScale.label, fontSize: 12, color: c.primary },
+
+    note: { flexDirection: "row", alignItems: "center", gap: space.m, paddingVertical: space.m, marginBottom: space.l },
+    noteText: { ...typeScale.caption, color: c.text, flex: 1 },
+
     verifyBanner: {
-      backgroundColor: c.warningLight, borderRadius: 10, padding: 14, marginBottom: 16,
-      flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.warningBorder,
+      flexDirection: "row", alignItems: "center", gap: space.s, backgroundColor: c.warningLight,
+      borderRadius: radius.m, padding: space.m, marginBottom: space.l,
     },
-    verifyBannerText: { flex: 1, fontSize: 13, color: c.warning },
-    verifyBannerLink: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.warning },
+    verifyBannerText: { ...typeScale.caption, color: c.text, flex: 1 },
+    verifyBannerLink: { ...typeScale.label, color: c.warning },
 
-    estimateBanner: {
-      backgroundColor: c.primaryLight, borderRadius: 10, padding: 14, marginBottom: 16,
-      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.primary,
-    },
-    estimateBannerText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
-    recoBanner: {
-      backgroundColor: c.success + "1A", borderRadius: 10, padding: 14, marginBottom: 16,
-      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.success,
-    },
-    recoBannerTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    recoBannerText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.success, marginTop: 2 },
-
-    inviteBanner: {
-      backgroundColor: c.primaryLight, borderRadius: 10, padding: 14, marginBottom: 24,
-      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.primary,
-    },
-    inviteBannerText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, lineHeight: 18 },
-    inviteBannerCta: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary, marginTop: 3 },
-
-    budgetCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 20,
-      borderWidth: 1, borderColor: c.border, borderLeftWidth: 4,
-    },
-    budgetRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-    budgetLabel: { fontSize: 11, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textMuted, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
-    budgetAmount: { fontSize: 18, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: c.text },
-    budgetOf: { fontSize: 14, fontWeight: "400", fontFamily: "Montserrat-Regular", color: c.textSecondary },
-    budgetPctBadge: { borderRadius: 10, paddingVertical: 6, paddingHorizontal: 12, marginLeft: 12 },
-    budgetPctText: { fontSize: 20, fontWeight: "800", fontFamily: "Montserrat-ExtraBold" },
-    progressTrack: { height: 10, backgroundColor: c.border, borderRadius: 5, overflow: "hidden", marginBottom: 10 },
-    progressFill: { height: "100%", borderRadius: 5 },
-    budgetFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    budgetStatusRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-    budgetStatus: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    budgetRemaining: { fontSize: 12, color: c.textSecondary },
-
-    trialsSection: {
-      backgroundColor: c.card, borderRadius: 12, padding: 14, marginBottom: 20,
-      borderWidth: 1, borderColor: c.border,
-    },
-    trialsSectionHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
-    trialsSectionTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text },
-    trialCard: {
-      flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 12,
-      backgroundColor: c.bg, borderRadius: 8, marginBottom: 6, borderLeftWidth: 3,
-    },
-    trialName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
-    trialCharge: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    trialBadge: { borderRadius: 8, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 8 },
-    trialBadgeText: { fontSize: 12, fontWeight: "800", fontFamily: "Montserrat-ExtraBold" },
-
-    heroCard: {
-      backgroundColor: c.card, borderRadius: 16, padding: 20, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border,
-      shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
-    },
-    heroIcon: {
-      width: 44, height: 44, borderRadius: 10, backgroundColor: c.primaryLight,
-      justifyContent: "center", alignItems: "center", marginBottom: 12,
-    },
-    heroValue: { fontSize: 38, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: c.text, marginBottom: 4 },
-    heroLabel: { fontSize: 13, color: c.textSecondary },
-    heroCardGradientBorder: { borderWidth: 0 },
-    heroIconOnGradient: {
-      width: 44, height: 44, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.18)",
-      justifyContent: "center", alignItems: "center", marginBottom: 12,
-    },
-    heroValueOnGradient: { fontSize: 38, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: "#FFFFFF", marginBottom: 4 },
-    heroLabelOnGradient: { fontSize: 13, color: "rgba(255,255,255,0.85)" },
-    secondaryStatCard: {
-      flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14,
-      padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border,
-    },
-    secondaryStatValue: { fontSize: 22, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 2 },
-    statusRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
-    statusPill: {
-      flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-      paddingVertical: 10, borderRadius: 10, backgroundColor: "transparent",
-    },
-    statusPillAlert: { backgroundColor: c.danger + "14" },
-    statusPillText: { fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
-    statIcon: {
-      width: 34, height: 34, borderRadius: 8, backgroundColor: c.primaryLight,
-      justifyContent: "center", alignItems: "center",
-    },
-    statLabel: { fontSize: 11, color: c.textSecondary },
-    sectionTitle: { fontSize: 16, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12 },
-    actionButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 12,
-      paddingHorizontal: 16, marginBottom: 12,
-    },
-    actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textAlign: "center" },
-    actionButtonOutline: {
-      backgroundColor: "transparent", borderRadius: 10, paddingVertical: 12,
-      paddingHorizontal: 16, marginBottom: 12, borderWidth: 1.5, borderColor: c.primary,
-    },
-    actionButtonOutlineText: { color: c.primary, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textAlign: "center" },
-    emptyState: {
-      backgroundColor: c.card, borderRadius: 12, padding: 24, alignItems: "center",
-      borderWidth: 1, borderColor: c.border,
-    },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    subCard: {
-      backgroundColor: c.card, borderRadius: 10, padding: 14, marginBottom: 8,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-    },
-    subName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text },
-    subMeta: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    subPrice: { fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary },
-    toggleRow: {
-      flexDirection: "row", gap: 4, marginBottom: 16,
-      backgroundColor: c.card, borderRadius: 10, padding: 4,
-      borderWidth: 1, borderColor: c.border, alignSelf: "flex-start",
-    },
-    togglePill: { paddingVertical: 6, paddingHorizontal: 16, borderRadius: 8 },
-    togglePillActive: { backgroundColor: c.primary },
-    toggleText: { fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.textSecondary },
-    toggleTextActive: { color: "#FFFFFF" },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
+    actionButton: { backgroundColor: c.primary, borderRadius: radius.m, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    actionButtonText: { ...typeScale.bodyStrong, color: "#FFFFFF" },
   });
 }

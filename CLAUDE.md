@@ -2040,6 +2040,20 @@ last one left off without needing a recap typed out.
   route answers 503). Both are fine for most checks and must be named when a
   change touches them.
 
+- THE REDESIGN HAS STARTED, 2026-11-07, at the owner's request ("the look of
+  the app inside still looks AI generated ... it must look expensive, premium
+  and professional"). METHOD: a shared scale in `lib/theme.ts` (`space`,
+  `radius`, `type`, `tabular`), then ONE SCREEN AT A TIME in the order a new
+  user meets them (dashboard, subscriptions list, add form, paywall, then the
+  rest), each rendered through the web preview below in both languages and
+  both themes, before and after, and each held for the owner's yes on the
+  direction. Same logic, new layout, no new libraries (so OTA only), palette
+  unchanged.
+  THE DASHBOARD IS DONE AND WAITING ON THAT YES. It sits on
+  `claude/calendar-dot-4riizs` AND MUST NOT BE MERGED TO MASTER UNTIL THE
+  OWNER APPROVES IT, even though CI is green: the standing merge rule covers
+  finished work, and a taste call is not finished until the owner makes it.
+  Once they say yes, merge and record it here.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds

@@ -64,7 +64,7 @@
     "overBudget": "Budget überschritten",
     "overLimit": "{{amount}} über dem Limit",
     "remaining": "{{amount}} übrig",
-    "today": "Heute!",
+    "today": "Heute",
     "daysLeft": "Noch {{count}} Tage",
     "chargedOnExpiry": "{{amount}}/{{cycle}} bei Ablauf fällig",
     "couldntLoad": "Dashboard konnte nicht geladen werden.",
@@ -83,9 +83,17 @@
     "dueToday": "Heute fällig",
     "dueTomorrow": "Morgen fällig",
     "dueInDays": "In {{count}} Tagen fällig",
-    "viewAllSubscriptions": "Alle Ausgaben anzeigen",
+    "viewAllSubscriptions": "Alle Abos anzeigen",
     "inviteBannerText": "Trimio funktioniert noch besser, wenn nicht nur du sparst.",
-    "inviteBannerCta": "Freund einladen"
+    "inviteBannerCta": "Freund einladen",
+    "thisMonth": "Diesen Monat",
+    "yearAndActive_one": "{{amount}} pro Jahr · {{count}} aktives Abo",
+    "yearAndActive_other": "{{amount}} pro Jahr · {{count}} aktive Abos",
+    "remainingOf": "{{amount}} von {{goal}} übrig",
+    "upcoming": "Demnächst",
+    "alertsCount_one": "{{count}} Hinweis",
+    "alertsCount_other": "{{count}} Hinweise",
+    "budgetUpsell": "Lege ein Monatsbudget fest"
   },
   "subscriptions": {
     "add": "Hinzufügen",

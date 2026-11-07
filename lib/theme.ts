@@ -128,6 +128,31 @@ export const DARK = {
 
 export type AppColors = Record<keyof typeof LIGHT, string>;
 
+/* THE TYPE, SPACING AND RADIUS SCALE, 2026-11-07. Until then every screen
+   picked its own numbers: 24 font sizes from 8 to 48, 18 corner radii, and 199
+   of 212 text styles semibold or heavier, so nothing led because everything
+   shouted. That, more than any colour, is what read as assembled rather than
+   designed. Screens being redone take their numbers from here; a number off
+   the scale is a decision, never a default.
+
+   fontFamily ONLY, no fontWeight: on Android a weight beside a custom family
+   can make the system pick a different file, which is how a SemiBold heading
+   turns into a faux bold. The weight is in the family name. */
+export const space = { xs: 4, s: 8, m: 12, l: 16, xl: 24, xxl: 32 } as const;
+export const radius = { s: 8, m: 12, l: 16, pill: 999 } as const;
+export const type = {
+  /** The one money figure a screen is about. */
+  display: { fontFamily: "Montserrat-SemiBold", fontSize: 40, lineHeight: 48, letterSpacing: -1 },
+  title: { fontFamily: "Montserrat-SemiBold", fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
+  heading: { fontFamily: "Montserrat-SemiBold", fontSize: 16, lineHeight: 22 },
+  body: { fontFamily: "Montserrat-Regular", fontSize: 15, lineHeight: 21 },
+  bodyStrong: { fontFamily: "Montserrat-Medium", fontSize: 15, lineHeight: 21 },
+  caption: { fontFamily: "Montserrat-Regular", fontSize: 13, lineHeight: 18 },
+  label: { fontFamily: "Montserrat-Medium", fontSize: 13, lineHeight: 18 },
+} as const;
+/** Figures in a column line up digit under digit. Montserrat carries tnum. */
+export const tabular = { fontVariant: ["tabular-nums"] } as { fontVariant: "tabular-nums"[] };
+
 function useResolvedScheme(): "light" | "dark" {
   const scheme = useColorScheme();
   const mode = useThemeStore((s) => s.mode);
