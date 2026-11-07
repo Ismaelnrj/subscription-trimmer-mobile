@@ -4970,9 +4970,16 @@ last one left off without needing a recap typed out.
   taken in airplane mode, shows the "Saved on this phone" dialog naming Xbox
   Game Pass Ultimate and the notice "1 subscription is saved on this phone
   only and is not in your totals yet." Those strings exist only from
-  `21593a96`, so the bundle carrying it landed. THE UPDATE ID WAS NOT READ, so
-  this file holds no id or timestamp for that publish; read Build Info next
-  time. The owner then went back online over WiFi, refreshed, and the entry
+  `21593a96`, so the bundle carrying it landed. BUILD INFO READ OFF A
+  SCREENSHOT on 2026-11-07: `App version: 1.0.4`, `Native build: 41`,
+  `Channel: production`, `Runtime version: 1.0.1`, `Embedded launch (no OTA
+  applied): false`, `Update ID: 01a1a873-6100-7312-865d-3ed6fb276048`,
+  `Update published: 2026-11-04T21:24:56.192Z`, `You are on the latest
+  version.` DIFFERENT ID AND LATER than `01a19b10-...` at
+  2026-11-02T07:01:36.363Z. Timestamp cross-check: `21593a96` was committed
+  18:32:35Z the same day and the next master commit, `6449d33b`, not until
+  2026-11-07, so the tree carried it; it is also the last client commit,
+  which names the baseline. The owner then went back online over WiFi, refreshed, and the entry
   was there (their report, not a screenshot), so the sync half works too.
   NOT SHOWN BY THAT: that it appears once rather than twice (airplane mode
   never reaches the lost-answer case, which was measured on the server), and
