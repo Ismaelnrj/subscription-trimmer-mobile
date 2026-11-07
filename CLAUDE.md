@@ -4965,10 +4965,21 @@ last one left off without needing a recap typed out.
   wiring suite caught 8 of 8 planted defects.
   ORDER OF ARRIVAL: the backend deploys with the push to master that carries
   it; the app half needs an `eas update`. An installed build sends no ref and
-  behaves exactly as before. NOT YET PUBLISHED, and offline adding has not
-  been seen on a phone. To check after the publish: airplane mode, add a
-  subscription, see it marked "Not saved yet", turn the connection back on,
-  reopen the app, and it should be saved once.
+  behaves exactly as before.
+  PUBLISHED AND SEEN WORKING ON A PHONE, 2026-11-07. The owner's screenshot,
+  taken in airplane mode, shows the "Saved on this phone" dialog naming Xbox
+  Game Pass Ultimate and the notice "1 subscription is saved on this phone
+  only and is not in your totals yet." Those strings exist only from
+  `21593a96`, so the bundle carrying it landed. THE UPDATE ID WAS NOT READ, so
+  this file holds no id or timestamp for that publish; read Build Info next
+  time. The owner then went back online over WiFi, refreshed, and the entry
+  was there (their report, not a screenshot), so the sync half works too.
+  NOT SHOWN BY THAT: that it appears once rather than twice (airplane mode
+  never reaches the lost-answer case, which was measured on the server), and
+  that the Railway deploy of `21593a96` with the client_ref migration is
+  green. A failed deploy leaves the old server running, and the old server
+  would also have saved the entry, so the sync working does not prove the
+  migration ran. The Railway deploy list settles it.
 - AN AUDIT, 2026-10-31, `04c9193b` (app) and `0fe2b7e6` (backend), before
   build 41. `__tests__/audit-2026-10-31.test.js`, 16 assertions, 14 failing
   against `10fa537c` (the commit message says 15; 14 is the measured number).
