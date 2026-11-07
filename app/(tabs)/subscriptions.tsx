@@ -855,9 +855,13 @@ export default function SubscriptionsScreen() {
 
   const isPending = createMutation.isLoading || updateMutation.isLoading;
 
-  const monthlyEquiv = (price: number, cycle: string) => {
-    if (cycle === "yearly") return `${fmtC(price / 12)}/mo`;
-    if (cycle === "weekly") return `${fmtC((price * 52) / 12)}/mo`;
+  /* In the ROW's own currency and in words. It used to format a bare number,
+     which fmtC reads as an amount in the base currency and converts, so a
+     yearly 99 USD row in a euro account read "~€7.60/mo"; and "/mo" was
+     English in both languages. */
+  const monthlyEquiv = (price: number, cycle: string, currency?: string) => {
+    if (cycle === "yearly") return t("subscriptions.perMonthEquiv", { amount: fmtC(price / 12, currency) });
+    if (cycle === "weekly") return t("subscriptions.perMonthEquiv", { amount: fmtC((price * 52) / 12, currency) });
     return null;
   };
 
@@ -1043,7 +1047,7 @@ export default function SubscriptionsScreen() {
             )
           ) : (
             filtered.map((sub: any) => {
-              const equiv = monthlyEquiv(sub.price, sub.billingCycle);
+              const equiv = monthlyEquiv(sub.price, sub.billingCycle, sub.currency);
               /* parseApiDate, never new Date(). The API sends next_billing_date
                  as TIMESTAMPTZ at midnight UTC, so new Date() on it resolves to
                  the PREVIOUS local day at any negative offset: a 16 October
@@ -1082,7 +1086,7 @@ export default function SubscriptionsScreen() {
                   >
                     <Text style={styles.cardName}>{sub.name}</Text>
                     <Text style={styles.cardPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
-                    {equiv && <Text style={styles.cardMonthly}>≈ {equiv}</Text>}
+                    {equiv && <Text style={styles.cardMonthly}>{equiv}</Text>}
                     <Text style={styles.cardDate}>
                       {nextDate
                         ? t("subscriptions.next", { date: fmtD(nextDate, "PP") })
@@ -1358,8 +1362,10 @@ export default function SubscriptionsScreen() {
                           <MaterialCommunityIcons name="check-circle" size={14} color={c.success} />
                           <Text style={styles.parsedPreviewText}>
                             {t("subscriptions.detected")}{formData.name ? ` ${formData.name}` : ""}
-                            {formData.price ? ` · ${baseCurrencyCode} ${formData.price}` : ""}
-                            {formData.billingCycle ? ` · ${formData.billingCycle}` : ""}
+                            {/* Commas, not middle dots, and the cycle in words: this
+                                printed the raw API value, so German read "monthly". */}
+                            {formData.price ? `, ${baseCurrencyCode} ${formData.price}` : ""}
+                            {formData.billingCycle ? `, ${cycleAdjective(formData.billingCycle)}` : ""}
                           </Text>
                         </View>
                       )}

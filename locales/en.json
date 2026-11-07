@@ -215,7 +215,8 @@
     "refusedTitle": "{{name}} could not be saved",
     "refusedLimit": "The free plan covers {{limit}} subscriptions. Upgrade to add more, or remove this one.",
     "refusedOther": "The server said: {{reason}}",
-    "a11yPending": "Status of {{name}}"
+    "a11yPending": "Status of {{name}}",
+    "perMonthEquiv": "≈ {{amount}} a month"
   },
   "profile": {
     "upgrade": "Upgrade",

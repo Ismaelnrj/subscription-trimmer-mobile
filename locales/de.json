@@ -38,7 +38,7 @@
     "calendar": "Kalender",
     "stats": "Statistik",
     "settings": "Einstellungen",
-    "headerSubscriptions": "Meine Ausgaben",
+    "headerSubscriptions": "Meine Abos",
     "headerAnalytics": "Statistik",
     "headerProfile": "Einstellungen",
     "headerCalendar": "Kalender"
@@ -138,7 +138,7 @@
     "nextBillingDate": "Nächstes Abrechnungsdatum (optional)",
     "trialEndDate": "Testphasenende (optional)",
     "trialEndsOn": "Testphase endet am",
-    "howToCancel": "Kündigen",
+    "howToCancel": "So kündigst du",
     "paused": "Pausiert",
     "recent": "Neueste",
     "atoz": "A-Z",
@@ -215,7 +215,8 @@
     "refusedTitle": "{{name}} konnte nicht gespeichert werden",
     "refusedLimit": "Der kostenlose Plan umfasst {{limit}} Abos. Mit einem Upgrade kannst du mehr hinzufügen, oder du entfernst dieses.",
     "refusedOther": "Der Server meldet: {{reason}}",
-    "a11yPending": "Status von {{name}}"
+    "a11yPending": "Status von {{name}}",
+    "perMonthEquiv": "≈ {{amount}} pro Monat"
   },
   "profile": {
     "upgrade": "Upgrade",
