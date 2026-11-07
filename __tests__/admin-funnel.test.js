@@ -47,6 +47,7 @@ function build() {
       return { rows: [{
         signups: 9, via_google: 4, via_email: 5, email_verified: 3,
         added_subscription: 6, at_free_limit: 2, paid: 1, bonus_premium: 1,
+        trial_started: 3, trial_active: 2, trial_paid: 1,
         referred: 2, referral_rewarded: 1, lang_de: 5, lang_en: 3, lang_unknown: 1,
       }] };
     },
@@ -148,6 +149,7 @@ describe('what it answers', () => {
     expect(r.body.windows.last24h).toEqual({
       signups: 9, viaGoogle: 4, viaEmail: 5, emailVerified: 3,
       addedSubscription: 6, atFreeLimit: 2, paid: 1, bonusPremium: 1,
+      trial: { started: 3, active: 2, paid: 1 },
       referred: 2, referralRewarded: 1, language: { de: 5, en: 3, unknown: 1 },
     });
   });

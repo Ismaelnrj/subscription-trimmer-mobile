@@ -2056,6 +2056,38 @@ last one left off without needing a recap typed out.
   says yes to the rendered before and after, because a taste call is not
   finished until the owner makes it. Every redone screen also joins the
   `REDONE` list in `__tests__/redesign-tells.test.js`.
+- THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
+  pricing entry). Every NEW account, email or Google, gets 14 days of Premium
+  with no card, written into `bonus_premium_until`, so every Premium check on
+  the server (all read `is_paid OR bonus_premium_until > NOW()`) covers it
+  untouched, and a referral redeemed during it stacks after it.
+  `users.trial_started_at` marks the cohort. Accounts from before the deploy
+  get nothing; nothing is backfilled.
+  `PREMIUM_TRIAL_DAYS` IN RAILWAY sets the length, default 14, 0 switches it
+  off for new accounts with no deploy, a typo warns and uses 14.
+  `/api/admin/funnel` reports `trial: { started, active, paid }` per window,
+  which is the success bar: `paid` at least 1 in 15 of `started`, read 30 days
+  after signups. `paid` counts is_paid, which test purchases also set.
+  THE APP NEEDED A SECOND QUESTION, "is there a purchase behind it", because
+  isPaid is also true for free Premium. formatUser now sends `hasPaidPlan`
+  (`!!is_paid`), and `lib/premium-status.ts` answers it (falling back to
+  isPaid on an older server, so a new bundle changes nothing there). Three
+  places read it: the purchase screen opens on the plans for a trial account
+  and says when free Premium ends; a purchase there counts as confirmed only
+  when hasPaidPlan comes back true (before, on a trial or referral account, an
+  UNCONFIRMED purchase came back isPaid: true and was greeted as a welcome);
+  and Settings offers "Manage subscription" (Google Play's page) only with a
+  purchase behind it, which also fixes it for referral users. The dashboard's
+  quiet card carries "Premium is free until ..." in the last 30 days.
+  The paywall also says "A plan bought now starts today": Google cannot start
+  a plan at the end of the trial, so buying early ends the free days.
+  MEASURED by booting the real server and the previous one on PostgreSQL 16,
+  21 checks, and the Google INSERT executed on the same database; see the
+  header of `__tests__/reverse-trial.test.js`, 20 assertions, all failing
+  against `10052c97`. Screens rendered in the web preview, both languages.
+  NOT BUILT, and both need the owner's yes first: a reminder before the trial
+  ends (scheduled behaviour, see NEVER CREATE A SCHEDULED ANYTHING), and
+  "14 days of Premium free" on the store listing or the landing page.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds

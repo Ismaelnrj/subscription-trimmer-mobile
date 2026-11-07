@@ -17,6 +17,9 @@ interface User {
   name: string | null;
   role: "user" | "admin";
   isPaid: boolean;
+  /** Sent since 2026-11-07; absent from an older server. See lib/premium-status.ts. */
+  hasPaidPlan?: boolean;
+  bonusPremiumUntil?: string | null;
   paidAt: string | null;
   isVerified: boolean;
   hasPassword: boolean;

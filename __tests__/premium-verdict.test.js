@@ -85,14 +85,20 @@ describe("the server's verdict is what decides premium", () => {
     expect(code).toMatch(/current\.id !== sync\.user\.id/);
   });
 
-  it("referral premium is never derived from the SDK", () => {
+  it("free premium (referral, trial) is never derived from the SDK", () => {
     /* formatUser computes `isPaid: is_paid || hasBonusPremium(u)`, so the
-       server already folds a free referral month in. Deriving entitlement from
-       the SDK's answer instead strips premium from every referral user. */
+       server already folds a free referral month and the reverse trial in.
+       Deriving the ACCOUNT's entitlement from the SDK's answer instead strips
+       premium from every such user, so the screen writes the server's user.
+       Since 2026-11-07 the screen's own "already bought" flag reads the
+       server's hasPaidPlan instead of isPaid: still the server's verdict, but
+       about the purchase, so an unconfirmed purchase on a trial account is not
+       greeted as a welcome. __tests__/reverse-trial.test.js covers that. */
     const server = read("backend/server.js");
     expect(server).toMatch(/isPaid: u\.is_paid \|\| hasBonusPremium\(u\)/);
+    expect(server).toMatch(/hasPaidPlan: !!u\.is_paid/);
     const code = codeOf("app/upgrade.tsx");
-    expect(code).toMatch(/setIsPremium\(sync\.user\.isPaid\)/);
+    expect(code).toMatch(/setUser\(sync\.user as any\);\s*const paid = hasPaidPlan\(sync\.user as any\);\s*setIsPremium\(paid\);/);
   });
 });
 

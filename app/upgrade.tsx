@@ -13,6 +13,9 @@ import {
   type PremiumSync,
 } from "../lib/iap";
 import { useAuthStore } from "../lib/auth-store";
+import { hasPaidPlan, freePremiumUntil } from "../lib/premium-status";
+import { parseApiDate } from "../lib/utils";
+import { useDateFormat } from "../lib/date-locale";
 import { useTheme, AppColors } from "../lib/theme";
 import { track } from "../lib/analytics";
 import { useQuery } from "@tanstack/react-query";
@@ -30,7 +33,11 @@ export default function UpgradeScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanKey>("yearly");
   const [loading, setLoading] = useState(false);
   const [restoring, setRestoring] = useState(false);
-  const [isPremium, setIsPremium] = useState(user?.isPaid ?? false);
+  /* A PURCHASE, not Premium: a trial or referral account is Premium and
+     still sees the plans, with when its free Premium ends above them. */
+  const [isPremium, setIsPremium] = useState(hasPaidPlan(user));
+  const freeUntil = freePremiumUntil(user);
+  const fmtD = useDateFormat();
   const [iapReady, setIapReady] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   /* Separate from `packages.length > 0`, because an empty array is two
@@ -159,10 +166,12 @@ export default function UpgradeScreen() {
      server already returns the real updated user from verify-premium and that
      was thrown away, so a 200 carrying `isPaid: false` produced a Premium
      welcome and an account that lost Premium on the next load.
-     It also protects REFERRAL premium without doing anything special:
-     formatUser computes `isPaid: is_paid || hasBonusPremium(u)`, so the server
-     already folds a free referral month in. Deriving entitlement from the SDK
-     instead would strip it from every referral user.
+     THE VERDICT IS hasPaidPlan, NOT isPaid. isPaid is also true for free
+     Premium (the trial, a referral bonus), so on a trial account a purchase
+     the server has NOT confirmed still came back isPaid: true and was greeted
+     as a welcome. hasPaidPlan is true only when a purchase stands behind it.
+     The account's free Premium is untouched either way: setUser writes the
+     server's user, whose isPaid still includes it.
      Returns true/false for a real verdict, or null when the server gave none,
      which the callers must not read as "no". */
   const applyServerVerdict = (sync: PremiumSync): boolean | null => {
@@ -172,8 +181,9 @@ export default function UpgradeScreen() {
        session changed underneath this call. */
     if (!user || sync.user.id !== user.id) return null;
     setUser(sync.user as any);
-    setIsPremium(sync.user.isPaid);
-    return sync.user.isPaid;
+    const paid = hasPaidPlan(sync.user as any);
+    setIsPremium(paid);
+    return paid;
   };
 
   const handleBuy = async () => {
@@ -271,6 +281,17 @@ export default function UpgradeScreen() {
           </View>
         ) : (
           <View style={styles.body}>
+            {freeUntil && (
+              <View style={styles.freeCard}>
+                <MaterialCommunityIcons name="crown-outline" size={20} color={c.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.freeTitle}>
+                    {t("upgrade.freeUntilTitle", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
+                  </Text>
+                  <Text style={styles.freeBody}>{t("upgrade.freeUntilBody")}</Text>
+                </View>
+              </View>
+            )}
             <View style={styles.hookCard}>
               <Text style={styles.hookText}>
                 <Text style={styles.hookBold}>{t("upgrade.stopLeaking")}</Text>{t("upgrade.stopLeakingSuffix")}
@@ -375,6 +396,13 @@ function makeStyles(c: AppColors) {
     heroTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 },
     heroSub: { fontSize: 13, color: "rgba(255,255,255,0.75)", textAlign: "center" },
     body: { padding: 20 },
+    freeCard: {
+      flexDirection: "row", gap: 12, alignItems: "flex-start",
+      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 16,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+    },
+    freeTitle: { fontFamily: "Montserrat-SemiBold", fontSize: 15, lineHeight: 21, color: c.text },
+    freeBody: { fontFamily: "Montserrat-Regular", fontSize: 13, lineHeight: 18, color: c.textSecondary, marginTop: 2 },
     hookCard: {
       backgroundColor: c.primaryLight, borderRadius: 12, padding: 16, marginBottom: 20,
       borderWidth: 1, borderColor: c.primary,

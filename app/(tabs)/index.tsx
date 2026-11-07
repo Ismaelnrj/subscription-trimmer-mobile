@@ -11,6 +11,7 @@ import { daysUntil, parseApiDate } from "../../lib/utils";
 import { useDateFormat } from "../../lib/date-locale";
 import { useCurrencyStore, useFmt, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useAuthStore } from "../../lib/auth-store";
+import { freePremiumUntil } from "../../lib/premium-status";
 import { FirstRunCard } from "../../components/FirstRunCard";
 import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
@@ -284,7 +285,21 @@ export default function DashboardScreen() {
     onPress: () => void;
     onDismiss?: () => void;
   };
+  /* While free Premium runs (the reverse trial, a referral bonus), one quiet
+     row says until when, leading to the plans. Only inside its last 30 days,
+     so a referral balance of months does not sit there all season. */
+  const freeUntil = freePremiumUntil(user);
+  const freeDays = freeUntil ? daysUntil(freeUntil) : null;
   const moreRows: MoreRow[] = [
+    ...(freeUntil && freeDays != null && freeDays <= 30
+      ? [{
+          key: "freePremium",
+          icon: "crown-outline",
+          title: t("dashboard.freePremiumUntil", { date: fmtD(parseApiDate(freeUntil)!, "PP") }),
+          meta: freeDays <= 0 ? t("dashboard.freePremiumEndsToday") : t("dashboard.freePremiumDaysLeft", { count: freeDays }),
+          onPress: () => router.push("/upgrade"),
+        }]
+      : []),
     ...(activeAlertCount > 0
       ? [{ key: "alerts", icon: "bell-outline", title: t("dashboard.alertsCount", { count: activeAlertCount }), tone: c.danger, onPress: () => router.push("/alerts") }]
       : []),

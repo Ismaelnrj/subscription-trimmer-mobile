@@ -93,7 +93,11 @@
     "upcoming": "Demnächst",
     "alertsCount_one": "{{count}} Hinweis",
     "alertsCount_other": "{{count}} Hinweise",
-    "budgetUpsell": "Lege ein Monatsbudget fest"
+    "budgetUpsell": "Lege ein Monatsbudget fest",
+    "freePremiumUntil": "Premium ist bis {{date}} kostenlos",
+    "freePremiumDaysLeft_one": "Noch 1 Tag",
+    "freePremiumDaysLeft_other": "Noch {{count}} Tage",
+    "freePremiumEndsToday": "Endet heute"
   },
   "subscriptions": {
     "add": "Hinzufügen",
@@ -236,7 +240,9 @@
     "themeSystem": "System",
     "themeLight": "Hell",
     "themeDark": "Dunkel",
-    "cancelled": "Gekündigte Abos"
+    "cancelled": "Gekündigte Abos",
+    "freePremiumUntil": "Premium kostenlos bis {{date}}",
+    "freePremiumSub": "Wähle einen Plan, um es zu behalten"
   },
   "calendar": {
     "selectDay": "Wähle einen Tag, um fällige Zahlungen zu sehen",
@@ -391,7 +397,9 @@
     "priceUnavailable": "Preis nicht verfügbar",
     "premium_unlimited": "Unbegrenzt",
     "premium_fullBreakdown": "Vollständige Übersicht",
-    "premium_allInsights": "Alle Empfehlungen"
+    "premium_allInsights": "Alle Empfehlungen",
+    "freeUntilTitle": "Premium ist bis {{date}} kostenlos",
+    "freeUntilBody": "Danach behältst du es mit einem Plan, oder du nutzt die kostenlose Version weiter. Ein Plan, den du jetzt abschließt, beginnt sofort."
   },
   "accountSettings": {
     "currency": "Währung",
@@ -647,7 +655,7 @@
     "screenTitle": "Freunde einladen",
     "title": "30 Tage verschenken, 30 Tage erhalten",
     "desc": "Teile deinen Code mit einem Freund. Wenn er sich anmeldet und seine E-Mail bestätigt, erhaltet ihr beide bis zu 30 Tage Premium kostenlos, bis zu insgesamt {{months}} Monate Bonuszugang.",
-    "bonusActive": "Bonus-Premium aktiv bis {{date}}",
+    "bonusActive": "Kostenloses Premium aktiv bis {{date}}",
     "atCap": "Du hast das Maximum von {{months}} Monaten Bonus-Premium. Sobald ein Teil davon verbraucht ist, bringt dir eine weitere Empfehlung wieder etwas dazu.",
     "yourCode": "Dein Empfehlungscode",
     "share": "Teilen",

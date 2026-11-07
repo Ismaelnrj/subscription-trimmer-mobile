@@ -1453,6 +1453,8 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_rewarded BOOLEAN DEFAULT FALSE`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS bonus_premium_until TIMESTAMPTZ`);
+  // Set on the accounts that got the reverse trial; see PREMIUM_TRIAL_DAYS.
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_opt_out BOOLEAN DEFAULT FALSE`);
   /* THE ONLY LANGUAGE SIGNAL THE BACKEND HAS is the Accept-Language header on
      a live request, which is useless for an email sent to somebody who is not
@@ -1986,6 +1988,12 @@ function formatUser(u) {
   return {
     id: u.id, openId: u.open_id, email: u.email, name: u.name, role: u.role,
     isPaid: u.is_paid || hasBonusPremium(u),
+    /* isPaid answers "does this account have Premium right now", which free
+       Premium (the trial, a referral bonus) also makes true. hasPaidPlan
+       answers "is there a purchase behind it". The purchase screen needs the
+       second: a trial user is Premium and still has nothing to manage in
+       Google Play, and a purchase is confirmed only when THIS turns true. */
+    hasPaidPlan: !!u.is_paid,
     paidAt: u.paid_at, isVerified: u.is_verified,
     hasPassword: !!u.password_hash,
     referralCode: u.referral_code,
@@ -2104,6 +2112,35 @@ const FREE_SUBSCRIPTION_LIMIT = (() => {
   }
   return n;
 })();
+
+/* THE REVERSE TRIAL, the owner's choice on 2026-11-07: every NEW account gets
+   this many days of Premium, with no card, and drops back to the free tier
+   unless it subscribes. It is written into bonus_premium_until, the field the
+   referral reward already uses, so every Premium check on this server (they
+   all read `is_paid OR bonus_premium_until > NOW()`) covers it without being
+   touched, and a referral redeemed during the trial stacks after it, because
+   rewardReferral extends from GREATEST(existing, NOW()).
+   trial_started_at marks the accounts that got it, so the funnel can count
+   the cohort whose conversion decides whether this stays.
+   0 TURNS IT OFF, deliberately allowed here unlike the free limit: no trial is
+   a coherent product, and switching it off must not need a deploy. A typo
+   warns and falls back to 14, never to 0 and never to a bigger grant.
+   Only accounts created after the deploy get it; nothing is backfilled. */
+const PREMIUM_TRIAL_DAYS = (() => {
+  const raw = process.env.PREMIUM_TRIAL_DAYS;
+  if (raw == null || raw === '') return 14;
+  const n = /^\d+$/.test(raw.trim()) ? parseInt(raw, 10) : NaN;
+  if (!Number.isFinite(n) || n > 90) {
+    console.warn(`WARNING: PREMIUM_TRIAL_DAYS is "${raw}", which is not a whole number from 0 to 90. Using 14.`);
+    return 14;
+  }
+  return n;
+})();
+/* The two values a new account's row gets for the trial, as SQL, with the
+   trial length bound as parameter $n. 0 days inserts two NULLs. */
+const trialValuesSql = (n) =>
+  `CASE WHEN $${n}::int > 0 THEN NOW() + make_interval(days => $${n}::int) END, ` +
+  `CASE WHEN $${n}::int > 0 THEN NOW() END`;
 
 // Both sides, which is what the app has always promised and never delivered.
 // "Give a month, get a month" is the screen's own title, the description says
@@ -2364,8 +2401,9 @@ app.post('/api/auth/register', async (req, res) => {
     const openId = generateOpenId();
 
     const result = await pool.query(
-      'INSERT INTO users (open_id, email, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING *',
-      [openId, email, name || null, passwordHash]
+      `INSERT INTO users (open_id, email, name, password_hash, bonus_premium_until, trial_started_at)
+       VALUES ($1, $2, $3, $4, ${trialValuesSql(5)}) RETURNING *`,
+      [openId, email, name || null, passwordHash, PREMIUM_TRIAL_DAYS]
     );
     const user = result.rows[0];
     user.referral_code = await assignReferralCode(user.id);
@@ -2506,8 +2544,9 @@ app.post('/api/auth/google', async (req, res) => {
     if (!user) {
       const openId = generateOpenId();
       const insertResult = await pool.query(
-        'INSERT INTO users (open_id, email, name, password_hash, google_id, is_verified) VALUES ($1, $2, $3, NULL, $4, TRUE) RETURNING *',
-        [openId, email, payload.name || null, googleId]
+        `INSERT INTO users (open_id, email, name, password_hash, google_id, is_verified, bonus_premium_until, trial_started_at)
+         VALUES ($1, $2, $3, NULL, $4, TRUE, ${trialValuesSql(5)}) RETURNING *`,
+        [openId, email, payload.name || null, googleId, PREMIUM_TRIAL_DAYS]
       );
       user = insertResult.rows[0];
       user.referral_code = await assignReferralCode(user.id);
@@ -4245,7 +4284,7 @@ async function funnelCounts(sinceValue) {
   const { rows } = await pool.query(
     `WITH cohort AS (
        SELECT u.google_id, u.is_verified, u.is_paid, u.bonus_premium_until,
-              u.referred_by, u.referral_rewarded, u.language,
+              u.trial_started_at, u.referred_by, u.referral_rewarded, u.language,
               COALESCE(s.total, 0)  AS subs_total,
               COALESCE(s.active, 0) AS subs_active
          FROM users u
@@ -4268,6 +4307,11 @@ async function funnelCounts(sinceValue) {
        COUNT(*) FILTER (WHERE is_paid IS TRUE)::int                            AS paid,
        COUNT(*) FILTER (WHERE is_paid IS NOT TRUE
                           AND bonus_premium_until > NOW())::int                AS bonus_premium,
+       COUNT(*) FILTER (WHERE trial_started_at IS NOT NULL)::int               AS trial_started,
+       COUNT(*) FILTER (WHERE trial_started_at IS NOT NULL AND is_paid IS NOT TRUE
+                          AND bonus_premium_until > NOW())::int                AS trial_active,
+       COUNT(*) FILTER (WHERE trial_started_at IS NOT NULL
+                          AND is_paid IS TRUE)::int                            AS trial_paid,
        COUNT(*) FILTER (WHERE referred_by IS NOT NULL)::int                    AS referred,
        COUNT(*) FILTER (WHERE referral_rewarded IS TRUE)::int                  AS referral_rewarded,
        COUNT(*) FILTER (WHERE language = 'de')::int                            AS lang_de,
@@ -4286,6 +4330,10 @@ async function funnelCounts(sinceValue) {
     atFreeLimit: r.at_free_limit,
     paid: r.paid,
     bonusPremium: r.bonus_premium,
+    /* The reverse trial's cohort. trial.paid against trial.started is the
+       success bar: at least 1 in 15 within 30 days of signing up. bonusPremium
+       above now includes everybody still inside their trial. */
+    trial: { started: r.trial_started, active: r.trial_active, paid: r.trial_paid },
     referred: r.referred,
     referralRewarded: r.referral_rewarded,
     language: { de: r.lang_de, en: r.lang_en, unknown: r.lang_unknown },

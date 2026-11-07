@@ -3,6 +3,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../lib/auth-store";
+import { freePremiumUntil } from "../../lib/premium-status";
+import { parseApiDate } from "../../lib/utils";
+import { useDateFormat } from "../../lib/date-locale";
 import { useTheme, AppColors } from "../../lib/theme";
 import { useLanguageStore } from "../../lib/language-store";
 import { useThemeStore, ThemeMode } from "../../lib/theme-store";
@@ -10,6 +13,11 @@ import { useThemeStore, ThemeMode } from "../../lib/theme-store";
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const isPremium = user?.isPaid ?? false;
+  /* Free Premium (the trial, a referral bonus) has no Google Play subscription
+     behind it, so the row opening Play's subscription page would land on
+     nothing. Those accounts get when it ends and the way to keep it. */
+  const freeUntil = freePremiumUntil(user);
+  const fmtD = useDateFormat();
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
@@ -52,7 +60,20 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>{t("profile.upgrade")}</Text>
-        {isPremium ? (
+        {freeUntil ? (
+          <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
+            <View style={styles.menuItemLeft}>
+              <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
+              <View style={{ flexShrink: 1 }}>
+                <Text style={[styles.menuItemLabel, { color: c.primary }]}>
+                  {t("profile.freePremiumUntil", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
+                </Text>
+                <Text style={{ fontSize: 12, color: c.textSecondary, marginTop: 1 }}>{t("profile.freePremiumSub")}</Text>
+              </View>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
+          </TouchableOpacity>
+        ) : isPremium ? (
           <TouchableOpacity
             style={[styles.premiumItem, { borderColor: c.success }]}
             onPress={() => Linking.openURL("https://play.google.com/store/account/subscriptions?package=com.trimio.app")}
