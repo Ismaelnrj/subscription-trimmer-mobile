@@ -2050,8 +2050,8 @@ last one left off without needing a recap typed out.
   direction. Same logic, new layout, no new libraries (so OTA only), palette
   unchanged.
   THE DASHBOARD IS APPROVED, 2026-11-07 ("looks better and premium, so
-  yes"), and merged to master through `bd438333`. NOT YET PUBLISHED: it is
-  client only and rides the next `eas update`. The process stands for every
+  yes"), and merged to master through `bd438333`. PUBLISHED 2026-11-07, see
+  the 801668aa baseline entry below. The process stands for every
   next screen: each one stays on the branch, CI green or not, until the owner
   says yes to the rendered before and after, because a taste call is not
   finished until the owner makes it. Every redone screen also joins the
@@ -2100,7 +2100,9 @@ last one left off without needing a recap typed out.
   THE SITE'S THIRD TRUST CHIP reads "14 days of Premium free" / "14 Tage
   Premium kostenlos" instead of "Free to start". THE STORE LISTINGS carry it in
   the FULL description only (English "FREE TO START" paragraph, German "Trimio
-  Premium" paragraph), pasted by the owner. NOT in the title or the short
+  Premium" paragraph), in `store-listing-en.md` and `store-listing-de.md` for
+  the owner to paste. NOT YET PASTED as of 2026-11-07 (owner: later that day,
+  with the price change). NOT in the title or the short
   description: Google's metadata policy bans price and promotional wording in
   the title, icon and developer name ("free for limited time only" is its own
   example) and says nothing about the short description, which carries the
@@ -2123,6 +2125,25 @@ last one left off without needing a recap typed out.
   trial with no word of it and Settings calls it "Premium Member / Manage
   subscription". Harmless and short lived, which is why the publish should
   follow the deploy closely.
+- PUBLISHED THROUGH 801668aa AND CONFIRMED ON A REAL DEVICE (2026-11-07),
+  read off a screenshot of the Build Info panel: `App version: 1.0.4`,
+  `Native build: 41`, `Channel: production`, `Runtime version: 1.0.1`,
+  `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1b631-ef3c-741f-b16f-6b8930e109b6`, `Update published:
+  2026-11-07T13:28:08.252Z`. DIFFERENT ID AND LATER than `01a1a873-...` at
+  2026-11-04T21:24:56.192Z. Timestamp cross-check: `801668aa` was committed
+  13:20:12Z and reached master 13:22:22Z with nothing after it, six minutes
+  before the publish, and the owner was handed the command after the merge, so
+  the tree was 801668aa; the owner's `git rev-parse` was not read. (The reply
+  that asked for the screenshot named 13:33 as the commit time, which was a
+  guess and wrong; read the time, do not quote one.)
+  WHAT WENT OUT across `21593a96..801668aa`: the redesigned dashboard and its
+  scale (`lib/theme.ts`), the honest labels (Savings recommendations, "PP"
+  dates, the computed yearly saving), the reverse trial's screens
+  (`lib/premium-status.ts`, paywall, Settings, dashboard), the free Premium
+  reminder and the two audit fixes. `needs_native_build.py 21593a96` said OTA
+  IS ENOUGH. NOTHING THE OWNER'S OWN ACCOUNT SHOWS PROVES THE TRIAL HALF: it
+  predates the trial, so only a new account displays it.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
