@@ -4232,6 +4232,20 @@ last one left off without needing a recap typed out.
   `/api/admin/funnel`. The price is only ever shown to people who reach the free
   cap, so until a real number of users reach it the question cannot be answered
   either way. Bring the numbers, not the argument.
+  THE OWNER RAISED IT, 2026-11-07: €3.99 A MONTH AND €24.99 A YEAR (a 47%
+  saving), replacing the 2026-10-01 decision above. Their call, made with the
+  recommendation in front of them: one step above Finanzguru Plus's usual
+  €2.99, yearly as the plan the paywall leads with, and raised now because
+  lowering a price later is easy while raising one on existing subscribers
+  needs Google's opt-in. Lifetime was not reopened. It is a PLAY CONSOLE
+  change on the EXISTING base plans (`monthly-2-99` keeps its old number,
+  since a base plan id cannot be renamed and the app finds the plan by it),
+  so no code and no app update. Nothing in the app, site, listings or legal
+  copy states a Premium price; the one derived figure, the yearly badge's
+  "Save 44%", is computed from Play's prices since `honest-labels.test.js`
+  (2026-11-07), so it reads 47% after the change and 44% before it.
+  "Premium costs less than one coffee a month" (`upgrade.costNote`) is
+  borderline at €3.99 and true of the yearly plan at €2.08; left as is.
 
 - THE EMAIL PASTE PARSER WAS ENGLISH SHAPED, fixed 2026-09-22, and it is the
   finding that most contradicts this file's own story about the product. The
