@@ -29,7 +29,7 @@ describe("the renewal date on a subscription card names the right day", () => {
   it("falls back to the no-date string rather than rendering Invalid Date", () => {
     // parseApiDate returns null for an unreadable value; the guard must be the
     // PARSED date, not the raw field, or a bad value renders "Invalid Date".
-    expect(src).toMatch(/\{nextDate\s*\n?\s*\?\s*t\("subscriptions\.next"/);
+    expect(src).toMatch(/nextDate\s*\?\s*t\("subscriptions\.next"[^\n]*:\s*t\("subscriptions\.noDate"\)/);
   });
 });
 

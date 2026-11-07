@@ -15,7 +15,10 @@ const path = require("path");
 const root = path.join(__dirname, "..");
 const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
 
-const REDONE = [{ file: "app/(tabs)/index.tsx", keys: "dashboard" }];
+const REDONE = [
+  { file: "app/(tabs)/index.tsx", keys: "dashboard" },
+  { file: "app/(tabs)/subscriptions.tsx", keys: "subscriptions" },
+];
 
 // Block and JSX comments may quote the tells they explain.
 const code = (s) => s.replace(/\{?\/\*[\s\S]*?\*\/\}?/g, "");

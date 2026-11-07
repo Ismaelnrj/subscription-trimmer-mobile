@@ -23,7 +23,7 @@ import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput, sanitiseAmountInput, daysUntil, parseApiDate } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
-import { useTheme, AppColors } from "../../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { useDateFormat } from "../../lib/date-locale";
 import { DEFAULT_CATEGORIES, guessCategory } from "../../lib/categories";
 import { sendLocalNotification } from "../../lib/notifications";
@@ -115,6 +115,8 @@ export default function SubscriptionsScreen() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customCatDraft, setCustomCatDraft] = useState("");
   const [showEmailPaste, setShowEmailPaste] = useState(false);
+  // The one row whose actions are open, so the list stays a list of rows.
+  const [openRow, setOpenRow] = useState<number | null>(null);
   const [emailText, setEmailText] = useState("");
   const [loadingExamples, setLoadingExamples] = useState(false);
   const [removedCard, setRemovedCard] = useState<{ name: string; yearly: number; currency?: string } | null>(null);
@@ -426,6 +428,12 @@ export default function SubscriptionsScreen() {
     setEditingId(null); setFormData(emptyForm);
     setShowCustomInput(false); setCustomCatDraft(""); setShowAdvanced(false);
     setShowModal(true);
+  };
+  // The add form with the email box already open, as the dashboard's tile does.
+  const openPaste = () => {
+    if (atLimit) { router.push("/upgrade"); return; }
+    openAdd();
+    setShowEmailPaste(true);
   };
 
   /* Three ways in from elsewhere, all opening the add form: "fab" plain,
@@ -855,16 +863,6 @@ export default function SubscriptionsScreen() {
 
   const isPending = createMutation.isLoading || updateMutation.isLoading;
 
-  /* In the ROW's own currency and in words. It used to format a bare number,
-     which fmtC reads as an amount in the base currency and converts, so a
-     yearly 99 USD row in a euro account read "~€7.60/mo"; and "/mo" was
-     English in both languages. */
-  const monthlyEquiv = (price: number, cycle: string, currency?: string) => {
-    if (cycle === "yearly") return t("subscriptions.perMonthEquiv", { amount: fmtC(price / 12, currency) });
-    if (cycle === "weekly") return t("subscriptions.perMonthEquiv", { amount: fmtC((price * 52) / 12, currency) });
-    return null;
-  };
-
   return (
     <View style={styles.container}>
       {removedCard && (
@@ -883,7 +881,7 @@ export default function SubscriptionsScreen() {
               }}
             >
               <Text style={styles.removedCardInvite}>
-                {t("subscriptions.inviteFriendPrompt")} {t("subscriptions.inviteFriend")} →
+                {t("subscriptions.inviteFriendPrompt")} {t("subscriptions.inviteFriend")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -894,6 +892,11 @@ export default function SubscriptionsScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
       >
         <View style={styles.scrollContent}>
+          {/* REDONE 2026-11-07 with the dashboard's scale. The top used to be a
+              locked Add, two locked icon squares for the exports, a meter card
+              and a navy banner for the paste feature, all before the first
+              subscription. Now: the two ways in, a quiet meter for the free
+              plan, the search. The exports moved to the end of the list. */}
           <View style={styles.topRow}>
             <TouchableOpacity
               style={[styles.addButton, atLimit && styles.addButtonLocked]}
@@ -902,36 +905,14 @@ export default function SubscriptionsScreen() {
               <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color={atLimit ? c.text : "#FFFFFF"} />
               <Text style={[styles.addButtonText, atLimit && styles.addButtonTextLocked]}>{atLimit ? t("subscriptions.limitReached") : t("subscriptions.add")}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
-              accessibilityRole="button"
-              accessibilityLabel={t("subscriptions.a11yExportReport")}
-              accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
-              onPress={exportReport}
-            >
-              <MaterialCommunityIcons
-                name={isPremium ? "file-chart" : "lock"}
-                size={20}
-                color={isPremium ? "#FFFFFF" : c.textMuted}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
-              accessibilityRole="button"
-              accessibilityLabel={t("subscriptions.a11yExportCalendar")}
-              accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
-              onPress={exportCalendar}
-            >
-              <MaterialCommunityIcons
-                name={isPremium ? "calendar-export" : "lock"}
-                size={20}
-                color={isPremium ? "#FFFFFF" : c.textMuted}
-              />
+            <TouchableOpacity style={styles.pasteButton} onPress={openPaste}>
+              <MaterialCommunityIcons name="email-fast-outline" size={20} color={c.text} />
+              <Text style={styles.pasteButtonText}>{t("subscriptions.pasteEmail")}</Text>
             </TouchableOpacity>
           </View>
 
           {!isPremium && (
-            <View style={styles.limitBar}>
+            <TouchableOpacity style={styles.limitBar} onPress={() => router.push("/upgrade")} activeOpacity={0.7}>
               <View style={styles.limitRow}>
                 <Text style={styles.limitLabel}>{t("subscriptions.freePlan")}</Text>
                 {/* `{total} / {FREE_LIMIT} subscriptions` was a bare English
@@ -946,43 +927,32 @@ export default function SubscriptionsScreen() {
               <View style={styles.limitTrack}>
                 <View style={[styles.limitFill, { width: `${limitPct}%`, backgroundColor: limitColor }]} />
               </View>
-              {atLimit ? (
-                <TouchableOpacity onPress={() => router.push("/upgrade")}>
-                  <Text style={[styles.limitHint, { color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" }]}>
-                    {t("subscriptions.upgradeUnlimited")} →
-                  </Text>
-                </TouchableOpacity>
-              ) : (
+              <View style={styles.limitRow}>
                 <Text style={styles.limitHint}>
-                  {t("subscriptions.slot", { count: freeLimit - total })} ·{" "}
-                  <Text style={{ color: c.primary }} onPress={() => router.push("/upgrade")}>
-                    {t("subscriptions.goUnlimited")}
-                  </Text>
+                  {atLimit ? t("subscriptions.upgradeUnlimited") : t("subscriptions.slot", { count: freeLimit - total })}
                 </Text>
-              )}
-            </View>
+                {!atLimit && <Text style={styles.limitLink}>{t("subscriptions.goUnlimited")}</Text>}
+                <MaterialCommunityIcons name="chevron-right" size={18} color={c.textMuted} />
+              </View>
+            </TouchableOpacity>
           )}
 
           {subscriptionsStale && <OfflineNotice />}
           <PendingNotice />
 
-          <TouchableOpacity style={styles.emailHintBanner} onPress={openAdd}>
-            <MaterialCommunityIcons name="email-fast-outline" size={18} color={c.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.emailHintTitle}>{t("subscriptions.emailHintTitle")}</Text>
-              <Text style={styles.emailHintSub}>{t("subscriptions.emailHintSub")}</Text>
+          {total > 0 && (
+            <View style={styles.searchBox}>
+              <MaterialCommunityIcons name="magnify" size={20} color={c.textMuted} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder={t("subscriptions.search")}
+                placeholderTextColor={c.placeholder}
+                value={search}
+                onChangeText={setSearch}
+                clearButtonMode="while-editing"
+              />
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={18} color={c.primary} />
-          </TouchableOpacity>
-
-          <TextInput
-            style={styles.searchBar}
-            placeholder={t("subscriptions.search")}
-            placeholderTextColor={c.placeholder}
-            value={search}
-            onChangeText={setSearch}
-            clearButtonMode="while-editing"
-          />
+          )}
 
           {total > 0 && (
             <View style={styles.sortRow}>
@@ -998,7 +968,7 @@ export default function SubscriptionsScreen() {
             </View>
           )}
 
-          {total > 0 && (
+          {total > 0 && search.trim() !== "" && (
             <Text style={styles.countText}>
               {t("subscriptions.countOf", { count: total, filtered: filtered.length, total })}
             </Text>
@@ -1046,8 +1016,8 @@ export default function SubscriptionsScreen() {
               </View>
             )
           ) : (
-            filtered.map((sub: any) => {
-              const equiv = monthlyEquiv(sub.price, sub.billingCycle, sub.currency);
+            <View style={styles.listCard}>
+            {filtered.map((sub: any, i: number) => {
               /* parseApiDate, never new Date(). The API sends next_billing_date
                  as TIMESTAMPTZ at midnight UTC, so new Date() on it resolves to
                  the PREVIOUS local day at any negative offset: a 16 October
@@ -1060,7 +1030,27 @@ export default function SubscriptionsScreen() {
               const nextDate = parseApiDate(sub.nextBillingDate);
               const trialDate = parseApiDate(sub.trialEndDate);
               const trialDaysLeft = daysUntil(sub.trialEndDate);
-              const isCustomCat = !(DEFAULT_CATEGORIES as readonly string[]).includes(sub.category);
+              const pending = isPendingRow(sub);
+              const paused = sub.isActive === false;
+              /* ONE STATUS LINE, the most important thing true of the row:
+                 waiting or refused, then paused, then a running trial, then the
+                 next payment. These were up to four badges under each card. */
+              const meta = pending
+                ? { text: t(sub.refusal ? "subscriptions.refusedBadge" : "subscriptions.pendingBadge"), color: sub.refusal ? c.danger : c.textSecondary }
+                : paused
+                  ? { text: t("subscriptions.paused"), color: c.textSecondary }
+                  : trialDate && trialDaysLeft !== null && trialDaysLeft >= 0
+                    ? {
+                        text: trialDaysLeft === 0
+                          ? t("subscriptions.trialEndsSoon_today")
+                          : t("subscriptions.trialEndsSoon_days", { days: trialDaysLeft }),
+                        color: c.warning,
+                      }
+                    : {
+                        text: nextDate ? t("subscriptions.next", { date: fmtD(nextDate, "PP") }) : t("subscriptions.noDate"),
+                        color: c.textSecondary,
+                      };
+              const open = openRow === sub.id && !pending;
               return (
                 <Swipeable
                   key={sub.id}
@@ -1078,123 +1068,140 @@ export default function SubscriptionsScreen() {
                     );
                   }}
                 >
-                <View style={[styles.card, sub.isActive === false && styles.cardPaused]}>
-                  <TouchableOpacity
-                    style={styles.cardInfo}
-                    activeOpacity={0.7}
-                    onPress={() => (isPendingRow(sub) ? showPending(sub) : router.push(`/subscription-details?id=${sub.id}`))}
-                  >
-                    <Text style={styles.cardName}>{sub.name}</Text>
-                    <Text style={styles.cardPrice}>{fmtC(sub.price, sub.currency)} / {cycleLabel(sub.billingCycle)}</Text>
-                    {equiv && <Text style={styles.cardMonthly}>{equiv}</Text>}
-                    <Text style={styles.cardDate}>
-                      {nextDate
-                        ? t("subscriptions.next", { date: fmtD(nextDate, "PP") })
-                        : t("subscriptions.noDate")}
-                    </Text>
-                    <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
-                      <View style={[styles.categoryBadge, isCustomCat && styles.customCategoryBadge]}>
-                        <Text style={[styles.categoryBadgeText, isCustomCat && styles.customCategoryBadgeText]}>
-                          {categoryLabel(sub.category)}
-                        </Text>
-                      </View>
-                      {sub.isActive === false && (
-                        <View style={styles.pausedBadge}>
-                          <Text style={styles.pausedBadgeText}>{t("subscriptions.paused")}</Text>
-                        </View>
-                      )}
-                      {isPendingRow(sub) && (
-                        /* Refused reads in danger on its own danger ground:
-                           on the grey badge it measured 3.87:1, under the
-                           4.5:1 floor for 10px text. 4.63 light, 5.94 dark. */
-                        <View style={[styles.pausedBadge, sub.refusal && { backgroundColor: c.dangerLight }]}>
-                          <Text style={[styles.pausedBadgeText, sub.refusal && { color: c.danger }]}>
-                            {t(sub.refusal ? "subscriptions.refusedBadge" : "subscriptions.pendingBadge")}
-                          </Text>
-                        </View>
-                      )}
-                      {trialDate && trialDaysLeft !== null && trialDaysLeft >= 0 && (
-                        <View style={styles.trialBadge}>
-                          <Text style={styles.trialBadgeText}>
-                            {trialDaysLeft === 0
-                              ? t("subscriptions.trialEndsSoon_today")
-                              : t("subscriptions.trialEndsSoon_days", { days: trialDaysLeft })}
-                          </Text>
-                        </View>
-                      )}
-                      {sub.priceIncrease && (
-                        <View style={styles.priceIncreaseBadge}>
-                          <MaterialCommunityIcons name="trending-up" size={10} color="#fff" />
-                          <Text style={styles.priceIncreaseBadgeText}>
+                <View style={[styles.subItem, i > 0 && styles.subDivider]}>
+                  <View style={styles.subRow}>
+                    <TouchableOpacity
+                      style={[styles.subMain, paused && styles.subPaused]}
+                      activeOpacity={0.7}
+                      onPress={() => (pending ? showPending(sub) : router.push(`/subscription-details?id=${sub.id}`))}
+                    >
+                      <LogoImage name={sub.name} category={sub.category} size={36} />
+                      <View style={styles.subText}>
+                        <Text style={styles.subName} numberOfLines={1}>{sub.name}</Text>
+                        <Text style={[styles.subMeta, { color: meta.color }]} numberOfLines={1}>{meta.text}</Text>
+                        {sub.priceIncrease && (
+                          <Text style={[styles.subMeta, { color: c.danger }]} numberOfLines={1}>
                             {t("subscriptions.priceUp", { amount: fmtC(sub.priceIncrease.to - sub.priceIncrease.from, sub.currency) })}
                           </Text>
-                        </View>
-                      )}
+                        )}
+                      </View>
+                      <View style={styles.subAmountCol}>
+                        <Text style={styles.subAmount}>{fmtC(sub.price, sub.currency)}</Text>
+                        <Text style={styles.subCycle}>{t("subscriptions.perCycle", { cycle: cycleLabel(sub.billingCycle) })}</Text>
+                      </View>
+                    </TouchableOpacity>
+                    {pending ? (
+                      <TouchableOpacity
+                        style={styles.moreButton}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("subscriptions.a11yPending", { name: sub.name })}
+                        onPress={() => showPending(sub)}
+                      >
+                        <MaterialCommunityIcons
+                          name={sub.refusal ? "alert-circle-outline" : "cloud-upload-outline"}
+                          size={20}
+                          color={sub.refusal ? c.danger : c.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.moreButton}
+                        accessibilityRole="button"
+                        accessibilityLabel={t("subscriptions.a11yActions", { name: sub.name })}
+                        accessibilityState={{ expanded: open }}
+                        onPress={() => setOpenRow(open ? null : sub.id)}
+                      >
+                        <MaterialCommunityIcons name={open ? "chevron-up" : "dots-horizontal"} size={20} color={c.textSecondary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {open && (
+                    /* Every action keeps a word beside its icon: these were three
+                       grey icon squares per card, one of which deletes data. */
+                    <View style={styles.actionBar}>
+                      <TouchableOpacity
+                        style={styles.cancelGuideLink}
+                        accessibilityRole="button"
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        onPress={() => router.push(`/cancel-guide?name=${encodeURIComponent(sub.name)}`)}
+                      >
+                        <MaterialCommunityIcons name="format-list-numbered" size={18} color={c.text} />
+                        <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionChip}
+                        accessibilityRole="button"
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        accessibilityLabel={t(paused ? "subscriptions.a11yResume" : "subscriptions.a11yPause", { name: sub.name })}
+                        onPress={() => { setOpenRow(null); setActiveMutation.mutate({ id: sub.id, isActive: paused }); }}
+                      >
+                        <MaterialCommunityIcons name={paused ? "play-circle-outline" : "pause-circle-outline"} size={18} color={c.text} />
+                        <Text style={styles.actionChipText}>{t(paused ? "subscriptions.resume" : "subscriptions.pause")}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionChip}
+                        accessibilityRole="button"
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        accessibilityLabel={t("subscriptions.a11yEdit", { name: sub.name })}
+                        onPress={() => { setOpenRow(null); openEdit(sub); }}
+                      >
+                        <MaterialCommunityIcons name="pencil-outline" size={18} color={c.text} />
+                        <Text style={styles.actionChipText}>{t("subscriptions.edit")}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.actionChip}
+                        accessibilityRole="button"
+                        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        accessibilityLabel={t("subscriptions.a11yDelete", { name: sub.name })}
+                        onPress={() => { setOpenRow(null); confirmDelete(sub); }}
+                      >
+                        <MaterialCommunityIcons name="trash-can-outline" size={18} color={c.danger} />
+                        <Text style={[styles.actionChipText, { color: c.danger }]}>{t("subscriptions.delete")}</Text>
+                      </TouchableOpacity>
                     </View>
-                    <TouchableOpacity
-                      style={styles.cancelGuideLink}
-                      accessibilityRole="button"
-                      hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
-                      onPress={() => router.push(`/cancel-guide?name=${encodeURIComponent(sub.name)}`)}
-                    >
-                      <MaterialCommunityIcons name="format-list-numbered" size={14} color={c.textSecondary} />
-                      <Text style={styles.cancelGuideLinkText}>{t("subscriptions.howToCancel")}</Text>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                  {isPendingRow(sub) ? (
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("subscriptions.a11yPending", { name: sub.name })}
-                      onPress={() => showPending(sub)}
-                    >
-                      <MaterialCommunityIcons
-                        name={sub.refusal ? "alert-circle-outline" : "cloud-upload-outline"}
-                        size={18}
-                        color={sub.refusal ? c.danger : c.textSecondary}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                  ) : (
-                  <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={t(
-                        sub.isActive === false ? "subscriptions.a11yResume" : "subscriptions.a11yPause",
-                        { name: sub.name }
-                      )}
-                      onPress={() => setActiveMutation.mutate({ id: sub.id, isActive: sub.isActive === false })}
-                    >
-                      <MaterialCommunityIcons
-                        name={sub.isActive === false ? "play-circle-outline" : "pause-circle-outline"}
-                        size={18}
-                        color={c.textSecondary}
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("subscriptions.a11yEdit", { name: sub.name })}
-                      onPress={() => openEdit(sub)}
-                    >
-                      <MaterialCommunityIcons name="pencil" size={18} color={c.primary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.iconButton}
-                      accessibilityRole="button"
-                      accessibilityLabel={t("subscriptions.a11yDelete", { name: sub.name })}
-                      onPress={() => confirmDelete(sub)}
-                    >
-                      <MaterialCommunityIcons name="trash-can" size={18} color={c.danger} />
-                    </TouchableOpacity>
-                  </View>
                   )}
                 </View>
                 </Swipeable>
               );
-            })
+            })}
+            </View>
+          )}
+
+          {/* THE EXPORTS, as quiet rows after the list rather than two locked
+              squares beside Add: they matter once there is something to export. */}
+          {total > 0 && !subscriptionsLoading && (
+            <View style={[styles.listCard, styles.exportCard]}>
+              <TouchableOpacity
+                style={styles.exportRow}
+                accessibilityRole="button"
+                accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
+                onPress={exportReport}
+              >
+                <MaterialCommunityIcons name="file-chart-outline" size={22} color={c.textSecondary} />
+                <Text style={styles.exportRowText}>{t("subscriptions.a11yExportReport")}</Text>
+                {!isPremium && (
+                  <View style={styles.premiumTag}>
+                    <Text style={styles.premiumTagText}>{t("upgrade.premium")}</Text>
+                  </View>
+                )}
+                <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.exportRow, styles.subDivider]}
+                accessibilityRole="button"
+                accessibilityHint={isPremium ? undefined : t("common.a11yPremiumLocked")}
+                onPress={exportCalendar}
+              >
+                <MaterialCommunityIcons name="calendar-export" size={22} color={c.textSecondary} />
+                <Text style={styles.exportRowText}>{t("subscriptions.a11yExportCalendar")}</Text>
+                {!isPremium && (
+                  <View style={styles.premiumTag}>
+                    <Text style={styles.premiumTagText}>{t("upgrade.premium")}</Text>
+                  </View>
+                )}
+                <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </ScrollView>
@@ -1568,6 +1575,48 @@ function makeStyles(c: AppColors) {
     },
     removedCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
     removedCardInvite: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
+    pasteButton: {
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
+      minHeight: 48, paddingHorizontal: space.l, borderRadius: radius.m,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card,
+    },
+    pasteButtonText: { ...typeScale.label, color: c.text },
+    limitLink: { ...typeScale.label, color: c.primary },
+    searchBox: {
+      flexDirection: "row", alignItems: "center", gap: space.s, minHeight: 48,
+      paddingHorizontal: space.m, borderRadius: radius.m, marginBottom: space.m,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.inputBg,
+    },
+    searchInput: { flex: 1, ...typeScale.body, color: c.text, paddingVertical: space.s },
+    listCard: {
+      backgroundColor: c.card, borderRadius: radius.m, paddingHorizontal: space.l,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+    },
+    exportCard: { marginTop: space.xl },
+    subItem: {},
+    subDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    subRow: { flexDirection: "row", alignItems: "center" },
+    subMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: space.m, paddingVertical: space.m, minHeight: 64 },
+    subPaused: { opacity: 0.55 },
+    subText: { flex: 1, minWidth: 0 },
+    subName: { ...typeScale.bodyStrong, color: c.text },
+    subMeta: { ...typeScale.caption, marginTop: 2 },
+    subAmountCol: { alignItems: "flex-end" },
+    subAmount: { ...typeScale.bodyStrong, ...tabular, color: c.text },
+    subCycle: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    moreButton: { width: 44, minHeight: 48, alignItems: "flex-end", justifyContent: "center" },
+    actionBar: { flexDirection: "row", flexWrap: "wrap", gap: space.s, paddingBottom: space.m, paddingLeft: 36 + space.m },
+    // Same shape as cancelGuideLink above: 40dp plus 4dp of hitSlop each way.
+    actionChip: {
+      flexDirection: "row", alignItems: "center", gap: 6, minHeight: 40, paddingHorizontal: 12,
+      borderRadius: 20, borderWidth: 1, borderColor: c.border,
+    },
+    actionChipText: { ...typeScale.label, color: c.text },
+    exportRow: { flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 56 },
+    exportRowText: { flex: 1, ...typeScale.body, color: c.text },
+    premiumTag: { backgroundColor: c.primaryLight, borderRadius: radius.pill, paddingHorizontal: space.s, paddingVertical: 2 },
+    // c.text, not c.primary: dark primary on primaryLight is 3.35:1.
+    premiumTagText: { ...typeScale.caption, color: c.text },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
@@ -1578,11 +1627,6 @@ function makeStyles(c: AppColors) {
     addButtonLocked: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     addButtonTextLocked: { color: c.text },
     addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    exportButton: {
-      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
-      justifyContent: "center", alignItems: "center",
-    },
-    exportButtonLocked: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     limitBar: {
       backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 12,
       borderWidth: 1, borderColor: c.border,
@@ -1593,49 +1637,6 @@ function makeStyles(c: AppColors) {
     limitTrack: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
     limitFill: { height: "100%", borderRadius: 3 },
     limitHint: { fontSize: 11, color: c.textSecondary, marginTop: 5 },
-    searchBar: {
-      backgroundColor: c.inputBg, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 14,
-      borderWidth: 1.5, borderColor: c.textMuted, fontSize: 14, color: c.text, marginBottom: 14,
-    },
-    card: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row",
-      justifyContent: "space-between", alignItems: "flex-start",
-    },
-    cardPaused: { opacity: 0.6 },
-    cardInfo: { flex: 1 },
-    cardName: { fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 3 },
-    cardPrice: { fontSize: 12, color: c.textSecondary, marginBottom: 2 },
-    cardDate: { fontSize: 11, color: c.textMuted },
-    cardMonthly: { fontSize: 11, color: c.primary, marginTop: 1 },
-    categoryBadge: {
-      alignSelf: "flex-start", backgroundColor: c.primaryLight, borderRadius: 4,
-      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-    },
-    categoryBadgeText: { fontSize: 10, color: c.primary, fontWeight: "600", fontFamily: "Montserrat-SemiBold", textTransform: "capitalize" },
-    customCategoryBadge: { backgroundColor: c.accentLight },
-    customCategoryBadgeText: { color: c.success },
-    trialBadge: {
-      alignSelf: "flex-start", backgroundColor: c.warningLight, borderRadius: 4,
-      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-    },
-    trialBadgeText: { fontSize: 10, color: c.warning, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    pausedBadge: {
-      alignSelf: "flex-start", backgroundColor: c.border, borderRadius: 4,
-      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-    },
-    pausedBadgeText: { fontSize: 10, color: c.textSecondary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    priceIncreaseBadge: {
-      alignSelf: "flex-start", backgroundColor: c.danger, borderRadius: 4,
-      paddingVertical: 2, paddingHorizontal: 6, marginTop: 4,
-      flexDirection: "row", alignItems: "center", gap: 3,
-    },
-    priceIncreaseBadgeText: { fontSize: 10, color: "#fff", fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    actionButtons: { flexDirection: "row", gap: 8 },
-    iconButton: {
-      width: 36, height: 36, borderRadius: 6, backgroundColor: c.border,
-      justifyContent: "center", alignItems: "center",
-    },
     emptyState: { alignItems: "center", paddingVertical: 48 },
     emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
     emptyStateTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 8, textAlign: "center" },
@@ -1713,13 +1714,6 @@ function makeStyles(c: AppColors) {
       alignItems: "center", marginTop: 8,
     },
     cancelButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    emailHintBanner: {
-      flexDirection: "row", alignItems: "center", gap: 10,
-      backgroundColor: c.primaryLight, borderRadius: 10, padding: 12, marginBottom: 12,
-      borderWidth: 1, borderColor: c.primary,
-    },
-    emailHintTitle: { fontSize: 13, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.primary },
-    emailHintSub: { fontSize: 11, color: c.primary, opacity: 0.8, marginTop: 1 },
     emailFillButton: {
       flexDirection: "row", alignItems: "center", gap: 8,
       backgroundColor: c.primaryLight, borderRadius: 8, padding: 12, marginBottom: 14,
@@ -1792,11 +1786,10 @@ function makeStyles(c: AppColors) {
        dark card is 3.94:1 and fails the same floor. Measured, not eyeballed. */
     cancelGuideLink: {
       flexDirection: "row", alignItems: "center", gap: 6,
-      marginTop: 10, alignSelf: "flex-start",
-      minHeight: 36, paddingHorizontal: 12,
-      borderWidth: 1, borderColor: c.border, borderRadius: 18,
+      minHeight: 40, paddingHorizontal: 12,
+      borderWidth: 1, borderColor: c.border, borderRadius: 20,
     },
-    cancelGuideLinkText: { fontSize: 13, color: c.textSecondary, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
+    cancelGuideLinkText: { fontSize: 13, lineHeight: 18, color: c.text, fontFamily: "Montserrat-Medium" },
     reviewOverlay: {
       flex: 1, backgroundColor: c.overlay,
       justifyContent: "center", alignItems: "center", padding: 32,

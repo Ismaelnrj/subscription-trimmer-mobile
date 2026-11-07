@@ -216,7 +216,12 @@
     "refusedLimit": "Der kostenlose Plan umfasst {{limit}} Abos. Mit einem Upgrade kannst du mehr hinzufügen, oder du entfernst dieses.",
     "refusedOther": "Der Server meldet: {{reason}}",
     "a11yPending": "Status von {{name}}",
-    "perMonthEquiv": "≈ {{amount}} pro Monat"
+    "pasteEmail": "E-Mail einfügen",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "edit": "Bearbeiten",
+    "perCycle": "pro {{cycle}}",
+    "a11yActions": "Aktionen für {{name}}"
   },
   "profile": {
     "upgrade": "Upgrade",

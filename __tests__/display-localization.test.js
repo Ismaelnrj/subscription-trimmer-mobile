@@ -228,9 +228,12 @@ describe("no screen renders a raw category or billing cycle string", () => {
   const SUBS = strip(read("app/(tabs)/subscriptions.tsx"));
   const ANALYTICS = strip(read("app/(tabs)/analytics.tsx"));
 
-  it("the subscription card badge goes through the helper", () => {
-    expect(SUBS).toMatch(/\{categoryLabel\(sub\.category\)\}/);
+  it("the subscription list renders no raw category", () => {
+    // The card's category badge went with the 2026-11-07 redesign: a row now
+    // carries logo, name, one status line and the amount. What must still hold
+    // is that no category reaches the screen without the helper.
     expect(SUBS).not.toMatch(/>\s*\{sub\.category\}\s*</);
+    expect(SUBS).not.toMatch(/\bcategoryBadge\b/);
   });
 
   it("the category chips in the form go through the helper", () => {

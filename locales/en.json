@@ -216,7 +216,12 @@
     "refusedLimit": "The free plan covers {{limit}} subscriptions. Upgrade to add more, or remove this one.",
     "refusedOther": "The server said: {{reason}}",
     "a11yPending": "Status of {{name}}",
-    "perMonthEquiv": "≈ {{amount}} a month"
+    "pasteEmail": "Paste email",
+    "pause": "Pause",
+    "resume": "Resume",
+    "edit": "Edit",
+    "perCycle": "per {{cycle}}",
+    "a11yActions": "Actions for {{name}}"
   },
   "profile": {
     "upgrade": "Upgrade",
