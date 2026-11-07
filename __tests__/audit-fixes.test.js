@@ -216,12 +216,17 @@ describe("the controls people tap most clear the 48dp floor", () => {
   it("the purchase screen states its terms at a readable size", () => {
     /* planSub sits under a price and legalNote carries the subscription terms.
        Both were under the floor on the one screen where a misread costs money.
-       The plan BADGE is deliberately left at 9: an uppercase chip is
-       decoration, and this test does not pretend otherwise. */
+       (The 9px uppercase plan badge went with the 2026-11-07 redesign.) */
     const src = read("app/upgrade.tsx");
+    /* A style may take its size from the shared scale (`...typeScale.caption`)
+       rather than a literal, so resolve that against lib/theme.ts. */
+    const theme = read("lib/theme.ts");
+    const scaleSize = (step) => Number((theme.match(new RegExp(`\\b${step}: \\{[^}]*fontSize: (\\d+)`)) || [])[1]);
     for (const name of ["planSub", "legalNote"]) {
       const block = src.slice(src.indexOf(`${name}: {`), src.indexOf("}", src.indexOf(`${name}: {`)));
-      const size = Number((block.match(/fontSize:\s*(\d+)/) || [])[1]);
+      const literal = (block.match(/fontSize:\s*(\d+)/) || [])[1];
+      const step = (block.match(/typeScale\.(\w+)/) || [])[1];
+      const size = literal ? Number(literal) : scaleSize(step);
       expect(size).toBeGreaterThanOrEqual(12);
     }
   });

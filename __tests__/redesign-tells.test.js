@@ -6,9 +6,9 @@
    redesigned dashboard shipped three of them before anybody checked.
 
    Scoped to the screens already redone. Add each screen here when its
-   redesign lands, so a redone screen cannot drift back. The paywall still
-   carries "Cancel anytime · Instant access · Instant results" and
-   "Unlock Premium · {{price}}"; they go when that screen is redone. */
+   redesign lands, so a redone screen cannot drift back. The paywall's
+   "Cancel anytime · Instant access · Instant results" and
+   "Unlock Premium · {{price}}" went with its redesign on 2026-11-07. */
 
 const fs = require("fs");
 const path = require("path");
@@ -18,6 +18,7 @@ const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
 const REDONE = [
   { file: "app/(tabs)/index.tsx", keys: "dashboard" },
   { file: "app/(tabs)/subscriptions.tsx", keys: "subscriptions" },
+  { file: "app/upgrade.tsx", keys: "upgrade" },
 ];
 
 // Block and JSX comments may quote the tells they explain.

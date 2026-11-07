@@ -16,7 +16,7 @@ import { useAuthStore } from "../lib/auth-store";
 import { hasPaidPlan, freePremiumUntil } from "../lib/premium-status";
 import { parseApiDate } from "../lib/utils";
 import { useDateFormat } from "../lib/date-locale";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../lib/theme";
 import { track } from "../lib/analytics";
 import { useQuery } from "@tanstack/react-query";
 import apiClient from "../lib/api";
@@ -65,19 +65,21 @@ export default function UpgradeScreen() {
   const serverLimit = Number(settings?.freeSubscriptionLimit);
   const freeLimit = Number.isFinite(serverLimit) && serverLimit >= 1 ? serverLimit : FREE_LIMIT_FALLBACK;
 
-  /* Checked against the code 2026-11-07. Trial tracking is FREE: nothing gates
-     the trial switch or its reminder, on the phone or the server, so this
-     table must not sell it as Premium. "Priority support" is gone: one address,
-     the same for everybody, so there was no queue to be first in. */
-  const FEATURES = [
-    { icon: "infinity",            label: t("upgrade.feat_subscriptions"),  free: t("upgrade.free_subscriptions", { count: freeLimit }), premium: t("upgrade.premium_unlimited") },
-    { icon: "chart-bar",           label: t("upgrade.feat_categories"),     free: t("upgrade.free_categories"),    premium: t("upgrade.premium_fullBreakdown") },
-    { icon: "lightbulb-on",        label: t("upgrade.feat_ai"),             free: t("upgrade.free_ai"),            premium: t("upgrade.premium_allInsights") },
-    { icon: "target",              label: t("upgrade.feat_budget"),         free: "—",                             premium: "✓" },
-    { icon: "clock-alert-outline", label: t("upgrade.feat_trial"),          free: "✓",                             premium: "✓" },
-    { icon: "tag-multiple",        label: t("upgrade.feat_customCat"),      free: "—",                             premium: "✓" },
-    { icon: "file-chart",          label: t("upgrade.feat_export"),         free: "—",                             premium: "✓" },
-    { icon: "email-fast-outline",  label: t("upgrade.feat_email"),          free: "—",                             premium: "✓" },
+  /* WHAT EACH TIER REALLY GETS, checked against the code on 2026-11-07.
+     true and false draw a check or a dash with a spoken label; a string is a
+     limit. Two rows were wrong and are gone from the Premium only side:
+     trial tracking is free (nothing gates the trial switch or its reminder,
+     on the phone or the server), and "Priority support" named a queue that
+     does not exist (one address, the same for everybody). */
+  const FEATURES: { label: string; free: string | boolean; premium: string | boolean }[] = [
+    { label: t("upgrade.feat_subscriptions"), free: t("upgrade.free_subscriptions", { count: freeLimit }), premium: t("upgrade.premium_unlimited") },
+    { label: t("upgrade.feat_categories"),    free: t("upgrade.free_categories"), premium: t("upgrade.premium_fullBreakdown") },
+    { label: t("upgrade.feat_ai"),            free: t("upgrade.free_ai"),         premium: t("upgrade.premium_allInsights") },
+    { label: t("upgrade.feat_budget"),        free: false, premium: true },
+    { label: t("upgrade.feat_customCat"),     free: false, premium: true },
+    { label: t("upgrade.feat_export"),        free: false, premium: true },
+    { label: t("upgrade.feat_email"),         free: false, premium: true },
+    { label: t("upgrade.feat_trial"),         free: true,  premium: true },
   ];
 
   /* THIS SCREEN NEVER NAMES A PRICE GOOGLE PLAY DID NOT GIVE IT.
@@ -127,9 +129,9 @@ export default function UpgradeScreen() {
   const saving = yearlySaving();
 
   const PLANS: { key: PlanKey; label: string; price: PlanPrice; sub: string; badge?: string }[] = [
-    { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly"),  sub: t("upgrade.perMonth") },
     { key: "yearly",   label: t("upgrade.yearly"),   price: priceFor("yearly"),   sub: t("upgrade.perYear"),   badge: saving !== null ? t("upgrade.savePercent", { percent: saving }) : undefined },
-    { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime"), sub: t("upgrade.oneTime"),   badge: t("upgrade.bestValue") },
+    { key: "monthly",  label: t("upgrade.monthly"),  price: priceFor("monthly"),  sub: t("upgrade.perMonth") },
+    { key: "lifetime", label: t("upgrade.lifetime"), price: priceFor("lifetime"), sub: t("upgrade.oneTime") },
   ];
 
   useEffect(() => {
@@ -263,94 +265,90 @@ export default function UpgradeScreen() {
 
   const selectedPlanInfo = PLANS.find((p) => p.key === selectedPlan)!;
 
+  const cell = (v: string | boolean, premium: boolean) =>
+    typeof v === "string" ? (
+      <Text style={[styles.cellText, premium && styles.cellTextStrong]}>{v}</Text>
+    ) : (
+      <MaterialCommunityIcons
+        name={v ? "check" : "minus"}
+        size={20}
+        color={v ? c.success : c.textSecondary}
+        accessibilityLabel={v ? t("upgrade.included") : t("upgrade.notIncluded")}
+      />
+    );
+
+  /* REDONE 2026-11-07 on the dashboard's scale. It was a navy (green in dark
+     mode) hero with an off-palette yellow crown, a tinted hook card, three
+     cramped plan columns with 9px badges, a twelve point table, and the buy
+     button below all of it. Now: one headline, the plans as a list with the
+     price where the eye ends, the button and its terms straight after, and
+     what Premium adds underneath for whoever wants it. Same handlers. */
   return (
     <>
       <Stack.Screen options={{ title: t("upgrade.title"), headerShown: true }} />
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
-
-        <View style={styles.hero}>
-          <MaterialCommunityIcons name="crown" size={48} color="#FCD34D" style={{ marginBottom: 12 }} />
-          <Text style={styles.heroTitle}>{t("upgrade.heroTitle")}</Text>
-          <Text style={styles.heroSub}>{t("upgrade.heroSubtitle")}</Text>
-        </View>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <Text style={styles.kicker}>{t("upgrade.heroTitle")}</Text>
+        {/* The pitch is for somebody deciding; a paying customer gets the card. */}
+        {!isPremium && <Text style={styles.headline} accessibilityRole="header">{t("upgrade.headline")}</Text>}
 
         {isPremium ? (
-          <View style={styles.body}>
-            <View style={styles.alreadyCard}>
-              <MaterialCommunityIcons name="check-circle" size={40} color={c.success} />
-              <Text style={styles.alreadyTitle}>{t("upgrade.alreadyPremiumTitle")}</Text>
-              <Text style={styles.alreadySub}>{t("upgrade.alreadyPremiumSub")}</Text>
+          <View style={[styles.card, styles.cardFirst]}>
+            <View style={styles.cardRow}>
+              <MaterialCommunityIcons name="check-circle" size={24} color={c.success} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{t("upgrade.alreadyPremiumTitle")}</Text>
+                <Text style={styles.cardBody}>{t("upgrade.alreadyPremiumSub")}</Text>
+              </View>
             </View>
           </View>
         ) : (
-          <View style={styles.body}>
+          <>
             {freeUntil && (
-              <View style={styles.freeCard}>
-                <MaterialCommunityIcons name="crown-outline" size={20} color={c.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.freeTitle}>
-                    {t("upgrade.freeUntilTitle", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
-                  </Text>
-                  <Text style={styles.freeBody}>{t("upgrade.freeUntilBody")}</Text>
+              <View style={[styles.card, styles.cardAfter]}>
+                <View style={styles.cardRow}>
+                  <MaterialCommunityIcons name="crown-outline" size={22} color={c.text} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.cardTitle}>
+                      {t("upgrade.freeUntilTitle", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
+                    </Text>
+                    <Text style={styles.cardBody}>{t("upgrade.freeUntilBody")}</Text>
+                  </View>
                 </View>
               </View>
             )}
-            <View style={styles.hookCard}>
-              <Text style={styles.hookText}>
-                <Text style={styles.hookBold}>{t("upgrade.stopLeaking")}</Text>{t("upgrade.stopLeakingSuffix")}
-              </Text>
-              <Text style={styles.hookSub}>{t("upgrade.costNote")}</Text>
-            </View>
 
-            <Text style={styles.sectionLabel}>{t("upgrade.choosePlan")}</Text>
-            <View style={styles.planRow}>
+            <Text style={styles.section}>{t("upgrade.choosePlan")}</Text>
+            <View style={styles.plans} accessibilityRole="radiogroup">
               {PLANS.map((plan) => {
                 const active = selectedPlan === plan.key;
                 return (
                   <TouchableOpacity
                     key={plan.key}
-                    style={[styles.planCard, active && styles.planCardActive]}
+                    style={[styles.plan, active && styles.planOn]}
                     onPress={() => setSelectedPlan(plan.key)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
                   >
-                    {plan.badge && (
-                      <View style={[styles.planBadge, active && styles.planBadgeActive]}>
-                        <Text style={styles.planBadgeText}>{plan.badge}</Text>
+                    <View style={[styles.radio, active && styles.radioOn]}>
+                      {active && <View style={styles.radioDot} />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.planTop}>
+                        <Text style={styles.planLabel}>{plan.label}</Text>
+                        {plan.badge && (
+                          <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{plan.badge}</Text>
+                          </View>
+                        )}
                       </View>
-                    )}
-                    <Text style={[styles.planLabel, active && styles.planLabelActive]}>{plan.label}</Text>
-                    <Text
-                      style={[
-                        styles.planPrice,
-                        plan.price.real
-                          ? active && styles.planPriceActive
-                          : styles.planPriceUnset,
-                      ]}
-                    >
+                      <Text style={styles.planSub}>{plan.sub}</Text>
+                    </View>
+                    <Text style={[styles.planPrice, !plan.price.real && styles.planPriceUnset]}>
                       {plan.price.text}
                     </Text>
-                    <Text style={[styles.planSub, active && styles.planSubActive]}>{plan.sub}</Text>
                   </TouchableOpacity>
                 );
               })}
-            </View>
-
-            <Text style={styles.sectionLabel}>{t("upgrade.whatsIncluded")}</Text>
-            <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.col, styles.featureCol]} />
-                <Text style={[styles.col, styles.headerText]}>{t("upgrade.free")}</Text>
-                <Text style={[styles.col, styles.headerText, styles.premiumColText]}>{t("upgrade.premium")}</Text>
-              </View>
-              {FEATURES.map((f, i) => (
-                <View key={f.label} style={[styles.row, i % 2 === 0 && styles.rowAlt]}>
-                  <View style={[styles.col, styles.featureCol, { flexDirection: "row", alignItems: "center", gap: 6 }]}>
-                    <MaterialCommunityIcons name={f.icon as any} size={13} color={c.textSecondary} />
-                    <Text style={styles.featureText} numberOfLines={2}>{f.label}</Text>
-                  </View>
-                  <Text style={[styles.col, styles.freeText]}>{f.free}</Text>
-                  <Text style={[styles.col, styles.premiumText, styles.premiumColText]}>{f.premium}</Text>
-                </View>
-              ))}
             </View>
 
             {/* Disabled until there is a real price. handleBuy already refuses a
@@ -376,13 +374,28 @@ export default function UpgradeScreen() {
                 </View>
               )}
             </TouchableOpacity>
+            <Text style={styles.legalNote}>{t("upgrade.legalNote")}</Text>
 
             <TouchableOpacity style={styles.restoreButton} onPress={handleRestore} disabled={restoring}>
               <Text style={styles.restoreText}>{restoring ? t("upgrade.restoring") : t("upgrade.restorePurchase")}</Text>
             </TouchableOpacity>
 
-            <Text style={styles.legalNote}>{t("upgrade.legalNote")}</Text>
-          </View>
+            <Text style={styles.section}>{t("upgrade.whatsIncluded")}</Text>
+            <View style={styles.card}>
+              <View style={styles.tableHead}>
+                <View style={styles.featureCol} />
+                <Text style={styles.headText}>{t("upgrade.free")}</Text>
+                <Text style={styles.headText}>{t("upgrade.premium")}</Text>
+              </View>
+              {FEATURES.map((f) => (
+                <View key={f.label} style={styles.tableRow}>
+                  <Text style={[styles.featureCol, styles.featureText]}>{f.label}</Text>
+                  <View style={styles.valueCol}>{cell(f.free, false)}</View>
+                  <View style={styles.valueCol}>{cell(f.premium, true)}</View>
+                </View>
+              ))}
+            </View>
+          </>
         )}
       </ScrollView>
     </>
@@ -392,73 +405,66 @@ export default function UpgradeScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    hero: {
-      backgroundColor: c.primary, paddingTop: 36, paddingBottom: 32,
-      alignItems: "center", paddingHorizontal: 24,
-    },
-    heroTitle: { fontSize: 28, fontWeight: "800", color: "#FFFFFF", marginBottom: 6 },
-    heroSub: { fontSize: 13, color: "rgba(255,255,255,0.75)", textAlign: "center" },
-    body: { padding: 20 },
-    freeCard: {
-      flexDirection: "row", gap: 12, alignItems: "flex-start",
-      backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 16,
+    content: { padding: space.xl, paddingBottom: space.xxl * 2 },
+    kicker: { ...typeScale.label, color: c.textSecondary },
+    headline: { ...typeScale.title, fontSize: 24, lineHeight: 30, color: c.text, marginTop: space.xs, marginBottom: space.xl },
+    section: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.m },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.l, padding: space.l,
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
     },
-    freeTitle: { fontFamily: "Montserrat-SemiBold", fontSize: 15, lineHeight: 21, color: c.text },
-    freeBody: { fontFamily: "Montserrat-Regular", fontSize: 13, lineHeight: 18, color: c.textSecondary, marginTop: 2 },
-    hookCard: {
-      backgroundColor: c.primaryLight, borderRadius: 12, padding: 16, marginBottom: 20,
-      borderWidth: 1, borderColor: c.primary,
+    cardAfter: { marginBottom: space.s },
+    cardFirst: { marginTop: space.l },
+    cardRow: { flexDirection: "row", gap: space.m, alignItems: "flex-start" },
+    cardTitle: { ...typeScale.bodyStrong, color: c.text },
+    cardBody: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    plans: { gap: space.s },
+    plan: {
+      flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 72,
+      paddingHorizontal: space.l, paddingVertical: space.m, borderRadius: radius.m,
+      backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
     },
-    hookText: { fontSize: 14, color: c.text, lineHeight: 22, marginBottom: 6 },
-    hookBold: { fontWeight: "800", color: c.primary },
-    hookSub: { fontSize: 12, color: c.textSecondary },
-    sectionLabel: { fontSize: 13, fontWeight: "700", color: c.text, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 },
-    planRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
-    planCard: {
-      flex: 1, borderRadius: 12, borderWidth: 2, borderColor: c.border,
-      backgroundColor: c.card, padding: 12, alignItems: "center",
+    /* Chosen is an ink outline and a filled radio, the same ink the add form
+       uses for a chosen option; never white on primary. */
+    planOn: { borderWidth: 2, borderColor: c.text, paddingHorizontal: space.l - 1 },
+    radio: {
+      width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.textSecondary,
+      alignItems: "center", justifyContent: "center",
     },
-    planCardActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
-    planBadge: { backgroundColor: c.border, borderRadius: 4, paddingVertical: 2, paddingHorizontal: 6, marginBottom: 4 },
-    planBadgeActive: { backgroundColor: c.primary },
-    planBadgeText: { fontSize: 9, fontWeight: "700", color: "#FFFFFF", textTransform: "uppercase" },
-    planLabel: { fontSize: 11, fontWeight: "600", color: c.textSecondary, marginBottom: 4, textTransform: "uppercase" },
-    planLabelActive: { color: c.primary },
-    planPrice: { fontSize: 18, fontWeight: "800", color: c.text },
-    /* Smaller and muted, because "Nicht verfügbar" is far longer than any
-       price string and would otherwise wrap at 18/800 into a heading that
-       shouts a non-price. Muted also reads as "not the number you want". */
-    planPriceUnset: { fontSize: 13, fontWeight: "600", color: c.textMuted },
-    planPriceActive: { color: c.primary },
-    planSub: { fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 2 },
-    planSubActive: { color: c.primary },
-    table: { borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: c.border, marginBottom: 24 },
-    tableHeader: { flexDirection: "row", backgroundColor: c.border, paddingVertical: 10, paddingHorizontal: 12 },
-    row: { flexDirection: "row", paddingVertical: 10, paddingHorizontal: 12 },
-    rowAlt: { backgroundColor: c.bg },
-    col: { flex: 1, fontSize: 12 },
-    featureCol: { flex: 2 },
-    featureText: { fontSize: 12, color: c.text, flex: 1 },
-    headerText: { fontWeight: "700", color: c.textSecondary, textAlign: "center" },
-    premiumColText: { color: c.primary },
-    freeText: { color: c.textMuted, textAlign: "center", fontSize: 12 },
-    premiumText: { fontWeight: "700", textAlign: "center", fontSize: 12 },
-    buyButtonDisabled: { opacity: 0.5 },
+    radioOn: { borderColor: c.text },
+    radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.text },
+    planTop: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: space.s },
+    planLabel: { ...typeScale.bodyStrong, color: c.text },
+    planSub: { ...typeScale.caption, color: c.textSecondary },
+    badge: {
+      borderRadius: radius.pill, borderWidth: 1, borderColor: c.success,
+      paddingHorizontal: space.s, paddingVertical: 1,
+    },
+    badgeText: { ...typeScale.label, color: c.success },
+    planPrice: { ...typeScale.heading, ...tabular, color: c.text },
+    /* Smaller and muted, because "Preis nicht verfügbar" is far longer than any
+       price and must not read as one. */
+    planPriceUnset: { ...typeScale.caption, color: c.textSecondary, maxWidth: 110, textAlign: "right" },
     buyButton: {
-      backgroundColor: c.primary, borderRadius: 14, paddingVertical: 18,
-      alignItems: "center", marginBottom: 14,
+      backgroundColor: c.primary, borderRadius: radius.m, minHeight: 60, marginTop: space.l,
+      alignItems: "center", justifyContent: "center", paddingVertical: space.s,
     },
-    buyButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-    buyButtonSub: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 3 },
-    restoreButton: { alignItems: "center", paddingVertical: 8 },
-    restoreText: { color: c.textMuted, fontSize: 13 },
-    legalNote: { fontSize: 12, color: c.textMuted, textAlign: "center", marginTop: 12, lineHeight: 17 },
-    alreadyCard: {
-      backgroundColor: c.card, borderRadius: 14, padding: 24,
-      alignItems: "center", borderWidth: 1, borderColor: c.success,
+    buyButtonDisabled: { opacity: 0.5 },
+    buyButtonText: { ...typeScale.bodyStrong, fontFamily: "Montserrat-SemiBold", color: "#FFFFFF" },
+    buyButtonSub: { ...typeScale.caption, color: "#FFFFFF", marginTop: 2 },
+    legalNote: { ...typeScale.caption, color: c.textSecondary, textAlign: "center", marginTop: space.m },
+    restoreButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: space.s },
+    restoreText: { ...typeScale.bodyStrong, color: c.text },
+    tableHead: { flexDirection: "row", alignItems: "center", paddingBottom: space.s },
+    headText: { flex: 1, ...typeScale.label, color: c.textSecondary, textAlign: "center" },
+    tableRow: {
+      flexDirection: "row", alignItems: "center", minHeight: 48, paddingVertical: space.s,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border,
     },
-    alreadyTitle: { fontSize: 18, fontWeight: "700", color: c.success, marginTop: 12, marginBottom: 6 },
-    alreadySub: { fontSize: 13, color: c.textSecondary, textAlign: "center", lineHeight: 20 },
+    featureCol: { flex: 1.6, paddingRight: space.s },
+    featureText: { ...typeScale.caption, color: c.text, flexShrink: 1 },
+    valueCol: { flex: 1, alignItems: "center" },
+    cellText: { ...typeScale.caption, color: c.textSecondary, textAlign: "center" },
+    cellTextStrong: { fontFamily: "Montserrat-Medium", color: c.text },
   });
 }
