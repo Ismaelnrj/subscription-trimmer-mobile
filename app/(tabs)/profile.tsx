@@ -6,9 +6,52 @@ import { useAuthStore } from "../../lib/auth-store";
 import { freePremiumUntil } from "../../lib/premium-status";
 import { parseApiDate } from "../../lib/utils";
 import { useDateFormat } from "../../lib/date-locale";
-import { useTheme, AppColors } from "../../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../../lib/theme";
 import { useLanguageStore } from "../../lib/language-store";
 import { useThemeStore, ThemeMode } from "../../lib/theme-store";
+import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
+
+/* Each language by its own name, never translated: somebody who cannot read
+   the current language must still find theirs. */
+const LANGUAGES: { code: "en" | "de"; name: string }[] = [
+  { code: "en", name: "English" },
+  { code: "de", name: "Deutsch" },
+];
+
+type RowProps = {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  sub?: string;
+  onPress: () => void;
+  first?: boolean;
+  tone?: "accent" | "danger";
+  styles: ReturnType<typeof makeStyles>;
+  c: AppColors;
+};
+
+/* One tappable row: icon, label, an optional second line, a chevron. The
+   label shrinks so a long one wraps instead of running under the chevron:
+   "Refer a Friend, get up to 30 days free" did exactly that on a phone. */
+function Row({ icon, label, sub, onPress, first, tone, styles, c }: RowProps) {
+  const color = tone === "danger" ? c.danger : tone === "accent" ? c.warning : c.textSecondary;
+  return (
+    <TouchableOpacity
+      style={[styles.row, !first && styles.rowDivider]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={sub ? `${label}. ${sub}` : label}
+    >
+      <View style={styles.menuItemLeft}>
+        <MaterialCommunityIcons name={icon} size={20} color={color} />
+        <View style={styles.rowText}>
+          <Text style={[styles.menuItemLabel, tone === "danger" && { color: c.danger }]}>{label}</Text>
+          {sub ? <Text style={styles.rowSub}>{sub}</Text> : null}
+        </View>
+      </View>
+      {tone !== "danger" && <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />}
+    </TouchableOpacity>
+  );
+}
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
@@ -31,11 +74,13 @@ export default function ProfileScreen() {
     { value: "dark", label: t("profile.themeDark") },
   ];
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return "U";
-    const parts = name.trim().split(/\s+/).filter(Boolean);
+  /* Initials from the name, else the first letter of the address. The old
+     fallbacks were the English words "U", "User" and "No email". */
+  const getInitials = (name?: string | null, email?: string | null) => {
+    const parts = (name ?? "").trim().split(/\s+/).filter(Boolean);
+    if (parts.length > 1) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return (email ?? "").trim().slice(0, 1).toUpperCase();
   };
 
   const handleLogout = () => {
@@ -45,6 +90,8 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const rowProps = { styles, c };
+
   return (
     <ScrollView
       style={styles.container}
@@ -53,223 +100,155 @@ export default function ProfileScreen() {
       <View style={styles.scrollContent}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+            <Text style={styles.avatarText}>{getInitials(user?.name, user?.email)}</Text>
           </View>
-          <Text style={styles.profileName}>{user?.name || "User"}</Text>
-          <Text style={styles.profileEmail}>{user?.email || "No email"}</Text>
+          <View style={styles.profileText}>
+            {user?.name ? <Text style={styles.profileName} numberOfLines={1}>{user.name}</Text> : null}
+            {user?.email ? (
+              <Text style={user?.name ? styles.profileEmail : styles.profileName} numberOfLines={1}>{user.email}</Text>
+            ) : null}
+          </View>
         </View>
 
-        <Text style={styles.sectionTitle}>{t("profile.upgrade")}</Text>
-        {freeUntil ? (
-          <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
-            <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
-              <View style={{ flexShrink: 1 }}>
-                <Text style={[styles.menuItemLabel, { color: c.primary }]}>
-                  {t("profile.freePremiumUntil", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
-                </Text>
-                <Text style={{ fontSize: 12, color: c.textSecondary, marginTop: 1 }}>{t("profile.freePremiumSub")}</Text>
-              </View>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
-          </TouchableOpacity>
-        ) : isPremium ? (
-          <TouchableOpacity
-            style={[styles.premiumItem, { borderColor: c.success }]}
-            onPress={() => Linking.openURL("https://play.google.com/store/account/subscriptions?package=com.trimio.app")}
-          >
-            <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="crown" size={20} color={c.success} />
-              <View>
-                <Text style={[styles.menuItemLabel, { color: c.success }]}>{t("profile.premiumMember")}</Text>
-                <Text style={{ fontSize: 11, color: c.textSecondary, marginTop: 1 }}>{t("profile.manageSubscription")}</Text>
-              </View>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.success} />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.premiumItem} onPress={() => router.push("/upgrade")}>
-            <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="crown" size={20} color={c.primary} />
-              <Text style={[styles.menuItemLabel, { color: c.primary }]}>
-                {t("profile.unlockPremium")}
-              </Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/cancelled")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="archive-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.cancelled")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/refer-a-friend")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="account-multiple-plus-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.referAFriend")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        {!isPremium && (
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/tip-jar")}>
-            <View style={styles.menuItemLeft}>
-              <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
-              <Text style={styles.menuItemLabel}>{t("profile.tipJar")}</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-          </TouchableOpacity>
-        )}
+        <View style={styles.card}>
+          {freeUntil ? (
+            <Row
+              {...rowProps}
+              first
+              tone="accent"
+              icon="crown"
+              label={t("profile.freePremiumUntil", { date: fmtD(parseApiDate(freeUntil)!, "PP") })}
+              sub={t("profile.freePremiumSub")}
+              onPress={() => router.push("/upgrade")}
+            />
+          ) : isPremium ? (
+            <Row
+              {...rowProps}
+              first
+              tone="accent"
+              icon="crown"
+              label={t("profile.premiumMember")}
+              sub={t("profile.manageSubscription")}
+              onPress={() => Linking.openURL("https://play.google.com/store/account/subscriptions?package=com.trimio.app")}
+            />
+          ) : (
+            <Row {...rowProps} first tone="accent" icon="crown" label={t("profile.unlockPremium")} onPress={() => router.push("/upgrade")} />
+          )}
+          <Row {...rowProps} icon="archive-outline" label={t("profile.cancelled")} onPress={() => router.push("/cancelled")} />
+          <Row
+            {...rowProps}
+            icon="account-multiple-plus-outline"
+            label={t("profile.referAFriend")}
+            sub={t("profile.referAFriendSub")}
+            onPress={() => router.push("/refer-a-friend")}
+          />
+          {!isPremium && (
+            <Row {...rowProps} icon="heart-outline" label={t("profile.tipJar")} sub={t("profile.tipJarSub")} onPress={() => router.push("/tip-jar")} />
+          )}
+        </View>
 
         <Text style={styles.sectionTitle}>{t("profile.settings")}</Text>
-        <View style={[styles.menuItem, styles.themeItem]}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="theme-light-dark" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.appearance")}</Text>
-          </View>
-          <View style={styles.themeToggle}>
-            {THEME_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.themeChip, mode === opt.value && styles.langChipActive]}
-                onPress={() => setMode(opt.value)}
-              >
-                <Text style={[styles.langChipText, mode === opt.value && styles.langChipTextActive]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        <View style={styles.menuItem}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="translate" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.language")}</Text>
-          </View>
-          <View style={styles.langToggle}>
-            <TouchableOpacity
-              style={[styles.langChip, language === "en" && styles.langChipActive]}
-              onPress={() => setLanguage("en")}
-            >
-              <Text style={[styles.langChipText, language === "en" && styles.langChipTextActive]}>EN</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.langChip, language === "de" && styles.langChipActive]}
-              onPress={() => setLanguage("de")}
-            >
-              <Text style={[styles.langChipText, language === "de" && styles.langChipTextActive]}>DE</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/notification-preferences")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="bell-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.notifications")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/account-settings")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="account-cog-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.accountSettings")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/help-support")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="help-circle-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.helpSupport")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/privacy-policy")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="shield-lock-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.privacyPolicy")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push("/terms-of-service")}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="file-document-outline" size={20} color={c.primary} />
-            <Text style={styles.menuItemLabel}>{t("profile.termsOfService")}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={20} color={c.textMuted} />
-        </TouchableOpacity>
-        <View style={[styles.menuItem, { opacity: 0.6 }]}>
-          <View style={styles.menuItemLeft}>
-            <MaterialCommunityIcons name="apple" size={20} color={c.text} />
-            <View>
-              <Text style={styles.menuItemLabel}>{t("profile.iOSComingSoon")}</Text>
-              <Text style={{ fontSize: 11, color: c.textSecondary, marginTop: 1 }}>{t("profile.comingSoon")}</Text>
+        <View style={styles.card}>
+          <View style={styles.controlRow}>
+            <Text style={styles.controlLabel}>{t("profile.appearance")}</Text>
+            {/* A segmented control: exactly one is always chosen. Chosen is
+                ink, never white on primary (4.02:1 in dark mode). */}
+            <View style={styles.segmented} accessibilityRole="radiogroup">
+              {THEME_OPTIONS.map((opt) => {
+                const on = mode === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.segment, on && styles.segmentOn]}
+                    onPress={() => setMode(opt.value)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
+                  >
+                    <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
-          <View style={{ backgroundColor: c.warningLight, borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8, borderWidth: 1, borderColor: c.warningBorder }}>
-            <Text style={{ fontSize: 10, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.warning }}>SOON</Text>
+          <View style={[styles.controlRow, styles.rowDivider]}>
+            <Text style={styles.controlLabel}>{t("profile.language")}</Text>
+            <View style={styles.segmented} accessibilityRole="radiogroup">
+              {LANGUAGES.map((lang) => {
+                const on = language === lang.code;
+                return (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={[styles.segment, on && styles.segmentOn]}
+                    onPress={() => setLanguage(lang.code)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: on }}
+                  >
+                    <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{lang.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
+          <Row {...rowProps} icon="bell-outline" label={t("profile.notifications")} onPress={() => router.push("/notification-preferences")} />
+          <Row {...rowProps} icon="account-cog-outline" label={t("profile.accountSettings")} onPress={() => router.push("/account-settings")} />
         </View>
 
-        <TouchableOpacity style={styles.dangerButton} onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={18} color={c.danger} />
-          <Text style={styles.dangerButtonText}>{t("profile.signOut")}</Text>
-        </TouchableOpacity>
+        <Text style={styles.sectionTitle}>{t("profile.helpLegal")}</Text>
+        <View style={styles.card}>
+          <Row {...rowProps} first icon="help-circle-outline" label={t("profile.helpSupport")} onPress={() => router.push("/help-support")} />
+          <Row {...rowProps} icon="shield-lock-outline" label={t("profile.privacyPolicy")} onPress={() => router.push("/privacy-policy")} />
+          <Row {...rowProps} icon="file-document-outline" label={t("profile.termsOfService")} onPress={() => router.push("/terms-of-service")} />
+        </View>
+
+        <View style={[styles.card, styles.cardAfter]}>
+          <Row {...rowProps} first tone="danger" icon="logout" label={t("profile.signOut")} onPress={handleLogout} />
+        </View>
       </View>
     </ScrollView>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    profileHeader: {
-      backgroundColor: c.card, borderRadius: 12, padding: 20, marginBottom: 16,
-      borderWidth: 1, borderColor: c.border, alignItems: "center",
-    },
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
+
+    profileHeader: { flexDirection: "row", alignItems: "center", gap: space.l, marginBottom: space.xl },
     avatar: {
-      width: 64, height: 64, borderRadius: 32, backgroundColor: c.primary,
-      justifyContent: "center", alignItems: "center", marginBottom: 12,
+      width: 56, height: 56, borderRadius: radius.pill, backgroundColor: c.text,
+      justifyContent: "center", alignItems: "center",
     },
-    avatarText: { color: "#FFFFFF", fontSize: 24, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    profileName: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 4 },
-    profileEmail: { fontSize: 14, color: c.textSecondary },
-    sectionTitle: {
-      fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12,
-      marginTop: 8, textTransform: "uppercase", letterSpacing: 0.5,
+    avatarText: { ...typeScale.title, color: c.bg },
+    profileText: { flex: 1 },
+    profileName: { ...typeScale.title, color: c.text },
+    profileEmail: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    menuItem: {
-      backgroundColor: c.card, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 16,
-      marginBottom: 8, flexDirection: "row", justifyContent: "space-between",
-      alignItems: "center", borderWidth: 1, borderColor: c.border,
-    },
-    premiumItem: {
-      backgroundColor: c.primaryLight, borderRadius: 8, paddingVertical: 14, paddingHorizontal: 16,
-      marginBottom: 8, flexDirection: "row", justifyContent: "space-between",
-      alignItems: "center", borderWidth: 1, borderColor: c.primary,
-    },
+    cardAfter: { marginTop: space.xl },
+    row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 56, paddingVertical: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     /* flexShrink on the label, or a long one runs under the chevron instead of
        wrapping: "Refer a Friend, get up to 30 days free" did exactly that on a
        real phone, and the German line is longer still. */
     menuItemLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, marginRight: 12 },
-    menuItemLabel: { fontSize: 14, color: c.text, fontWeight: "500", fontFamily: "Montserrat-Medium", flexShrink: 1 },
-    langToggle: { flexDirection: "row", gap: 6 },
-    langChip: {
-      paddingVertical: 5, paddingHorizontal: 12, borderRadius: 16,
-      backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
+    rowText: { flexShrink: 1 },
+    menuItemLabel: { ...typeScale.body, color: c.text, flexShrink: 1 },
+    rowSub: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+
+    controlRow: { paddingVertical: space.m, gap: space.s },
+    controlLabel: { ...typeScale.body, color: c.text },
+    segmented: {
+      flexDirection: "row", padding: 4, borderRadius: radius.m, gap: 4,
+      backgroundColor: c.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
     },
-    langChipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    langChipText: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.textSecondary },
-    langChipTextActive: { color: "#FFFFFF" },
-    themeItem: { flexDirection: "column", alignItems: "stretch" },
-    themeToggle: { flexDirection: "row", gap: 6, marginTop: 12 },
-    themeChip: {
-      flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 16,
-      backgroundColor: c.border, borderWidth: 1, borderColor: c.border,
-    },
-    dangerButton: {
-      backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 16,
-      marginTop: 16, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-      borderWidth: 1, borderColor: c.dangerBorder,
-    },
-    dangerButtonText: { color: c.danger, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
+    segment: { flex: 1, minHeight: 40, borderRadius: radius.s, alignItems: "center", justifyContent: "center" },
+    segmentOn: { backgroundColor: c.text },
+    segmentText: { ...typeScale.label, color: c.textSecondary },
+    segmentTextOn: { color: c.bg, fontFamily: "Montserrat-SemiBold" },
   });
 }
