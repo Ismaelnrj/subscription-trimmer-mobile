@@ -1496,7 +1496,8 @@ export default function SubscriptionsScreen() {
                     style={[styles.chip, styles.chipAdd]}
                     onPress={() => setShowCustomInput(true)}
                   >
-                    <Text style={[styles.chipText, { color: "#142B3A" }]}>+ {t("subscriptions.customCategory")}</Text>
+                    {/* c.text, not a hardcoded navy: on the dark chip that measured 1.08:1. */}
+                    <Text style={[styles.chipText, { color: c.text }]}>+ {t("subscriptions.customCategory")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1515,7 +1516,7 @@ export default function SubscriptionsScreen() {
                     returnKeyType="done"
                   />
                   <TouchableOpacity style={styles.customCatConfirm} onPress={addCustomCategory}>
-                    <Text style={styles.customCatConfirmText}>Add</Text>
+                    <Text style={styles.customCatConfirmText}>{t("subscriptions.add")}</Text>
                   </TouchableOpacity>
                 </View>
               )}
