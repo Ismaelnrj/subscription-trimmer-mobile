@@ -2056,6 +2056,21 @@ last one left off without needing a recap typed out.
   says yes to the rendered before and after, because a taste call is not
   finished until the owner makes it. Every redone screen also joins the
   `REDONE` list in `__tests__/redesign-tells.test.js`.
+  THE SUBSCRIPTIONS LIST AND THE ADD FORM ARE APPROVED, 2026-11-07, and on
+  master through `1bc2fcab` (list) and `dd9fa7e2` (form). NOT YET PUBLISHED:
+  they ride the next `eas update`. The form's rule for "chosen" is ink
+  (c.text fill, c.bg text), never white on primary; reuse it.
+  THE PAYWALL CARRIED THREE FALSE CLAIMS, fixed on their own in `5f267263`
+  and on master: trial tracking was sold as Premium and is free, "Priority
+  support" named a queue that does not exist, and the terms quoted Apple's
+  "cancel 24h before renewal" rule, which Google Play does not have.
+  `__tests__/paywall-claims.test.js` pins them whatever the layout. Its
+  redesign is on the branch awaiting the owner's yes.
+  THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
+  unavailable" everywhere. For screenshots only, the scratch copy's
+  `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
+  never apply that to the repo. The demo account sits at 5 of 5, so to open
+  the add form shoot with a fresh account (the trial makes it Premium).
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
