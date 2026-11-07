@@ -562,7 +562,8 @@ function makeStyles(c: AppColors) {
     rowAside: { ...typeScale.label },
     rowLink: { ...typeScale.bodyStrong, color: c.text, flex: 1 },
     tag: { backgroundColor: c.primaryLight, borderRadius: radius.pill, paddingHorizontal: space.s, paddingVertical: 2 },
-    tagText: { ...typeScale.label, fontSize: 12, color: c.primary },
+    // c.text, not c.primary: dark primary on primaryLight is 3.35:1, under 4.5.
+    tagText: { ...typeScale.label, fontSize: 12, color: c.text },
 
     note: { flexDirection: "row", alignItems: "center", gap: space.m, paddingVertical: space.m, marginBottom: space.l },
     noteText: { ...typeScale.caption, color: c.text, flex: 1 },

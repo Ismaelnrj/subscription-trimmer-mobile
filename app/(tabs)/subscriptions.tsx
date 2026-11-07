@@ -899,8 +899,8 @@ export default function SubscriptionsScreen() {
               style={[styles.addButton, atLimit && styles.addButtonLocked]}
               onPress={openAdd}
             >
-              <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color="#FFFFFF" />
-              <Text style={styles.addButtonText}>{atLimit ? t("subscriptions.limitReached") : t("subscriptions.add")}</Text>
+              <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color={atLimit ? c.text : "#FFFFFF"} />
+              <Text style={[styles.addButtonText, atLimit && styles.addButtonTextLocked]}>{atLimit ? t("subscriptions.limitReached") : t("subscriptions.add")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.exportButton, !isPremium && styles.exportButtonLocked]}
@@ -1573,7 +1573,10 @@ function makeStyles(c: AppColors) {
       flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     },
-    addButtonLocked: { backgroundColor: c.textMuted },
+    /* OUTLINED WHEN LOCKED, never white on grey: white on dark textMuted
+       measured 3.08:1, under the 4.5:1 floor. Ink on the card is 12:1 or more. */
+    addButtonLocked: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
+    addButtonTextLocked: { color: c.text },
     addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     exportButton: {
       backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12, paddingHorizontal: 14,
