@@ -4,11 +4,10 @@ import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import apiClient from "../lib/api";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
+import { LogoImage } from "../components/LogoImage";
 import { useDateFormat } from "../lib/date-locale";
 import { useFmt } from "../lib/currency-store";
-import { useCategoryLabel } from "../lib/category-label";
-import { getCategoryIcon } from "../lib/categories";
 
 /* Only for an older backend that does not send `limit` on the refusal. Kept
    equal to the server default, which a test asserts. */
@@ -34,7 +33,6 @@ export default function CancelledScreen() {
   const { t } = useTranslation();
   const fmtD = useDateFormat();
   const fmtC = useFmt();
-  const categoryLabel = useCategoryLabel();
   const queryClient = useQueryClient();
 
   /* isLoadingError, not isError: a refetch that fails (offline, or the server
@@ -130,17 +128,18 @@ export default function CancelledScreen() {
     >
       {subs.length === 0 ? (
         <View style={styles.empty}>
-          <MaterialCommunityIcons name="check-circle-outline" size={44} color={c.textMuted} />
+          <MaterialCommunityIcons name="check-circle-outline" size={40} color={c.textMuted} />
           <Text style={styles.emptyTitle}>{t("cancelled.emptyTitle")}</Text>
           <Text style={styles.emptyBody}>{t("cancelled.emptyBody")}</Text>
         </View>
       ) : (
         <>
-          {/* ONE CARD PER CURRENCY, never one summed figure. Adding 15.99 EUR to
-              9.99 USD needs a rate, and a row is shown in the currency it was
-              charged in. For the ordinary case of one currency this is one card. */}
+          {/* ONE FIGURE PER CURRENCY, never one summed figure. Adding 15.99 EUR
+              to 9.99 USD needs a rate, and a row is shown in the currency it
+              was charged in. For the ordinary case of one currency this is one
+              figure, open on the page like every other screen's lead. */}
           {totals.length > 0 && (
-            <View style={styles.totalCard}>
+            <View style={styles.summary}>
               <Text style={styles.totalLabel}>{t("cancelled.totalLabel")}</Text>
               {totals.map((tot) => (
                 <View key={tot.currency ?? "none"} style={styles.totalRow}>
@@ -164,18 +163,13 @@ export default function CancelledScreen() {
               number that looks better. */}
           <Text style={styles.explainer}>{t("cancelled.explainer")}</Text>
 
-          {subs.map((sub) => {
-            const icon = getCategoryIcon(sub.category);
-            return (
-              <View key={sub.id} style={styles.card}>
-                <View style={[styles.iconWrap, { backgroundColor: icon.color + "22" }]}>
-                  <MaterialCommunityIcons name={icon.icon as any} size={20} color={icon.color} />
-                </View>
+          <View style={styles.card}>
+            {subs.map((sub, i) => (
+              <View key={sub.id} style={[styles.row, i > 0 && styles.rowDivider]}>
+                <LogoImage name={sub.name} category={sub.category} />
                 <View style={styles.cardBody}>
                   <Text style={styles.cardName} numberOfLines={1}>{sub.name}</Text>
                   <Text style={styles.cardMeta}>
-                    {categoryLabel(sub.category)}
-                    {"  ·  "}
                     {/* `new Date()` IS CORRECT HERE, and this comment exists
                         because a standing grep in this repo, `new Date(sub.`,
                         flags exactly this shape as the parseApiDate defect.
@@ -188,7 +182,7 @@ export default function CancelledScreen() {
                         parseApiDate: that would slice the UTC calendar day and
                         show the wrong one to anybody who cancelled in the
                         evening west of UTC. */}
-                    {t("cancelled.since", { date: fmtD(new Date(sub.cancelledAt), "d MMM yyyy") })}
+                    {t("cancelled.since", { date: fmtD(new Date(sub.cancelledAt), "PP") })}
                   </Text>
                   <Text style={sub.chargesAvoided > 0 ? styles.cardSaved : styles.cardNotYet}>
                     {sub.chargesAvoided > 0
@@ -205,41 +199,51 @@ export default function CancelledScreen() {
                   accessibilityLabel={t("cancelled.a11yRestore", { name: sub.name })}
                   onPress={() => confirmRestore(sub)}
                 >
-                  <MaterialCommunityIcons name="restore" size={20} color={c.primary} />
+                  <MaterialCommunityIcons name="restore" size={20} color={c.textSecondary} />
                 </TouchableOpacity>
               </View>
-            );
-          })}
+            ))}
+          </View>
         </>
       )}
     </ScrollView>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, paddingBottom: 40 },
-    centre: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.bg, padding: 24 },
-    errorText: { marginTop: 12, fontSize: 15, color: c.textSecondary, textAlign: "center", fontFamily: "Montserrat-Regular" },
-    retryButton: { marginTop: 16, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20, backgroundColor: c.primary, minHeight: 48, justifyContent: "center" },
-    retryText: { color: "#fff", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: 24 },
-    emptyTitle: { marginTop: 14, fontSize: 17, color: c.text, fontWeight: "700", fontFamily: "Montserrat-Bold", textAlign: "center" },
-    emptyBody: { marginTop: 8, fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, fontFamily: "Montserrat-Regular" },
-    totalCard: { backgroundColor: c.card, borderRadius: 16, padding: 18, borderWidth: 1, borderColor: c.border, marginBottom: 12 },
-    totalLabel: { fontSize: 13, color: c.textSecondary, fontFamily: "Montserrat-SemiBold", fontWeight: "600" },
-    totalRow: { marginTop: 8 },
-    totalAmount: { fontSize: 30, color: c.text, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    totalMeta: { marginTop: 2, fontSize: 13, color: c.textSecondary, fontFamily: "Montserrat-Regular" },
-    explainer: { fontSize: 13, color: c.textSecondary, lineHeight: 19, marginBottom: 16, fontFamily: "Montserrat-Regular" },
-    card: { flexDirection: "row", alignItems: "center", backgroundColor: c.card, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: c.border, marginBottom: 10 },
-    iconWrap: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-    cardBody: { flex: 1, marginLeft: 12 },
-    cardName: { fontSize: 15, color: c.text, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    cardMeta: { marginTop: 2, fontSize: 12, color: c.textSecondary, fontFamily: "Montserrat-Regular" },
-    cardSaved: { marginTop: 4, fontSize: 13, color: c.success, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
-    cardNotYet: { marginTop: 4, fontSize: 13, color: c.textSecondary, fontFamily: "Montserrat-Regular" },
-    iconButton: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+    content: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: 40 },
+    centre: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: c.bg, padding: space.xl },
+    errorText: { ...typeScale.body, marginTop: space.m, color: c.textSecondary, textAlign: "center" },
+    retryButton: {
+      marginTop: space.l, paddingHorizontal: space.xl, borderRadius: radius.m,
+      backgroundColor: c.text, minHeight: 48, justifyContent: "center",
+    },
+    retryText: { ...typeScale.bodyStrong, color: c.bg },
+    empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: space.xl },
+    emptyTitle: { ...typeScale.heading, marginTop: space.l, color: c.text, textAlign: "center" },
+    emptyBody: { ...typeScale.body, marginTop: space.s, color: c.textSecondary, textAlign: "center" },
+
+    summary: { marginBottom: space.l },
+    totalLabel: { ...typeScale.caption, color: c.textSecondary },
+    totalRow: { marginTop: space.xs },
+    totalAmount: { ...typeScale.display, color: c.text },
+    totalMeta: { ...typeScale.caption, marginTop: 2, color: c.textSecondary },
+    explainer: { ...typeScale.caption, color: c.textSecondary, marginBottom: space.l },
+
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
+    },
+    row: { flexDirection: "row", alignItems: "center", paddingVertical: space.m, gap: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    cardBody: { flex: 1 },
+    cardName: { ...typeScale.bodyStrong, color: c.text },
+    cardMeta: { ...typeScale.caption, marginTop: 2, color: c.textSecondary },
+    cardSaved: { ...typeScale.label, marginTop: space.xs, color: c.success },
+    cardNotYet: { ...typeScale.caption, marginTop: space.xs, color: c.textSecondary },
+    iconButton: { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
   });
 }

@@ -26,6 +26,7 @@ const REDONE = [
   { file: "app/subscription-details.tsx", keys: "subscriptionDetails" },
   { file: "app/alerts.tsx", keys: "alerts" },
   { file: "app/notifications.tsx", keys: "notifications" },
+  { file: "app/cancelled.tsx", keys: "cancelled" },
 ];
 
 // Block and JSX comments may quote the tells they explain.
