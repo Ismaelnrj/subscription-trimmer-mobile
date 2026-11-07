@@ -2064,8 +2064,25 @@ last one left off without needing a recap typed out.
   and on master: trial tracking was sold as Premium and is free, "Priority
   support" named a queue that does not exist, and the terms quoted Apple's
   "cancel 24h before renewal" rule, which Google Play does not have.
-  `__tests__/paywall-claims.test.js` pins them whatever the layout. Its
-  redesign is on the branch awaiting the owner's yes.
+  `__tests__/paywall-claims.test.js` pins them whatever the layout. ITS
+  REDESIGN IS APPROVED AND ON MASTER, 2026-11-07, through `b35c1684`: one
+  headline, the plans as radio rows with yearly first, the button and terms
+  straight under them, the comparison below. The LIFETIME PLAN EXISTS in Play
+  Console (owner, 2026-11-07), so it stays on the screen and in the listing.
+  MONEY IS WRITTEN ONE WAY, 2026-11-07 in `8c4e508c`, the owner's call
+  ("13,99 € would be better"): `formatMoney` in `lib/currencies.ts`, German
+  "13,99 €" and "1.500,00 €" with a no-break space, English "€13.99" exactly
+  as before. Every screen, the reminders, the calendar and the service chips
+  go through it, and `__tests__/money-format.test.js` scans for a symbol glued
+  to a number by hand. The CSV export keeps a decimal point on purpose. In the
+  same commit "Ausgabe" became "Abo" wherever it NAMED a subscription; where
+  it means spending ("Ausgaben nach Kategorie") it is correct and stays.
+  GERMAN DATES ARE DAY FIRST, `96e6cf8b`: `dayMonthPattern` in
+  `lib/date-locale.ts` decides the order ("16. Nov.", not "Nov. 16"), since a
+  date-fns locale changes month names and never the order of a pattern.
+  ALL OF THIS RIDES THE NEXT `eas update`, NOT YET ASKED FOR AN ANSWER on
+  2026-11-07 (the owner left that question blank): the list, the add form,
+  the paywall, the claim fixes, the money format and the date order.
   THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
   unavailable" everywhere. For screenshots only, the scratch copy's
   `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
@@ -4363,8 +4380,8 @@ last one left off without needing a recap typed out.
   copy states a Premium price; the one derived figure, the yearly badge's
   "Save 44%", is computed from Play's prices since `honest-labels.test.js`
   (2026-11-07), so it reads 47% after the change and 44% before it.
-  "Premium costs less than one coffee a month" (`upgrade.costNote`) is
-  borderline at €3.99 and true of the yearly plan at €2.08; left as is.
+  The coffee line (`upgrade.costNote`) is GONE, with its unbackable "pays for
+  itself on day one", in the paywall redesign of 2026-11-07.
   THE PLAY CONSOLE CHANGE IS THE OWNER'S AND NOT YET DONE as of 2026-11-07
   (owner: "I need to do this first. But yes."). Until it is, Play still
   charges 2.99 and 19.99, and the badge correctly reads 44%.
