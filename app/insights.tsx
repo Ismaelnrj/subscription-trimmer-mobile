@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { fetchSubscriptionList } from "../lib/subscription-list";
-import { useFmt, useCurrencyStore } from "../lib/currency-store";
+import { useFmt, useCurrencyStore, sumMixedInBase } from "../lib/currency-store";
 import { useAuthStore } from "../lib/auth-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { useTheme, AppColors } from "../lib/theme";
@@ -34,6 +34,12 @@ export type Tip = {
   savingsValue?: number;
 };
 
+
+const CYCLE_NOUN_KEYS: Record<string, string> = {
+  monthly: "common.cycleMonthly",
+  yearly: "common.cycleYearly",
+  weekly: "common.cycleWeekly",
+};
 
 function toMonthly(price: number, cycle: string) {
   if (cycle === "weekly") return (price * 52) / 12;
@@ -106,7 +112,22 @@ export function buildTips(
   if (planned.length === 0) return [];
   const tips: Tip[] = [];
   const now = new Date();
-  const totalMonthly = planned.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+  /* EVERY SUM AND EVERY THRESHOLD IS IN THE BASE CURRENCY, found 2026-11-07.
+     These added raw prices across currencies, so a 1500 yen row joined a
+     euro total as 1500 euros, was "expensive" at a 50 euro threshold, and a
+     tracked price in one currency was compared with a market price converted
+     into another. fmtC treats an unlabelled amount as base, so converting
+     each row once here makes every total and comparison mean what it prints.
+     A missing rate leaves the amount as it was, the old behaviour, rather
+     than inventing a figure; without a currency context nothing converts. */
+  const toBase = (amount: number, currency?: string | null) => {
+    if (!currencyContext) return amount;
+    const base = currencyContext.baseCurrencyCode.toUpperCase();
+    const from = (currency || base).toUpperCase();
+    return convertCurrency(amount, from, base, currencyContext.rates) ?? amount;
+  };
+  const monthlyInBase = (s: Sub) => toBase(toMonthly(s.price, s.billingCycle), s.currency);
+  const totalMonthly = planned.reduce((sum, s) => sum + monthlyInBase(s), 0);
   const byCategory: Record<string, Sub[]> = {};
   for (const s of planned) { byCategory[s.category] = byCategory[s.category] || []; byCategory[s.category].push(s); }
 
@@ -125,19 +146,19 @@ export function buildTips(
   // Streaming overlap (3+ streaming services)
   const streamingSubs = planned.filter(s => matchesKeywords(s.name, STREAMING_KEYWORDS) || s.category === "streaming");
   if (streamingSubs.length >= 3) {
-    const streamTotal = streamingSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
-    const cheapest = [...streamingSubs].sort((a, b) => toMonthly(a.price ?? 0, a.billingCycle ?? "monthly") - toMonthly(b.price ?? 0, b.billingCycle ?? "monthly"))[0];
+    const streamTotal = streamingSubs.reduce((sum, s) => sum + monthlyInBase(s), 0);
+    const cheapest = [...streamingSubs].sort((a, b) => monthlyInBase(a) - monthlyInBase(b))[0];
     tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
       title: t("insights.streamingTitle", { count: streamingSubs.length }),
       detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
-      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle), cheapest.currency) }), savingsValue: toMonthly(cheapest.price, cheapest.billingCycle) });
+      priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle), cheapest.currency) }), savingsValue: monthlyInBase(cheapest) });
     coveredCategories.add("streaming");
   }
 
   // Fitness overlap (2+ fitness services)
   const fitnessSubs = planned.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
   if (fitnessSubs.length >= 2) {
-    const fitTotal = fitnessSubs.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+    const fitTotal = fitnessSubs.reduce((sum, s) => sum + monthlyInBase(s), 0);
     tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
       title: t("insights.fitnessTitle", { count: fitnessSubs.length }),
       detail: t("insights.fitnessDetail", { names: fitnessSubs.map(s => s.name).join(" & "), total: fmtC(fitTotal) }),
@@ -150,7 +171,7 @@ export function buildTips(
   for (const [cat, list] of Object.entries(byCategory)) {
     if (coveredCategories.has(cat)) continue;
     if (list.length >= 3) {
-      const catTotal = list.reduce((sum, s) => sum + toMonthly(s.price, s.billingCycle), 0);
+      const catTotal = list.reduce((sum, s) => sum + monthlyInBase(s), 0);
       tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
         title: t("insights.catManyTitle", { count: list.length, category: localiseCategory(cat, t) }),
         detail: t("insights.catManyDetail", { names: list.map(s => s.name).join(", "), total: fmtC(catTotal) }),
@@ -172,8 +193,10 @@ export function buildTips(
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
     tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
       title: t("insights.priceUpTitle", { name: s.name }),
-      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from, s.currency), to: fmtC(s.priceIncrease.to, s.currency), cycle: s.billingCycle, extra: fmtC(annualExtra, s.currency) }),
-      priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle), s.currency) }), savingsValue: toMonthly(s.priceIncrease.to, s.billingCycle) });
+      /* The cycle as a noun in the reader's language: the raw API word
+         printed "pro monthly" to a German reader. */
+      detail: t("insights.priceUpDetail", { from: fmtC(s.priceIncrease.from, s.currency), to: fmtC(s.priceIncrease.to, s.currency), cycle: t(CYCLE_NOUN_KEYS[s.billingCycle] ?? "common.cycleMonthly"), extra: fmtC(annualExtra, s.currency) }),
+      priority: "high", savingsHint: t("insights.priceUpHint", { amount: fmtC(toMonthly(s.priceIncrease.to, s.billingCycle), s.currency) }), savingsValue: toBase(toMonthly(s.priceIncrease.to, s.billingCycle), s.currency) });
   }
 
   // Known market price is higher than what's tracked — this is the "before
@@ -200,7 +223,7 @@ export function buildTips(
       );
       // No usable rate means no comparable figure, so there is nothing to say.
       if (marketMonthlyInBase == null) continue;
-      const trackedMonthly = toMonthly(s.price, s.billingCycle);
+      const trackedMonthly = monthlyInBase(s);
       if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
         tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#C4544A",
           title: t("insights.marketPriceTitle", { name: s.name }),
@@ -235,7 +258,7 @@ export function buildTips(
 
   // Individual expensive subs
   for (const s of planned) {
-    if (toMonthly(s.price, s.billingCycle) >= singleSubThreshold) {
+    if (monthlyInBase(s) >= singleSubThreshold) {
       tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
         title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle), s.currency) }),
         detail: t("insights.expensiveDetail", { yearly: fmtC(toMonthly(s.price, s.billingCycle) * 12, s.currency) }),
@@ -244,9 +267,9 @@ export function buildTips(
   }
 
   // Switch monthly → yearly
-  const monthlySubs = planned.filter(s => s.billingCycle === "monthly" && s.price >= 5);
+  const monthlySubs = planned.filter(s => s.billingCycle === "monthly" && toBase(s.price, s.currency) >= 5);
   if (monthlySubs.length > 0) {
-    const annualSaving = monthlySubs.reduce((sum, s) => sum + s.price * 0.17, 0) * 12;
+    const annualSaving = monthlySubs.reduce((sum, s) => sum + toBase(s.price, s.currency) * 0.17, 0) * 12;
     tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#1F7A62",
       title: t("insights.yearlySwitchTitle"),
       detail: t("insights.yearlySwitchDetail", { count: monthlySubs.length, names: monthlySubs.map(s => s.name).join(", "), amount: fmtC(annualSaving) }),
@@ -268,7 +291,7 @@ export function buildTips(
     return days != null && days >= 0 && days <= 7;
   });
   if (thisWeek.length >= 2) {
-    const weekTotal = thisWeek.reduce((sum, s) => sum + s.price, 0);
+    const weekTotal = thisWeek.reduce((sum, s) => sum + toBase(s.price, s.currency), 0);
     tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#142B3A",
       title: t("insights.renewalsWeekTitle", { count: thisWeek.length }),
       detail: t("insights.renewalsWeekDetail", { names: thisWeek.map(s => s.name).join(", "), total: fmtC(weekTotal) }),
@@ -336,7 +359,9 @@ export default function InsightsScreen() {
   );
   const tips = isPremium ? allTips : allTips.slice(0, 2);
   const lockedCount = isPremium ? 0 : Math.max(0, allTips.length - 2);
-  const monthlyTotal: number = summary?.monthlyTotal ?? 0;
+  /* From the per currency parts, converted once, as the dashboard and Stats
+     do. The raw monthlyTotal adds a 10 EUR row and a 10 USD row into 20. */
+  const monthlyTotal: number = sumMixedInBase(summary?.monthlyByCurrency, rates, baseCurrencyCode, summary?.monthlyTotal ?? 0);
   const highCount = tips.filter(t => t.priority === "high").length;
   // Multiple tips can reference the same underlying subscription (e.g. a sub can be
   // both "part of a duplicate category" and "individually expensive"), so their
