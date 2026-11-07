@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
 
-import { CURRENCIES } from "./currencies";
+import { useTranslation } from "react-i18next";
+import { CURRENCIES, formatMoney } from "./currencies";
 export { CURRENCIES };
 
 export type Currency = (typeof CURRENCIES)[0];
@@ -171,6 +172,9 @@ export function fmt(amount: number, symbol: string): string {
    arithmetic error. A defect you can notice is cheaper than one you cannot. */
 export function useFmt(): (amount: number, fromCurrency?: string | null) => string {
   const { currency, convert, baseCurrencyCode } = useCurrencyStore();
+  // German writes "13,99 €", English "€13.99"; see formatMoney in ./currencies.
+  const { i18n } = useTranslation();
+  const language = i18n.language;
   return (amount: number, fromCurrency?: string | null) => {
     /* A ROW THAT NAMES ITS OWN CURRENCY IS SHOWN IN IT, NEVER CONVERTED.
        Netflix charges an Austrian 15.99 EUR and an American 19.99 USD, and
@@ -184,7 +188,7 @@ export function useFmt(): (amount: number, fromCurrency?: string | null) => stri
       const own = CURRENCIES.find(x => x.code === code);
       if (own) {
         const d = own.code === "JPY" ? 0 : 2;
-        return `${own.symbol}${roundTo(amount, d).toFixed(d)}`;
+        return formatMoney(amount, own.symbol, d, language);
       }
       /* An unrecognised code falls through to the convert path rather than
          being rendered with a symbol we do not have. The server validates
@@ -197,7 +201,7 @@ export function useFmt(): (amount: number, fromCurrency?: string | null) => stri
     const from = String(baseCurrencyCode).toUpperCase();
     const converted = convert(amount, null);
     const decimals = currency.code === "JPY" ? 0 : 2;
-    const text = `${currency.symbol}${roundTo(converted, decimals).toFixed(decimals)}`;
+    const text = formatMoney(converted, currency.symbol, decimals, language);
     return from === currency.code ? text : `~${text}`;
   };
 }

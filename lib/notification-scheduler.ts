@@ -1,6 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { getUpcomingOccurrences, livePlanned } from "./recurrence";
-import { CURRENCIES } from "./currencies";
+import { CURRENCIES, formatMoney } from "./currencies";
 import { registerForPushNotificationsAsync } from "./notifications";
 import { parseLocalDate } from "./utils";
 import i18n from "./i18n";
@@ -38,10 +38,7 @@ function formatAmount(price: unknown, rowCurrency: unknown, fallbackSymbol: stri
   const own = CURRENCIES.find(c => c.code === String(rowCurrency ?? "").toUpperCase());
   const symbol = own ? own.symbol : fallbackSymbol;
   const d = own?.code === "JPY" ? 0 : 2;
-  if (lang() === "de") {
-    return `${n.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d })} ${symbol}`;
-  }
-  return `${symbol}${n.toFixed(d)}`;
+  return formatMoney(n, symbol, d, lang());
 }
 
 function formatDate(d: Date): string {

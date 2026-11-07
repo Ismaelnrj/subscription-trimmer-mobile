@@ -19,6 +19,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useCycleLabel, useCycleAdjective } from "../../lib/cycle-label";
 import { useCategoryLabel } from "../../lib/category-label";
+import { formatMoney } from "../../lib/currencies";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
 import { normaliseDateInput, sanitiseAmountInput, daysUntil, parseApiDate } from "../../lib/utils";
@@ -102,7 +103,7 @@ export default function SubscriptionsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmtD = useDateFormat();
 
   const [showModal, setShowModal] = useState(false);
@@ -1310,7 +1311,7 @@ export default function SubscriptionsScreen() {
                           {filteredTemplates.map((tpl) => (
                             <TouchableOpacity key={tpl.id} style={styles.templateChip} onPress={() => applyTemplate(tpl)}>
                               <Text style={styles.templateChipName} numberOfLines={1}>{tpl.name}</Text>
-                              <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl)}</Text>
+                              <Text style={styles.templateChipPrice}>{formatTemplatePrice(tpl, i18n.language)}</Text>
                             </TouchableOpacity>
                           ))}
                         </ScrollView>
@@ -1429,7 +1430,7 @@ export default function SubscriptionsScreen() {
                   const decimals = currency.code === "JPY" ? 0 : 2;
                   return (
                     <Text style={styles.priceHint}>
-                      ≈ {currency.symbol}{converted.toFixed(decimals)} {currency.code}
+                      ≈ {formatMoney(converted, currency.symbol, decimals, i18n.language)}
                     </Text>
                   );
                 }

@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { formatMoney } from "../../lib/currencies";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
@@ -37,14 +38,14 @@ export default function CalendarScreen() {
   const router = useRouter();
   const c = useTheme();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmtC = useFmt();
   /* The grid gets whole units. Seven columns on a phone cannot spare the width
      for cents, and "15.99" against "16" tells a reader nothing extra about
      whether a day is heavy. Converts before rounding, so the rounding happens
      in the currency the number is displayed in. */
   const { currency, convert } = useCurrencyStore();
-  const fmtCompact = (amount: number) => `${currency.symbol}${Math.round(convert(amount))}`;
+  const fmtCompact = (amount: number) => formatMoney(Math.round(convert(amount)), currency.symbol, 0, i18n.language);
   const fmtD = useDateFormat();
   const cycleLabel = useCycleLabel();
   const categoryLabel = useCategoryLabel();

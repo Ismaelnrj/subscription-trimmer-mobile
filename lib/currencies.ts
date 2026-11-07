@@ -17,3 +17,35 @@ export const CURRENCIES = [
   { code: "MXN", symbol: "MX$", name: "Mexican Peso" },
   { code: "INR", symbol: "₹",   name: "Indian Rupee" },
 ];
+
+/* HOW MONEY IS WRITTEN, in one place for every surface that writes it.
+
+   German writes a decimal COMMA, groups thousands with a POINT and puts the
+   symbol AFTER the amount: "13,99 €", "1.500,00 €". English keeps the form
+   the app has always used, "€13.99", untouched, so nothing changes for an
+   English reader. The reminders and the server's emails already wrote German
+   this way while every screen in the app wrote "€13.99" in German too, so the
+   same charge read two different ways depending on where you met it.
+
+   The space before the symbol is a NO-BREAK space, so a narrow cell can never
+   leave "€" alone on the next line.
+
+   Done by hand rather than with toLocaleString("de-DE"): this module has no
+   imports and runs in the notification scheduler, and the output must not
+   depend on which Intl data a phone's JavaScript engine carries. */
+const NBSP = " ";
+
+function roundMoney(amount: number, decimals: number): number {
+  const factor = 10 ** decimals;
+  return Math.round((amount + Number.EPSILON) * factor) / factor;
+}
+
+export function formatMoney(amount: number, symbol: string, decimals: number, language?: string | null): string {
+  if (!String(language ?? "").toLowerCase().startsWith("de")) {
+    return `${symbol}${roundMoney(amount, decimals).toFixed(decimals)}`;
+  }
+  const sign = amount < 0 ? "-" : "";
+  const [whole, fraction] = roundMoney(Math.abs(amount), decimals).toFixed(decimals).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return `${sign}${grouped}${fraction ? `,${fraction}` : ""}${NBSP}${symbol}`;
+}

@@ -238,7 +238,8 @@ describe("a row is shown in its own currency, never converted", () => {
 
   it("renders a named currency with that currency's own symbol", () => {
     expect(STORE).toMatch(/const own = CURRENCIES\.find\(x => x\.code === code\)/);
-    expect(STORE).toMatch(/return `\$\{own\.symbol\}\$\{roundTo\(amount, d\)\.toFixed\(d\)\}`/);
+    // Through the one shared formatter since 2026-11-07, with the row's own symbol.
+    expect(STORE).toMatch(/return formatMoney\(amount, own\.symbol, d, language\);/);
   });
 
   it("returns the stored amount untouched for a named currency", () => {
@@ -247,7 +248,7 @@ describe("a row is shown in its own currency, never converted", () => {
     const fn = STORE.slice(STORE.indexOf("export function useFmt"));
     const rowBranch = fn.slice(fn.indexOf("if (fromCurrency)"), fn.indexOf("const from = String(baseCurrencyCode)"));
     expect(rowBranch).not.toMatch(/convert\(/);
-    expect(rowBranch).toMatch(/roundTo\(amount,/);
+    expect(rowBranch).toMatch(/formatMoney\(amount,/);
   });
 
   it("carries no tilde on a row, because an exact figure is not an estimate", () => {

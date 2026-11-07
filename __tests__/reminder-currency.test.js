@@ -48,7 +48,7 @@ describe('the reminder amount', () => {
 
 describe('one currency list, with no native imports', () => {
   test('the scheduler reads it from the dependency-free module', () => {
-    expect(sched).toContain('import { CURRENCIES } from "./currencies";');
+    expect(sched).toMatch(/import \{ CURRENCIES(, formatMoney)? \} from "\.\/currencies";/);
     expect(sched).not.toMatch(/from "\.\/currency-store"/);
   });
 
@@ -58,7 +58,7 @@ describe('one currency list, with no native imports', () => {
   });
 
   test('currency-store re-exports it and no longer holds a copy', () => {
-    expect(store).toContain('import { CURRENCIES } from "./currencies";');
+    expect(store).toMatch(/import \{ CURRENCIES(, formatMoney)? \} from "\.\/currencies";/);
     expect(store).toContain('export { CURRENCIES };');
     expect(store).not.toMatch(/CURRENCIES = \[/);
   });

@@ -70,7 +70,13 @@ describe("the German copy follows this project's own rules", () => {
     /* tools/make-cut.py already refuses a decimal point in German video
        captions. A German notification reading "€10.00" would break a rule this
        project enforces on its own marketing. */
-    expect(SCHED).toMatch(/toLocaleString\("de-DE"/);
+    /* Since 2026-11-07 through the shared formatMoney rather than
+       toLocaleString, so a reminder and a screen write a charge the same way.
+       Checked on what it PRODUCES, not on how. */
+    expect(SCHED).toMatch(/return formatMoney\(n, symbol, d, lang\(\)\);/);
+    const { formatMoney } = require("../lib/currencies");
+    expect(formatMoney(10, "€", 2, "de")).toBe("10,00\u00A0€");
+    expect(formatMoney(1500, "€", 2, "de")).toBe("1.500,00\u00A0€");
   });
 
   it("stays informal, matching every other German surface", () => {

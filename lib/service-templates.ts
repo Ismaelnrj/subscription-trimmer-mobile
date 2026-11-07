@@ -1,3 +1,5 @@
+import { formatMoney } from "./currencies";
+
 export interface ServiceTemplate {
   id: string;
   name: string;
@@ -328,8 +330,13 @@ export function searchTemplates(query: string, preferDach = false): ServiceTempl
   return dedupeForRegion(hits, preferDach).slice(0, 40);
 }
 
-export function formatTemplatePrice(t: ServiceTemplate): string {
+/* `language` decides the shape, as everywhere money is written: German reads
+   "15,99 €/Monat", where this used to print "€15.99/mo" to a German reader. */
+export function formatTemplatePrice(t: ServiceTemplate, language?: string | null): string {
   const symbol = t.currency === "EUR" ? "€" : t.currency === "CHF" ? "Fr." : t.currency === "GBP" ? "£" : "$";
-  const cycle = t.billingCycle === "monthly" ? "mo" : t.billingCycle === "yearly" ? "yr" : "wk";
-  return `${symbol}${t.defaultPrice}/${cycle}`;
+  const de = String(language ?? "").toLowerCase().startsWith("de");
+  const cycle = de
+    ? (t.billingCycle === "monthly" ? "Monat" : t.billingCycle === "yearly" ? "Jahr" : "Woche")
+    : (t.billingCycle === "monthly" ? "mo" : t.billingCycle === "yearly" ? "yr" : "wk");
+  return `${formatMoney(t.defaultPrice, symbol, 2, language)}/${cycle}`;
 }
