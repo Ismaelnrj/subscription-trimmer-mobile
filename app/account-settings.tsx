@@ -12,7 +12,7 @@ import { useCurrencyStore, CURRENCIES, useFmt } from "../lib/currency-store";
 import { PremiumGate } from "../components/PremiumGate";
 import { isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { sanitiseAmountInput } from "../lib/utils";
 import { signInWithGoogle } from "../lib/google-auth";
 import * as SecureStore from "expo-secure-store";
@@ -234,10 +234,10 @@ export default function AccountSettingsScreen() {
                 {t("accountSettings.budgetHint")}
                 {settings?.budgetGoal != null ? `\n${t("accountSettings.currentGoal", { amount: `${fmtC(settings.budgetGoal)}` })}` : ""}
               </Text>
-              <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+              <View style={{ flexDirection: "row", gap: space.s, marginTop: space.m }}>
                 <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSaveBudget} disabled={settingsMutation.isLoading}>
                   {settingsMutation.isLoading
-                    ? <ActivityIndicator color="#FFFFFF" />
+                    ? <ActivityIndicator color={c.bg} />
                     : <Text style={styles.saveButtonText}>{t("accountSettings.saveGoal")}</Text>
                   }
                 </TouchableOpacity>
@@ -271,9 +271,9 @@ export default function AccountSettingsScreen() {
                 />
               </View>
               <Text style={styles.infoText}>{t("accountSettings.thresholdHint", { symbol: currency.symbol })}</Text>
-              <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveAlertThreshold} disabled={settingsMutation.isLoading}>
+              <TouchableOpacity style={[styles.saveButton, { marginTop: space.m }]} onPress={handleSaveAlertThreshold} disabled={settingsMutation.isLoading}>
                 {settingsMutation.isLoading
-                  ? <ActivityIndicator color="#FFFFFF" />
+                  ? <ActivityIndicator color={c.bg} />
                   : <Text style={styles.saveButtonText}>{t("accountSettings.saveThreshold")}</Text>
                 }
               </TouchableOpacity>
@@ -292,14 +292,14 @@ export default function AccountSettingsScreen() {
             />
             <Text style={styles.label}>{t("accountSettings.email")}</Text>
             <TextInput
-              style={[styles.input, { color: c.textMuted }]}
+              style={[styles.input, styles.inputReadOnly]}
               value={user?.email || ""}
               editable={false}
             />
             <Text style={styles.infoText}>{t("accountSettings.emailCannotChange")}</Text>
-            <TouchableOpacity style={[styles.saveButton, { marginTop: 12 }]} onPress={handleSaveName} disabled={profileMutation.isLoading}>
+            <TouchableOpacity style={[styles.saveButton, { marginTop: space.m }]} onPress={handleSaveName} disabled={profileMutation.isLoading}>
               {profileMutation.isLoading
-                ? <ActivityIndicator color="#FFFFFF" />
+                ? <ActivityIndicator color={c.bg} />
                 : <Text style={styles.saveButtonText}>{t("accountSettings.saveName")}</Text>
               }
             </TouchableOpacity>
@@ -308,7 +308,7 @@ export default function AccountSettingsScreen() {
           <Text style={styles.sectionTitle}>{t("accountSettings.changePassword")}</Text>
           {user?.hasPassword === false ? (
             <View style={styles.card}>
-              <Text style={{ color: c.textSecondary, fontSize: 13, lineHeight: 20 }}>
+              <Text style={styles.note}>
                 {t("accountSettings.googleAccountNote")}
               </Text>
             </View>
@@ -325,15 +325,16 @@ export default function AccountSettingsScreen() {
               placeholder={t("accountSettings.confirmPasswordPlaceholder")} placeholderTextColor={c.placeholder} secureTextEntry autoComplete="new-password" />
             <TouchableOpacity style={styles.saveButton} onPress={handleChangePassword} disabled={passwordMutation.isLoading}>
               {passwordMutation.isLoading
-                ? <ActivityIndicator color="#FFFFFF" />
+                ? <ActivityIndicator color={c.bg} />
                 : <Text style={styles.saveButtonText}>{t("accountSettings.changePasswordBtn")}</Text>
               }
             </TouchableOpacity>
           </View>
           )}
 
+          {/* No "Danger Zone" heading: one plainly worded card with a red
+              button says the same without the borrowed developer jargon. */}
           <View style={styles.deleteSection}>
-            <Text style={styles.deleteSectionTitle}>{t("accountSettings.dangerZone")}</Text>
             <View style={styles.deleteCard}>
               <Text style={styles.deleteDesc}>{t("accountSettings.deleteDesc")}</Text>
               <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
@@ -353,7 +354,7 @@ export default function AccountSettingsScreen() {
               keyExtractor={(item) => item.code}
               renderItem={({ item }) => (
                 <TouchableOpacity style={styles.currencyRow} onPress={() => handleSelectCurrency(item)}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.m }}>
                     <Text style={styles.currencySymbol}>{item.symbol}</Text>
                     <View>
                       <Text style={styles.currencyName}>{item.name}</Text>
@@ -361,7 +362,7 @@ export default function AccountSettingsScreen() {
                     </View>
                   </View>
                   {currency.code === item.code && (
-                    <MaterialCommunityIcons name="check-circle" size={20} color={c.primary} />
+                    <MaterialCommunityIcons name="check-circle" size={20} color={c.text} />
                   )}
                 </TouchableOpacity>
               )}
@@ -372,11 +373,11 @@ export default function AccountSettingsScreen() {
 
       <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
         <View style={styles.pickerOverlay}>
-          <View style={[styles.pickerSheet, { borderTopLeftRadius: 16, borderTopRightRadius: 16 }]}>
+          <View style={styles.pickerSheet}>
             <Text style={styles.pickerTitle}>{t("accountSettings.deleteModalTitle")}</Text>
             <Text style={styles.deleteDesc}>{t("accountSettings.deleteModalDesc")}</Text>
             {user?.hasPassword === false ? (
-              <Text style={[styles.deleteDesc, { marginBottom: 12 }]}>
+              <Text style={[styles.deleteDesc, { marginBottom: space.m }]}>
                 {t("accountSettings.deleteGoogleConfirmNote")}
               </Text>
             ) : (
@@ -391,7 +392,7 @@ export default function AccountSettingsScreen() {
                 autoFocus
               />
             )}
-            <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flexDirection: "row", gap: space.s }}>
               <TouchableOpacity
                 style={[styles.clearButton, { flex: 1, backgroundColor: c.card, borderColor: c.border }]}
                 onPress={() => setShowDeleteModal(false)}
@@ -415,76 +416,77 @@ export default function AccountSettingsScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    sectionTitle: {
-      fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase",
-      letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xxl },
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, padding: space.l,
     },
-    card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 8 },
-    /* c.danger is already the deepened coral (#C4544A), which is the value the
-       palette rules require for coral carrying text on a light ground. The raw
-       #D96B62 would not clear the contrast floor here. */
+    /* c.danger is the deepened coral, the value the palette rules require for
+       coral carrying text on a light ground. */
     loadErrorRow: {
-      flexDirection: "row", alignItems: "flex-start", gap: 8,
-      backgroundColor: c.dangerLight, borderWidth: 1, borderColor: c.dangerBorder,
-      borderRadius: 10, padding: 12, marginBottom: 12,
+      flexDirection: "row", alignItems: "flex-start", gap: space.s,
+      backgroundColor: c.dangerLight, borderRadius: radius.m, padding: space.m, marginTop: space.l,
     },
-    loadErrorText: { flex: 1, fontSize: 12, lineHeight: 18, color: c.danger },
-    label: { fontSize: 12, fontWeight: "600", color: c.text, marginBottom: 6 },
+    loadErrorText: { ...typeScale.caption, flex: 1, color: c.danger },
+    label: { ...typeScale.label, color: c.text, marginBottom: space.s },
     input: {
-      borderWidth: 1, borderColor: c.border, borderRadius: 8, paddingVertical: 12,
-      paddingHorizontal: 12, fontSize: 14, color: c.text, marginBottom: 12, backgroundColor: c.inputBg,
+      ...typeScale.body, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.s,
+      minHeight: 48, paddingHorizontal: space.m, color: c.text, marginBottom: space.m, backgroundColor: c.inputBg,
     },
-    saveButton: { backgroundColor: c.primary, borderRadius: 8, paddingVertical: 13, alignItems: "center", marginTop: 4 },
-    saveButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-    infoText: { fontSize: 12, color: c.textMuted, marginTop: 4 },
+    inputReadOnly: { color: c.textSecondary },
+    saveButton: {
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      alignItems: "center", justifyContent: "center", marginTop: space.xs,
+    },
+    saveButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    infoText: { ...typeScale.caption, color: c.textSecondary, marginTop: space.xs },
+    note: { ...typeScale.body, color: c.textSecondary },
     currencyRow: {
       flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-      paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border,
+      minHeight: 56, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border,
     },
-    currencyName: { fontSize: 14, color: c.text },
-    currencyCode: { fontSize: 12, color: c.textSecondary },
+    currencyName: { ...typeScale.body, color: c.text },
+    currencyCode: { ...typeScale.caption, color: c.textSecondary },
     pickerOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
     pickerSheet: {
-      backgroundColor: c.card, borderTopLeftRadius: 16, borderTopRightRadius: 16,
-      padding: 20, maxHeight: "70%",
+      backgroundColor: c.card, borderTopLeftRadius: radius.l, borderTopRightRadius: radius.l,
+      padding: space.xl, maxHeight: "70%",
     },
-    pickerTitle: { fontSize: 16, fontWeight: "700", color: c.text, marginBottom: 16 },
+    pickerTitle: { ...typeScale.title, color: c.text, marginBottom: space.l },
     currencyButton: {
-      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-      borderWidth: 1, borderColor: c.border, borderRadius: 8, padding: 14, marginBottom: 4,
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 56,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.s,
+      paddingHorizontal: space.m, marginBottom: space.xs,
     },
-    currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-    currencySymbol: { fontSize: 18, fontWeight: "700", color: c.primary, width: 28 },
+    currencyButtonLeft: { flexDirection: "row", alignItems: "center", gap: space.m },
+    currencySymbol: { ...typeScale.heading, color: c.text, width: 28 },
     budgetInput: { flex: 1 },
     prefixInputRow: {
-      flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: c.border,
-      borderRadius: 8, backgroundColor: c.inputBg, marginBottom: 4,
+      flexDirection: "row", alignItems: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderRadius: radius.s, backgroundColor: c.inputBg, marginBottom: space.xs,
     },
-    prefixSymbol: { fontSize: 16, fontWeight: "700", color: c.primary, paddingLeft: 12 },
+    prefixSymbol: { ...typeScale.bodyStrong, color: c.textSecondary, paddingLeft: space.m },
     prefixInput: { flex: 1, borderWidth: 0, marginBottom: 0, backgroundColor: "transparent" },
     clearButton: {
-      backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 13, paddingHorizontal: 16,
-      alignItems: "center", marginTop: 4, borderWidth: 1, borderColor: c.dangerBorder,
+      borderRadius: radius.m, minHeight: 48, paddingHorizontal: space.l, alignItems: "center", justifyContent: "center",
+      marginTop: space.xs, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card,
     },
-    clearButtonText: { color: c.danger, fontSize: 14, fontWeight: "600" },
-    deleteSection: { marginTop: 24, marginBottom: 8 },
-    deleteSectionTitle: {
-      fontSize: 12, fontWeight: "600", color: c.danger, textTransform: "uppercase",
-      letterSpacing: 0.5, marginBottom: 8,
-    },
+    clearButtonText: { ...typeScale.bodyStrong, color: c.text },
+    deleteSection: { marginTop: space.xxl, marginBottom: space.s },
     deleteCard: {
-      backgroundColor: c.card, borderRadius: 12, borderWidth: 1,
-      borderColor: c.dangerBorder, padding: 16,
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, padding: space.l,
     },
-    deleteDesc: { fontSize: 13, color: c.textSecondary, lineHeight: 20, marginBottom: 14 },
+    deleteDesc: { ...typeScale.body, color: c.textSecondary, marginBottom: space.l },
     deleteButton: {
-      backgroundColor: c.dangerLight, borderRadius: 8, paddingVertical: 13,
-      alignItems: "center", borderWidth: 1, borderColor: c.dangerBorder,
+      backgroundColor: c.dangerLight, borderRadius: radius.m, minHeight: 48,
+      alignItems: "center", justifyContent: "center",
     },
-    deleteButtonText: { color: c.danger, fontSize: 14, fontWeight: "700" },
+    deleteButtonText: { ...typeScale.bodyStrong, color: c.danger },
   });
 }
