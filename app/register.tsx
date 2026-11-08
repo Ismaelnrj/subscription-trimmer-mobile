@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { track } from "../lib/analytics";
@@ -111,7 +111,7 @@ export default function RegisterScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{emailError}</Text>
             <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={styles.errorLink}>{t("register.signInLink")} →</Text>
+              <Text style={styles.errorLink}>{t("register.signInLink")}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -133,7 +133,7 @@ export default function RegisterScreen() {
         <PasswordStrengthMeter password={password} />
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
+          {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
         </TouchableOpacity>
 
         {isGoogleAuthConfigured() ? (
@@ -162,46 +162,46 @@ export default function RegisterScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, justifyContent: "center", padding: 24 },
-    header: { alignItems: "center", marginBottom: 40 },
-    title: { fontSize: 32, fontWeight: "800", color: c.primary, marginBottom: 8 },
-    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    form: { gap: 12 },
+    container: { flex: 1, backgroundColor: c.bg, justifyContent: "center", paddingHorizontal: space.xl },
+    header: { alignItems: "center", marginBottom: space.xxl },
+    title: { ...typeScale.display, color: c.text, textAlign: "center" },
+    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginTop: space.s },
+    form: { gap: space.m },
     input: {
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
-      paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text,
+      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderRadius: radius.m, minHeight: 52, paddingHorizontal: space.l, color: c.text,
     },
     passwordWrapper: {
-      flexDirection: "row", alignItems: "center",
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
+      flexDirection: "row", alignItems: "center", minHeight: 52,
+      backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
     },
-    passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text },
-    eyeButton: { paddingHorizontal: 14 },
+    passwordInput: { ...typeScale.body, flex: 1, minHeight: 52, paddingHorizontal: space.l, color: c.text },
+    eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 8,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
+      alignItems: "center", justifyContent: "center", marginTop: space.s,
     },
-    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    divider: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-    dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
-    dividerText: { color: c.textSecondary, fontSize: 12, marginHorizontal: 10 },
+    buttonText: { ...typeScale.bodyStrong, color: c.bg },
+    divider: { flexDirection: "row", alignItems: "center", marginTop: space.s },
+    dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.border },
+    dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
-      paddingVertical: 14,
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
+      minHeight: 52, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
     },
-    googleButtonText: { color: c.text, fontSize: 15, fontWeight: "600" },
+    googleButtonText: { ...typeScale.bodyStrong, color: c.text },
     inputError: { borderColor: c.danger },
     errorBox: {
-      backgroundColor: c.dangerLight, borderRadius: 8, padding: 10,
-      borderWidth: 1, borderColor: c.dangerBorder, flexDirection: "row",
-      justifyContent: "space-between", alignItems: "center",
+      backgroundColor: c.dangerLight, borderRadius: radius.m, padding: space.m,
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     },
-    errorText: { fontSize: 13, color: c.danger, flex: 1 },
-    errorLink: { fontSize: 13, fontWeight: "700", color: c.primary, marginLeft: 8 },
-    link: { alignItems: "center", marginTop: 16 },
-    linkText: { color: c.textSecondary, fontSize: 14 },
-    linkBold: { color: c.primary, fontWeight: "700" },
+    errorText: { ...typeScale.caption, color: c.danger, flex: 1 },
+    errorLink: { ...typeScale.label, color: c.text, marginLeft: space.s },
+    link: { alignItems: "center", justifyContent: "center", minHeight: 48 },
+    linkText: { ...typeScale.body, color: c.textSecondary },
+    linkBold: { fontFamily: "Montserrat-SemiBold", color: c.text },
   });
 }

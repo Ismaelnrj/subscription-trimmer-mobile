@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export default function VerifyEmailScreen() {
   const { user, setUser } = useAuthStore();
@@ -65,7 +65,7 @@ export default function VerifyEmailScreen() {
       <Stack.Screen options={{ title: t("screenTitles.verifyEmail"), headerShown: true }} />
       <View style={styles.container}>
         <View style={styles.icon}>
-          <MaterialCommunityIcons name="email-check-outline" size={56} color={c.primary} />
+          <MaterialCommunityIcons name="email-check-outline" size={48} color={c.textSecondary} />
         </View>
         <Text style={styles.title}>{t("verifyEmail.checkInbox")}</Text>
         <Text style={styles.subtitle}>
@@ -87,7 +87,7 @@ export default function VerifyEmailScreen() {
 
         <TouchableOpacity style={styles.button} onPress={handleVerify} disabled={loading || code.length !== 6}>
           {loading
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={c.bg} />
             : <Text style={styles.buttonText}>{t("verifyEmail.verifyBtn")}</Text>
           }
         </TouchableOpacity>
@@ -106,26 +106,28 @@ export default function VerifyEmailScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, alignItems: "center", justifyContent: "center", padding: 32 },
-    icon: { marginBottom: 20 },
-    title: { fontSize: 24, fontWeight: "800", color: c.text, marginBottom: 10, textAlign: "center" },
-    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 32 },
-    email: { fontWeight: "700", color: c.primary },
+    container: { flex: 1, backgroundColor: c.bg, alignItems: "center", justifyContent: "center", paddingHorizontal: space.xl },
+    icon: { marginBottom: space.xl },
+    title: { ...typeScale.title, color: c.text, marginBottom: space.s, textAlign: "center" },
+    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
+    email: { fontFamily: "Montserrat-SemiBold", color: c.text },
     codeInput: {
-      width: 200, fontSize: 36, fontWeight: "800", letterSpacing: 12, color: c.text,
-      borderWidth: 2, borderColor: c.primary, borderRadius: 12, paddingVertical: 16, marginBottom: 24,
-      backgroundColor: c.inputBg,
+      /* The one place outside the scale: six digits read at arm's length. */
+      backgroundColor: c.inputBg, borderWidth: 1.5, borderColor: c.text, borderRadius: radius.m,
+      minHeight: 64, fontFamily: "Montserrat-SemiBold", fontSize: 32, letterSpacing: 10,
+      color: c.text, textAlign: "center", width: 220, marginBottom: space.xl,
     },
     button: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14,
-      paddingHorizontal: 48, alignItems: "center", marginBottom: 16, width: "100%",
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
+      alignItems: "center", justifyContent: "center", width: "100%", marginBottom: space.m,
     },
-    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    resendButton: { marginBottom: 16 },
-    resendText: { color: c.primary, fontSize: 14, fontWeight: "500" },
-    skipButton: { marginTop: 8 },
-    skipText: { color: c.textMuted, fontSize: 13 },
+    buttonText: { ...typeScale.bodyStrong, color: c.bg },
+    resendButton: { alignItems: "center", justifyContent: "center", minHeight: 48, marginBottom: space.s },
+    resendText: { ...typeScale.label, color: c.text },
+    skipButton: { alignItems: "center", justifyContent: "center", minHeight: 48 },
+    skipText: { ...typeScale.label, color: c.textSecondary },
   });
 }

@@ -4,19 +4,19 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import { useTranslation } from "react-i18next";
-import { useTheme, useIsDark, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { track } from "../lib/analytics";
 
 const { width } = Dimensions.get("window");
 
-/* One slide per brand colour: ink navy, warm amber, soft mint. `color`
-   fills the button under white text, `colorDark` draws the icon on the
-   dark tint, where the button colour would be too close to the ground to
-   read. */
+/* One icon per slide, drawn in ink on a hairline circle. Each slide used to
+   carry its own fixed hex (navy, amber, mint) for a tinted circle and the
+   button under white text, so the main action changed colour on every step
+   and the navy one nearly vanished on the dark ground. */
 const SLIDE_ICONS = [
-  { icon: "view-dashboard-outline", color: "#142B3A", colorDark: "#F2F1EC", bg: "#E7EBEE", bgDark: "#1B3040" },
-  { icon: "bell-alert-outline", color: "#96631B", colorDark: "#EFB264", bg: "#FDF3E4", bgDark: "#3A2C14" },
-  { icon: "lightbulb-on-outline", color: "#1F7A62", colorDark: "#55C6A3", bg: "#E2F1EB", bgDark: "#16342C" },
+  { icon: "view-dashboard-outline" },
+  { icon: "bell-alert-outline" },
+  { icon: "lightbulb-on-outline" },
 ];
 
 const ESTIMATE_OPTIONS = [
@@ -33,7 +33,6 @@ export default function OnboardingScreen() {
   const [current, setCurrent] = useState(0);
   const [estimate, setEstimate] = useState<number | null>(null);
   const c = useTheme();
-  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
@@ -81,35 +80,35 @@ export default function OnboardingScreen() {
   if (isEstimateStep) {
     return (
       <View style={styles.container}>
-        <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish}>
+        <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish} accessibilityRole="button">
           <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
         </TouchableOpacity>
-
         <View style={styles.content}>
-          <View style={[styles.iconCircle, { backgroundColor: isDark ? "#1B3040" : "#E7EBEE" }]}>
-            <MaterialCommunityIcons name="help-circle-outline" size={64} color={isDark ? "#F2F1EC" : c.primary} />
+          <View style={styles.iconCircle}>
+            <MaterialCommunityIcons name="help-circle-outline" size={44} color={c.text} />
           </View>
           <Text style={styles.title}>{t("onboarding.estimateTitle")}</Text>
           <Text style={styles.desc}>{t("onboarding.estimateDesc")}</Text>
-
-          <View style={styles.estimateRow}>
-            {ESTIMATE_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.estimateChip, estimate === opt.value && styles.estimateChipActive]}
-                onPress={() => setEstimate(opt.value)}
-              >
-                <Text style={[styles.estimateChipText, estimate === opt.value && styles.estimateChipTextActive]}>
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          {/* Chosen is ink, the app wide rule, never mint on a mint tint. */}
+          <View style={styles.estimateRow} accessibilityRole="radiogroup">
+            {ESTIMATE_OPTIONS.map((opt) => {
+              const on = estimate === opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.estimateChip, on && styles.estimateChipActive]}
+                  onPress={() => setEstimate(opt.value)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: on }}
+                >
+                  <Text style={[styles.estimateChipText, on && styles.estimateChipTextActive]}>{opt.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
-
-        <TouchableOpacity style={[styles.button, { backgroundColor: c.primary }]} onPress={finish}>
+        <TouchableOpacity style={styles.button} onPress={finish} accessibilityRole="button">
           <Text style={styles.buttonText}>{t("onboarding.getStarted")}</Text>
-          <MaterialCommunityIcons name="arrow-right-circle" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
     );
@@ -119,69 +118,63 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish}>
+      <TouchableOpacity style={styles.skip} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={finish} accessibilityRole="button">
         <Text style={styles.skipText}>{t("onboarding.skip")}</Text>
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <View style={[styles.iconCircle, { backgroundColor: isDark ? slide.bgDark : slide.bg }]}>
-          <MaterialCommunityIcons name={slide.icon as any} size={64} color={isDark ? slide.colorDark : slide.color} />
+        <View style={styles.iconCircle}>
+          <MaterialCommunityIcons name={slide.icon as any} size={44} color={c.text} />
         </View>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.desc}>{slide.desc}</Text>
       </View>
 
-      <View style={styles.dots}>
+      <View style={styles.dots} accessibilityElementsHidden>
         {[...SLIDES, null].map((_, i) => (
           <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
         ))}
       </View>
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: slide.color }]} onPress={next}>
+      <TouchableOpacity style={styles.button} onPress={next} accessibilityRole="button">
         <Text style={styles.buttonText}>{t("onboarding.next")}</Text>
-        <MaterialCommunityIcons name="arrow-right" size={20} color="#fff" />
       </TouchableOpacity>
     </View>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: {
       flex: 1, backgroundColor: c.bg,
-      alignItems: "center", justifyContent: "center", padding: 32,
+      alignItems: "center", justifyContent: "center", paddingHorizontal: space.xl, paddingVertical: space.xxl,
     },
-    skip: { position: "absolute", top: 56, right: 24 },
-    skipText: { fontSize: 14, color: c.textMuted, fontWeight: "500" },
+    skip: { position: "absolute", top: 56, right: space.xl, minHeight: 40, justifyContent: "center" },
+    skipText: { ...typeScale.label, color: c.textSecondary },
     content: { alignItems: "center", width: "100%", marginBottom: 48 },
     iconCircle: {
-      width: 140, height: 140, borderRadius: 70,
-      justifyContent: "center", alignItems: "center", marginBottom: 36,
+      width: 96, height: 96, borderRadius: radius.pill, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      backgroundColor: c.card, justifyContent: "center", alignItems: "center", marginBottom: space.xxl,
     },
-    title: {
-      fontSize: 26, fontWeight: "800", color: c.text,
-      textAlign: "center", marginBottom: 16, lineHeight: 34,
-    },
-    desc: {
-      fontSize: 16, color: c.textSecondary, textAlign: "center",
-      lineHeight: 26, maxWidth: width * 0.8,
-    },
-    estimateRow: { flexDirection: "row", gap: 10, marginTop: 28, flexWrap: "wrap", justifyContent: "center" },
+    title: { ...typeScale.title, fontSize: 24, lineHeight: 31, color: c.text, textAlign: "center", marginBottom: space.m },
+    desc: { ...typeScale.body, fontSize: 16, lineHeight: 24, color: c.textSecondary, textAlign: "center", maxWidth: width * 0.82 },
+    estimateRow: { flexDirection: "row", gap: space.s, marginTop: space.xl, flexWrap: "wrap", justifyContent: "center" },
     estimateChip: {
-      paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12,
-      borderWidth: 2, borderColor: c.border, backgroundColor: c.card,
+      minHeight: 48, minWidth: 64, paddingHorizontal: space.l, borderRadius: radius.m,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card,
+      alignItems: "center", justifyContent: "center",
     },
-    estimateChipActive: { borderColor: c.primary, backgroundColor: c.primaryLight },
-    estimateChipText: { fontSize: 15, fontWeight: "700", color: c.textSecondary },
-    estimateChipTextActive: { color: c.primary },
-    dots: { flexDirection: "row", gap: 8, marginBottom: 40 },
-    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
-    dotActive: { width: 24, backgroundColor: c.primary },
+    estimateChipActive: { borderColor: c.text, backgroundColor: c.text },
+    estimateChipText: { ...typeScale.bodyStrong, color: c.textSecondary },
+    estimateChipTextActive: { color: c.bg },
+    dots: { flexDirection: "row", gap: space.s, marginBottom: space.xxl },
+    dot: { width: 6, height: 6, borderRadius: radius.pill, backgroundColor: c.border },
+    dotActive: { width: 20, backgroundColor: c.text },
     button: {
-      flexDirection: "row", alignItems: "center", gap: 8,
-      borderRadius: 14, paddingVertical: 16, paddingHorizontal: 40,
-      width: "100%", justifyContent: "center",
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
+      width: "100%", alignItems: "center", justifyContent: "center",
     },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+    buttonText: { ...typeScale.bodyStrong, color: c.bg },
   });
 }

@@ -33,6 +33,11 @@ const REDONE = [
   { file: "app/tip-jar.tsx", keys: "tipJar" },
   { file: "app/refer-a-friend.tsx", keys: "referFriend" },
   { file: "app/help-support.tsx", keys: "helpSupport" },
+  { file: "app/login.tsx", keys: "login" },
+  { file: "app/register.tsx", keys: "register" },
+  { file: "app/forgot-password.tsx", keys: "forgotPassword" },
+  { file: "app/verify-email.tsx", keys: "verifyEmail" },
+  { file: "app/onboarding.tsx", keys: "onboarding" },
 ];
 
 // Block and JSX comments may quote the tells they explain.

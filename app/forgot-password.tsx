@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -58,13 +58,13 @@ export default function ForgotPasswordScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.back} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel={t("common.a11yBack")} onPress={() => step === 2 ? setStep(1) : router.back()}>
-        <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
+        <MaterialCommunityIcons name="arrow-left" size={24} color={c.text} />
       </TouchableOpacity>
 
       <View style={styles.icon}>
         <MaterialCommunityIcons
           name={step === 1 ? "lock-question" : "lock-reset"}
-          size={56} color={c.primary}
+          size={48} color={c.textSecondary}
         />
       </View>
 
@@ -83,7 +83,7 @@ export default function ForgotPasswordScreen() {
             onChangeText={setEmail}
           />
           <TouchableOpacity style={styles.button} onPress={handleSendCode} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("forgotPassword.sendCode")}</Text>}
+            {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.sendCode")}</Text>}
           </TouchableOpacity>
         </>
       ) : (
@@ -124,7 +124,7 @@ export default function ForgotPasswordScreen() {
           <PasswordStrengthMeter password={newPassword} />
 
           <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
+            {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.resend} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={handleSendCode} disabled={loading}>
@@ -140,37 +140,39 @@ export default function ForgotPasswordScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, padding: 28, paddingTop: 60 },
-    back: { marginBottom: 16 },
-    icon: { alignItems: "center", marginBottom: 24 },
-    title: { fontSize: 24, fontWeight: "800", color: c.text, marginBottom: 10, textAlign: "center" },
-    subtitle: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 22, marginBottom: 28 },
-    emailHighlight: { fontWeight: "700", color: c.primary },
+    container: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.xl, paddingTop: 60 },
+    back: { marginBottom: space.l, minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
+    icon: { alignItems: "center", marginBottom: space.xl },
+    title: { ...typeScale.title, color: c.text, marginBottom: space.s, textAlign: "center" },
+    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
+    emailHighlight: { fontFamily: "Montserrat-SemiBold", color: c.text },
     input: {
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: 10,
-      paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text, marginBottom: 14,
+      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderRadius: radius.m, minHeight: 52, paddingHorizontal: space.l, color: c.text, marginBottom: space.m,
     },
     codeInput: {
-      backgroundColor: c.inputBg, borderWidth: 2, borderColor: c.primary, borderRadius: 12,
-      paddingVertical: 16, fontSize: 36, fontWeight: "800", letterSpacing: 12,
-      color: c.text, marginBottom: 14, textAlign: "center",
+      /* The one place outside the scale: six digits read at arm's length. */
+      backgroundColor: c.inputBg, borderWidth: 1.5, borderColor: c.text, borderRadius: radius.m,
+      minHeight: 64, fontFamily: "Montserrat-SemiBold", fontSize: 32, letterSpacing: 10,
+      color: c.text, textAlign: "center", marginBottom: space.m,
     },
     passwordWrapper: {
-      flexDirection: "row", alignItems: "center", backgroundColor: c.inputBg,
-      borderWidth: 1, borderColor: c.border, borderRadius: 10, marginBottom: 14,
+      flexDirection: "row", alignItems: "center", minHeight: 52,
+      backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m, marginBottom: space.m,
     },
-    passwordInput: { flex: 1, paddingVertical: 14, paddingHorizontal: 16, fontSize: 15, color: c.text },
-    eyeButton: { paddingHorizontal: 14 },
+    passwordInput: { ...typeScale.body, flex: 1, minHeight: 52, paddingHorizontal: space.l, color: c.text },
+    eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 14,
-      alignItems: "center", marginBottom: 14,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
+      alignItems: "center", justifyContent: "center", marginBottom: space.m,
     },
-    buttonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    resend: { alignItems: "center", marginBottom: 16 },
-    resendText: { color: c.primary, fontSize: 14, fontWeight: "500" },
-    backToLogin: { alignItems: "center", marginTop: 8 },
-    backToLoginText: { color: c.textMuted, fontSize: 13 },
+    buttonText: { ...typeScale.bodyStrong, color: c.bg },
+    resend: { alignItems: "center", justifyContent: "center", minHeight: 48, marginBottom: space.s },
+    resendText: { ...typeScale.label, color: c.text },
+    backToLogin: { alignItems: "center", justifyContent: "center", minHeight: 48 },
+    backToLoginText: { ...typeScale.label, color: c.textSecondary },
   });
 }
