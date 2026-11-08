@@ -1239,11 +1239,14 @@ export default function SubscriptionsScreen() {
                   onPress={handleStarTap}
                   hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                 >
-                  <MaterialCommunityIcons name="star-outline" size={38} color="#FCD34D" />
+                  {/* c.warning, not #FCD34D: that pale amber measured 1.39:1 on the
+                      light card, and a star is a control, so it needs 3:1. c.warning
+                      is 4.95:1 light and 8.46:1 dark. */}
+                  <MaterialCommunityIcons name="star-outline" size={38} color={c.warning} />
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity onPress={handleReviewLater} style={{ marginTop: 16 }}>
+            <TouchableOpacity onPress={handleReviewLater} style={styles.reviewDismiss} accessibilityRole="button">
               <Text style={styles.reviewDismissText}>{t("review.later")}</Text>
             </TouchableOpacity>
           </View>
@@ -1824,6 +1827,9 @@ function makeStyles(c: AppColors) {
     starRow: {
       flexDirection: "row", gap: 10, marginBottom: 8,
     },
+    /* A control, so 48dp: it was bare 13px text with only a top margin, about
+       18dp to hit. */
+    reviewDismiss: { marginTop: space.s, minHeight: 48, paddingHorizontal: space.l, justifyContent: "center" },
     reviewDismissText: { fontSize: 13, color: c.textMuted },
     quickPickRow: { flexDirection: "row", flexWrap: "wrap", gap: space.s, marginBottom: space.l },
     quickPickItem: {
