@@ -3976,6 +3976,27 @@ last one left off without needing a recap typed out.
   which makes the installer extract the .so files to the lib directory
   instead of reading them from inside the APK. Not worth a build for one
   corrupted install on a superseded versionCode.
+- A SIGBUS IN FREETYPE, 2026-11-08 (Sentry email, owner's screenshot):
+  `SIGBUS: BusError` in `TT_RunIns` under `FT_Load_Glyph`, project
+  react-native, production, fatal, Sentry user id `7c4e5fc7-...` (a random
+  install id: the app never calls Sentry.setUser, so it names no account).
+  That is Android's font rasteriser running a font's hinting bytecode.
+  THE FONT FILES WERE MEASURED AND ARE CLEAN, so do not repeat it: the five
+  Montserrat TTFs (unchanged since `71dccb10`, 2026-08-07, so identical in
+  builds 40 and 41 and every update) parse in fontTools 4.68 (1961 glyphs,
+  fpgm and prep present, about 1166 glyphs carry bytecode), and FreeType
+  2.13.2 ran hinted `FT_LOAD_DEFAULT` on every glyph at every ppem 6 to 72,
+  656,935 loads, no fault. A bug in the fonts would also hit every phone.
+  LEADING READING, not proven: SIGBUS rather than SIGSEGV is the kernel's
+  signal for touching a memory mapped file page that cannot be read, a flash
+  read error or a file cut short while mapped, which fits one device. Also
+  possible: a reload during Check for updates, or that phone's own FreeType.
+  OWED, from the Sentry ISSUE page rather than the email: events and users,
+  first and last seen, device model, Android version, release and dist, and
+  the last breadcrumbs. Dehinting the fonts was considered and NOT done: if
+  the file is unreadable it only moves the crash to the outline loader.
+  WHAT WOULD CHANGE THE DECISION: a second device, more than a handful of
+  events, or breadcrumbs showing an update reload just before.
 - That crash was only ever visible because of Fix 9 in `fix-gradle.sh`,
   which adds native Sentry auto-init through AndroidManifest meta-data so
   crashes BEFORE the JS bundle loads still report. Do not remove it.
