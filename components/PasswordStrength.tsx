@@ -122,8 +122,14 @@ const styles = StyleSheet.create({
   container: { marginBottom: 4 },
   bars: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 8 },
   bar: { flex: 1, height: 4, borderRadius: 2 },
-  label: { fontSize: 12, fontWeight: "700", marginLeft: 4, width: 44 },
+  /* NOT a fixed width. It was width 44, and German "Schwach" is 55.8 in
+     Montserrat SemiBold 12 (about 50 in Roboto), so on the German sign up
+     screen it broke mid word into "Schwa" / "ch". minWidth 60 clears the
+     widest label in both languages, so the bars do not shift as the label
+     changes while typing; flexShrink 0 means a larger system font grows the
+     label and shortens the bars rather than wrapping the word. */
+  label: { fontSize: 12, fontFamily: "Montserrat-SemiBold", marginLeft: 4, minWidth: 60, flexShrink: 0, textAlign: "right" },
   reqs: { gap: 4 },
   req: { flexDirection: "row", alignItems: "center", gap: 6 },
-  reqText: { fontSize: 12 },
+  reqText: { fontSize: 12, fontFamily: "Montserrat-Regular" },
 });
