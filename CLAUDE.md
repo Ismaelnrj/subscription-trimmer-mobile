@@ -2083,6 +2083,37 @@ last one left off without needing a recap typed out.
   ALL OF THIS RIDES THE NEXT `eas update`, NOT YET ASKED FOR AN ANSWER on
   2026-11-07 (the owner left that question blank): the list, the add form,
   the paywall, the claim fixes, the money format and the date order.
+  EVERY OTHER SCREEN WAS REDONE 2026-11-07/08, on the owner's instruction "Do
+  everything directly and then we create the eas update": no per screen yes,
+  one before/after sheet at the end instead. Stats, Settings, Calendar,
+  Recommendations, subscription details, Alerts, Notifications, Cancelled,
+  notification preferences, Account settings, cancel guide, tip jar, referral,
+  help, the sign-in flow, onboarding, the first-run card, the reminder primer,
+  the update modal, the legal screens and both title bars. Each is its own
+  commit with its own CI run, so any one can be reverted alone. All of them
+  are in `REDONE` (the legal screens are not: their dates line shares a middle
+  dot with the website's legal pages). Rules every one follows: open lead
+  figure, grouped hairline cards, ink for "chosen" and for primary buttons
+  (never white on primary), Montserrat via `type` (a fontWeight with no family
+  is Roboto), theme tokens only.
+  STATS USES A THIN SPLIT BAR, not the donut, per the dataviz skill ("a split
+  read beside its figures"). The category palette passes the validator in
+  declared order and FAILS it all pairs (insurance beside software, 5.1); the
+  donut had the same exposure. 2px gaps plus a named row per part keep
+  identity off colour. `DonutChart.tsx` is now unused and was left in place.
+  DEFECTS FIXED ON THE WAY, each its own commit and test: bare English "/mo",
+  "/yr" and hand pluralised counts on German Stats and Insights; the calendar
+  and Insights adding raw prices across currencies (Month view read 129,94 €
+  for six euro rows plus 24.99 USD); subscription details labelling a dollar
+  row's yearly figure in euros; the cancel guide's button white on dark danger
+  at 2.52:1; the tip jar quoting hardcoded USD; "pro monthly" in the price rise
+  tip; the verify code box clipping its sixth digit; referral Apply off screen;
+  an English "SOON" badge and "User"/"No email" fallbacks in Settings.
+  REMOVED AS FALSE CLAIMS: the "Trimio for iOS, coming soon" row (iOS is
+  deferred), and two notification switches that controlled nothing: "Weekly
+  summary" (no job sends one) and "Spending alerts" (alerts.list never reads
+  it). Their server columns are untouched. Wiring spending alerts properly is
+  a backend change, left as a follow-up.
   THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
   unavailable" everywhere. For screenshots only, the scratch copy's
   `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
