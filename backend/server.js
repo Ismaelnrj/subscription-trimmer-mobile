@@ -1195,8 +1195,6 @@ const ALERT_TEXT = {
     renewalBody: (name, money) => `${money} will be charged for ${name}.`,
     trialTitle: (name, when) => `${name} trial ends ${when}`,
     trialBody: (name) => `Your free trial for ${name} is about to end. Cancel now to avoid charges.`,
-    spendTitle: 'High monthly spending',
-    spendBody: (moneyPerMonth) => `You spend ${moneyPerMonth} on subscriptions.`,
   },
   de: {
     when: (days) => (days <= 0 ? 'heute' : days === 1 ? 'morgen' : `in ${days} Tagen`),
@@ -1204,8 +1202,6 @@ const ALERT_TEXT = {
     renewalBody: (name, money) => `${money} wird für ${name} abgebucht.`,
     trialTitle: (name, when) => `Testphase von ${name} endet ${when}`,
     trialBody: (name) => `Deine Testphase für ${name} endet bald. Kündige jetzt, wenn nichts abgebucht werden soll.`,
-    spendTitle: 'Hohe monatliche Ausgaben',
-    spendBody: (moneyPerMonth) => `Du gibst ${moneyPerMonth} für Abos aus.`,
   },
 };
 
@@ -3873,7 +3869,6 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
     ]);
     const subs = subResult.rows;
     const sym = settingsResult.rows[0]?.currency_symbol || '$';
-    const accountCurrency = settingsResult.rows[0]?.currency || null;
     const lang = languageOf(req);
     const T = ALERT_TEXT[lang];
     const renewalAlertDays = prefsResult.rows[0]?.renewal_alert_days ?? 3;
@@ -3942,33 +3937,18 @@ app.get('/api/trpc/alerts.list', authMiddleware, async (req, res) => {
       }
     }
 
-    /* Total monthly spend threshold for the "high spending" alert. It used to
-       add every row's raw price whatever its currency, so 10 EUR and 10 USD
-       made 20 of nothing, printed with the account's symbol. The server holds
-       no exchange rates on purpose (the client fetches and validates them), so
-       a total exists only when every row shares one currency. Across several
-       there is no honest number to compare, and the alert stays quiet: the
-       dashboard already shows a correctly converted total. */
-    const TOTAL_SPEND_ALERT_THRESHOLD = 200;
-    const totalsByCurrency = {};
-    for (const s of subs) {
-      const cur = s.currency || accountCurrency || '';
-      totalsByCurrency[cur] = (totalsByCurrency[cur] || 0) + toMonthly(parseFloat(s.price), s.billing_cycle);
-    }
-    const currencies = Object.keys(totalsByCurrency);
-    const monthlyTotal = currencies.length === 1 ? totalsByCurrency[currencies[0]] : 0;
-    if (monthlyTotal > TOTAL_SPEND_ALERT_THRESHOLD) {
-      alerts.push({
-        id: 'expensive',
-        type: 'expensive_alert',
-        title: T.spendTitle,
-        message: T.spendBody(formatEmailPrice(monthlyTotal, currencies[0] || null, sym, 'monthly', lang)),
-        subscriptionId: null,
-        subscriptionName: null,
-        severity: 'low',
-      });
-    }
-
+    /* NO SPENDING ALERT, removed 2026-11-08. It fired whenever a one currency
+       monthly total passed a fixed 200, in whatever currency that was: a
+       number the user never chose, which tracking insurance and utilities (as
+       the empty state invites) passes with ordinary use, and 200 yen passes
+       with one subscription. It carried no subscription id, so the dashboard
+       counted it in its red alerts row, permanently, with nothing to dismiss
+       and, since the redesign, no switch either (the old one was never read
+       here). A count that never goes to zero trains people to stop reading
+       it, and that row exists for renewals. The dashboard already shows the
+       total, and the budget goal is a threshold the user sets themselves.
+       notification_preferences.spending_alerts stays, unread: installed
+       builds still send and display it. */
     res.json(trpc(alerts));
   } catch (err) {
     handleError(err, res);

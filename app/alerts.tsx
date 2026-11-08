@@ -21,16 +21,15 @@ export default function AlertsScreen() {
   });
 
   /* These names must match what alerts.list in backend/server.js actually
-     sends: renewal_alert, trial_alert and expensive_alert. They used to read
-     "renewal" and "expensive", which match NO type the server has ever sent,
+     sends: renewal_alert and trial_alert (expensive_alert went 2026-11-08).
+     They used to read "renewal" and "expensive", which match NO type the
+     server has ever sent,
      so every alert on this screen fell through to the generic "information"
      icon and the severity colour was the only thing telling them apart.
      The bare names are kept as aliases so a payload from an older or
      hand-rolled source still resolves rather than silently going generic. */
   const getAlertIcon = (type: string) => {
     switch (type) {
-      case "expensive_alert":
-      case "expensive": return "alert-circle";
       case "renewal_alert":
       case "renewal": return "calendar-alert";
       case "trial_alert":

@@ -95,28 +95,27 @@ describe('renewal and trial alerts', () => {
   });
 });
 
-describe('the spending alert', () => {
-  test('one currency: totals and prints in that currency', async () => {
-    const a = await alerts('de', { subs: [row({ id: 1, name: 'A', price: 250, currency: 'EUR', in: 20 })], settings: EUR });
-    const s = a.find((x) => x.type === 'expensive_alert');
-    expect(s.title).toBe('Hohe monatliche Ausgaben');
-    expect(s.message).toBe('Du gibst 250,00\u00a0€ pro Monat für Abos aus.');
+/* The spending alert went 2026-11-08: a fixed 200 in whatever currency, with
+   no subscription id, so the dashboard counted it in its red alert row for
+   good. Every row the handler returns now belongs to a subscription. */
+describe('no spending alert, at any total', () => {
+  test('a large one currency total raises nothing', async () => {
+    const a = await alerts('de', { subs: [row({ id: 1, name: 'A', price: 2500, currency: 'EUR', in: 20 })], settings: EUR });
+    expect(a).toEqual([]);
   });
 
-  test('several currencies: no alert, because adding them needs a rate', async () => {
-    const a = await alerts('de', { subs: [
-      row({ id: 1, name: 'A', price: 150, currency: 'EUR', in: 20 }),
-      row({ id: 2, name: 'B', price: 150, currency: 'USD', in: 20 }),
-    ], settings: EUR });
-    expect(a.find((x) => x.type === 'expensive_alert')).toBeUndefined();
+  test('200 yen on one row raises nothing', async () => {
+    const a = await alerts('en', { subs: [row({ id: 1, name: 'A', price: 1500, currency: 'JPY', in: 20 })], settings: { currency: 'JPY', currency_symbol: '¥' } });
+    expect(a).toEqual([]);
   });
 
-  test('a null currency row counts as the account currency, not as a third one', async () => {
+  test('every alert names a subscription, so none can sit in the dashboard count for good', async () => {
     const a = await alerts('en', { subs: [
-      row({ id: 1, name: 'A', price: 150, currency: 'EUR', in: 20 }),
-      row({ id: 2, name: 'B', price: 100, currency: null, in: 20 }),
+      row({ id: 1, name: 'A', price: 900, currency: 'EUR', in: 1 }),
+      row({ id: 2, name: 'B', price: 900, currency: 'EUR', in: 2 }),
     ], settings: EUR });
-    expect(a.find((x) => x.type === 'expensive_alert').message).toBe('You spend €250.00/month on subscriptions.');
+    expect(a.length).toBeGreaterThan(0);
+    for (const x of a) expect(x.subscriptionId).toBeTruthy();
   });
 });
 
@@ -129,7 +128,7 @@ describe('the copy', () => {
 
   test('no dash as clause punctuation in the German', () => {
     const texts = [T.de.renewalTitle('X', T.de.when(3)), T.de.renewalBody('X', '1 €'), T.de.trialTitle('X', T.de.when(0)),
-      T.de.trialBody('X'), T.de.spendTitle, T.de.spendBody('1 € pro Monat')];
+      T.de.trialBody('X')];
     for (const t of texts) expect(t).not.toMatch(/ [-–—] |[–—]/);
   });
 

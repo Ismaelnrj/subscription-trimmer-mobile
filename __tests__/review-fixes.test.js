@@ -31,10 +31,13 @@ const codeOf = (p) => {
 
 describe("alert types match what the server actually sends", () => {
   const SERVER = read("backend/server.js");
-  const SENT = ["renewal_alert", "trial_alert", "expensive_alert"];
+  /* expensive_alert went 2026-11-08: a fixed 200 in any currency, counted
+     forever in the dashboard's alert row. See alerts.list. */
+  const SENT = ["renewal_alert", "trial_alert"];
 
-  it("the server emits exactly these three types", () => {
+  it("the server emits exactly these two types", () => {
     for (const t of SENT) expect(SERVER).toContain(`type: '${t}'`);
+    expect(SERVER).not.toContain("type: 'expensive_alert'");
   });
 
   it("the screen maps every one of them to its own icon", () => {
@@ -51,8 +54,8 @@ describe("alert types match what the server actually sends", () => {
       expect(m[1]).not.toBe("information");
       icons.add(m[1]);
     }
-    // three distinct icons, or two types are still indistinguishable
-    expect(icons.size).toBe(3);
+    // distinct icons, or two types are still indistinguishable
+    expect(icons.size).toBe(SENT.length);
   });
 
   it("the severity badge is localised rather than a bare English JSX node", () => {
