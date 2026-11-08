@@ -633,8 +633,8 @@
     "later": "Later"
   },
   "helpSupport": {
-    "faq": "Frequently Asked Questions",
-    "contactUs": "Contact Us",
+    "faq": "Frequently asked questions",
+    "contactUs": "Contact us",
     "faq1Q": "How do I add a subscription?",
     "faq1A": "Tap the round + button, or open My Subscriptions from the dashboard and tap Add. Fill in the name, price, billing cycle and category.",
     "faq2Q": "Can I edit a subscription?",
@@ -647,8 +647,8 @@
     "faq5A": "Go to Profile > Notification Preferences and enable Renewal Alerts. You will be notified before any subscription renews.",
     "faq6Q": "How do I delete my account?",
     "faq6A": "Go to Profile > Account Settings and scroll to the bottom. Tap 'Delete Account' and confirm. You can also email Trimio@subtrimio.com.",
-    "emailSupport": "Email Support",
-    "privacyPolicy": "Privacy Policy",
+    "emailSupport": "Email support",
+    "privacyPolicy": "Privacy policy",
     "viewPrivacyPolicy": "View our privacy policy",
     "footerNote": "Trimio@subtrimio.com is our official support address. Yes, the domain is \"subtrimio.com\" even though the app is called Trimio.",
     "checkForUpdates": "Check for updates",
@@ -691,7 +691,7 @@
     "footerNote": "Tips are optional and non-refundable.\nThey do not unlock any additional features.",
     "errNotAvailable": "In-app purchases are not available in this build. Please download the latest version from the Play Store.",
     "thankYouTitle": "Thank you!",
-    "thankYouMsg": "Your support means the world and helps keep Trimio free and improving!",
+    "thankYouMsg": "Your support means the world and helps keep Trimio going and improving.",
     "errPurchase": "Could not complete the purchase. Please try again."
   },
   "fab": {

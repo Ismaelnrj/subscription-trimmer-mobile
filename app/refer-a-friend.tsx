@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import * as Sentry from "@sentry/react-native";
 import apiClient from "../lib/api";
 import { useAuthStore } from "../lib/auth-store";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useDateFormat } from "../lib/date-locale";
 
 export default function ReferAFriendScreen() {
@@ -93,7 +93,6 @@ export default function ReferAFriendScreen() {
       <Stack.Screen options={{ title: t("referFriend.screenTitle"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.headerEmoji}>🎁</Text>
           <Text style={styles.headerTitle}>{t("referFriend.title")}</Text>
           <Text style={styles.headerDesc}>{t("referFriend.desc", { months: bonusCapMonths })}</Text>
         </View>
@@ -103,9 +102,9 @@ export default function ReferAFriendScreen() {
             <ActivityIndicator color={c.primary} style={{ marginTop: 24 }} />
           ) : loadError ? (
             <View style={styles.errorState}>
-              <MaterialCommunityIcons name="alert-circle-outline" size={28} color={c.danger} />
+              <MaterialCommunityIcons name="alert-circle-outline" size={36} color={c.textMuted} />
               <Text style={styles.errorText}>{t("referFriend.loadError")}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); load(); }}>
+              <TouchableOpacity style={styles.retryButton} onPress={() => { setLoading(true); load(); }} accessibilityRole="button">
                 <Text style={styles.retryButtonText}>{t("referFriend.retry")}</Text>
               </TouchableOpacity>
             </View>
@@ -113,7 +112,7 @@ export default function ReferAFriendScreen() {
             <>
               {bonusActive && (
                 <View style={styles.bonusCard}>
-                  <MaterialCommunityIcons name="crown" size={22} color={c.success} />
+                  <MaterialCommunityIcons name="crown" size={20} color={c.warning} />
                   <Text style={styles.bonusText}>
                     {t("referFriend.bonusActive", { date: fmtD(new Date(bonusPremiumUntil!), "PP") })}
                   </Text>
@@ -128,9 +127,11 @@ export default function ReferAFriendScreen() {
 
               <Text style={styles.sectionLabel}>{t("referFriend.yourCode")}</Text>
               <View style={styles.codeCard}>
-                <Text style={styles.codeText}>{referralCode || "—"}</Text>
-                <TouchableOpacity style={styles.shareButton} onPress={handleShare} disabled={!referralCode}>
-                  <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+                <Text style={styles.codeText} selectable accessibilityLabel={referralCode ? referralCode.split("").join(" ") : undefined}>
+                  {referralCode || "…"}
+                </Text>
+                <TouchableOpacity style={styles.shareButton} onPress={handleShare} disabled={!referralCode} accessibilityRole="button">
+                  <MaterialCommunityIcons name="share-variant" size={18} color={c.bg} />
                   <Text style={styles.shareButtonText}>{t("referFriend.share")}</Text>
                 </TouchableOpacity>
               </View>
@@ -142,7 +143,7 @@ export default function ReferAFriendScreen() {
                     <TextInput
                       style={styles.redeemInput}
                       placeholder={t("referFriend.codePlaceholder")}
-                      placeholderTextColor={c.textMuted}
+                      placeholderTextColor={c.placeholder}
                       autoCapitalize="characters"
                       autoCorrect={false}
                       value={redeemCode}
@@ -152,8 +153,9 @@ export default function ReferAFriendScreen() {
                       style={[styles.redeemButton, (!redeemCode.trim() || redeeming) && { opacity: 0.5 }]}
                       onPress={handleRedeem}
                       disabled={!redeemCode.trim() || redeeming}
+                      accessibilityRole="button"
                     >
-                      {redeeming ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text style={styles.redeemButtonText}>{t("referFriend.apply")}</Text>}
+                      {redeeming ? <ActivityIndicator color={c.bg} size="small" /> : <Text style={styles.redeemButtonText}>{t("referFriend.apply")}</Text>}
                     </TouchableOpacity>
                   </View>
                 </>
@@ -170,51 +172,49 @@ export default function ReferAFriendScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    header: { padding: 24, alignItems: "center", backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
-    headerEmoji: { fontSize: 48, marginBottom: 8 },
-    headerTitle: { fontSize: 22, fontWeight: "800", color: c.text, marginBottom: 6, textAlign: "center" },
-    headerDesc: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20 },
-    body: { padding: 20, paddingBottom: 40 },
-    sectionLabel: {
-      fontSize: 13, fontWeight: "600", color: c.text, marginBottom: 10,
-      marginTop: 8, textTransform: "uppercase", letterSpacing: 0.5,
-    },
+    header: { paddingHorizontal: space.l, paddingTop: space.xl },
+    headerTitle: { ...typeScale.title, color: c.text },
+    headerDesc: { ...typeScale.body, color: c.textSecondary, marginTop: space.s },
+    body: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: 40 },
+    sectionLabel: { ...typeScale.heading, color: c.text, marginBottom: space.s, marginTop: space.l },
+    /* The code is the thing a person reads aloud or types, so it gets the
+       display size; the share button sits under it at full width. */
     codeCard: {
-      backgroundColor: c.card, borderRadius: 14, padding: 20, marginBottom: 8,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row",
-      alignItems: "center", justifyContent: "space-between",
+      backgroundColor: c.card, borderRadius: radius.m, padding: space.l, marginBottom: space.s,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, gap: space.l,
     },
-    codeText: { fontSize: 24, fontWeight: "800", color: c.primary, letterSpacing: 2 },
+    codeText: { ...typeScale.display, color: c.text, letterSpacing: 2, textAlign: "center" },
     shareButton: {
-      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 9,
-      paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 6,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
     },
-    shareButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-    redeemRow: { flexDirection: "row", gap: 10 },
+    shareButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    redeemRow: { flexDirection: "row", gap: space.s },
     redeemInput: {
-      flex: 1, backgroundColor: c.card, borderRadius: 10, borderWidth: 1, borderColor: c.border,
-      paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: c.text, letterSpacing: 1,
+      /* minWidth 0, or the field refuses to shrink and pushes Apply off the
+         right edge, which it did before this change too. */
+      ...typeScale.body, flex: 1, minWidth: 0, backgroundColor: c.inputBg, borderRadius: radius.s,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      paddingHorizontal: space.m, minHeight: 48, color: c.text, letterSpacing: 1,
     },
     redeemButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingHorizontal: 18,
+      backgroundColor: c.text, borderRadius: radius.m, paddingHorizontal: space.l,
       alignItems: "center", justifyContent: "center", minWidth: 80, minHeight: 48,
     },
-    redeemButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-    bonusCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, flexDirection: "row",
-      alignItems: "center", gap: 10, borderWidth: 1, borderColor: c.success, marginBottom: 20,
-    },
-    bonusText: { fontSize: 13, fontWeight: "600", color: c.success, flex: 1 },
-    errorState: { alignItems: "center", marginTop: 32, gap: 10, paddingHorizontal: 24 },
-    errorText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
+    redeemButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    bonusCard: { flexDirection: "row", alignItems: "center", gap: space.s, marginBottom: space.s },
+    bonusText: { ...typeScale.bodyStrong, color: c.text, flex: 1 },
+    errorState: { alignItems: "center", marginTop: space.xxl, gap: space.m, paddingHorizontal: space.xl },
+    errorText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
     retryButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
-      paddingHorizontal: 24, marginTop: 4,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      paddingHorizontal: space.xl, justifyContent: "center",
     },
-    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-    note: { textAlign: "center", fontSize: 12, color: c.textMuted, marginTop: 8, lineHeight: 18 },
+    retryButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    note: { ...typeScale.caption, color: c.textSecondary, marginTop: space.s },
   });
 }

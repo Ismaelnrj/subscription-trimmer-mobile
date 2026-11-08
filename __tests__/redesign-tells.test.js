@@ -29,6 +29,10 @@ const REDONE = [
   { file: "app/cancelled.tsx", keys: "cancelled" },
   { file: "app/notification-preferences.tsx", keys: "notifPrefs" },
   { file: "app/account-settings.tsx", keys: "accountSettings" },
+  { file: "app/cancel-guide.tsx", keys: "cancelGuide" },
+  { file: "app/tip-jar.tsx", keys: "tipJar" },
+  { file: "app/refer-a-friend.tsx", keys: "referFriend" },
+  { file: "app/help-support.tsx", keys: "helpSupport" },
 ];
 
 // Block and JSX comments may quote the tells they explain.

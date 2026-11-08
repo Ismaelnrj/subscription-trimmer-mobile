@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getCancellationGuide, hasCancellationGuide } from "../lib/cancellation-guides";
 import { track } from "../lib/analytics";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useLanguageStore } from "../lib/language-store";
 
 export default function CancelGuideScreen() {
@@ -40,14 +40,17 @@ export default function CancelGuideScreen() {
 
       {guide.note && (
         <View style={styles.noteBox}>
-          <MaterialCommunityIcons name="information-outline" size={16} color={c.primary} style={{ marginTop: 1 }} />
+          <MaterialCommunityIcons name="information-outline" size={18} color={c.textSecondary} style={{ marginTop: 1 }} />
           <Text style={styles.noteText}>{guide.note}</Text>
         </View>
       )}
 
-      <View style={styles.stepsContainer}>
+      {/* The steps as one numbered list in a card, each number in an ink
+          circle: the reader follows them with the service's own app open
+          beside this, so the number is what the eye returns to. */}
+      <View style={styles.card}>
         {guide.steps.map((step, i) => (
-          <View key={i} style={styles.stepRow}>
+          <View key={i} style={[styles.stepRow, i > 0 && styles.rowDivider]}>
             <View style={styles.stepNumber}>
               <Text style={styles.stepNumberText}>{i + 1}</Text>
             </View>
@@ -57,57 +60,57 @@ export default function CancelGuideScreen() {
       </View>
 
       {!!guide.url && (
+        /* Ink, not danger red: white on dark danger (#F0857A) measured 2.52:1,
+           under even the large text floor, on the one button this feature
+           exists for. Opening a page is not a destructive act anyway. */
         <TouchableOpacity
           style={styles.linkButton}
+          accessibilityRole="link"
           onPress={() =>
             Linking.openURL(guide.url).catch(() =>
               Alert.alert(t("cancelGuide.errOpenTitle"), t("cancelGuide.errOpenMessage", { url: guide.url }))
             )
           }
         >
-          <MaterialCommunityIcons name="open-in-new" size={18} color="#FFFFFF" />
+          <MaterialCommunityIcons name="open-in-new" size={18} color={c.bg} />
           <Text style={styles.linkButtonText}>{t("cancelGuide.openPage")}</Text>
         </TouchableOpacity>
       )}
 
       <View style={styles.footerNote}>
-        <MaterialCommunityIcons name="shield-check-outline" size={14} color={c.textMuted} />
+        <MaterialCommunityIcons name="shield-check-outline" size={16} color={c.textSecondary} />
         <Text style={styles.footerNoteText}>{t("cancelGuide.footerNote")}</Text>
       </View>
     </ScrollView>
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, paddingBottom: 48 },
-    heading: { fontSize: 22, fontWeight: "700", color: c.text, marginBottom: 20 },
-    noteBox: {
-      flexDirection: "row", gap: 8, backgroundColor: c.primaryLight,
-      borderRadius: 12, padding: 14, marginBottom: 24, alignItems: "flex-start",
+    content: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: 48 },
+    heading: { ...typeScale.title, color: c.text, marginBottom: space.l },
+    noteBox: { flexDirection: "row", gap: space.s, marginBottom: space.l, alignItems: "flex-start" },
+    noteText: { ...typeScale.body, flex: 1, color: c.textSecondary },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l, marginBottom: space.xl,
     },
-    noteText: { flex: 1, fontSize: 13, color: c.text, lineHeight: 20 },
-    stepsContainer: { gap: 16, marginBottom: 32 },
-    stepRow: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
+    stepRow: { flexDirection: "row", gap: space.m, alignItems: "flex-start", paddingVertical: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     stepNumber: {
-      width: 30, height: 30, borderRadius: 15,
-      backgroundColor: c.primary, justifyContent: "center", alignItems: "center", flexShrink: 0,
+      width: 28, height: 28, borderRadius: radius.pill,
+      backgroundColor: c.text, justifyContent: "center", alignItems: "center", flexShrink: 0,
     },
-    stepNumberText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-    stepText: { flex: 1, fontSize: 14, color: c.text, lineHeight: 22, paddingTop: 4 },
+    stepNumberText: { ...typeScale.label, color: c.bg },
+    stepText: { ...typeScale.body, flex: 1, color: c.text, paddingTop: 3 },
     linkButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center",
-      gap: 8, backgroundColor: c.danger, borderRadius: 12,
-      paddingVertical: 15, marginBottom: 20,
-      shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 3,
+      gap: space.s, backgroundColor: c.text, borderRadius: radius.m, minHeight: 52, marginBottom: space.xl,
     },
-    linkButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
-    footerNote: {
-      flexDirection: "row", gap: 8, alignItems: "flex-start",
-      backgroundColor: c.card, borderRadius: 10, padding: 12,
-      borderWidth: 1, borderColor: c.border,
-    },
-    footerNoteText: { flex: 1, fontSize: 12, color: c.textMuted, lineHeight: 17 },
+    linkButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    footerNote: { flexDirection: "row", gap: space.s, alignItems: "flex-start" },
+    footerNoteText: { ...typeScale.caption, flex: 1, color: c.textSecondary },
   });
 }

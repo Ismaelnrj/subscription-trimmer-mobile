@@ -5,40 +5,52 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { setupIAP, sendTip, TIP_IDS, getOfferings } from "../lib/iap";
 import { PurchasesPackage } from "react-native-purchases";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useAuthStore } from "../lib/auth-store";
-import { TIP_PRICES } from "../lib/pricing";
 
 export default function TipJarScreen() {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [tipped, setTipped] = useState(false);
   const [iapReady, setIapReady] = useState(false);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  /* Separate from packages.length: an empty list is both "not loaded yet" and
+     "loaded and empty", and only the second may say the price is unavailable. */
+  const [offeringsLoaded, setOfferingsLoaded] = useState(false);
   const { user } = useAuthStore();
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
 
   const TIPS = [
-    { id: TIP_IDS.coffee, emoji: "☕", label: t("tipJar.coffee"), fallbackPrice: TIP_PRICES.coffee, desc: t("tipJar.coffeeDesc") },
-    { id: TIP_IDS.lunch,  emoji: "🍕", label: t("tipJar.slice"),  fallbackPrice: TIP_PRICES.lunch,  desc: t("tipJar.sliceDesc") },
-    { id: TIP_IDS.dinner, emoji: "🍔", label: t("tipJar.dinner"), fallbackPrice: TIP_PRICES.dinner, desc: t("tipJar.dinnerDesc") },
-  ];
+    { id: TIP_IDS.coffee, icon: "coffee-outline", label: t("tipJar.coffee"), desc: t("tipJar.coffeeDesc") },
+    { id: TIP_IDS.lunch,  icon: "pizza",          label: t("tipJar.slice"),  desc: t("tipJar.sliceDesc") },
+    { id: TIP_IDS.dinner, icon: "silverware-fork-knife", label: t("tipJar.dinner"), desc: t("tipJar.dinnerDesc") },
+  ] as const;
 
   useEffect(() => {
     (async () => {
-      const ready = await setupIAP(user?.openId);
-      setIapReady(ready);
-      if (ready) {
-        const pkgs = await getOfferings();
-        setPackages(pkgs);
+      try {
+        const ready = await setupIAP(user?.openId);
+        setIapReady(ready);
+        if (ready) {
+          const pkgs = await getOfferings();
+          setPackages(pkgs);
+        }
+      } finally {
+        // Even when IAP is not ready: "resolved with nothing" is a real answer.
+        setOfferingsLoaded(true);
       }
     })();
   }, []);
 
-  const priceFor = (id: string, fallback: string) => {
+  /* ONLY Play's own price looks like money. This used to fall back to
+     TIP_PRICES, hardcoded USD, so an Austrian read "$0.99" until RevenueCat
+     answered, and forever if it never did: the defect the purchase screen was
+     fixed for on 2026-09-20, surviving here. */
+  const priceFor = (id: string): { kind: "real"; text: string } | { kind: "loading" } | { kind: "unavailable" } => {
     const pkg = packages.find((p) => p.product.identifier === id);
-    return pkg?.product.priceString ?? fallback;
+    if (pkg) return { kind: "real", text: pkg.product.priceString };
+    return offeringsLoaded ? { kind: "unavailable" } : { kind: "loading" };
   };
 
   const handleTip = async (id: string) => {
@@ -64,42 +76,46 @@ export default function TipJarScreen() {
     <>
       <Stack.Screen options={{ title: t("screenTitles.tipJar"), headerShown: true }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.headerEmoji}>🫙</Text>
+        <View style={styles.body}>
           <Text style={styles.headerTitle}>{t("tipJar.title")}</Text>
           <Text style={styles.headerDesc}>{t("tipJar.desc")}</Text>
-        </View>
 
-        <View style={styles.body}>
           {tipped && (
-            <View style={styles.thankCard}>
-              <MaterialCommunityIcons name="heart" size={28} color={c.danger} />
-              <Text style={styles.thankText}>{t("tipJar.thankYou")} 🙏</Text>
+            <View style={styles.thankRow}>
+              <MaterialCommunityIcons name="heart" size={20} color={c.danger} />
+              <Text style={styles.thankText}>{t("tipJar.thankYou")}</Text>
             </View>
           )}
 
-          {TIPS.map((tip) => (
-            <View key={tip.id} style={styles.tipCard}>
-              <View style={styles.tipLeft}>
-                <Text style={styles.tipEmoji}>{tip.emoji}</Text>
-                <View>
-                  <Text style={styles.tipLabel}>{tip.label}</Text>
-                  <Text style={styles.tipDesc}>{tip.desc}</Text>
+          <View style={styles.card}>
+            {TIPS.map((tip, i) => {
+              const price = priceFor(tip.id);
+              return (
+                <View key={tip.id} style={[styles.tipRow, i > 0 && styles.rowDivider]}>
+                  <MaterialCommunityIcons name={tip.icon} size={22} color={c.textSecondary} />
+                  <View style={styles.tipText}>
+                    <Text style={styles.tipLabel}>{tip.label}</Text>
+                    <Text style={styles.tipDesc}>{tip.desc}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.tipButton, price.kind !== "real" && styles.tipButtonOff]}
+                    onPress={() => handleTip(tip.id)}
+                    disabled={loadingId !== null || price.kind !== "real"}
+                    accessibilityRole="button"
+                    accessibilityLabel={price.kind === "real" ? `${tip.label}, ${price.text}` : tip.label}
+                  >
+                    {loadingId === tip.id ? (
+                      <ActivityIndicator color={c.bg} size="small" />
+                    ) : (
+                      <Text style={[styles.tipButtonText, price.kind !== "real" && styles.tipButtonTextOff]}>
+                        {price.kind === "real" ? price.text : price.kind === "loading" ? t("upgrade.priceLoading") : t("upgrade.priceUnavailable")}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
-              </View>
-              <TouchableOpacity
-                style={styles.tipButton}
-                onPress={() => handleTip(tip.id)}
-                disabled={loadingId !== null}
-              >
-                {loadingId === tip.id ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                ) : (
-                  <Text style={styles.tipButtonText}>{priceFor(tip.id, tip.fallbackPrice)}</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ))}
+              );
+            })}
+          </View>
 
           <Text style={styles.note}>{t("tipJar.footerNote")}</Text>
         </View>
@@ -108,33 +124,31 @@ export default function TipJarScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    header: { padding: 24, alignItems: "center", backgroundColor: c.card, borderBottomWidth: 1, borderBottomColor: c.border },
-    headerEmoji: { fontSize: 48, marginBottom: 8 },
-    headerTitle: { fontSize: 22, fontWeight: "800", color: c.text, marginBottom: 6 },
-    headerDesc: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20 },
-    body: { padding: 20, paddingBottom: 40 },
-    tipCard: {
-      backgroundColor: c.card, borderRadius: 14, padding: 20, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row",
-      alignItems: "center", justifyContent: "space-between",
+    body: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: space.xxl },
+    headerTitle: { ...typeScale.title, color: c.text },
+    headerDesc: { ...typeScale.body, color: c.textSecondary, marginTop: space.s, marginBottom: space.xl },
+    thankRow: { flexDirection: "row", alignItems: "center", gap: space.s, marginBottom: space.l },
+    thankText: { ...typeScale.bodyStrong, color: c.text },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    tipLeft: { flexDirection: "row", alignItems: "center", gap: 14 },
-    tipEmoji: { fontSize: 32 },
-    tipLabel: { fontSize: 15, fontWeight: "700", color: c.text },
-    tipDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
+    tipRow: { flexDirection: "row", alignItems: "center", gap: space.m, paddingVertical: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    tipText: { flex: 1 },
+    tipLabel: { ...typeScale.bodyStrong, color: c.text },
+    tipDesc: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
     tipButton: {
-      backgroundColor: c.primary, borderRadius: 8, paddingVertical: 8,
-      paddingHorizontal: 14, minWidth: 70, alignItems: "center",
+      backgroundColor: c.text, borderRadius: radius.pill, minHeight: 40, minWidth: 80,
+      paddingHorizontal: space.l, alignItems: "center", justifyContent: "center",
     },
-    tipButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-    note: { textAlign: "center", fontSize: 12, color: c.textMuted, marginTop: 8, lineHeight: 18 },
-    thankCard: {
-      backgroundColor: c.card, borderRadius: 12, padding: 16, alignItems: "center",
-      borderWidth: 1, borderColor: c.success, marginBottom: 20,
-    },
-    thankText: { fontSize: 15, fontWeight: "700", color: c.success, marginTop: 8 },
+    tipButtonOff: { backgroundColor: c.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border },
+    tipButtonText: { ...typeScale.label, color: c.bg },
+    tipButtonTextOff: { color: c.textSecondary },
+    note: { ...typeScale.caption, color: c.textSecondary, textAlign: "center", marginTop: space.l },
   });
 }

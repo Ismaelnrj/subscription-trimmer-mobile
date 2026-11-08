@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Updates from "expo-updates";
 import { nativeBuild } from "../lib/app-build";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 /* The canonical host, not the Railway one: the bare service hostname was
    showing in a privacy context, and it breaks the day the service is renamed.
@@ -93,7 +93,12 @@ export default function HelpSupportScreen() {
           <View style={styles.faqCard}>
             {FAQ.map((item, i) => (
               <View key={i} style={[styles.faqItem, i === FAQ.length - 1 && styles.faqItemLast]}>
-                <TouchableOpacity style={styles.faqQuestion} onPress={() => toggle(i)}>
+                <TouchableOpacity
+                  style={styles.faqQuestion}
+                  onPress={() => toggle(i)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: openIndex === i }}
+                >
                   <Text style={styles.faqQuestionText}>{item.q}</Text>
                   <MaterialCommunityIcons name={openIndex === i ? "chevron-up" : "chevron-down"} size={20} color={c.textMuted} />
                 </TouchableOpacity>
@@ -109,14 +114,14 @@ export default function HelpSupportScreen() {
           <Text style={styles.sectionTitle}>{t("helpSupport.contactUs")}</Text>
           <View style={styles.contactCard}>
             <TouchableOpacity style={styles.contactItem} onPress={() => Linking.openURL("mailto:Trimio@subtrimio.com")}>
-              <MaterialCommunityIcons name="email-outline" size={22} color={c.primary} />
+              <MaterialCommunityIcons name="email-outline" size={20} color={c.textSecondary} />
               <View>
                 <Text style={styles.contactLabel}>{t("helpSupport.emailSupport")}</Text>
                 <Text style={styles.contactValue}>Trimio@subtrimio.com</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.contactItem, styles.contactItemLast]} onPress={() => Linking.openURL(PRIVACY_URL(i18n.language))}>
-              <MaterialCommunityIcons name="shield-outline" size={22} color={c.primary} />
+              <MaterialCommunityIcons name="shield-outline" size={20} color={c.textSecondary} />
               <View>
                 <Text style={styles.contactLabel}>{t("helpSupport.privacyPolicy")}</Text>
                 <Text style={styles.contactValue}>{t("helpSupport.viewPrivacyPolicy")}</Text>
@@ -127,7 +132,7 @@ export default function HelpSupportScreen() {
 
           <Text style={styles.sectionTitle}>Build Info</Text>
           <View style={styles.contactCard}>
-            <View style={{ padding: 16, gap: 6 }}>
+            <View style={styles.debugBlock}>
               <Text style={styles.debugText}>App version: {nativeBuild().version ?? "n/a"}</Text>
               <Text style={styles.debugText}>Native build: {nativeBuild().versionCode ?? "n/a"}</Text>
               <Text style={styles.debugText}>Channel: {Updates.channel ?? "n/a"}</Text>
@@ -146,8 +151,8 @@ export default function HelpSupportScreen() {
                 accessibilityLabel={t("helpSupport.checkForUpdates")}
               >
                 {updateBusy
-                  ? <ActivityIndicator size="small" color={c.primary} />
-                  : <MaterialCommunityIcons name="cloud-download-outline" size={20} color={c.primary} />}
+                  ? <ActivityIndicator size="small" color={c.text} />
+                  : <MaterialCommunityIcons name="cloud-download-outline" size={20} color={c.text} />}
                 <Text style={styles.updateButtonText}>{t("helpSupport.checkForUpdates")}</Text>
               </TouchableOpacity>
             ) : (
@@ -161,36 +166,50 @@ export default function HelpSupportScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    sectionTitle: {
-      fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase",
-      letterSpacing: 0.5, marginBottom: 8, marginTop: 8,
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xxl },
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    faqCard: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, overflow: "hidden",
     },
-    faqCard: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginBottom: 16 },
-    faqItem: { borderBottomWidth: 1, borderBottomColor: c.border },
+    faqItem: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
     faqItemLast: { borderBottomWidth: 0 },
-    faqQuestion: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16 },
-    faqQuestionText: { fontSize: 14, fontWeight: "600", color: c.text, flex: 1, marginRight: 8 },
-    faqAnswer: { paddingHorizontal: 16, paddingBottom: 16 },
-    faqAnswerText: { fontSize: 13, color: c.textSecondary, lineHeight: 20 },
-    contactCard: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginBottom: 16 },
-    contactItem: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, borderBottomWidth: 1, borderBottomColor: c.border },
+    faqQuestion: {
+      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+      minHeight: 56, paddingHorizontal: space.l, paddingVertical: space.m,
+    },
+    faqQuestionText: { ...typeScale.bodyStrong, color: c.text, flex: 1, marginRight: space.s },
+    faqAnswer: { paddingHorizontal: space.l, paddingBottom: space.l },
+    faqAnswerText: { ...typeScale.body, color: c.textSecondary },
+    contactCard: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, overflow: "hidden",
+    },
+    contactItem: {
+      flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 64,
+      paddingHorizontal: space.l, paddingVertical: space.m,
+      borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border,
+    },
     contactItemLast: { borderBottomWidth: 0 },
-    contactLabel: { fontSize: 14, fontWeight: "500", color: c.text },
-    contactValue: { fontSize: 12, color: c.primary, marginTop: 2 },
-    contactNote: { fontSize: 11, color: c.textMuted, lineHeight: 16, marginTop: -8, marginBottom: 8 },
-    debugText: { fontSize: 11, color: c.textMuted, fontFamily: "monospace" },
+    contactLabel: { ...typeScale.body, color: c.text },
+    contactValue: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    contactNote: { ...typeScale.caption, color: c.textSecondary, marginTop: space.s },
+    debugBlock: { padding: space.l, gap: space.xs },
+    /* Monospace and English on purpose: these are EAS's own field names, quoted
+       verbatim by the publish confirmation procedure. 12, not 11, the floor. */
+    debugText: { fontSize: 12, lineHeight: 17, color: c.textSecondary, fontFamily: "monospace" },
     /* minHeight rather than padding: padding leaves the height at the mercy of
        the font size, and 48 is Android's floor. */
     updateButton: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-      minHeight: 48, paddingHorizontal: 16,
-      borderTopWidth: 1, borderTopColor: c.border,
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
+      minHeight: 48, paddingHorizontal: space.l,
+      borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border,
     },
-    updateButtonText: { fontSize: 14, fontWeight: "600", color: c.primary },
-    updateStatus: { fontSize: 11, color: c.textMuted, lineHeight: 16, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12, textAlign: "center" },
+    updateButtonText: { ...typeScale.bodyStrong, color: c.text },
+    updateStatus: { ...typeScale.caption, color: c.textSecondary, paddingHorizontal: space.l, paddingTop: space.xs, paddingBottom: space.m, textAlign: "center" },
   });
 }
