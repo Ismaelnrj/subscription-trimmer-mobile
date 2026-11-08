@@ -1686,18 +1686,18 @@ function makeStyles(c: AppColors) {
     limitCount: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     limitTrack: { height: 6, backgroundColor: c.border, borderRadius: 3, overflow: "hidden" },
     limitFill: { height: "100%", borderRadius: 3 },
-    limitHint: { fontSize: 11, color: c.textSecondary, marginTop: 5 },
+    limitHint: { flex: 1, ...typeScale.caption, color: c.textSecondary, marginTop: 5 },
     emptyState: { alignItems: "center", paddingVertical: 48 },
-    emptyStateText: { fontSize: 14, color: c.textSecondary, textAlign: "center" },
-    emptyStateTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 8, textAlign: "center" },
-    emptyStateSubtext: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, paddingHorizontal: 24, marginBottom: 20 },
+    emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
+    emptyStateTitle: { ...typeScale.title, color: c.text, marginBottom: space.s, textAlign: "center" },
+    emptyStateSubtext: { ...typeScale.body, color: c.textSecondary, textAlign: "center", paddingHorizontal: space.xl, marginBottom: space.l },
     emptyStateButton: {
-      backgroundColor: c.text, borderRadius: 10,
-      paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      justifyContent: "center", paddingHorizontal: space.xl, marginBottom: space.m,
     },
-    emptyStateButtonText: { color: c.bg, fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    emptyStateHint: { fontSize: 12, color: c.textMuted, textAlign: "center", paddingHorizontal: 32, lineHeight: 18 },
-    countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
+    emptyStateButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    emptyStateHint: { ...typeScale.caption, color: c.textMuted, textAlign: "center", paddingHorizontal: space.xxl },
+    countText: { ...typeScale.caption, color: c.textSecondary, marginBottom: 10 },
     modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
     modalContent: {
       backgroundColor: c.card, borderTopLeftRadius: radius.l, borderTopRightRadius: radius.l,
@@ -1726,7 +1726,7 @@ function makeStyles(c: AppColors) {
     customCatRow: { flexDirection: "row", gap: 8, marginBottom: 12, alignItems: "center" },
     customCatInput: {
       flex: 1, borderWidth: 1, borderColor: c.primary, borderRadius: 8,
-      paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, color: c.text,
+      paddingVertical: 8, paddingHorizontal: 12, fontSize: 13, fontFamily: "Montserrat-Regular", color: c.text,
       backgroundColor: c.primaryLight,
     },
     customCatConfirm: {
@@ -1764,12 +1764,12 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.danger, justifyContent: "center", alignItems: "center",
       width: 80, borderRadius: 12, height: "100%", gap: 2,
     },
-    swipeDeleteText: { color: c.bg, fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    swipeDeleteText: { color: c.bg, fontSize: 12, fontFamily: "Montserrat-SemiBold" },
     examplesButton: {
-      borderWidth: 1, borderColor: c.border, borderRadius: 10,
-      paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,
+      borderWidth: 1, borderColor: c.border, borderRadius: radius.m, minHeight: 48,
+      justifyContent: "center", paddingHorizontal: space.xl, marginBottom: space.m,
     },
-    examplesButtonText: { color: c.textSecondary, fontSize: 13 },
+    examplesButtonText: { ...typeScale.bodyStrong, color: c.text },
     /* THIS IS A CONTROL, NOT A CAPTION, and it did not read as one. It used to
        be an 11px icon beside 11px text with NO padding and no hitSlop, so the
        tappable strip was roughly 14dp, against Android's 48dp minimum, sitting
@@ -1809,28 +1809,22 @@ function makeStyles(c: AppColors) {
       justifyContent: "center", alignItems: "center", padding: 32,
     },
     reviewCard: {
-      backgroundColor: c.card, borderRadius: 20, padding: 28,
+      backgroundColor: c.card, borderRadius: radius.l, padding: space.xl,
       alignItems: "center", width: "100%",
       shadowColor: "#000", shadowOpacity: 0.3, shadowRadius: 20,
       shadowOffset: { width: 0, height: 8 }, elevation: 10,
       borderWidth: 1, borderColor: c.border,
     },
     reviewEmoji: { fontSize: 40, marginBottom: 12 },
-    reviewTitle: {
-      fontSize: 20, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text,
-      textAlign: "center", marginBottom: 8,
-    },
-    reviewSubtitle: {
-      fontSize: 14, color: c.textSecondary, textAlign: "center",
-      lineHeight: 20, marginBottom: 24,
-    },
+    reviewTitle: { ...typeScale.title, color: c.text, textAlign: "center", marginBottom: space.s },
+    reviewSubtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
     starRow: {
       flexDirection: "row", gap: 10, marginBottom: 8,
     },
     /* A control, so 48dp: it was bare 13px text with only a top margin, about
        18dp to hit. */
     reviewDismiss: { marginTop: space.s, minHeight: 48, paddingHorizontal: space.l, justifyContent: "center" },
-    reviewDismissText: { fontSize: 13, color: c.textMuted },
+    reviewDismissText: { ...typeScale.label, color: c.textMuted },
     quickPickRow: { flexDirection: "row", flexWrap: "wrap", gap: space.s, marginBottom: space.l },
     quickPickItem: {
       flexBasis: "30%", flexGrow: 1, minHeight: 96, alignItems: "center", justifyContent: "center", gap: space.s,

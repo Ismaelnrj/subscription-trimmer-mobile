@@ -190,7 +190,7 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
                 </View>
                 {total > 0 && formatDayTotal ? (
                   <Text
-                    style={[styles.dayTotal, selected && styles.dayTotalSelected]}
+                    style={styles.dayTotal}
                     numberOfLines={1}
                   >
                     {formatDayTotal(total)}
@@ -280,9 +280,12 @@ function makeStyles(c: AppColors) {
        subordinate to the day number without borrowing contrast to do it.
        An amount is information, not decoration: if it cannot be read it may as
        well not be drawn. */
-    dotOverflow: { fontSize: 8, lineHeight: 8, fontWeight: "700", color: c.text },
-    dayTotal: { fontSize: 12, lineHeight: 14, marginTop: 1, color: c.text, fontWeight: "600" },
-    dayTotalSelected: { fontWeight: "800" },
+    dotOverflow: { fontSize: 8, lineHeight: 8, fontFamily: "Montserrat-Bold", color: c.text },
+    /* SemiBold on every day, the selected one included: a cell is 43 wide on
+       a 360dp phone and "1.234 €" is 42.8 in SemiBold 12, 43.7 in Bold, so a
+       heavier selected weight would clip a four digit day. The ink circle on
+       the day number already marks the selection. */
+    dayTotal: { fontSize: 12, lineHeight: 14, marginTop: 1, color: c.text, fontFamily: "Montserrat-SemiBold" },
     /* Sits inside the calendar card under a hairline rule, because a legend in
        a card of its own reads as a second thing to look at rather than as a
        footnote to the grid above it. */
@@ -307,6 +310,6 @@ function makeStyles(c: AppColors) {
        exactly as the user typed it and would otherwise sit lowercase beside
        eleven capitalised ones. c.text rather than textMuted for the same reason
        the day amount is: at 11px, 2.98:1 is not a legible label. */
-    legendName: { fontSize: 12, color: c.text, textTransform: "capitalize", flexShrink: 1 },
+    legendName: { fontSize: 12, fontFamily: "Montserrat-Regular", color: c.text, textTransform: "capitalize", flexShrink: 1 },
   });
 }

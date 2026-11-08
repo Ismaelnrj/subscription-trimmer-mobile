@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, type as typeScale } from "../lib/theme";
 
 /* SAYS THE NUMBERS ARE NOT LIVE.
 
@@ -39,5 +39,5 @@ const makeStyles = (c: AppColors) =>
       paddingHorizontal: 14,
       marginBottom: 12,
     },
-    text: { flex: 1, fontSize: 13, color: c.textSecondary },
+    text: { flex: 1, ...typeScale.caption, color: c.textSecondary },
   });

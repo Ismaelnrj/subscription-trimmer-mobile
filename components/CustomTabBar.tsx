@@ -71,6 +71,12 @@ function makeStyles(c: AppColors) {
       paddingTop: 8,
     },
     tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, minHeight: 48 },
-    label: { fontSize: 11, fontWeight: "600" },
+    /* Montserrat, like every other word in the app; with no family it was
+       Roboto. 11 and not 12 on purpose, measured: German "Einstellungen" is
+       77.4 wide at 11 in Montserrat Medium and 84.5 at 12, and a tab on a
+       360dp phone is 90. At 12 it breaks mid word from a system font scale of
+       about 1.07; at 11 it holds to about 1.16, roughly where the Roboto
+       label broke. */
+    label: { fontSize: 11, fontFamily: "Montserrat-Medium" },
   });
 }
