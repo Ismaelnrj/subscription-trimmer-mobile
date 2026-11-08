@@ -27,6 +27,7 @@ const REDONE = [
   { file: "app/alerts.tsx", keys: "alerts" },
   { file: "app/notifications.tsx", keys: "notifications" },
   { file: "app/cancelled.tsx", keys: "cancelled" },
+  { file: "app/notification-preferences.tsx", keys: "notifPrefs" },
 ];
 
 // Block and JSX comments may quote the tells they explain.

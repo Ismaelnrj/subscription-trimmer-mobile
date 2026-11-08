@@ -6,8 +6,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { fetchSubscriptionList } from "../lib/subscription-list";
-import { useTheme, AppColors } from "../lib/theme";
-import { useDateFormat } from "../lib/date-locale";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
+import { useDateFormat, dayMonthPattern } from "../lib/date-locale";
 import { parseApiDate } from "../lib/utils";
 
 /* How many days before a renewal the reminder email actually goes out.
@@ -29,7 +29,7 @@ export default function NotificationPreferencesScreen() {
   const isPremium = user?.isPaid ?? false;
   const c = useTheme();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fmtD = useDateFormat();
 
   const { data: subscriptions = [] } = useQuery<any[]>({
@@ -58,16 +58,20 @@ export default function NotificationPreferencesScreen() {
     updateMutation.mutate({ ...prefs, [key]: value });
   };
 
+  /* Off is a visible track: c.border measured 1.31:1 against the card, so an
+     off switch read as missing. Same tokens as the add form's trial switch. */
+  const track = { false: c.textSecondary, true: c.success };
+
   /* prefs stays undefined when the request fails, so the old
      "isLoading || !prefs" check spun forever with no way out. */
   if (isError || (!isLoading && !prefs)) {
     return (
       <>
         <Stack.Screen options={{ title: t("profile.notifications") }} />
-        <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 32 }]}>
-          <MaterialCommunityIcons name="cloud-off-outline" size={44} color={c.border} style={{ marginBottom: 12 }} />
-          <Text style={{ color: c.textSecondary, textAlign: "center" }}>{t("notifPrefs.couldntLoad")}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+        <View style={[styles.container, styles.centre]}>
+          <MaterialCommunityIcons name="cloud-off-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
+          <Text style={styles.centreText}>{t("notifPrefs.couldntLoad")}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()} accessibilityRole="button">
             <Text style={styles.retryButtonText}>{t("notifPrefs.retry")}</Text>
           </TouchableOpacity>
         </View>
@@ -79,13 +83,18 @@ export default function NotificationPreferencesScreen() {
     return (
       <>
         <Stack.Screen options={{ title: t("profile.notifications") }} />
-        <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-          <Text style={{ color: c.textSecondary }}>{t("notifPrefs.loading")}</Text>
+        <View style={[styles.container, styles.centre]}>
+          <Text style={styles.centreText}>{t("notifPrefs.loading")}</Text>
         </View>
       </>
     );
   }
 
+  /* Two switches are gone, deliberately: "Weekly summary" (on by default)
+     promised an email no job has ever sent, and "Spending alerts" was stored
+     but never read, so turning it off stopped nothing. A switch that controls
+     nothing is a claim the product cannot keep. Their columns stay on the
+     server untouched. */
   return (
     <>
       <Stack.Screen options={{ title: t("profile.notifications") }} />
@@ -93,9 +102,23 @@ export default function NotificationPreferencesScreen() {
         <View style={styles.scrollContent}>
           <Text style={styles.sectionTitle}>{t("notifPrefs.alerts")}</Text>
           <View style={styles.card}>
-            <View style={[styles.row, { flexDirection: "column", alignItems: "flex-start" }]}>
-              <View style={{ flexDirection: "row", width: "100%", alignItems: "center" }}>
-                <View style={{ flex: 1, marginRight: 16 }}>
+            <View style={styles.row}>
+              <View style={styles.rowText}>
+                <Text style={styles.rowLabel}>{t("notifPrefs.pushNotifications")}</Text>
+                <Text style={styles.rowDesc}>{t("notifPrefs.pushNotificationsDesc")}</Text>
+              </View>
+              <Switch
+                value={prefs.pushEnabled}
+                onValueChange={(v) => toggle("pushEnabled", v)}
+                disabled={updateMutation.isLoading}
+                trackColor={track}
+                thumbColor="#FFFFFF"
+                accessibilityLabel={t("notifPrefs.pushNotifications")}
+              />
+            </View>
+            <View style={[styles.rowColumn, styles.rowDivider]}>
+              <View style={styles.rowInner}>
+                <View style={styles.rowText}>
                   <Text style={styles.rowLabel}>{t("notifPrefs.renewalAlerts")}</Text>
                   <Text style={styles.rowDesc}>{t("notifPrefs.renewalAlertsDesc")}</Text>
                 </View>
@@ -103,22 +126,27 @@ export default function NotificationPreferencesScreen() {
                   value={prefs.renewalAlerts}
                   onValueChange={(v) => toggle("renewalAlerts", v)}
                   disabled={updateMutation.isLoading}
-                  trackColor={{ false: c.border, true: c.primary }}
+                  trackColor={track}
                   thumbColor="#FFFFFF"
+                  accessibilityLabel={t("notifPrefs.renewalAlerts")}
                 />
               </View>
               {prefs.renewalAlerts && (
-                <View style={styles.dayChipRow}>
+                /* A segmented control: exactly one lead time is chosen. Chosen
+                   is ink, never white on primary (4.02:1 in dark mode). */
+                <View style={styles.segmented} accessibilityRole="radiogroup">
                   {[1, 3, 7].map((days) => {
-                    const active = (prefs.renewalAlertDays ?? 3) === days;
+                    const on = (prefs.renewalAlertDays ?? 3) === days;
                     return (
                       <TouchableOpacity
                         key={days}
-                        style={[styles.dayChip, active && styles.dayChipActive]}
+                        style={[styles.segment, on && styles.segmentOn]}
                         onPress={() => toggle("renewalAlertDays", days)}
                         disabled={updateMutation.isLoading}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: on }}
                       >
-                        <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>
+                        <Text style={[styles.segmentText, on && styles.segmentTextOn]}>
                           {t("notifPrefs.day", { count: days })}
                         </Text>
                       </TouchableOpacity>
@@ -127,59 +155,14 @@ export default function NotificationPreferencesScreen() {
                 </View>
               )}
             </View>
-            <View style={[styles.row, styles.rowLast]}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>{t("notifPrefs.spendingAlerts")}</Text>
-                <Text style={styles.rowDesc}>{t("notifPrefs.spendingAlertsDesc")}</Text>
-              </View>
-              <Switch
-                value={prefs.spendingAlerts}
-                onValueChange={(v) => toggle("spendingAlerts", v)}
-                disabled={updateMutation.isLoading}
-                trackColor={{ false: c.border, true: c.primary }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
           </View>
 
-          <Text style={styles.sectionTitle}>{t("notifPrefs.summary")}</Text>
+          <Text style={styles.sectionTitle}>{t("notifPrefs.emailSection")}</Text>
           <View style={styles.card}>
-            <View style={[styles.row, styles.rowLast]}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>{t("notifPrefs.weeklySummary")}</Text>
-                <Text style={styles.rowDesc}>{t("notifPrefs.weeklySummaryDesc")}</Text>
-              </View>
-              <Switch
-                value={prefs.weeklySummary}
-                onValueChange={(v) => toggle("weeklySummary", v)}
-                disabled={updateMutation.isLoading}
-                trackColor={{ false: c.border, true: c.primary }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-          </View>
-
-          <Text style={styles.sectionTitle}>{t("notifPrefs.general")}</Text>
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <View style={{ flex: 1, marginRight: 16 }}>
-                <Text style={styles.rowLabel}>{t("notifPrefs.pushNotifications")}</Text>
-                <Text style={styles.rowDesc}>{t("notifPrefs.pushNotificationsDesc")}</Text>
-              </View>
-              <Switch
-                value={prefs.pushEnabled}
-                onValueChange={(v) => toggle("pushEnabled", v)}
-                disabled={updateMutation.isLoading}
-                trackColor={{ false: c.border, true: c.primary }}
-                thumbColor="#FFFFFF"
-              />
-            </View>
-            <View style={[styles.row, styles.rowLast, { flexDirection: "column", alignItems: "flex-start" }]}>
-              <View style={styles.emailRowTop}>
-                <View style={{ flex: 1, marginRight: 16 }}>
-                  <Text style={styles.rowLabel}>
-                    {t("notifPrefs.emailReminders")}{!isPremium ? "  🔒" : ""}
-                  </Text>
+            <View style={styles.rowColumn}>
+              <View style={styles.rowInner}>
+                <View style={styles.rowText}>
+                  <Text style={styles.rowLabel}>{t("notifPrefs.emailReminders")}</Text>
                   <Text style={styles.rowDesc}>
                     {isPremium
                       ? t("notifPrefs.emailRemindersDesc")
@@ -191,15 +174,13 @@ export default function NotificationPreferencesScreen() {
                     value={prefs.emailReminders ?? false}
                     onValueChange={(v) => toggle("emailReminders", v)}
                     disabled={updateMutation.isLoading}
-                    trackColor={{ false: c.border, true: c.primary }}
+                    trackColor={track}
                     thumbColor="#FFFFFF"
+                    accessibilityLabel={t("notifPrefs.emailReminders")}
                   />
                 ) : (
-                  <TouchableOpacity
-                    onPress={() => router.push("/upgrade")}
-                    style={{ backgroundColor: c.primary, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 12 }}
-                  >
-                    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "600" }}>{t("notifPrefs.upgradeBtn")}</Text>
+                  <TouchableOpacity onPress={() => router.push("/upgrade")} style={styles.upgradeButton} accessibilityRole="button">
+                    <Text style={styles.upgradeButtonText}>{t("notifPrefs.upgradeBtn")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -228,16 +209,11 @@ export default function NotificationPreferencesScreen() {
                     <Text style={styles.upcomingLabel}>{t("notifPrefs.nextEmails")}</Text>
                     {upcoming.map((s, i) => (
                       <View key={i} style={styles.upcomingRow}>
-                        <MaterialCommunityIcons name="email-outline" size={13} color={c.primary} />
-                        {/* Two things were wrong on this one line. The locale was
-                            hardcoded to "en-GB", so a German user read English
-                            month abbreviations inside German UI, and the
-                            separator was an em dash, which this project's copy
-                            rule forbids as clause punctuation in any Trimio
-                            facing text. A colon carries the same meaning and is
-                            allowed. */}
+                        {/* A colon, not a dash: the copy rule forbids a dash as
+                            clause punctuation. The date follows the app's
+                            language and its day order. */}
                         <Text style={styles.upcomingText}>
-                          {s.name}: {fmtD(new Date(s.emailMs), "d MMM")}
+                          {s.name}: {fmtD(new Date(s.emailMs), dayMonthPattern(i18n.language))}
                         </Text>
                       </View>
                     ))}
@@ -252,38 +228,46 @@ export default function NotificationPreferencesScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
+    centre: { justifyContent: "center", alignItems: "center", padding: space.xxl },
+    centreText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
     retryButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 10,
-      paddingHorizontal: 24, marginTop: 16,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      paddingHorizontal: space.xl, marginTop: space.l, justifyContent: "center",
     },
-    retryButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    scrollContent: { padding: 16, paddingBottom: 32 },
-    card: { backgroundColor: c.card, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: "hidden", marginBottom: 16 },
-    row: {
-      flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-      paddingVertical: 16, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: c.border,
+    retryButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    scrollContent: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xxl },
+
+    sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    rowLast: { borderBottomWidth: 0 },
-    rowLabel: { fontSize: 14, fontWeight: "500", color: c.text },
-    rowDesc: { fontSize: 12, color: c.textSecondary, marginTop: 2 },
-    sectionTitle: { fontSize: 12, fontWeight: "600", color: c.textSecondary, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginTop: 8 },
-    emailRowTop: { flexDirection: "row", alignItems: "center", width: "100%" },
-    dayChipRow: { flexDirection: "row", gap: 8, marginTop: 12 },
-    dayChip: {
-      paddingVertical: 6, paddingHorizontal: 14, borderRadius: 16,
-      borderWidth: 1, borderColor: c.border, backgroundColor: c.bg,
+    row: { flexDirection: "row", alignItems: "center", gap: space.l, paddingVertical: space.l },
+    rowColumn: { paddingVertical: space.l, gap: space.m },
+    rowInner: { flexDirection: "row", alignItems: "center", gap: space.l },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    rowText: { flex: 1 },
+    rowLabel: { ...typeScale.body, color: c.text },
+    rowDesc: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+
+    segmented: {
+      flexDirection: "row", padding: 4, borderRadius: radius.m, gap: 4,
+      backgroundColor: c.bg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
     },
-    dayChipActive: { backgroundColor: c.primary, borderColor: c.primary },
-    dayChipText: { fontSize: 12, fontWeight: "600", color: c.textSecondary },
-    dayChipTextActive: { color: "#FFFFFF" },
-    upcomingEmails: {
-      marginTop: 12, backgroundColor: c.primaryLight, borderRadius: 8, padding: 10, width: "100%",
-    },
-    upcomingLabel: { fontSize: 11, fontWeight: "700", color: c.primary, marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.3 },
-    upcomingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
-    upcomingText: { fontSize: 13, color: c.text },
+    segment: { flex: 1, minHeight: 40, borderRadius: radius.s, alignItems: "center", justifyContent: "center" },
+    segmentOn: { backgroundColor: c.text },
+    segmentText: { ...typeScale.label, color: c.textSecondary },
+    segmentTextOn: { color: c.bg, fontFamily: "Montserrat-SemiBold" },
+
+    upgradeButton: { backgroundColor: c.text, borderRadius: radius.pill, minHeight: 40, paddingHorizontal: space.l, justifyContent: "center" },
+    upgradeButtonText: { ...typeScale.label, color: c.bg },
+    upcomingEmails: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: space.m, gap: space.xs },
+    upcomingLabel: { ...typeScale.label, color: c.textSecondary },
+    upcomingRow: { flexDirection: "row", alignItems: "center" },
+    upcomingText: { ...typeScale.caption, color: c.text },
   });
 }
