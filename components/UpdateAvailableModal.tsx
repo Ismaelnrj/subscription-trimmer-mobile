@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { nativeBuild } from "../lib/app-build";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export function UpdateAvailableModal() {
   const { t } = useTranslation();
@@ -39,7 +39,7 @@ export function UpdateAvailableModal() {
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <MaterialCommunityIcons name="cellphone-arrow-down" size={40} color={c.primary} />
+          <MaterialCommunityIcons name="cellphone-arrow-down" size={40} color={c.text} />
           <Text style={styles.title}>{t("updateAvailable.title")}</Text>
           <Text style={styles.message}>{t("updateAvailable.message")}</Text>
           <TouchableOpacity style={styles.updateButton} onPress={() => Linking.openURL(updateUrl)}>
@@ -54,19 +54,22 @@ export function UpdateAvailableModal() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. The button is ink:
+   white on dark primary is 4.02:1, under the text floor. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "center", alignItems: "center", padding: 24 },
+    overlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "center", alignItems: "center", padding: space.xl },
     card: {
-      backgroundColor: c.card, borderRadius: 16, padding: 24, alignItems: "center", width: "100%", maxWidth: 340,
+      backgroundColor: c.card, borderRadius: radius.l, padding: space.xl, alignItems: "center", width: "100%", maxWidth: 340,
     },
-    title: { fontSize: 18, fontWeight: "700", color: c.text, marginTop: 12, marginBottom: 8 },
-    message: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, marginBottom: 20 },
+    title: { ...typeScale.title, color: c.text, marginTop: space.m, marginBottom: space.s, textAlign: "center" },
+    message: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
     updateButton: {
-      backgroundColor: c.primary, borderRadius: 10, paddingVertical: 12, paddingHorizontal: 32, width: "100%", alignItems: "center",
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52, width: "100%",
+      alignItems: "center", justifyContent: "center",
     },
-    updateButtonText: { color: "#fff", fontSize: 15, fontWeight: "700" },
-    laterButton: { marginTop: 12, paddingVertical: 8 },
-    laterButtonText: { color: c.textSecondary, fontSize: 14, fontWeight: "600" },
+    updateButtonText: { ...typeScale.bodyStrong, color: c.bg },
+    laterButton: { marginTop: space.s, minHeight: 48, justifyContent: "center", paddingHorizontal: space.l },
+    laterButtonText: { ...typeScale.bodyStrong, color: c.textSecondary },
   });
 }

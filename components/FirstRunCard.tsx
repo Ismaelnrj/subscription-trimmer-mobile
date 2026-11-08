@@ -1,10 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useTheme, useIsDark, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useCurrencyStore } from "../lib/currency-store";
 import { useLanguageStore } from "../lib/language-store";
 import { getRegionalPopularTemplates, prefersDachCatalogue, ServiceTemplate } from "../lib/service-templates";
@@ -30,10 +29,10 @@ import { track } from "../lib/analytics";
    price and cycle and confirms them, which is the honest version: a one-tap
    save would write a catalogue price they may not pay.
 
-   COLOURS ARE MEASURED, not chosen by eye (trimio-design check_contrast.py):
-   warm white on the navy gradient 11.00:1 at its lighter end, the secondary
-   line #B7C4CC 6.68:1, mint icons 5.66:1, and the eyebrow pill is navy on mint
-   at 6.96:1. Mint never carries text here, it marks. */
+   REDONE 2026-11-07 in the dashboard's own language: open on the page, theme
+   tokens only. It was a navy gradient block with a mint trim tab, an eyebrow
+   pill and an ExtraBold title, the one screen every new account sees, and it
+   looked like a different app from the dashboard that replaces it. */
 
 const TILE_COUNT = 6;
 
@@ -42,7 +41,6 @@ type Props = { verifyBanner?: ReactNode };
 export function FirstRunCard({ verifyBanner }: Props) {
   const router = useRouter();
   const c = useTheme();
-  const isDark = useIsDark();
   const styles = makeStyles(c);
   const { t } = useTranslation();
   const { currency, baseCurrencyCode } = useCurrencyStore();
@@ -84,30 +82,20 @@ export function FirstRunCard({ verifyBanner }: Props) {
 
   return (
     <View>
-      <LinearGradient
-        colors={isDark ? (["#1A3344", "#1F3B4C"] as const) : (["#142B3A", "#1C3A4E"] as const)}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.hero}
-      >
-        <View style={styles.trim} />
-        <View style={styles.eyebrow}>
-          <Text style={styles.eyebrowText}>{t("firstRun.eyebrow")}</Text>
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.eyebrow}>{t("firstRun.eyebrow")}</Text>
         <Text style={styles.title}>{t("firstRun.title")}</Text>
         <Text style={styles.subtitle}>{t("firstRun.subtitle")}</Text>
+      </View>
 
-        <View style={styles.steps}>
-          {steps.map((s) => (
-            <View key={s.icon} style={styles.stepRow}>
-              <View style={styles.stepIcon}>
-                <MaterialCommunityIcons name={s.icon as any} size={16} color="#55C6A3" />
-              </View>
-              <Text style={styles.stepText}>{s.text}</Text>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
+      <View style={styles.card}>
+        {steps.map((s, i) => (
+          <View key={s.icon} style={[styles.stepRow, i > 0 && styles.rowDivider]}>
+            <MaterialCommunityIcons name={s.icon as any} size={20} color={c.textSecondary} />
+            <Text style={styles.stepText}>{s.text}</Text>
+          </View>
+        ))}
+      </View>
 
       <Text style={styles.sectionLabel}>{t("firstRun.popular")}</Text>
       <View style={styles.grid}>
@@ -141,7 +129,7 @@ export function FirstRunCard({ verifyBanner }: Props) {
         <Text style={styles.privacyText}>{t("firstRun.privacy")}</Text>
       </View>
 
-      {/* Below the tiles, not between them and the hero: on a real phone the
+      {/* Below the tiles, not between them and the header: on a real phone the
           banner pushed the whole tile row under the fold, and the tiles are
           the one thing this card exists to get tapped. */}
       {verifyBanner ? <View style={styles.verifySlot}>{verifyBanner}</View> : null}
@@ -149,72 +137,56 @@ export function FirstRunCard({ verifyBanner }: Props) {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    hero: {
-      borderRadius: 24,
-      padding: 22,
-      paddingTop: 26,
-      overflow: "hidden",
-      marginBottom: 20,
+    header: { marginBottom: space.l },
+    eyebrow: { ...typeScale.caption, color: c.textSecondary },
+    title: { ...typeScale.title, fontSize: 24, lineHeight: 31, color: c.text, marginTop: space.xs },
+    subtitle: { ...typeScale.body, color: c.textSecondary, marginTop: space.s },
+    card: {
+      backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border, paddingHorizontal: space.l,
     },
-    // A short mint rule at the top edge: a mark, not a carrier of text.
-    trim: { position: "absolute", top: 0, left: 22, width: 44, height: 4, borderBottomLeftRadius: 2, borderBottomRightRadius: 2, backgroundColor: "#55C6A3" },
-    eyebrow: {
-      alignSelf: "flex-start",
-      backgroundColor: "#55C6A3",
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      marginBottom: 14,
-    },
-    eyebrowText: { fontSize: 12, fontWeight: "700", fontFamily: "Montserrat-Bold", color: "#142B3A", letterSpacing: 0.3 },
-    title: { fontSize: 25, lineHeight: 32, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: "#F7F6F1", marginBottom: 8 },
-    subtitle: { fontSize: 15, lineHeight: 22, color: "#B7C4CC", marginBottom: 18 },
-    steps: { gap: 10 },
-    stepRow: { flexDirection: "row", alignItems: "center" },
-    stepIcon: {
-      width: 30, height: 30, borderRadius: 15,
-      backgroundColor: "rgba(85,198,163,0.14)",
-      justifyContent: "center", alignItems: "center", marginRight: 12,
-    },
-    stepText: { flex: 1, fontSize: 14, lineHeight: 20, color: "#F7F6F1", fontFamily: "Montserrat-Medium" },
-    sectionLabel: { fontSize: 16, fontWeight: "600", fontFamily: "Montserrat-SemiBold", color: c.text, marginBottom: 12 },
-    grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 10 },
+    stepRow: { flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 52, paddingVertical: space.m },
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    stepText: { ...typeScale.body, flex: 1, color: c.text },
+    sectionLabel: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    grid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: space.s },
     tile: {
       width: "31.5%",
       minHeight: 104,
       backgroundColor: c.card,
-      borderRadius: 18,
-      borderWidth: 1,
+      borderRadius: radius.m,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
-      paddingVertical: 14,
-      paddingHorizontal: 8,
+      paddingVertical: space.m,
+      paddingHorizontal: space.s,
       alignItems: "center",
       justifyContent: "center",
     },
-    tileName: { marginTop: 8, fontSize: 12, lineHeight: 16, color: c.text, textAlign: "center", fontFamily: "Montserrat-SemiBold" },
-    actions: { flexDirection: "row", gap: 10, marginTop: 14 },
+    tileName: { ...typeScale.label, marginTop: space.s, color: c.text, textAlign: "center" },
+    actions: { flexDirection: "row", gap: space.s, marginTop: space.m },
     actionButton: {
       flex: 1,
       minHeight: 48,
-      paddingVertical: 6,
+      paddingVertical: space.xs,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 8,
-      borderRadius: 14,
-      borderWidth: 1,
+      gap: space.s,
+      borderRadius: radius.m,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
       backgroundColor: c.card,
-      paddingHorizontal: 10,
+      paddingHorizontal: space.m,
     },
     /* Two lines, not one: on a real phone with a larger system font "Another
        service" read "Another servi..." on the first screen a new user sees.
        minHeight on the button keeps the row 48dp either way. */
-    actionText: { fontSize: 14, lineHeight: 18, color: c.text, fontFamily: "Montserrat-SemiBold", flexShrink: 1, textAlign: "center" },
-    privacyRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 18, paddingHorizontal: 4 },
-    verifySlot: { marginTop: 18 },
-    privacyText: { flex: 1, fontSize: 13, lineHeight: 18, color: c.textSecondary },
+    actionText: { ...typeScale.label, color: c.text, flexShrink: 1, textAlign: "center" },
+    privacyRow: { flexDirection: "row", alignItems: "center", gap: space.s, marginTop: space.l },
+    verifySlot: { marginTop: space.l },
+    privacyText: { ...typeScale.caption, flex: 1, color: c.textSecondary },
   });
 }

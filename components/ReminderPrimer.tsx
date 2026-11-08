@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 /* THE SENTENCE BEFORE ANDROID'S QUESTION.
 
@@ -46,19 +46,24 @@ export function ReminderPrimer({ name, onAccept, onDecline }: Props) {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. The button is ink:
+   white on dark primary is 4.02:1, under the text floor. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "center", padding: 24 },
-    sheet: { backgroundColor: c.card, borderRadius: 24, padding: 24, alignItems: "center" },
-    iconCircle: { width: 72, height: 72, borderRadius: 36, backgroundColor: c.warningLight, justifyContent: "center", alignItems: "center", marginBottom: 18 },
-    title: { fontSize: 20, lineHeight: 27, fontWeight: "800", fontFamily: "Montserrat-ExtraBold", color: c.text, textAlign: "center", marginBottom: 10 },
-    body: { fontSize: 15, lineHeight: 22, color: c.textSecondary, textAlign: "center", marginBottom: 22 },
-    primary: {
-      alignSelf: "stretch", minHeight: 52, borderRadius: 14, backgroundColor: c.primary,
-      justifyContent: "center", alignItems: "center", paddingHorizontal: 16,
+    overlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "center", padding: space.xl },
+    sheet: { backgroundColor: c.card, borderRadius: radius.l, padding: space.xl, alignItems: "center" },
+    iconCircle: {
+      width: 64, height: 64, borderRadius: radius.pill, backgroundColor: c.warningLight,
+      justifyContent: "center", alignItems: "center", marginBottom: space.l,
     },
-    primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", fontFamily: "Montserrat-Bold" },
-    secondary: { alignSelf: "stretch", minHeight: 48, justifyContent: "center", alignItems: "center", marginTop: 6 },
-    secondaryText: { color: c.textSecondary, fontSize: 15, fontFamily: "Montserrat-SemiBold" },
+    title: { ...typeScale.title, color: c.text, textAlign: "center", marginBottom: space.s },
+    body: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
+    primary: {
+      alignSelf: "stretch", minHeight: 52, borderRadius: radius.m, backgroundColor: c.text,
+      justifyContent: "center", alignItems: "center", paddingHorizontal: space.l,
+    },
+    primaryText: { ...typeScale.bodyStrong, color: c.bg },
+    secondary: { alignSelf: "stretch", minHeight: 48, justifyContent: "center", alignItems: "center", marginTop: space.xs },
+    secondaryText: { ...typeScale.bodyStrong, color: c.textSecondary },
   });
 }

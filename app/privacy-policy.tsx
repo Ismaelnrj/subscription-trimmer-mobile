@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Stack } from "expo-router";
-import { useTheme, AppColors } from "../lib/theme";
+import { useTheme, AppColors, space, type as typeScale } from "../lib/theme";
 import { useTranslation } from "react-i18next";
 import legalDe from "../backend/legal-de.json";
 
@@ -65,14 +65,17 @@ export default function PrivacyPolicyScreen() {
   );
 }
 
+/* Every number below comes from the scale in lib/theme.ts. Long legal text
+   wants the body size with generous leading, and no italics: an italic
+   paragraph in Montserrat reads as decoration, not as the terms. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 20, paddingBottom: 48 },
-    updated: { fontSize: 12, color: c.textMuted, marginBottom: 12 },
-    intro: { fontSize: 14, color: c.text, lineHeight: 22, marginBottom: 24, fontStyle: "italic" },
-    section: { marginBottom: 20 },
-    sectionTitle: { fontSize: 14, fontWeight: "700", color: c.text, marginBottom: 6 },
-    sectionBody: { fontSize: 13, color: c.textSecondary, lineHeight: 21 },
+    content: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: 48 },
+    updated: { ...typeScale.caption, color: c.textSecondary, marginBottom: space.m },
+    intro: { ...typeScale.body, lineHeight: 23, color: c.text, marginBottom: space.xl },
+    section: { marginBottom: space.xl },
+    sectionTitle: { ...typeScale.heading, color: c.text, marginBottom: space.s },
+    sectionBody: { ...typeScale.body, lineHeight: 23, color: c.textSecondary },
   });
 }
