@@ -28,7 +28,7 @@ export type Sub = {
   isActive?: boolean | null;
 };
 export type Tip = {
-  id: string; icon: string; color: string;
+  id: string; icon: string;
   title: string; detail: string; priority: "high" | "medium" | "low";
   savingsHint?: string;
   savingsValue?: number;
@@ -148,7 +148,7 @@ export function buildTips(
   if (streamingSubs.length >= 3) {
     const streamTotal = streamingSubs.reduce((sum, s) => sum + monthlyInBase(s), 0);
     const cheapest = [...streamingSubs].sort((a, b) => monthlyInBase(a) - monthlyInBase(b))[0];
-    tips.push({ id: "streaming-overlap", icon: "television-play", color: "#C4544A",
+    tips.push({ id: "streaming-overlap", icon: "television-play",
       title: t("insights.streamingTitle", { count: streamingSubs.length }),
       detail: t("insights.streamingDetail", { names: streamingSubs.map(s => s.name).join(", "), total: fmtC(streamTotal) }),
       priority: "high", savingsHint: t("insights.streamingHint", { amount: fmtC(toMonthly(cheapest.price, cheapest.billingCycle), cheapest.currency) }), savingsValue: monthlyInBase(cheapest) });
@@ -159,7 +159,7 @@ export function buildTips(
   const fitnessSubs = planned.filter(s => matchesKeywords(s.name, FITNESS_KEYWORDS) || s.category === "fitness" || s.category === "health");
   if (fitnessSubs.length >= 2) {
     const fitTotal = fitnessSubs.reduce((sum, s) => sum + monthlyInBase(s), 0);
-    tips.push({ id: "fitness-overlap", icon: "dumbbell", color: "#142B3A",
+    tips.push({ id: "fitness-overlap", icon: "dumbbell",
       title: t("insights.fitnessTitle", { count: fitnessSubs.length }),
       detail: t("insights.fitnessDetail", { names: fitnessSubs.map(s => s.name).join(" & "), total: fmtC(fitTotal) }),
       priority: "medium", savingsHint: t("insights.fitnessHint", { amount: fmtC(fitTotal * 0.5) }), savingsValue: fitTotal * 0.5 });
@@ -172,12 +172,12 @@ export function buildTips(
     if (coveredCategories.has(cat)) continue;
     if (list.length >= 3) {
       const catTotal = list.reduce((sum, s) => sum + monthlyInBase(s), 0);
-      tips.push({ id: `cat3-${cat}`, icon: "layers-outline", color: "#C4544A",
+      tips.push({ id: `cat3-${cat}`, icon: "layers-outline",
         title: t("insights.catManyTitle", { count: list.length, category: localiseCategory(cat, t) }),
         detail: t("insights.catManyDetail", { names: list.map(s => s.name).join(", "), total: fmtC(catTotal) }),
         priority: "high", savingsHint: t("insights.catManyHint", { amount: fmtC(catTotal * 0.5) }), savingsValue: catTotal * 0.5 });
     } else if (list.length === 2) {
-      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate", color: "#96631B",
+      tips.push({ id: `cat2-${cat}`, icon: "content-duplicate",
         title: t("insights.catTwoTitle", { category: localiseCategory(cat, t) }),
         detail: t("insights.catTwoDetail", { first: list[0].name, second: list[1].name }),
         priority: "medium" });
@@ -191,7 +191,7 @@ export function buildTips(
     if (!s.priceIncrease) continue;
     const diff = s.priceIncrease.to - s.priceIncrease.from;
     const annualExtra = toMonthly(diff, s.billingCycle) * 12;
-    tips.push({ id: `price-up-${s.id}`, icon: "trending-up", color: "#C4544A",
+    tips.push({ id: `price-up-${s.id}`, icon: "trending-up",
       title: t("insights.priceUpTitle", { name: s.name }),
       /* The cycle as a noun in the reader's language: the raw API word
          printed "pro monthly" to a German reader. */
@@ -225,7 +225,7 @@ export function buildTips(
       if (marketMonthlyInBase == null) continue;
       const trackedMonthly = monthlyInBase(s);
       if (marketMonthlyInBase > trackedMonthly * MARKET_PRICE_INCREASE_THRESHOLD) {
-        tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline", color: "#C4544A",
+        tips.push({ id: `market-price-${s.id}`, icon: "alert-decagram-outline",
           title: t("insights.marketPriceTitle", { name: s.name }),
           detail: t("insights.marketPriceDetail", { name: s.name, market: fmtC(marketMonthlyInBase), tracked: fmtC(trackedMonthly) }),
           priority: "high" });
@@ -240,7 +240,7 @@ export function buildTips(
     // `days != null` first: null >= 0 is TRUE in JavaScript, so a nullable
     // number compared against a threshold passes silently.
     if (days != null && days >= 0 && days <= 7) {
-      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline", color: "#C4544A",
+      tips.push({ id: `trial-${s.id}`, icon: "clock-alert-outline",
         title: days === 0 ? t("insights.trialTitleToday", { name: s.name })
                          : t("insights.trialTitleDays", { name: s.name, count: days }),
         detail: t("insights.trialDetail", { amount: fmtC(s.price, s.currency) }),
@@ -250,7 +250,7 @@ export function buildTips(
 
   // High total spend
   if (totalMonthly >= TOTAL_SPEND_THRESHOLD) {
-    tips.push({ id: "high-spend", icon: "trending-up", color: "#C4544A",
+    tips.push({ id: "high-spend", icon: "trending-up",
       title: t("insights.highSpendTitle", { total: fmtC(totalMonthly) }),
       detail: t("insights.highSpendDetail", { total: fmtC(totalMonthly), yearly: fmtC(totalMonthly * 12) }),
       priority: "high" });
@@ -259,7 +259,7 @@ export function buildTips(
   // Individual expensive subs
   for (const s of planned) {
     if (monthlyInBase(s) >= singleSubThreshold) {
-      tips.push({ id: `exp-${s.id}`, icon: "cash-remove", color: "#142B3A",
+      tips.push({ id: `exp-${s.id}`, icon: "cash-remove",
         title: t("insights.expensiveTitle", { name: s.name, amount: fmtC(toMonthly(s.price, s.billingCycle), s.currency) }),
         detail: t("insights.expensiveDetail", { yearly: fmtC(toMonthly(s.price, s.billingCycle) * 12, s.currency) }),
         priority: "medium" });
@@ -270,7 +270,7 @@ export function buildTips(
   const monthlySubs = planned.filter(s => s.billingCycle === "monthly" && toBase(s.price, s.currency) >= 5);
   if (monthlySubs.length > 0) {
     const annualSaving = monthlySubs.reduce((sum, s) => sum + toBase(s.price, s.currency) * 0.17, 0) * 12;
-    tips.push({ id: "yearly-switch", icon: "tag-outline", color: "#1F7A62",
+    tips.push({ id: "yearly-switch", icon: "tag-outline",
       title: t("insights.yearlySwitchTitle"),
       detail: t("insights.yearlySwitchDetail", { count: monthlySubs.length, names: monthlySubs.map(s => s.name).join(", "), amount: fmtC(annualSaving) }),
       priority: "medium", savingsHint: t("insights.yearlySwitchHint", { amount: fmtC(annualSaving) }), savingsValue: annualSaving / 12 });
@@ -279,7 +279,7 @@ export function buildTips(
   // No yearly plans at all — nudge harder
   const yearlyCount = planned.filter(s => s.billingCycle === "yearly").length;
   if (yearlyCount === 0 && planned.length >= 4) {
-    tips.push({ id: "no-yearly", icon: "calendar-check-outline", color: "#142B3A",
+    tips.push({ id: "no-yearly", icon: "calendar-check-outline",
       title: t("insights.noYearlyTitle"),
       detail: t("insights.noYearlyDetail", { count: planned.length }),
       priority: "medium" });
@@ -292,14 +292,14 @@ export function buildTips(
   });
   if (thisWeek.length >= 2) {
     const weekTotal = thisWeek.reduce((sum, s) => sum + toBase(s.price, s.currency), 0);
-    tips.push({ id: "renewals-week", icon: "calendar-clock", color: "#142B3A",
+    tips.push({ id: "renewals-week", icon: "calendar-clock",
       title: t("insights.renewalsWeekTitle", { count: thisWeek.length }),
       detail: t("insights.renewalsWeekDetail", { names: thisWeek.map(s => s.name).join(", "), total: fmtC(weekTotal) }),
       priority: "low" });
   }
 
   if (tips.length === 0) {
-    tips.push({ id: "all-good", icon: "check-decagram", color: "#1F7A62",
+    tips.push({ id: "all-good", icon: "check-decagram",
       title: t("insights.allGoodTitle"),
       detail: t("insights.allGoodDetail", { count: planned.length, total: fmtC(totalMonthly) }),
       priority: "low" });

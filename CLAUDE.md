@@ -327,7 +327,7 @@ a loaded skill does not.
 | `trimio-verify` | claiming ANY suite passes, and before saying a guard would have caught something |
 | `code-review` | a second pass on a diff that is about to merge |
 | `security-review` | an audit of a branch, as its own pass |
-| `dataviz` | the Stats donut or any chart |
+| `dataviz` | the Stats split bar or any chart |
 
 THE REST DO NOT APPLY HERE. xlsx, pptx, docx, pdf, morning, keybindings and the
 artifact skills have nothing to do with this repo, and reaching for one is a
@@ -2114,6 +2114,47 @@ last one left off without needing a recap typed out.
   summary" (no job sends one) and "Spending alerts" (alerts.list never reads
   it). Their server columns are untouched. Wiring spending alerts properly is
   a backend change, left as a follow-up.
+  AN AUDIT OF THAT WORK, 2026-11-08, at the owner's request ("audit it in
+  order to know if that was the best move"), found the two rules above, ink
+  for primary buttons and Montserrat via `type`, were claimed for the whole
+  app and held only on the screens redone that session. Light mode hid the
+  first: `primary` and `text` are the same navy there. Each fix is its own
+  commit with a scan or measured test that fails against the code before it:
+  `1c131717` DARK MODE. White on dark primary, 4.02:1, on the paywall buy
+  button and its sub line, the dashboard action, the form submit, the list's
+  add, empty state and sort buttons, and the floating add; "Go unlimited" set
+  in primary on the card, 3.94:1; the savings toast white on Soft Mint (dark
+  `success`), 2.10:1; swipe delete white on dark danger, 2.52:1, the pairing
+  fixed on the cancel guide and never swept for. No screen now puts text on or
+  in primary; status fills keep their colour and label with `c.bg`.
+  `dark-mode-fills.test.js` scans every screen for it.
+  `a3ece7ea` the review prompt's stars were #FCD34D, 1.39:1 on the light card,
+  and its Later was about 18dp tall.
+  `380e0ff6` German "Schwach" broke mid word in the fixed 44 wide strength
+  label on sign up (rendered "Schwa" over "ch"), there before the redesign.
+  `59d7b3db` sixteen styles were still Roboto: tab bar, calendar amounts and
+  legend, the list's empty, error, limit and review states, both notices.
+  `montserrat-everywhere.test.js` scans for the class. The tab label stays
+  11: "Einstellungen" at 12 breaks mid word from about 1.07 font scale on a
+  360dp phone (84.5 of a 90 wide tab).
+  THE TIDY, in the commit that adds this paragraph: `lib/pricing.ts` deleted
+  (nothing imported it and its header still said the tip jar showed its USD
+  prices), 13 hex colours removed from buildTips that nothing rendered, the
+  orphaned `common.perYearShort` key, and the donut wording in the design
+  skill and here.
+  THE LESSON is one this file already holds: "every screen follows the rule"
+  is a completeness claim, and it was checked screen by screen, never by a
+  scan. Both rules have a scan now.
+  A COMMIT MESSAGE MISCOUNTED: `303f80b3` says its test has 10 assertions; it
+  had 8 test cases and 9 expect calls. Not amended: that rewrites pushed
+  history.
+  KEPT AFTER A SECOND LOOK: the split bar (the palette fails all pairs, so the
+  donut's colours never carried identity either); dropping "Avg per year" (the
+  monthly average times twelve); removing the iOS row and the two dead
+  switches (a switched off "Spending alerts" did nothing before either).
+  `DonutChart.tsx` stays, unused.
+  NOT YET PUBLISHED, any of it: the redesign and these fixes all ride one
+  `eas update`, which is the owner's to run.
   THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
   unavailable" everywhere. For screenshots only, the scratch copy's
   `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
@@ -3088,6 +3129,8 @@ last one left off without needing a recap typed out.
   (`DONUT_SLICES` in `app/(tabs)/analytics.tsx`). Not 3: that was tried
   first, was tighter than the colours require, and hid real categories.
   Eleven is not an option, the colours stop being tellable apart.
+  THE DONUT IS GONE since 2026-11-07, replaced by a thin split bar; the cap
+  of six plus Other carried over and the constant kept its name.
 - SERVICE TEMPLATES: the region lives in the row, never in the name. 33
   services used to be listed twice, "Amazon Prime" beside "Amazon Prime
   DE", and 59 names carried a DE/AT/CH token. Names are clean now and
@@ -4289,8 +4332,8 @@ last one left off without needing a recap typed out.
   button that offers to charge you an amount the screen could not name should
   not be pressable. The label drops the price rather than interpolating the
   placeholder into "Unlock Premium, Loading...".
-  PREMIUM_PRICES IS GONE FROM THIS SCREEN ENTIRELY. It still exists for
-  `app/tip-jar.tsx`, which genuinely uses it as a fallback. A test now asserts
+  PREMIUM_PRICES IS GONE FROM THIS SCREEN ENTIRELY, and since 2026-11-08 so
+  is `lib/pricing.ts`: the tip jar names only Play's own price too. A test now asserts
   the purchase screen does not reference it at all, having previously asserted
   the OPPOSITE, that it was kept here as a fallback. That assertion was written
   to fix the inline "$2.99" string and aimed at the wrong destination.

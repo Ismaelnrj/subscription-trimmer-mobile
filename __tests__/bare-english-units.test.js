@@ -49,7 +49,8 @@ describe("no English unit or plural is written beside a number by hand", () => {
     for (const lang of ["en", "de"]) {
       const l = JSON.parse(fs.readFileSync(path.join(ROOT, "locales", `${lang}.json`), "utf8"));
       expect(l.common.perMonthShort).toMatch(/^\//);
-      expect(l.common.perYearShort).toMatch(/^\//);
+      // perYearShort went with the "Avg per year" row, 2026-11-08: nothing
+      // shows a yearly short unit. The scan above still catches a bare "}/yr".
       for (const k of ["snapshot", "recommendationCount", "needAttention"]) {
         expect(l.insights[`${k}_one`]).toContain("{{count}}");
         expect(l.insights[`${k}_other`]).toContain("{{count}}");

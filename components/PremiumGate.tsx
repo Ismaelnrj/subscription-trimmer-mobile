@@ -43,9 +43,8 @@ export function PremiumGate({ title, description }: Props) {
             correct fix is to stop quoting a price here rather than to fetch
             RevenueCat offerings from every gate, which would be four extra
             round trips for one line of marketing copy. app/upgrade.tsx stays
-            the single surface responsible for a price, and it already reads
-            RevenueCat's localized priceString with PREMIUM_PRICES as the
-            fallback it claims to be. */}
+            the single surface responsible for a price, and it names only the
+            localized priceString Google Play gives it, never a fallback. */}
         <Text style={styles.buttonText}>{t("profile.unlockPremium")}</Text>
       </View>
     </TouchableOpacity>

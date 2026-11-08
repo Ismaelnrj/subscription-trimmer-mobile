@@ -1,6 +1,6 @@
 ---
 name: trimio-design
-description: Trimio's brand palette, contrast floors, category colour constraints and copy rules, with scripts that measure rather than eyeball. Use this whenever work touches how Trimio looks or reads: picking or changing any colour, editing lib/theme.ts or lib/categories.ts, designing or reviewing a screen, building the Stats donut or any chart, writing or reviewing Play Store copy, in-app strings, locale files, video captions, ad copy or landing page text, reviewing a screenshot or promo video frame, or answering "does this look right". Also use it before saying any colour pairing is fine, because several Trimio colours fail contrast in ways that look acceptable to the eye. Also use it before adding or editing a text field (login, signup, password, codes), and before changing the landing page or the cancellation guide pages.
+description: Trimio's brand palette, contrast floors, category colour constraints and copy rules, with scripts that measure rather than eyeball. Use this whenever work touches how Trimio looks or reads: picking or changing any colour, editing lib/theme.ts or lib/categories.ts, designing or reviewing a screen, building the Stats split bar or any chart, writing or reviewing Play Store copy, in-app strings, locale files, video captions, ad copy or landing page text, reviewing a screenshot or promo video frame, or answering "does this look right". Also use it before saying any colour pairing is fine, because several Trimio colours fail contrast in ways that look acceptable to the eye. Also use it before adding or editing a text field (login, signup, password, codes), and before changing the landing page or the cancellation guide pages.
 ---
 
 # Trimio design and copy rules
@@ -205,8 +205,11 @@ where white on dark success, which is Soft Mint, was 2.10:1.
 ## lib/categories.ts: declaration order is load bearing
 
 The ten real categories are a validated categorical palette, checked against
-the warm white ground on the **adjacent** pairlist, which is the right test
-for a donut because slices only touch their neighbours.
+the warm white ground on the **adjacent** pairlist, which was the right test
+for the old Stats donut, whose slices only touched their neighbours. The split
+bar that replaced it (2026-11-07) draws parts by amount, not in declaration
+order, so adjacency there is not guaranteed by this file: identity rests on
+the 2dp gaps between parts and a named row for each, never on colour alone.
 
 **Reordering the map without re-validating silently reintroduces failures.**
 Red with olive-green, and orange with green, both fail when adjacent. They are
@@ -217,19 +220,21 @@ If you add, remove or reorder a category, re-run the adjacency check before
 shipping. `other` is the one deliberate neutral and should stay that way.
 
 These colours drive four surfaces at once: quick-add icons, subscription card
-icons, the Stats donut and its legend, and calendar day dots. A change is
+icons, the Stats split bar and its rows, and calendar day dots. A change is
 never local.
 
-## The Stats donut caps at 6 named slices
+## The Stats split bar caps at 6 named parts
 
-Plus a labelled Other row. `DONUT_SLICES` in `app/(tabs)/analytics.tsx`.
+Plus a labelled Other row in a neutral (`textMuted`), never a category colour.
+`DONUT_SLICES` in `app/(tabs)/analytics.tsx`, a name kept from the donut the
+split bar replaced on 2026-11-07; the cap carried over unchanged.
 
 Three was tried first and was wrong: tighter than the colours require, and it
 hid real categories, which defeats the chart. Eleven is also wrong, because at
 that count the colours stop being tellable apart. Six plus Other is the point
 where both constraints are satisfied.
 
-If a slice is folded into Other, say so in the legend. An unexplained wedge
+If a part is folded into Other, say so in the rows. An unexplained segment
 reads as a bug.
 
 ## The copy rule: no dash as clause-separating punctuation
