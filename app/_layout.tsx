@@ -230,8 +230,8 @@ export default function RootLayout() {
         <Stack screenOptions={{
           headerShown: false,
           headerStyle: { backgroundColor: c.card },
-          headerTitleStyle: { color: c.text },
-          headerTintColor: c.primary,
+          headerTitleStyle: { color: c.text, fontFamily: "Montserrat-SemiBold", fontSize: 18 },
+          headerTintColor: c.text,
           contentStyle: { backgroundColor: c.bg },
         }}>
           <Stack.Screen name="onboarding" />

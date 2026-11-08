@@ -17,8 +17,10 @@ export default function TabLayout() {
           headerStyle: {
             backgroundColor: c.card,
           },
+          /* A family, not a weight: fontWeight with no family falls back to
+             the system font, so every title bar was Roboto over Montserrat. */
           headerTitleStyle: {
-            fontWeight: "600",
+            fontFamily: "Montserrat-SemiBold",
             fontSize: 18,
             color: c.text,
           },

@@ -41,3 +41,13 @@ describe.each(["app/terms-of-service.tsx", "app/privacy-policy.tsx"])("%s", (f) 
     expect(styles).toMatch(/sectionBody: \{ \.\.\.typeScale\.body/);
   });
 });
+
+describe("the title bars", () => {
+  it("set Montserrat on both navigators, with an ink back arrow", () => {
+    const tabs = fs.readFileSync(path.join(ROOT, "app", "(tabs)", "_layout.tsx"), "utf8");
+    const stack = fs.readFileSync(path.join(ROOT, "app", "_layout.tsx"), "utf8");
+    expect(tabs).toMatch(/headerTitleStyle: \{\s*fontFamily: "Montserrat-SemiBold"/);
+    expect(stack).toMatch(/headerTitleStyle: \{ color: c\.text, fontFamily: "Montserrat-SemiBold"/);
+    expect(stack).toMatch(/headerTintColor: c\.text,/);
+  });
+});
