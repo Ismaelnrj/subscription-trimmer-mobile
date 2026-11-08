@@ -1979,6 +1979,8 @@ last one left off without needing a recap typed out.
   account's. STILL TRUE AND NOT CHANGED: the threshold is a bare 200 in
   whatever that currency is, so 200 yen trips it. Few yen users; revisit if any
   appear. Ids, types and severities are unchanged, so no app publish.
+  THE SPENDING ALERT IS GONE since 2026-11-08 (`8313aed2`), see the redesign
+  audit entry: the paragraph above is history.
   `__tests__/alerts-localization.test.js` drives the REAL handler on a stub
   pool: four mutations, four caught.
 
@@ -2100,7 +2102,7 @@ last one left off without needing a recap typed out.
   read beside its figures"). The category palette passes the validator in
   declared order and FAILS it all pairs (insurance beside software, 5.1); the
   donut had the same exposure. 2px gaps plus a named row per part keep
-  identity off colour. `DonutChart.tsx` is now unused and was left in place.
+  identity off colour. `DonutChart.tsx` was deleted 2026-11-08, unused.
   DEFECTS FIXED ON THE WAY, each its own commit and test: bare English "/mo",
   "/yr" and hand pluralised counts on German Stats and Insights; the calendar
   and Insights adding raw prices across currencies (Month view read 129,94 €
@@ -2114,6 +2116,14 @@ last one left off without needing a recap typed out.
   summary" (no job sends one) and "Spending alerts" (alerts.list never reads
   it). Their server columns are untouched. Wiring spending alerts properly is
   a backend change, left as a follow-up.
+  DECIDED 2026-11-08, owner's "is it a good move? if so, do": not wired, the
+  ALERT ITSELF REMOVED in `8313aed2`, backend only, live with the Railway
+  deploy. A fixed 200 in any currency, which insurance and utilities pass in
+  ordinary use and 200 yen passes with one row, carried no subscription id, so
+  the dashboard counted it in its red alerts row for good with nothing to
+  act on. That row is for renewals. Measured on the real server: a 500 EUR
+  account got the alert from the old one and nothing from the new. The
+  `spending_alerts` column and API fields stay, unread, for installed builds.
   AN AUDIT OF THAT WORK, 2026-11-08, at the owner's request ("audit it in
   order to know if that was the best move"), found the two rules above, ink
   for primary buttons and Montserrat via `type`, were claimed for the whole
@@ -2152,7 +2162,7 @@ last one left off without needing a recap typed out.
   donut's colours never carried identity either); dropping "Avg per year" (the
   monthly average times twelve); removing the iOS row and the two dead
   switches (a switched off "Spending alerts" did nothing before either).
-  `DonutChart.tsx` stays, unused.
+  `DonutChart.tsx` was deleted the same day, at the owner's word.
   NOT YET PUBLISHED, any of it: the redesign and these fixes all ride one
   `eas update`, which is the owner's to run.
   THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
@@ -2205,8 +2215,8 @@ last one left off without needing a recap typed out.
   Premium kostenlos" instead of "Free to start". THE STORE LISTINGS carry it in
   the FULL description only (English "FREE TO START" paragraph, German "Trimio
   Premium" paragraph), in `store-listing-en.md` and `store-listing-de.md` for
-  the owner to paste. NOT YET PASTED as of 2026-11-07 (owner: later that day,
-  with the price change). NOT in the title or the short
+  the owner to paste. NOT YET PASTED as of 2026-11-08 (owner: "I must do it
+  today"; the price change went first). NOT in the title or the short
   description: Google's metadata policy bans price and promotional wording in
   the title, icon and developer name ("free for limited time only" is its own
   example) and says nothing about the short description, which carries the
@@ -4456,9 +4466,11 @@ last one left off without needing a recap typed out.
   (2026-11-07), so it reads 47% after the change and 44% before it.
   The coffee line (`upgrade.costNote`) is GONE, with its unbackable "pays for
   itself on day one", in the paywall redesign of 2026-11-07.
-  THE PLAY CONSOLE CHANGE IS THE OWNER'S AND NOT YET DONE as of 2026-11-07
-  (owner: "I need to do this first. But yes."). Until it is, Play still
-  charges 2.99 and 19.99, and the badge correctly reads 44%.
+  THE PLAY CONSOLE CHANGE IS DONE, 2026-11-08 (owner: "the price is ready",
+  a report, not read off Play Console). So Play charges 3.99 and 24.99 now,
+  and the yearly badge, computed from Play's own prices, should read 47%
+  rather than 44%. Seeing 47% on the paywall is the cheap proof; RevenueCat
+  can take a while to serve the new price strings.
   THE TRIAL MODEL IS A REVERSE TRIAL, the owner's choice on 2026-11-07 on
   the recommendation: every new account gets 14 days of Premium with no card
   and drops back to the free tier unless it subscribes. Not a Google Play

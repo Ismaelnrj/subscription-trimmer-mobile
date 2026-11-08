@@ -50,10 +50,12 @@ describe('logos are bundled, not fetched', () => {
   });
 
   it('react-native-svg is already a native dependency, so this ships over the air', () => {
-    // It has been in package.json since 2026-07-21 and DonutChart uses it, so
-    // build 40 carries it. Removing it would make every mark a native crash.
+    // In package.json since 2026-07-21, so builds 40 and 41 carry it. The
+    // Stats donut that first used it was deleted 2026-11-08; LogoImage draws
+    // every brand mark with it now. Removing the package would make every
+    // mark a native crash.
     expect(PKG.dependencies['react-native-svg']).toBeTruthy();
-    expect(read('components/DonutChart.tsx')).toContain('react-native-svg');
+    expect(read('components/LogoImage.tsx')).toContain('from "react-native-svg"');
   });
 });
 
