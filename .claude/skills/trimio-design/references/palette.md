@@ -92,8 +92,9 @@ must pass both ways at once.
 - Bright mint lives in `accent`, a separate token, precisely so it cannot leak
   into a fill.
 
-Setting dark `primary` to `#55C6A3` would drop roughly 36 call sites to 2.1:1
-in one edit. It is the highest-blast-radius colour change in the codebase.
+Until 2026-11-08 roughly 36 call sites put white on a primary fill, so setting
+dark `primary` to `#55C6A3` would have dropped them all to 2.1:1. None do now:
+fills use `text` with a `bg` label, and a scan test keeps it that way.
 
 ## lib/categories.ts and the adjacency constraint
 

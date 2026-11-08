@@ -61,13 +61,14 @@ import { useThemeStore } from "./theme-store";
  *   stays the same red rather than becoming a different one.
  *   `dangerLight` and `dangerBorder` are untouched, they are grounds not text.
  *
- *   ONE KNOWN GAP IS DELIBERATELY LEFT, and it is recorded rather than fixed:
- *   white on DARK `primary` #2F8E71 is 4.02:1, under the 4.5:1 floor and over
- *   the 3:1 large-text one. That value was chosen on purpose to balance both
- *   directions the way the old violet did, and 36 call sites put white on a
- *   primary fill, so changing it is the highest blast radius colour change in
- *   this codebase and a decision rather than a correction. The test asserts it
- *   at the 3:1 floor and says so, so the gap is visible instead of hidden. */
+ *   White on DARK `primary` #2F8E71 is 4.02:1, under the 4.5:1 text floor, and
+ *   as text on the dark card it is 3.94:1. Neither reaches anybody any more:
+ *   since 2026-11-08 NO screen puts text on a primary fill or sets text in
+ *   primary. Buttons, chosen states and the add button fill with `text` and
+ *   label with `bg`, which in light is the same Ink Navy and in dark is light
+ *   ink on near black. What still uses primary is non-text (spinners, refresh
+ *   tint, the limit meter, a border, the top weekly bar), where 3:1 is the
+ *   floor and 3.94:1 clears it. __tests__/dark-mode-fills.test.js keeps it so. */
 export const LIGHT = {
   bg: "#F7F6F1",
   card: "#FCFBF8",

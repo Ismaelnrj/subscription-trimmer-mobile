@@ -363,7 +363,7 @@ export default function UpgradeScreen() {
               accessibilityRole="button"
               accessibilityState={{ disabled: loading || !selectedPlanInfo.price.real }}
             >
-              {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+              {loading ? <ActivityIndicator color={c.bg} /> : (
                 <View style={{ alignItems: "center" }}>
                   <Text style={styles.buyButtonText}>
                     {selectedPlanInfo.price.real
@@ -446,12 +446,12 @@ function makeStyles(c: AppColors) {
        price and must not read as one. */
     planPriceUnset: { ...typeScale.caption, color: c.textSecondary, maxWidth: 110, textAlign: "right" },
     buyButton: {
-      backgroundColor: c.primary, borderRadius: radius.m, minHeight: 60, marginTop: space.l,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 60, marginTop: space.l,
       alignItems: "center", justifyContent: "center", paddingVertical: space.s,
     },
     buyButtonDisabled: { opacity: 0.5 },
-    buyButtonText: { ...typeScale.bodyStrong, fontFamily: "Montserrat-SemiBold", color: "#FFFFFF" },
-    buyButtonSub: { ...typeScale.caption, color: "#FFFFFF", marginTop: 2 },
+    buyButtonText: { ...typeScale.bodyStrong, fontFamily: "Montserrat-SemiBold", color: c.bg },
+    buyButtonSub: { ...typeScale.caption, color: c.bg, marginTop: 2 },
     legalNote: { ...typeScale.caption, color: c.textSecondary, textAlign: "center", marginTop: space.m },
     restoreButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: space.s },
     restoreText: { ...typeScale.bodyStrong, color: c.text },

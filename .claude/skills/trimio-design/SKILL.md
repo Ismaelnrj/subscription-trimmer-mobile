@@ -138,12 +138,14 @@ light one at 2.85:1, under even the 3:1 floor.
 Do not duplicate that here. Use `check_contrast.py` for a pairing that is not
 yet in the theme, and `check_screens.py` for what the gate cannot see.
 
-ONE GAP IS OPEN AND NAMED RATHER THAN HIDDEN: white on dark `primary` #2F8E71
-is 4.02:1, under the 4.5:1 text floor and over the 3:1 large-text one. It was
-chosen to balance both directions the way the old violet did, and 36 call sites
-put white on a primary fill, so raising it is a product decision. The test
-asserts it at 3:1 AND asserts it is still under 4.5, so closing the gap means
-tightening that assertion in the same commit.
+THE OLD GAP NO LONGER REACHES ANYBODY: white on dark `primary` #2F8E71 is
+4.02:1, and primary as text on the dark card is 3.94:1, both under the 4.5:1
+text floor. Since 2026-11-08 no screen does either. A button, a chosen state,
+the add button or a status toast fills with `text` (or the status colour) and
+labels with `bg`; in light that is the same Ink Navy as before, in dark it is
+legible. `__tests__/dark-mode-fills.test.js` scans for a primary fill, a
+literal white label and primary as a text colour, and fails on any of them.
+The theme test still asserts the 4.02:1 at 3:1, so the gap stays visible.
 
 ## The palette
 
@@ -181,20 +183,24 @@ nobody notices the substitution and it measures 4.8:1 on warm white.
 A decorative rule in mint is fine at any contrast, because a rule is not text
 and contrast floors do not apply to it. Do not "fix" those.
 
-## lib/theme.ts: primary works in both directions
+## lib/theme.ts: primary is for marks, not for text
 
-`primary` is used both as a fill behind white text and as text on a surface,
-so it has to pass in both directions at once. That is a tighter constraint
-than it looks.
+`primary` used to be both a fill behind white text and a text colour on a
+surface, so it had to pass in both directions at once, and in dark mode it
+passed neither for text. Since 2026-11-08 it carries no text at all: it is
+the colour of spinners, the refresh tint, the limit meter, one border and the
+top weekly bar, where the floor is 3:1.
 
 - Light theme primary is Ink Navy.
 - Dark theme primary is `#2F8E71`, chosen because it balances both ways: 4.0:1
   under white, 3.9:1 on the card.
 - The bright mint lives in the separate `accent` token.
 
-**Do not set dark `primary` to `#55C6A3`.** Around 36 call sites put white on a
-primary fill, and every one would drop to 2.1:1 at once. This is the single
-highest-blast-radius colour change in the codebase.
+**Do not put text on a primary fill, and do not set text in primary.** That was
+the 4.02:1 and 3.94:1 dark mode gap, at some 36 call sites until 2026-11-08.
+The rule now: fill with `text`, label with `bg`. For a status colour (success,
+danger) keep the fill and label with `bg`: 4.83:1 and above in both themes,
+where white on dark success, which is Soft Mint, was 2.10:1.
 
 ## lib/categories.ts: declaration order is load bearing
 

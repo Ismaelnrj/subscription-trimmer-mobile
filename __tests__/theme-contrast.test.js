@@ -76,25 +76,24 @@ for (const [name, palette] of [["LIGHT", LIGHT], ["DARK", DARK]]) {
   });
 }
 
-describe("white on a primary fill, which 36 call sites rely on", () => {
+describe("white on a primary fill, which no call site uses since 2026-11-08", () => {
   it("passes normal text in the light theme", () => {
     expect(ratio("#FFFFFF", LIGHT.primary)).toBeGreaterThanOrEqual(NORMAL_TEXT);
   });
 
   it("clears only the LARGE text floor in the dark theme, a known gap", () => {
-    // 4.02:1. Deliberate, not an oversight: dark primary #2F8E71 was chosen to
-    // balance BOTH directions the way the old violet did, and 36 call sites put
-    // white on it, so raising it is the highest blast radius colour change in
-    // this codebase and a product decision rather than a correction.
-    // Asserted at 3:1 so the gap is VISIBLE here instead of absent. If somebody
-    // decides to close it, tighten this to NORMAL_TEXT in the same commit.
+    // 4.02:1. Until 2026-11-08 some 36 call sites put white on it; now none do
+    // (buttons fill with text and label with bg, see dark-mode-fills.test.js),
+    // so the gap reaches nobody. Asserted at 3:1 so it stays VISIBLE here: a
+    // fill that comes back would bring it back. If the token is ever raised,
+    // tighten this to NORMAL_TEXT in the same commit.
     expect(ratio("#FFFFFF", DARK.primary)).toBeGreaterThanOrEqual(LARGE_TEXT);
     expect(ratio("#FFFFFF", DARK.primary)).toBeLessThan(NORMAL_TEXT);
   });
 
   it("does not let dark primary become the bright mint", () => {
-    // #55C6A3 under white is 2.1:1, and all 36 call sites would drop to it at
-    // once. This is the specific mistake CLAUDE.md names as highest risk.
+    // #55C6A3 under white is 2.1:1. No call site puts white on primary now,
+    // but this stays as a second guard in case a primary fill comes back.
     expect(DARK.primary).not.toBe("#55C6A3");
   });
 });

@@ -868,7 +868,7 @@ export default function SubscriptionsScreen() {
     <View style={styles.container}>
       {removedCard && (
         <View style={styles.removedCard}>
-          <MaterialCommunityIcons name="check-circle-outline" size={22} color="#FFFFFF" />
+          <MaterialCommunityIcons name="check-circle-outline" size={22} color={c.bg} />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.removedCardText}>
               {t("subscriptions.cancelledSaving", { amount: fmtC(removedCard.yearly, removedCard.currency), name: removedCard.name })}
@@ -903,7 +903,7 @@ export default function SubscriptionsScreen() {
               style={[styles.addButton, atLimit && styles.addButtonLocked]}
               onPress={openAdd}
             >
-              <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color={atLimit ? c.text : "#FFFFFF"} />
+              <MaterialCommunityIcons name={atLimit ? "lock" : "plus"} size={20} color={atLimit ? c.text : c.bg} />
               <Text style={[styles.addButtonText, atLimit && styles.addButtonTextLocked]}>{atLimit ? t("subscriptions.limitReached") : t("subscriptions.add")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.pasteButton} onPress={openPaste}>
@@ -1062,7 +1062,7 @@ export default function SubscriptionsScreen() {
                     return (
                       <Animated.View style={[styles.swipeDeleteWrapper, { transform: [{ translateX: trans }] }]}>
                         <TouchableOpacity style={styles.swipeDelete} onPress={() => confirmDelete(sub)}>
-                          <MaterialCommunityIcons name="trash-can-outline" size={22} color="#fff" />
+                          <MaterialCommunityIcons name="trash-can-outline" size={22} color={c.bg} />
                           <Text style={styles.swipeDeleteText}>{t("subscriptions.delete")}</Text>
                         </TouchableOpacity>
                       </Animated.View>
@@ -1558,7 +1558,7 @@ export default function SubscriptionsScreen() {
 
               <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isPending}>
                 {isPending
-                  ? <ActivityIndicator color="#FFFFFF" />
+                  ? <ActivityIndicator color={c.bg} />
                   : <Text style={styles.submitButtonText}>
                       {editingId ? t("subscriptions.saveChanges") : t("subscriptions.addExpense")}
                     </Text>
@@ -1581,19 +1581,23 @@ function makeStyles(c: AppColors) {
     scrollContent: { padding: 16, paddingBottom: 32 },
     removedCard: {
       position: "absolute", top: 12, left: 16, right: 16, zIndex: 50,
+      /* Text on a status fill takes c.bg, never a literal white: dark success is
+         Soft Mint, and white on it measured 2.10:1. c.bg is 4.83:1 light and
+         8.40:1 dark. */
       backgroundColor: c.success, borderRadius: 12, padding: 14,
       flexDirection: "row", alignItems: "center",
       shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
     },
-    removedCardText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
-    removedCardInvite: { color: "#FFFFFF", fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
+    removedCardText: { color: c.bg, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
+    removedCardInvite: { color: c.bg, fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
     pasteButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
       minHeight: 48, paddingHorizontal: space.l, borderRadius: radius.m,
       borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, backgroundColor: c.card,
     },
     pasteButtonText: { ...typeScale.label, color: c.text },
-    limitLink: { ...typeScale.label, color: c.primary },
+    /* c.text, not c.primary: dark primary as text on the card is 3.94:1. */
+    limitLink: { ...typeScale.label, color: c.text },
     searchBox: {
       flexDirection: "row", alignItems: "center", gap: space.s, minHeight: 48,
       paddingHorizontal: space.m, borderRadius: radius.m, marginBottom: space.m,
@@ -1662,14 +1666,14 @@ function makeStyles(c: AppColors) {
     switchLabel: { flex: 1, ...typeScale.body, color: c.text },
     topRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
     addButton: {
-      flex: 1, backgroundColor: c.primary, borderRadius: 8, paddingVertical: 12,
+      flex: 1, backgroundColor: c.text, borderRadius: 8, paddingVertical: 12,
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
     },
     /* OUTLINED WHEN LOCKED, never white on grey: white on dark textMuted
        measured 3.08:1, under the 4.5:1 floor. Ink on the card is 12:1 or more. */
     addButtonLocked: { backgroundColor: c.card, borderWidth: 1, borderColor: c.border },
     addButtonTextLocked: { color: c.text },
-    addButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
+    addButtonText: { color: c.bg, fontSize: 14, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     limitBar: {
       backgroundColor: c.card, borderRadius: 10, padding: 12, marginBottom: 12,
       borderWidth: 1, borderColor: c.border,
@@ -1685,10 +1689,10 @@ function makeStyles(c: AppColors) {
     emptyStateTitle: { fontSize: 18, fontWeight: "700", fontFamily: "Montserrat-Bold", color: c.text, marginBottom: 8, textAlign: "center" },
     emptyStateSubtext: { fontSize: 14, color: c.textSecondary, textAlign: "center", lineHeight: 20, paddingHorizontal: 24, marginBottom: 20 },
     emptyStateButton: {
-      backgroundColor: c.primary, borderRadius: 10,
+      backgroundColor: c.text, borderRadius: 10,
       paddingVertical: 12, paddingHorizontal: 32, marginBottom: 16,
     },
-    emptyStateButtonText: { color: "#fff", fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    emptyStateButtonText: { color: c.bg, fontSize: 14, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     emptyStateHint: { fontSize: 12, color: c.textMuted, textAlign: "center", paddingHorizontal: 32, lineHeight: 18 },
     countText: { fontSize: 12, color: c.textSecondary, marginBottom: 10 },
     modalOverlay: { flex: 1, backgroundColor: c.overlay, justifyContent: "flex-end" },
@@ -1723,15 +1727,15 @@ function makeStyles(c: AppColors) {
       backgroundColor: c.primaryLight,
     },
     customCatConfirm: {
-      backgroundColor: "#142B3A", borderRadius: 8, paddingVertical: 8,
+      backgroundColor: c.text, borderRadius: 8, paddingVertical: 8,
       paddingHorizontal: 14, justifyContent: "center",
     },
-    customCatConfirmText: { color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
+    customCatConfirmText: { color: c.bg, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold" },
     submitButton: {
-      backgroundColor: c.primary, borderRadius: radius.m, minHeight: 52, marginTop: space.xl,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52, marginTop: space.xl,
       alignItems: "center", justifyContent: "center",
     },
-    submitButtonText: { ...typeScale.bodyStrong, color: "#FFFFFF" },
+    submitButtonText: { ...typeScale.bodyStrong, color: c.bg },
     cancelButton: { minHeight: 48, alignItems: "center", justifyContent: "center", marginTop: space.s },
     cancelButtonText: { ...typeScale.bodyStrong, color: c.textSecondary },
     emailPasteLabel: { ...typeScale.caption, color: c.textSecondary, marginBottom: space.s },
@@ -1748,15 +1752,16 @@ function makeStyles(c: AppColors) {
       paddingVertical: 5, paddingHorizontal: 12, borderRadius: 20,
       backgroundColor: c.card, borderWidth: 1, borderColor: c.border,
     },
-    sortChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    sortChipActive: { backgroundColor: c.text, borderColor: c.text },
     sortChipText: { fontSize: 12, color: c.textSecondary, fontWeight: "500", fontFamily: "Montserrat-Medium" },
-    sortChipTextActive: { color: "#FFFFFF", fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    sortChipTextActive: { color: c.bg, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     swipeDeleteWrapper: { justifyContent: "center", marginBottom: 12 },
     swipeDelete: {
+      /* c.bg, not white: white on dark danger measured 2.52:1. */
       backgroundColor: c.danger, justifyContent: "center", alignItems: "center",
       width: 80, borderRadius: 12, height: "100%", gap: 2,
     },
-    swipeDeleteText: { color: "#fff", fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold" },
+    swipeDeleteText: { color: c.bg, fontSize: 11, fontWeight: "700", fontFamily: "Montserrat-Bold" },
     examplesButton: {
       borderWidth: 1, borderColor: c.border, borderRadius: 10,
       paddingVertical: 10, paddingHorizontal: 28, marginBottom: 16,

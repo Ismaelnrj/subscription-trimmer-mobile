@@ -56,9 +56,9 @@ export function GlobalFab() {
         onPress={handlePress}
         accessibilityRole="button"
         accessibilityLabel={t("fab.addSubscription")}
-        style={[styles.button, { backgroundColor: c.primary }]}
+        style={[styles.button, { backgroundColor: c.text }]}
       >
-        <MaterialCommunityIcons name="plus" size={26} color="#FFFFFF" />
+        <MaterialCommunityIcons name="plus" size={26} color={c.bg} />
       </Pressable>
     </Animated.View>
   );

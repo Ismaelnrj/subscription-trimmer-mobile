@@ -576,7 +576,7 @@ function makeStyles(c: AppColors) {
     verifyBannerLink: { ...typeScale.label, color: c.warning },
 
     emptyStateText: { ...typeScale.body, color: c.textSecondary, textAlign: "center" },
-    actionButton: { backgroundColor: c.primary, borderRadius: radius.m, minHeight: 48, alignItems: "center", justifyContent: "center" },
-    actionButtonText: { ...typeScale.bodyStrong, color: "#FFFFFF" },
+    actionButton: { backgroundColor: c.text, borderRadius: radius.m, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    actionButtonText: { ...typeScale.bodyStrong, color: c.bg },
   });
 }
