@@ -2383,6 +2383,9 @@ last one left off without needing a recap typed out.
   IT RELOADS IMMEDIATELY rather than offering to restart later, which is safe on
   THIS screen and nowhere else: Help & Support holds no unsaved input, so a
   restart can discard nothing. Do not lift the pattern onto a screen with a form.
+  NO LONGER TRUE SINCE 2026-11-09: the reload crashed the owner's phone with a
+  SIGBUS, so the button now downloads and then says to close and reopen the app.
+  See the SIGBUS entry; do not put `reloadAsync` back before expo-asset 12.
   FOUR STATES, NOT A BOOLEAN: checking, downloading, up to date, and failed with
   the real error message shown. Same reasoning as the purchase screen's price and
   for the same reason: "found nothing" and "could not reach the server" are
@@ -3987,16 +3990,40 @@ last one left off without needing a recap typed out.
   fpgm and prep present, about 1166 glyphs carry bytecode), and FreeType
   2.13.2 ran hinted `FT_LOAD_DEFAULT` on every glyph at every ppem 6 to 72,
   656,935 loads, no fault. A bug in the fonts would also hit every phone.
-  LEADING READING, not proven: SIGBUS rather than SIGSEGV is the kernel's
-  signal for touching a memory mapped file page that cannot be read, a flash
-  read error or a file cut short while mapped, which fits one device. Also
-  possible: a reload during Check for updates, or that phone's own FreeType.
-  OWED, from the Sentry ISSUE page rather than the email: events and users,
-  first and last seen, device model, Android version, release and dist, and
-  the last breadcrumbs. Dehinting the fonts was considered and NOT done: if
-  the file is unreadable it only moves the crash to the outline loader.
-  WHAT WOULD CHANGE THE DECISION: a second device, more than a handful of
-  events, or breadcrumbs showing an update reload just before.
+  THE CAUSE IS FOUND, 2026-11-09. The owner reported it happened once, on
+  tapping Check for updates in Help & Support, which then called
+  `Updates.reloadAsync`. expo-asset 11.1.7 (SDK 53) copies each font out of
+  the APK (an update whose fonts match the embedded ones maps them to
+  `file:///android_res/raw/...`) into `cache/ExponentAsset-<md5>.ttf` on every
+  font load, and `getMD5HashOfFileContent` builds a DigestInputStream it never
+  reads, so it hashes zero bytes, never matches, and the copy is REWRITTEN IN
+  PLACE (`localUrl.outputStream()` truncates first) on every load. Harmless on
+  a cold start, where nothing has the file open. A reload keeps the process, so
+  the old screen's Typeface (Typeface.createFromFile maps the file) is still
+  mapped while the new bundle truncates it, and FreeType reading a glyph from
+  the cut part is a bus error.
+  REPRODUCED, not argued: FreeType 2.13.2 mapping a copy of the real
+  Montserrat-Regular.ttf, truncated and partly rewritten mid use, died with
+  SIGBUS, and gdb put it at `TT_RunIns` < `tt_size_run_prep` <
+  `TT_Load_Glyph` < `FT_Load_Glyph`, the Sentry frame. The two safe patterns
+  (no rewrite; write to a temp file and rename) both survived 1961 hinted
+  loads. expo-updates itself was read and is clean: it skips an asset that
+  exists and writes new ones through a temp file.
+  FIXED IN THE APP, `app/help-support.tsx`: the button downloads, then says
+  "Update downloaded. Close Trimio fully ... and open it again", and never
+  reloads. One reopen instead of none; still one fewer than before the button
+  existed. Nothing else in app/, components/ or lib/ calls `reloadAsync`, and
+  `__tests__/update-check.test.js` scans for it. Its premise test reads the
+  installed expo-asset and fails once the hash really reads the file (it does
+  in expo-asset 12, SDK 54), which is the moment to reconsider, after measuring.
+  WHO ELSE CAN HIT IT: essentially nobody. Real users never tap that button, and
+  expo-updates applies updates on a cold start. The one other in process reload
+  is expo-updates' own error recovery after a JS crash on launch, which is rare
+  and not ours to change. The rewrite on every cold start is still about 1MB of
+  writes per launch, wasted but not dangerous; it ends with SDK 54.
+  NOT VERIFIED: that the crashing event's time matches a tap that found an
+  update (a tap that finds none never reloads). The Sentry issue page settles
+  it, and its breadcrumbs should show the reload.
 - That crash was only ever visible because of Fix 9 in `fix-gradle.sh`,
   which adds native Sentry auto-init through AndroidManifest meta-data so
   crashes BEFORE the JS bundle loads still report. Do not remove it.

@@ -31,13 +31,14 @@ const de = JSON.parse(read("locales/de.json"));
 describe("Build Info can fetch an update without two cold launches", () => {
   const code = codeOf("app/help-support.tsx");
 
-  it("runs the full check, fetch and reload sequence", () => {
-    /* All three are needed. checkForUpdateAsync alone reports availability and
-       downloads nothing; fetchUpdateAsync alone downloads and still waits for
-       the next launch, which is the exact problem this exists to remove. */
+  it("checks and downloads, then says it is ready", () => {
+    /* checkForUpdateAsync alone reports availability and downloads nothing.
+       fetchUpdateAsync downloads and marks the update ready, so the next cold
+       start runs it: one reopen instead of two cold launches. */
     expect(code).toContain("Updates.checkForUpdateAsync(");
     expect(code).toContain("Updates.fetchUpdateAsync(");
-    expect(code).toContain("Updates.reloadAsync(");
+    expect(code).toMatch(/fetchUpdateAsync\(\);\s*(?:\/\*[\s\S]*?\*\/\s*)?setUpdateState\(\{ kind: "ready" \}\)/);
+    expect(code).toContain("helpSupport.updateReady");
   });
 
   it("does not offer the button when updates are disabled", () => {
@@ -54,8 +55,8 @@ describe("Build Info can fetch an update without two cold launches", () => {
     expect(code).toContain("helpSupport.updateCheckFailed");
   });
 
-  it("keeps checking, up to date and failed as separate answers", () => {
-    for (const kind of ["checking", "downloading", "uptodate", "error"]) {
+  it("keeps checking, ready, up to date and failed as separate answers", () => {
+    for (const kind of ["checking", "downloading", "ready", "uptodate", "error"]) {
       expect(code).toContain(`"${kind}"`);
     }
   });
@@ -69,7 +70,7 @@ describe("Build Info can fetch an update without two cold launches", () => {
 
   it("takes every user facing string from t(), in both languages", () => {
     const keys = [
-      "checkForUpdates", "checkingForUpdates", "downloadingUpdate",
+      "checkForUpdates", "checkingForUpdates", "downloadingUpdate", "updateReady",
       "upToDate", "updateCheckFailed", "updatesDisabled",
     ];
     for (const k of keys) {
@@ -85,6 +86,48 @@ describe("Build Info can fetch an update without two cold launches", () => {
        because it looks like one. */
     expect(en.helpSupport.updateCheckFailed).toContain("{{message}}");
     expect(de.helpSupport.updateCheckFailed).toContain("{{message}}");
+  });
+});
+
+/* NO IN-PROCESS RELOAD, measured 2026-11-09 after a SIGBUS on this button.
+   expo-asset 11.1.7 copies each font out of the APK into
+   cache/ExponentAsset-<md5>.ttf on every font load, and its freshness check
+   hashes a stream it never reads, so it never matches and the copy is rewritten
+   IN PLACE (outputStream truncates first). A reload keeps the process, so the
+   old screen's typeface still has that file mapped while the new bundle
+   truncates it, and FreeType reading a glyph from the truncated part is a bus
+   error in TT_RunIns, the exact frame Sentry reported. Reproduced on the real
+   Montserrat-Regular.ttf. A cold start is a new process and cannot hit it.
+
+   The premise is checked against the installed expo-asset rather than assumed:
+   once its content hash really reads the file (expo-asset 12, SDK 54), the
+   second test here fails and says so, which is the moment to reconsider. */
+describe("nothing reloads the app inside the same process", () => {
+  function sourceFiles(dir) {
+    return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap((e) => {
+      const rel = path.join(dir, e.name);
+      if (e.isDirectory()) return sourceFiles(rel);
+      return /\.(tsx?|jsx?)$/.test(e.name) ? [rel] : [];
+    });
+  }
+  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+
+  it("no screen or module calls Updates.reloadAsync", () => {
+    const files = [...sourceFiles("app"), ...sourceFiles("components"), ...sourceFiles("lib")];
+    expect(files.length).toBeGreaterThan(60);
+    const hits = files.filter((f) => /reloadAsync\s*\(/.test(strip(read(f))));
+    expect(hits).toEqual([]);
+  });
+
+  it("the installed expo-asset still rewrites a cached font in place", () => {
+    const mod = read("node_modules/expo-asset/android/src/main/java/expo/modules/asset/AssetModule.kt");
+    const hash = mod.slice(mod.indexOf("private fun getMD5HashOfFileContent"), mod.indexOf("private suspend fun downloadAsset"));
+    expect(hash).toContain("DigestInputStream");
+    /* The defect: the digest is taken without a single read from the stream,
+       so it is the MD5 of zero bytes. If this fails, expo-asset now reads the
+       file, and an in-process reload may be safe again: measure, then decide. */
+    expect(hash).not.toMatch(/\.read\(/);
+    expect(mod).toMatch(/localUrl\.outputStream\(\)/);
   });
 });
 

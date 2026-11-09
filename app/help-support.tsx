@@ -19,12 +19,13 @@ const PRIVACY_URL = (lang: string) =>
 /* Four honest states rather than a boolean, the same reasoning as the purchase
    screen's price: "checking" and "found nothing" and "could not reach the
    server" are three different answers and collapsing them is how a silent
-   failure reads as success. There is no "idle" success state on purpose, since
-   a successful fetch reloads the app and this component stops existing. */
+   failure reads as success. "ready" means downloaded and waiting for the next
+   cold start, which is a fourth answer, not a success that needs no words. */
 type UpdateState =
   | { kind: "idle" }
   | { kind: "checking" }
   | { kind: "downloading" }
+  | { kind: "ready" }
   | { kind: "uptodate" }
   | { kind: "error"; message: string };
 
@@ -53,11 +54,20 @@ export default function HelpSupportScreen() {
      background, and applies on the NEXT launch. That is the right trade for a
      cold start and it means confirming a publish took two force stops and two
      launches, with no way to tell a slow download from a failed one. This
-     collapses it to one tap.
-     IT RELOADS IMMEDIATELY rather than offering to restart later. Safe here
-     and nowhere else: Help & Support holds no unsaved input, so there is
-     nothing a restart can discard. Do not lift this onto a screen with a
-     form. */
+     collapses it to one tap and one reopen.
+     IT NEVER CALLS Updates.reloadAsync, and that is measured, not cautious.
+     It used to, and on 2026-11-08 the owner's phone crashed on this button
+     with SIGBUS in FreeType's TT_RunIns under FT_Load_Glyph. The cause is
+     expo-asset 11.1.7 (SDK 53): every font load copies the font from the APK
+     into cache/ExponentAsset-<md5>.ttf, and its "is the cached copy current"
+     check hashes zero bytes, so it never matches and the file is REWRITTEN IN
+     PLACE every time. On a cold start nothing has it open. A reloadAsync keeps
+     the process, so the old screen's typeface still has that file mapped while
+     the new bundle truncates and rewrites it; a glyph read from the truncated
+     part is a bus error. Reproduced on the real Montserrat-Regular.ttf with
+     FreeType: same signal, same top frame. A cold start is a new process, so
+     it cannot happen there. expo-asset 12 (SDK 54) reads the file before
+     comparing, so reconsider this after that upgrade, not before. */
   const checkForUpdate = async () => {
     if (updateBusy) return;
     setUpdateState({ kind: "checking" });
@@ -69,7 +79,9 @@ export default function HelpSupportScreen() {
       }
       setUpdateState({ kind: "downloading" });
       await Updates.fetchUpdateAsync();
-      await Updates.reloadAsync();
+      /* Downloaded and marked ready: expo-updates launches the newest ready
+         update on the next cold start, so one reopen applies it. */
+      setUpdateState({ kind: "ready" });
     } catch (e) {
       /* The message is the diagnostic, so it is shown rather than swallowed
          into a generic string. This panel exists to be read. */
@@ -80,6 +92,7 @@ export default function HelpSupportScreen() {
   const updateStatusLine =
     updateState.kind === "checking" ? t("helpSupport.checkingForUpdates")
     : updateState.kind === "downloading" ? t("helpSupport.downloadingUpdate")
+    : updateState.kind === "ready" ? t("helpSupport.updateReady")
     : updateState.kind === "uptodate" ? t("helpSupport.upToDate")
     : updateState.kind === "error" ? t("helpSupport.updateCheckFailed", { message: updateState.message })
     : null;
