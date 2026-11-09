@@ -2059,8 +2059,8 @@ last one left off without needing a recap typed out.
   finished until the owner makes it. Every redone screen also joins the
   `REDONE` list in `__tests__/redesign-tells.test.js`.
   THE SUBSCRIPTIONS LIST AND THE ADD FORM ARE APPROVED, 2026-11-07, and on
-  master through `1bc2fcab` (list) and `dd9fa7e2` (form). NOT YET PUBLISHED:
-  they ride the next `eas update`. The form's rule for "chosen" is ink
+  master through `1bc2fcab` (list) and `dd9fa7e2` (form). PUBLISHED
+  2026-11-09, see the 3596ff00 baseline entry. The form's rule for "chosen" is ink
   (c.text fill, c.bg text), never white on primary; reuse it.
   THE PAYWALL CARRIED THREE FALSE CLAIMS, fixed on their own in `5f267263`
   and on master: trial tracking was sold as Premium and is free, "Priority
@@ -2082,9 +2082,9 @@ last one left off without needing a recap typed out.
   GERMAN DATES ARE DAY FIRST, `96e6cf8b`: `dayMonthPattern` in
   `lib/date-locale.ts` decides the order ("16. Nov.", not "Nov. 16"), since a
   date-fns locale changes month names and never the order of a pattern.
-  ALL OF THIS RIDES THE NEXT `eas update`, NOT YET ASKED FOR AN ANSWER on
-  2026-11-07 (the owner left that question blank): the list, the add form,
-  the paywall, the claim fixes, the money format and the date order.
+  ALL OF THIS IS ON PHONES SINCE 2026-11-09 (the 3596ff00 publish): the
+  list, the add form, the paywall, the claim fixes, the money format and the
+  date order.
   EVERY OTHER SCREEN WAS REDONE 2026-11-07/08, on the owner's instruction "Do
   everything directly and then we create the eas update": no per screen yes,
   one before/after sheet at the end instead. Stats, Settings, Calendar,
@@ -2163,8 +2163,8 @@ last one left off without needing a recap typed out.
   monthly average times twelve); removing the iOS row and the two dead
   switches (a switched off "Spending alerts" did nothing before either).
   `DonutChart.tsx` was deleted the same day, at the owner's word.
-  NOT YET PUBLISHED, any of it: the redesign and these fixes all ride one
-  `eas update`, which is the owner's to run.
+  PUBLISHED 2026-11-09 with the rest of the redesign, in the 3596ff00
+  baseline entry.
   THE WEB PREVIEW CANNOT LOAD PLAY PRICES, so a paywall render shows "Price
   unavailable" everywhere. For screenshots only, the scratch copy's
   `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
@@ -2258,6 +2258,28 @@ last one left off without needing a recap typed out.
   reminder and the two audit fixes. `needs_native_build.py 21593a96` said OTA
   IS ENOUGH. NOTHING THE OWNER'S OWN ACCOUNT SHOWS PROVES THE TRIAL HALF: it
   predates the trial, so only a new account displays it.
+- PUBLISHED THROUGH 3596ff00 AND CONFIRMED ON A REAL DEVICE (2026-11-09),
+  read off a screenshot of the Build Info panel: `App version: 1.0.4`,
+  `Native build: 41`, `Channel: production`, `Runtime version: 1.0.1`,
+  `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1bff4-faed-7610-8e06-e8caed958a46`, `Update published:
+  2026-11-09T10:57:45.709Z`, `You are on the latest version.` DIFFERENT ID
+  AND LATER than `01a1b631-...` at 2026-11-07T13:28:08.252Z. Timestamp
+  cross-check: `3596ff00` was committed 08:09:27Z the same day with nothing
+  after it on master, so the tree carried it (the owner's `git rev-parse` was
+  not read). It is also the last client commit, which names the baseline.
+  WHAT WENT OUT, 47 client files across 39 commits in `801668aa..3596ff00`,
+  the largest range in this file: every remaining screen of the redesign (the
+  list, the add form, the paywall and its three false claims removed, Stats
+  with the split bar, Settings, Calendar and the rest), money written one way
+  and German dates day first, the dark mode, Montserrat and review prompt
+  fixes from the audit, and the update button that no longer reloads in
+  process. `needs_native_build.py 801668aa` said OTA IS ENOUGH. The backend
+  half (the spending alert removal) went live earlier via Railway.
+  NOT YET EXERCISED: the button's new "Update downloaded ... open it again"
+  line, which only shows when an update is waiting, so the NEXT publish is
+  the first that can show it; and the paywall's yearly badge reading 47% now
+  that Play charges 3.99 and 24.99.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
@@ -4009,6 +4031,7 @@ last one left off without needing a recap typed out.
   (no rewrite; write to a temp file and rename) both survived 1961 hinted
   loads. expo-updates itself was read and is clean: it skips an asset that
   exists and writes new ones through a temp file.
+  ON PHONES SINCE THE 2026-11-09 PUBLISH (`01a1bff4-...`).
   FIXED IN THE APP, `app/help-support.tsx`: the button downloads, then says
   "Update downloaded. Close Trimio fully ... and open it again", and never
   reloads. One reopen instead of none; still one fewer than before the button
