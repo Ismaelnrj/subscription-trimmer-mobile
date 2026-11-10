@@ -2215,8 +2215,13 @@ last one left off without needing a recap typed out.
   Premium kostenlos" instead of "Free to start". THE STORE LISTINGS carry it in
   the FULL description only (English "FREE TO START" paragraph, German "Trimio
   Premium" paragraph), in `store-listing-en.md` and `store-listing-de.md` for
-  the owner to paste. NOT YET PASTED as of 2026-11-08 (owner: "I must do it
-  today"; the price change went first). NOT in the title or the short
+  the owner to paste. PASTED 2026-11-10, both languages (owner's report, not
+  a screenshot), as the full rewrite of `ee093f07`: every claim checked
+  against the code, the English short description changed to "Renewal and
+  free trial reminders, plus over 30 guides to cancel subscriptions." (78/80),
+  titles and the German short description unchanged. Read store listing
+  visitors and conversion in Play Console around 2026-12-08, 28 days on, as a
+  direction rather than a result at this traffic. NOT in the title or the short
   description: Google's metadata policy bans price and promotional wording in
   the title, icon and developer name ("free for limited time only" is its own
   example) and says nothing about the short description, which carries the
