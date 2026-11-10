@@ -92,123 +92,76 @@ read: `check_copy.py --keywords de "<line>"` fails on zero category terms.
 
 ## Full description
 
-**Limit 4000 characters.** This block now matches WHAT IS LIVE, corrected
-2026-09-22. It previously held a 1405 character draft that was never what went
-up: CLAUDE.md records that the uploaded version was a merged one, and this file
-had no copy of it, so anybody reading here was reading a version no user has
-ever seen. The owner pasted the live text and it is reproduced below with three
-measured corrections.
+**Limit 4000 characters.** REWRITTEN 2026-11-10 from scratch, 2989
+characters, written alongside the English rather than translated from it.
 
 ```
-Die meisten Abo-Apps zeigen dir, wofür du zahlst. Trimio zeigt dir auch, wie du wieder rauskommst. Über 30 Dienste haben eine Schritt-für-Schritt-Anleitung zum Kündigen, mit den genauen Schritten und einem direkten Link, damit du nicht in Hilfeseiten suchen musst, wenn du dich endlich entschieden hast.
+Trimio ist dein Abo-Tracker. Die App erinnert dich, bevor ein Abo verlängert wird oder eine kostenlose Testphase kostenpflichtig wird, und zeigt dir genau, wie du kündigst, was du nicht mehr nutzt.
 
 Kein Bankzugang. Keine Kartendaten. Nichts zu verbinden.
 
-Trimio hilft dir, deine Abos, Testphasen und wiederkehrenden Zahlungen im Blick zu behalten, bevor die nächste Abbuchung kommt.
-
-Füge ein Abonnement in Sekunden hinzu: Bestätigungsmail einfügen und Trimio trägt Name, Preis und Abrechnungszeitraum automatisch ein. Über 45 Dienste werden erkannt. Auch eine PayPal oder Stripe Quittung funktioniert, weil Trimio am Zahlungsdienst vorbei schaut und das Abo benennt, für das du wirklich zahlst. Oder wähle aus über 120 fertigen Vorlagen für Dienste wie Netflix, Spotify, Disney+, iCloud und viele mehr. Trimio zeigt dir dann, was als Nächstes fällig ist, wie viel du monatlich und jährlich ausgibst und wo du sparen kannst.
-
-Mit Trimio kannst du:
-
-• Abos und Testphasen übersichtlich verwalten
-• Anstehende Zahlungen frühzeitig sehen
-• Erinnerungen vor Verlängerungen erhalten
-• Monatliche und jährliche Kosten im Blick behalten
-• Deine Ausgaben nach Kategorien verstehen
-• Sparmöglichkeiten und Empfehlungen entdecken
-• Preiserhöhungen bei laufenden Abos erkennen
-• Abos kündigen, mit Anleitung für über 30 Dienste
-• Mehrere Währungen verwalten
-• Deine Abos im Kalender verfolgen
-
 Kündigen ohne Sucherei
+Für über 30 Dienste, darunter Netflix, Spotify, Disney+, Amazon Prime und YouTube Premium, gibt es in der App eine Schritt-für-Schritt-Anleitung zum Kündigen, mit den Schaltflächen, die du wirklich siehst, und einem direkten Link zur richtigen Seite. Wenn du dich entschieden hast, ist die Kündigungsseite nur einen Tipp entfernt.
 
-Wenn du ein Abo kündigen willst, zeigt dir Trimio bei über 30 Diensten die genauen Schritte und verlinkt direkt auf die richtige Seite. Kein Durchklicken durch Einstellungsmenüs und kein Suchen in Hilfeseiten, nur um herauszufinden, wo das Kündigen überhaupt versteckt ist.
+Erinnerung vor der Abbuchung
+Trimio erinnert dich auf dem Handy vor jeder Verlängerung und bevor eine Testphase in ein bezahltes Abo übergeht, mit der Vorlaufzeit, die du wählst. Jedes Abo behält seine eigene Währung, damit die Erinnerung den Betrag nennt, der wirklich abgebucht wird.
 
-Privatsphäre zuerst
+Abos in Sekunden hinzufügen
+Füge eine Bestätigungs- oder Rechnungsmail ein, und Trimio trägt Name, Preis und Abrechnungszeitraum ein. Über 50 Dienste werden erkannt, von Netflix und Spotify bis ChatGPT, Adobe und Microsoft 365, und hinter PayPal oder Stripe findet Trimio den Dienst, für den du wirklich zahlst. Die E-Mail wird auf deinem Handy ausgelesen. Oder wähle aus über 120 fertigen Vorlagen, oder trag ein Abonnement selbst ein.
 
-Trimio benötigt keinen Zugriff auf dein Bankkonto und keine Verbindung zu deiner Kreditkarte. Du entscheidest selbst, welche Abos du hinzufügst.
+Deine Kosten im Blick
+Monatliche und jährliche Kosten auf einen Blick, Ausgaben nach Kategorie, ein Kalender mit allen kommenden Zahlungen und Sparempfehlungen, etwa für zwei Dienste, die dasselbe tun, oder ein Monatsabo, das jährlich günstiger wäre. Änderst du einen Preis, speichert Trimio den Verlauf und zeigt dir, was die Preiserhöhung im Jahr kostet.
 
-Deine Finanzdaten werden nicht automatisch aus deinem Konto ausgelesen.
+Funktioniert auch offline
+Trimio öffnet ohne Verbindung und zeigt deine zuletzt gespeicherte Liste. Ein Abo, das du offline hinzufügst, bleibt auf dem Handy und wird in deinem Konto gespeichert, sobald du wieder online bist.
 
-So behältst du die Kontrolle, ohne unnötig sensible Bankdaten zu teilen.
-
-Wissen, bevor abgebucht wird
-
-Statt erst nach einer Abbuchung zu merken, dass ein Abo verlängert wurde, hilft Trimio dir dabei, vorher zu wissen, was kommt.
-
-Sieh deine nächsten Zahlungen auf dem Dashboard, plane Verlängerungen im Kalender und erkenne, wie sich deine Abos auf deine monatlichen Kosten auswirken.
-
-Mehr Überblick über deine Ausgaben
-
-Mit Statistiken und Kategorien siehst du auf einen Blick, wohin dein Geld fließt.
-
-Trimio zeigt dir unter anderem:
-
-• Monatliche Gesamtkosten
-• Jährliche Hochrechnung
-• Ausgaben nach Kategorie
-• Kommende Verlängerungen
-• Potenzielle Sparmöglichkeiten
-
-Für kostenlose Testphasen und laufende Abos
-
-Auch Testphasen lassen sich verfolgen, damit du rechtzeitig weißt, wann eine kostenlose Phase endet und eine kostenpflichtige Verlängerung beginnt.
-
+Für Testphasen und laufende Abos
 Ob Streaming, Software, Fitnessstudio, Versicherung oder ein Probeabo, das du längst vergessen hast: Trimio sammelt alles an einem Ort.
 
-Trimio Premium
+Durchdacht bis ins Detail
+• Komplett auf Deutsch, auch Erinnerungen und E-Mails
+• Neun Währungen, Summen werden für dich umgerechnet
+• Heller und dunkler Modus
+• Abos pausieren, ohne den Verlauf zu verlieren
+• Anmeldung per E-Mail oder mit Google
 
+Kostenlos starten
 Neue Konten bekommen 14 Tage Premium kostenlos, ohne Kartendaten. Danach wird nichts abgebucht: Du wählst einen Plan oder nutzt die kostenlose Version weiter.
 
-Mit Trimio Premium verwaltest du unbegrenzt viele Abonnements und bekommst zusätzlich Ausgabenanalysen nach Kategorie, E-Mail-Erinnerungen vor jeder Verlängerung, eigene Kategorien und den Export deiner Daten als CSV.
+Premium bietet unbegrenzt viele Abos, die volle Aufschlüsselung nach Kategorie, alle Sparempfehlungen, ein monatliches Budget, eigene Kategorien, E-Mail-Erinnerungen vor jeder Verlängerung und den Export als CSV. Monatlich, jährlich oder einmalig mit lebenslangem Zugang.
 
-Trimio wurde entwickelt, um dir mehr Klarheit über wiederkehrende Zahlungen zu geben, ohne unnötige Komplexität und ohne Bankzugang.
+Deine Daten gehören dir
+Trimio fragt nie nach Bankzugang und verkauft keine persönlichen Daten. Du kannst dein Konto und alle Daten jederzeit direkt in der App löschen.
 
-Trimio. Wissen, bevor abgebucht wird.
+Wissen, bevor abgebucht wird.
 ```
 
-Roughly 3150 characters against a 4000 limit. The live version measured 2515,
-so this spends part of the 1485 characters of indexed field that were sitting
-unused.
+### What changed on 2026-11-10 and why
 
-### The three corrections, each measured rather than judged
+The old text (about 3150 characters) said most things twice: the cancellation
+guides three times, the privacy line three times, a ten bullet list repeating
+the paragraphs above it. The new one says each thing once, in the order a
+reader decides in: what it does, why it is safe, then each feature with the
+evidence for it.
 
-**`kündig` APPEARED ONCE IN 2515 CHARACTERS.** The differentiator had one vague
-bullet, `Kündigungsseiten schneller finden`, at position 8 of 10, and nothing
-else. "Abo kündigen" is a high intent German query and the listing barely said
-the word. It now appears six times, including a section heading and a bullet
-that names the number.
+KEPT, because they carry search: Abo and Abos (12), Abonnement, Kosten,
+Testphase (3), Probeabo once (a recorded decision, see the top of this file),
+kündigen in four forms, Verlängerung, Preiserhöhung, Abo-Tracker in the first
+sentence, and the named services.
 
-**THE PASTE PARSER NAMED NO NUMBER.** `lib/parse-subscription.ts` recognises 49
-distinct services through `KNOWN_SERVICES`, counted by parsing the object rather
-than grepping. The listing now says "über 45", rounding DOWN so it stays true if
-one is removed. It also now describes the payment intermediary behaviour, which
-is a better feature than the old text claimed: PayPal, Stripe and nine others
-are in `PAYMENT_INTERMEDIARIES`, which exists so the parser looks PAST them and
-names the real service.
+REMOVED AS OVERCLAIMS: "Preiserhöhungen bei laufenden Abos erkennen" read as
+automatic detection. Trimio records a rise when the user changes the price, and
+the new sentence says exactly that. "Über 45 Dienste" is now "über 50" (56
+distinct names in `KNOWN_SERVICES`, counted 2026-11-10).
 
-**THE CANCELLATION BULLET OVERCLAIMED.** It read "Verlinkt direkt auf die echte
-Kündigungsseite jedes Anbieters", which says EVERY provider. It is 36, counted
-by walking braces in `lib/cancellation-guides.ts`. The German mirror of the
-English `170+` error, and the same class as `über 160 Vorlagen`.
+ADDED, all shipped and checked against the code: adding offline, the reminder
+naming each row's own currency, "Komplett auf Deutsch, auch Erinnerungen und
+E-Mails", dark mode, the lifetime plan, and the Premium list taken from the
+paywall's own comparison rows.
 
-**`über 120 Vorlagen` WAS ALREADY CORRECT** and is untouched. 127 unique names,
-so the count error was English only: the German had already been fixed once and
-the English never was.
-
-### What was deliberately NOT changed
-
-**`Probeabo` stays.** It contradicts the Testphase rule and that is already a
-recorded decision, stated at the top of this file: people search for it. The app
-itself still says Testphase everywhere.
-
-**No free tier number appears anywhere in the German**, which is why nothing
-here goes stale when `FREE_SUBSCRIPTION_LIMIT` moves. The English listing said
-"up to 5 subscriptions" and needed fixing for exactly that reason.
-
-**The tagline closes it**, unchanged, and that is where it belongs now that the
-short description spends its 80 characters elsewhere.
+The short description and the title are UNCHANGED: both already lead with
+Abo, Tracker, Kosten and Testphasen, and the short line carries the
+positioning test's variable.
 
 ---
 
@@ -221,7 +174,7 @@ overlays. German equivalents, kept short enough to read at thumbnail size:
 |---|---|---|
 | 1 | Dashboard | Wisse, was du wirklich zahlst. |
 | 2 | Add by pasting an email | Ein Abo, ein Einfügen. |
-| 3 | Price hike alert | Erkennt Preiserhöhungen automatisch. |
+| 3 | Price rise in insights | Zeigt, was eine Preiserhöhung im Jahr kostet. |
 | 4 | Cancellation guide | Kündigen in zwei Taps, nicht zwanzig. |
 
 If you shoot the screenshots with the app set to German, these go on those

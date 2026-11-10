@@ -28,93 +28,93 @@ characters re-buying those two.
 ## Short description
 
 ```
-Subscription tracker. See renewals early, cancel with over 30 real guides.
+Renewal and free trial reminders, plus over 30 guides to cancel subscriptions.
 ```
 
-74/80, measured with `check_copy.py --keywords en`.
-
-Category terms: subscription, tracker, track. Supporting: cancel, renewal,
-renew, guide. The line it replaces is recorded in the positioning test file
-along with why an earlier draft of it was an ASO regression.
+78/80, measured with `check_copy.py --keywords en`. REWRITTEN 2026-11-10. The
+line before it, `Subscription tracker. See renewals early, cancel with over 30
+real guides.`, spent its first 21 characters on the two words the TITLE already
+carries at higher weight, which this file's own note above says not to do.
+This one keeps `subscription`, adds the category term `trial` (people search
+"free trial tracker") and the supporting term `reminder`, and keeps the
+positioning test's variable, cancellation guides, in the line. It loses
+`tracker`, which the checker reports and which the title still holds.
 
 ---
 
 ## Full description
 
-**Limit 4000 characters.** Corrected 2026-09-22 against the live text the owner
-pasted. Three numbers in it were wrong and one was going to become wrong.
+**Limit 4000 characters.** REWRITTEN 2026-11-10 from scratch: 2565 characters.
 
 ```
-Stop paying for subscriptions you forgot you had.
-
-Most subscription apps tell you what you are paying for. Trimio also shows you how to stop. Over 30 services have a step by step cancellation guide built in, with the exact screens to tap and a direct link, so you are not hunting through help pages at the moment you have finally decided.
+Trimio is a subscription tracker that reminds you before a renewal or a free trial charges you, and shows you exactly how to cancel what you no longer use.
 
 No bank login. No card details. Nothing to connect.
 
-As we say: "Know before you pay"
+Cancel without the hunt
+Over 30 services, including Netflix, Spotify, Disney+, Amazon Prime and YouTube Premium, have a step by step cancellation guide in the app, with the buttons you will actually see and a direct link to the right page. Once you have decided, the cancel page is one tap away.
 
-Trimio is a simple, privacy-first way to track every subscription you pay for: streaming, software, fitness, gaming, and more, so you always know what's coming out of your account and when.
+Reminders before you are charged
+Trimio reminds you on your phone before each renewal and before a free trial turns into a paid plan, at the lead time you choose. Every subscription keeps its own currency, so the reminder names the amount that will really leave your account.
 
-WHY TRIMIO
-• No bank or card linking required. You add your subscriptions yourself in seconds. Nothing to authorize, no financial account access, no data-sharing with a bank-linking service. Just you and your list.
-• See exactly what you're spending, monthly or yearly, in one place.
-• Get reminded before a renewal or a trial ends, so you're never surprised by a charge.
-• Get notified if a price goes up.
+Add a subscription in seconds
+Paste a confirmation or receipt email and Trimio fills in the name, price and billing cycle. It recognises over 50 services, from Netflix and Spotify to ChatGPT, Adobe and Microsoft 365, and it looks past PayPal or Stripe to name the service you are really paying for. The email is read on your phone. Or pick from over 120 ready made templates, or type anything in yourself.
 
-ADD SUBSCRIPTIONS IN SECONDS
-Got a confirmation or receipt email from Netflix, Spotify, YouTube Premium, Adobe, ChatGPT or 45 other services? Just paste the email text in, and Trimio fills in the name, price, and billing cycle for you. Even a PayPal or Stripe receipt works: Trimio looks past the payment processor and names the service you are actually paying for. No forwarding, no linking your inbox, nothing to authorize. Or pick from over 120 built-in service templates, or add anything manually. Track subscriptions in any currency, with a display currency of your choice.
+See where your money goes
+Your monthly and yearly total at a glance, spending by category, a calendar of every upcoming payment, and suggestions where you could save, such as two services doing the same job or a monthly plan that is cheaper billed yearly. Change a price and Trimio keeps the history and shows what the increase costs you a year.
 
-KNOW WHERE YOUR MONEY GOES
-Your dashboard shows your monthly and yearly spend at a glance, plus trends over time, so you can see whether your subscription costs are creeping up.
+Works offline
+Trimio opens without a connection and shows your last saved list. Add a subscription offline and it is kept on your phone, then saved to your account when you are back online.
 
-FIND WAYS TO SAVE
-Trimio looks at what you've entered and surfaces practical suggestions, like overlapping services doing the same job, or subscriptions where switching to annual billing would save you money.
+Made to stay out of your way
+• Nine currencies, with totals converted for you
+• English and German, reminders and emails included
+• Light and dark mode
+• Pause a subscription without losing its history
+• Sign in with email or Google
 
-CANCEL WITHOUT THE HUNTING
-Over 30 major services have a built-in step-by-step cancellation guide with a direct link to the right page, so when you decide to cancel something, you're not stuck digging through menus trying to find where.
+Free to start
+New accounts get 14 days of Premium free, no card needed. Nothing is charged when it ends: choose a plan, or carry on with the free version.
 
-STAY IN CONTROL
-• Renewal and price-change notifications you can configure
-• Toggle subscriptions active/inactive without losing history
-• Track price changes over time per subscription
-• Sign in with email or Google, your choice
+Premium adds unlimited subscriptions, the full category breakdown, every savings recommendation, a monthly budget goal, custom categories, email reminders before each renewal and a CSV export. Monthly, yearly or a one time lifetime purchase.
 
-FREE TO START
-New accounts get 14 days of Premium free, no card needed. Nothing is charged when it ends: you choose a plan, or carry on with the free version, where your first subscriptions stay free. Premium gives you unlimited subscriptions and full access to cost-saving insights: monthly, yearly, or a one-time lifetime purchase.
+Your data stays yours
+Trimio never asks for bank access and never sells your personal information. You can delete your account and everything in it at any time, from inside the app.
 
-Your data belongs to you. Trimio doesn't sell your personal information, and you can permanently delete your account and data at any time from within the app.
+Know before you pay.
 ```
 
-### The four corrections, each counted rather than judged
+### Every claim, checked against the code on 2026-11-10
 
-**`170+ built-in service templates` WAS AN OVERCLAIM AND IS NOW `over 120`.**
-`lib/service-templates.ts` holds 162 rows and **127 unique names**, and
-`dedupeForRegion` shows one row per name, so a user browses at most 127. This is
-the third time this repo has shipped a count that was grepped rather than
-counted, and the German listing had ALREADY been corrected for the identical
-error (`über 160 Vorlagen` to `über 120`) while the English kept it. A fix
-applied to one language is not a fix applied to the claim. Play policy also
-prohibits misrepresenting features in a listing, so this one carried real risk.
-
-**`20+ other services` WAS AN UNDERCLAIM BY 2.5x AND IS NOW `45 other`.**
-`KNOWN_SERVICES` in `lib/parse-subscription.ts` holds 54 aliases resolving to
-**49 distinct services**, counted by parsing the object. The old line was hiding
-the best feature in the app.
-
-**PayPal AND Stripe WERE IN THE WRONG LIST.** They sat beside Netflix and
-Spotify as services the parser recognises. They are in
-`PAYMENT_INTERMEDIARIES`, which exists so the parser looks PAST them and names
-the real service behind the receipt. The old sentence implied Trimio would name
-your subscription "PayPal". The new one describes what it actually does, which
-is a better feature than the claim it replaced.
-
-**`Track up to 5 subscriptions for free` WAS GOING TO LIE.** The cap became the
-Railway variable `FREE_SUBSCRIPTION_LIMIT` on 2026-09-22. A listing naming a
-number the server can change is a listing that eventually contradicts the app,
-which is the same reason the landing page went from `Free for 5 subscriptions`
-to `Free to start`. If a concrete number is ever wanted back, it has to be
-edited in Play Console every time that variable moves, and nothing will remind
-anybody.
+- **Over 30 cancellation guides**: 36, counted by walking braces in
+  `lib/cancellation-guides.ts`. Rounded down.
+- **Over 50 services recognised from a pasted email**: 56 distinct names in
+  `KNOWN_SERVICES` (it said 45 when there were 49). Rounded down.
+- **Looks past PayPal or Stripe**: `PAYMENT_INTERMEDIARIES`.
+- **The email is read on your phone**: `lib/parse-subscription.ts` makes no
+  network call.
+- **Over 120 templates**: 127 unique names (162 rows).
+- **Reminders before renewals and trial ends, lead time you choose, in the
+  row's own currency**: `lib/notification-scheduler.ts`, phone reminders are
+  not Premium gated; currency per row since `5c803d5c`.
+- **Price history and what an increase costs a year**: recorded when the
+  user CHANGES a price (`price_history`, the price rise tip). Deliberately NOT
+  "detects price increases": Trimio cannot know a provider raised a price until
+  somebody edits it. The previous text said "Get notified if a price goes up",
+  which read as automatic.
+- **Savings suggestions**: the overlap and yearly switch tips in `buildTips`.
+- **Works offline**: opens offline (`lib/offline-cache.ts`) and ADDS offline
+  (`lib/pending-subscriptions.ts`). Edits still need a connection, so the text
+  only claims adding.
+- **Nine currencies**: `lib/currencies.ts`. **Dark mode**: Settings >
+  Appearance. **English and German, reminders and emails included**.
+- **14 days of Premium free, no card**: the reverse trial,
+  `PREMIUM_TRIAL_DAYS` default 14. `reverse-trial.test.js` fails if this file
+  and the server disagree.
+- **Premium list**: exactly the paywall's comparison rows in `app/upgrade.tsx`.
+- **No free tier number** anywhere, on purpose: `FREE_SUBSCRIPTION_LIMIT` is a
+  Railway variable and a listing that names it eventually lies.
+- **No price** anywhere: Play shows the real one.
 
 ### Numbers to re-count before quoting them again
 
