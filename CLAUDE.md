@@ -4049,9 +4049,11 @@ last one left off without needing a recap typed out.
   is expo-updates' own error recovery after a JS crash on launch, which is rare
   and not ours to change. The rewrite on every cold start is still about 1MB of
   writes per launch, wasted but not dangerous; it ends with SDK 54.
-  NOT VERIFIED: that the crashing event's time matches a tap that found an
-  update (a tap that finds none never reloads). The Sentry issue page settles
-  it, and its breadcrumbs should show the reload.
+  THE OWNER READ THE SENTRY ISSUE PAGE, 2026-11-11, and reports it "ok"
+  (their report, not a screenshot). Nothing on it contradicts the cause. What
+  exactly it showed (the reload breadcrumb, the event time against a tap that
+  found an update, no further events) was not captured, so do not later quote
+  any of those as read.
 - That crash was only ever visible because of Fix 9 in `fix-gradle.sh`,
   which adds native Sentry auto-init through AndroidManifest meta-data so
   crashes BEFORE the JS bundle loads still report. Do not remove it.
