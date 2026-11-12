@@ -59,7 +59,7 @@ export default function AlertsScreen() {
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[c.primary]} tintColor={c.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[c.primary]} progressBackgroundColor={c.card} tintColor={c.primary} />}
       >
         <View style={styles.scrollContent}>
           {isLoading ? (

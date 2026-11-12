@@ -111,3 +111,21 @@ describe("bg on every fill a label sits on clears 4.5:1 in both themes", () => {
     expect(ratio("#FFFFFF", tokens("DARK").success)).toBeLessThan(3);
   });
 });
+
+/* Android draws the pull to refresh arrow in `colors` on a circle that is
+   WHITE unless progressBackgroundColor says otherwise. Since 2026-11-12 dark
+   `primary` is the light ink #F2F1EC, so a refresh control passing
+   colors={[c.primary]} and nothing else drew a near white arrow on a white
+   circle in dark mode: a spinner nobody can see. The web preview cannot show
+   an Android RefreshControl, which is how it got past the screenshots. */
+describe("a pull to refresh arrow that sets its colour also sets its circle", () => {
+  it("every RefreshControl with colors also passes progressBackgroundColor", () => {
+    const bad = [];
+    for (const f of FILES) {
+      for (const m of code(read(f)).matchAll(/<RefreshControl\b[^>]*>/g)) {
+        if (/\bcolors=/.test(m[0]) && !/\bprogressBackgroundColor=/.test(m[0])) bad.push(f);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+});

@@ -381,7 +381,7 @@ export default function InsightsScreen() {
       <ScrollView
         style={styles.container}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} colors={[c.primary]} tintColor={c.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={onRefresh} colors={[c.primary]} progressBackgroundColor={c.card} tintColor={c.primary} />}
       >
         <View style={styles.content}>
           {/* What this screen is about, said once, open on the page: what you
