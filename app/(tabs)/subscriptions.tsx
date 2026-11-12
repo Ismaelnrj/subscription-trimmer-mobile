@@ -866,26 +866,42 @@ export default function SubscriptionsScreen() {
 
   return (
     <View style={styles.container}>
+      {/* THE CANCEL MOMENT, 2026-11-12. Marking something cancelled is the
+          clearest "this app just saved me money" moment there is, and it used
+          to be a small green toast with the amount buried in a sentence. Now
+          the yearly amount kept is the one large figure, the only mint on the
+          card: the last thing somebody sees of a cancellation is the reason it
+          was worth doing. The sentence it replaces is still what a screen
+          reader announces. */}
       {removedCard && (
-        <View style={styles.removedCard}>
-          <MaterialCommunityIcons name="check-circle-outline" size={22} color={c.bg} />
-          <View style={{ flex: 1, marginLeft: 10 }}>
-            <Text style={styles.removedCardText}>
-              {t("subscriptions.cancelledSaving", { amount: fmtC(removedCard.yearly, removedCard.currency), name: removedCard.name })}
+        <View style={styles.keptCard}>
+          <View
+            accessible
+            accessibilityLiveRegion="polite"
+            accessibilityLabel={t("subscriptions.cancelledSaving", { amount: fmtC(removedCard.yearly, removedCard.currency), name: removedCard.name })}
+          >
+            <Text style={styles.keptTitle} numberOfLines={2}>
+              {t("subscriptions.cancelledTitle", { name: removedCard.name })}
             </Text>
-            <TouchableOpacity
-              onPress={() => {
-                if (removedTimer.current) clearTimeout(removedTimer.current);
-                setRemovedCard(null);
-                track("referral_invite_tapped", { source: "savings_toast" });
-                router.push("/refer-a-friend");
-              }}
-            >
-              <Text style={styles.removedCardInvite}>
-                {t("subscriptions.inviteFriendPrompt")} {t("subscriptions.inviteFriend")}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.keptFigure} numberOfLines={1} adjustsFontSizeToFit>
+              {fmtC(removedCard.yearly, removedCard.currency)}
+            </Text>
+            <Text style={styles.keptCaption}>{t("subscriptions.cancelledKeep")}</Text>
           </View>
+          <View style={styles.keptRule} />
+          <TouchableOpacity
+            style={styles.keptInvite}
+            onPress={() => {
+              if (removedTimer.current) clearTimeout(removedTimer.current);
+              setRemovedCard(null);
+              track("referral_invite_tapped", { source: "savings_toast" });
+              router.push("/refer-a-friend");
+            }}
+          >
+            <Text style={styles.keptInviteText}>
+              {t("subscriptions.inviteFriendPrompt")} <Text style={styles.keptInviteLink}>{t("subscriptions.inviteFriend")}</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
       <ScrollView
@@ -1582,17 +1598,19 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { padding: 16, paddingBottom: 32 },
-    removedCard: {
+    keptCard: {
       position: "absolute", top: 12, left: 16, right: 16, zIndex: 50,
-      /* Text on a status fill takes c.bg, never a literal white: dark success is
-         Soft Mint, and white on it measured 2.10:1. c.bg is 4.83:1 light and
-         8.40:1 dark. */
-      backgroundColor: c.success, borderRadius: 12, padding: 14,
-      flexDirection: "row", alignItems: "center",
-      shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+      backgroundColor: c.card, borderRadius: radius.l, padding: space.l,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.cardBorder,
+      shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 8,
     },
-    removedCardText: { color: c.bg, fontSize: 13, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 18 },
-    removedCardInvite: { color: c.bg, fontSize: 12, fontWeight: "600", fontFamily: "Montserrat-SemiBold", lineHeight: 17, marginTop: 6, textDecorationLine: "underline" },
+    keptTitle: { ...typeScale.label, color: c.textSecondary },
+    keptFigure: { ...typeScale.display, ...tabular, color: c.success, marginTop: space.xs },
+    keptCaption: { ...typeScale.caption, color: c.textSecondary },
+    keptRule: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginTop: space.m },
+    keptInvite: { minHeight: 48, justifyContent: "center" },
+    keptInviteText: { ...typeScale.caption, color: c.text },
+    keptInviteLink: { ...typeScale.label, color: c.text, textDecorationLine: "underline" },
     pasteButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
       minHeight: 48, paddingHorizontal: space.l, borderRadius: radius.m,

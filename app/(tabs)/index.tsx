@@ -29,12 +29,21 @@ import { track } from "../../lib/analytics";
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
 const ESTIMATE_BANNER_SHOWN_KEY = "estimate_banner_shown";
 const INVITE_BANNER_DISMISSED_UNTIL_KEY = "invite_banner_dismissed_until";
+/* THE FIRST THREE, 2026-11-12. One subscription on a money dashboard is a
+   total that means nothing yet, and the first session is where people stop:
+   20 of the first 30 accounts never added one. A goal with a visible end
+   (three) and the next step on it is the cheapest nudge there is. Ink, not
+   mint: progress is "chosen", and mint is kept for money kept. Dismissed for
+   good, since somebody who really pays for two things should not be nagged. */
+const FIRST_GOAL = 3;
+const FIRST_GOAL_DISMISSED_KEY = "first_goal_dismissed";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [recoBannerDismissed, setRecoBannerDismissed] = useState(true);
   const [inviteBannerDismissed, setInviteBannerDismissed] = useState(true);
+  const [goalDismissed, setGoalDismissed] = useState(true);
   const [estimateBanner, setEstimateBanner] = useState<{ guess: number; actual: number } | null>(null);
   const { currency, baseCurrencyCode, rates } = useCurrencyStore();
   const fmtC = useFmt();
@@ -211,6 +220,12 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
+    SecureStore.getItemAsync(FIRST_GOAL_DISMISSED_KEY)
+      .then((v) => setGoalDismissed(v === "true"))
+      .catch(() => setGoalDismissed(false));
+  }, []);
+
+  useEffect(() => {
     (async () => {
       const dismissedUntil = await SecureStore.getItemAsync(INVITE_BANNER_DISMISSED_UNTIL_KEY);
       setInviteBannerDismissed(!!dismissedUntil && new Date(dismissedUntil) > new Date());
@@ -251,6 +266,12 @@ export default function DashboardScreen() {
     setInviteBannerDismissed(true);
     const dismissedUntil = new Date(Date.now() + 14 * 86400000).toISOString();
     await SecureStore.setItemAsync(INVITE_BANNER_DISMISSED_UNTIL_KEY, dismissedUntil);
+  };
+
+  const showGoal = !goalDismissed && subscriptions.length >= 1 && subscriptions.length < FIRST_GOAL;
+  const dismissGoal = () => {
+    setGoalDismissed(true);
+    SecureStore.setItemAsync(FIRST_GOAL_DISMISSED_KEY, "true").catch(() => {});
   };
 
   const handleInviteBannerPress = () => {
@@ -400,6 +421,36 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
+
+        {showGoal && (
+          <View style={[styles.card, styles.goal]}>
+            <View style={styles.goalHead}>
+              <Text style={styles.goalTitle}>
+                {t("dashboard.goalProgress", { count: subscriptions.length, total: FIRST_GOAL })}
+              </Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t("common.a11yDismiss")} onPress={dismissGoal} hitSlop={12}>
+                <MaterialCommunityIcons name="close" size={18} color={c.textMuted} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.goalSegments} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+              {Array.from({ length: FIRST_GOAL }, (_, i) => (
+                <View key={i} style={[styles.goalSegment, { backgroundColor: i < subscriptions.length ? c.text : c.border }]} />
+              ))}
+            </View>
+            <Text style={styles.goalBody}>{t("dashboard.goalBody")}</Text>
+            <TouchableOpacity
+              style={styles.goalButton}
+              accessibilityRole="button"
+              onPress={() => {
+                track("first_run_action", { action: "another" });
+                router.push({ pathname: "/(tabs)/subscriptions", params: { from: "fab" } });
+              }}
+            >
+              <MaterialCommunityIcons name="plus" size={18} color={c.text} />
+              <Text style={styles.goalButtonText}>{t("dashboard.goalAdd")}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {verifyBanner}
 
@@ -565,6 +616,17 @@ function makeStyles(c: AppColors) {
     // c.text, not c.primary: dark primary on primaryLight is 3.35:1, under 4.5.
     tagText: { ...typeScale.label, fontSize: 12, color: c.text },
 
+    goal: { paddingVertical: space.l, marginBottom: space.l },
+    goalHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.m },
+    goalTitle: { ...typeScale.heading, ...tabular, color: c.text, flex: 1 },
+    goalSegments: { flexDirection: "row", gap: space.xs, marginTop: space.m },
+    goalSegment: { flex: 1, height: 6, borderRadius: radius.pill },
+    goalBody: { ...typeScale.caption, color: c.textSecondary, marginTop: space.m },
+    goalButton: {
+      flexDirection: "row", alignItems: "center", gap: space.s, alignSelf: "flex-start",
+      minHeight: 48, marginTop: space.s,
+    },
+    goalButtonText: { ...typeScale.label, color: c.text },
     note: { flexDirection: "row", alignItems: "center", gap: space.m, paddingVertical: space.m, marginBottom: space.l },
     noteText: { ...typeScale.caption, color: c.text, flex: 1 },
 

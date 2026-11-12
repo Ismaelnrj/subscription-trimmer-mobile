@@ -41,7 +41,7 @@ const ALLOWED = {
   },
   "app/(tabs)/subscriptions.tsx": {
     'name="check-circle" size={16} color={c.success}': "a pasted email was read: done",
-    "backgroundColor: c.success, borderRadius: 12, padding: 14,": "the cancel moment: money kept a year",
+    "keptFigure: {": "the cancel moment: the money kept a year, its one large figure",
     "parsedPreviewText: {": "a pasted email was read: done",
   },
   "app/(tabs)/index.tsx": {

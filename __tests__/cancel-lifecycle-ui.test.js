@@ -76,6 +76,20 @@ describe("only cancelling celebrates a saving", () => {
     expect(SUBS).toMatch(/fmtC\(removedCard\.yearly, removedCard\.currency\)/);
   });
 
+  it("the cancel moment makes the yearly saving its one large figure", () => {
+    /* Peak end: the last thing somebody sees of a cancellation is the money it
+       keeps, at the display size a screen reserves for its one figure, and the
+       sentence it replaced is what a screen reader hears. */
+    expect(SUBS).toMatch(/<Text style=\{styles\.keptFigure\}[^>]*>\s*\{fmtC\(removedCard\.yearly, removedCard\.currency\)\}/);
+    expect(SUBS).toMatch(/accessibilityLiveRegion="polite"\s*accessibilityLabel=\{t\("subscriptions\.cancelledSaving"/);
+    for (const L of [EN, DE]) {
+      expect(L.subscriptions.cancelledTitle).toMatch(/\{\{name\}\}/);
+      expect(L.subscriptions.cancelledKeep).not.toMatch(/\{\{/);
+    }
+    // Read as one line under the figure: "191,88 € behältst du jedes Jahr".
+    expect(DE.subscriptions.cancelledKeep).toBe("behältst du jedes Jahr");
+  });
+
   it("the toast copy says cancelled, not removed, in both languages", () => {
     for (const L of [EN, DE]) {
       expect(L.subscriptions.cancelledSaving).toMatch(/\{\{name\}\}/);

@@ -71,11 +71,12 @@ describe("no text on a primary fill, and no text set in primary", () => {
     expect(layout).toMatch(/errStyles = StyleSheet\.create\([\s\S]*?buttonText: \{ color: "#FFFFFF"/);
   });
 
-  it("the savings toast and swipe delete keep their status fill and label with c.bg", () => {
+  it("the cancel moment sets its mint figure on the card, and swipe delete labels its fill with c.bg", () => {
     const s = code(read("app/(tabs)/subscriptions.tsx"));
-    expect(s).toMatch(/removedCard: \{[\s\S]*?backgroundColor: c\.success/);
-    expect(s).toMatch(/removedCardText: \{ color: c\.bg,/);
-    expect(s).toMatch(/removedCardInvite: \{ color: c\.bg,/);
+    // Since 2026-11-12 the saving is a figure ON the card, not text on a fill.
+    expect(s).not.toMatch(/backgroundColor: c\.success/);
+    expect(s).toMatch(/keptCard: \{[\s\S]*?backgroundColor: c\.card,/);
+    expect(s).toMatch(/keptFigure: \{ \.\.\.typeScale\.display, \.\.\.tabular, color: c\.success,/);
     expect(s).toMatch(/swipeDelete: \{[\s\S]*?backgroundColor: c\.danger/);
     expect(s).toMatch(/swipeDeleteText: \{ color: c\.bg,/);
   });
