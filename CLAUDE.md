@@ -2187,9 +2187,18 @@ last one left off without needing a recap typed out.
   ONLY for good news (money kept, something done and fine), listed place by
   place in `__tests__/mint-only-for-good-news.test.js`. On the site, 7 of 8
   section labels are gone and check_landing's eyebrow rule passes at 1 of 9.
-  WAITING ON THE OWNER'S YES to the before and after (both sent 2026-11-12)
-  before master: the site half deploys on merge, the app half needs an
-  `eas update` (`needs_native_build.py bf3c6706` says OTA IS ENOUGH).
+  APPROVED 2026-11-12, the owner's words: "do it please ! but only if you
+  genuinely think that the new design look better". The judgement given back
+  was yes, modestly, with two faults found and fixed first: the before and
+  after sent that morning showed the German dashboard still loading (re-shot
+  and re-sent; a sheet must be READ before it is sent), and the switches. With
+  "on" moved from green to ink, the off track stayed textSecondary, 2.28:1
+  from on in light and 2.30:1 in dark, and the dark knob was the card's own
+  colour, so the part Android's SwitchCompat draws over the card vanished.
+  `switchOn`, `switchOff` and `switchThumb` in lib/theme.ts fix both, every
+  Switch uses them, and theme-contrast.test.js measures them (negative tested
+  against the morning's values). The site half deploys on merge, the app half
+  needs an `eas update` (`needs_native_build.py bf3c6706` says OTA IS ENOUGH).
   NOT CHANGED, ON PURPOSE: the OS splash (`app.json` backgroundColor) and
   `AnimatedSplash.tsx` stay warm white until the next native build, since
   changing only the JS half would flash; the chevron in the mark is warm
