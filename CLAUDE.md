@@ -5646,6 +5646,39 @@ last one left off without needing a recap typed out.
   actions, low); deleting and re-registering an address earns a new 14 day
   trial (same reasoning as referral abuse); and a deleted account's old Brevo
   contact keeps its attributes, which only the owner can delete in Brevo.
+- A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
+  server, RLS on, check who owns each record, admin behind login, limits on
+  signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
+  remembered: every commit in the public history was searched for key shapes
+  and only the Firebase Android key turned up (public by design); the app
+  carries no secret; `access-control-scan.test.js` is this repo's answer to
+  RLS, since no client ever talks to Postgres; `/api/admin/funnel` is the only
+  admin route and needs CRON_SECRET in constant time; the RevenueCat webhook
+  compares its header with timingSafeEqual. `trust proxy` is 1, so a spoofed
+  X-Forwarded-For does not dodge the IP limits.
+  SIGNUP HAD THREE GAPS, fixed in one backend commit with
+  `__tests__/signup-limits.test.js` (23 assertions; the suite cannot even load
+  against the code before it). None was a way into an account: register took
+  any value as an email (a non-string threw a 500 and a Sentry event, any
+  string became an account and was mailed through Brevo); one inbox could be
+  sent code emails without limit from rotated IPs; and one machine could open
+  about 960 accounts a day. Now: `cleanEmail` (string, trimmed, at most 254)
+  everywhere and `isPlausibleEmail` on NEW accounts only, so an old odd
+  address can still sign in and reset; `takeCodeEmail`, 5 code emails per
+  address per hour, ONE budget across verification, resend and reset (past it
+  reset answers success without rotating the code, resend answers 429);
+  `signupLimiter`, 20 created accounts per IP per day, counting only
+  successes, beside authLimiter. Login, reset, redeem and validatePassword take
+  the same type guard. MEASURED by booting master and the fix on PostgreSQL
+  16: the old server answered 500 to five malformed bodies, created accounts
+  named `nope` and a 300 character string, and sent one inbox 15 code emails
+  from 15 IPs; the new one answers 400 (German too), creates neither, and
+  stops at 5. The daily cap was driven on a scratch copy with authLimiter
+  loosened: 5 weak password failures uncounted, 20 accounts, then 429, another
+  IP unaffected. Backend only, no app update.
+  THE ONE REAL RESIDUAL IS INFRASTRUCTURE, NOT CODE: the database is reached
+  over Railway's PUBLIC proxy, so its password (rotated 2026-10-24) is the only
+  lock on it. See the private address entry before trying to move it.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

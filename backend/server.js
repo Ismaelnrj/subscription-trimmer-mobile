@@ -625,6 +625,9 @@ const ERROR_TEXT_DE = {
   'Too many requests. Please try again shortly.': 'Zu viele Anfragen. Bitte versuche es gleich noch einmal.',
   'Email and password required': 'Bitte gib E-Mail-Adresse und Passwort ein.',
   'Email required': 'Bitte gib deine E-Mail-Adresse ein.',
+  'Please enter a valid email address': 'Bitte gib eine gültige E-Mail-Adresse ein.',
+  'Too many new accounts from this network today. Please try again tomorrow.':
+    'Von diesem Netzwerk wurden heute zu viele neue Konten erstellt. Bitte versuche es morgen erneut.',
   'Password required': 'Bitte gib dein Passwort ein.',
   'Invalid email or password': 'E-Mail-Adresse oder Passwort ist falsch.',
   'Name must be under 80 characters': 'Der Name darf höchstens 80 Zeichen lang sein.',
@@ -678,6 +681,23 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/* NEW ACCOUNTS PER IP PER DAY, added 2026-11-12. authLimiter alone allowed 10
+   every 15 minutes, about 960 accounts a day from one machine, each with a 14
+   day trial and a verification email sent through Brevo. This counts only
+   requests that SUCCEED (skipFailedRequests), so somebody retrying a weak
+   password is not charged for it, and it sits BESIDE authLimiter, not instead
+   of it. 20 is far above what one public address produces at this scale, but a
+   carrier puts many people behind one address (CGNAT): raise it if real
+   signups ever approach it, do not remove it. In memory, so a deploy resets it. */
+const signupLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 20,
+  skipFailedRequests: true,
+  message: { error: 'Too many new accounts from this network today. Please try again tomorrow.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -756,6 +776,7 @@ const loginLimiter = rateLimit({
 });
 
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/register', signupLimiter);
 app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth/google', tokenLimiter);
 app.use('/api/auth/refresh', tokenLimiter);
@@ -2410,7 +2431,7 @@ function formatNotification(n) {
  * predates a rule, and their password is correct. Validation belongs where a
  * password is CREATED. */
 function validatePassword(password) {
-  if (!password || password.length < 8) return 'Password must be at least 8 characters.';
+  if (typeof password !== 'string' || password.length < 8) return 'Password must be at least 8 characters.';
   /* bcrypt hashes at most 72 BYTES and silently ignores the rest, so without
      this a 200 character passphrase is really its first 72 bytes and two
      different passphrases sharing that prefix both authenticate. Bytes, not
@@ -2426,11 +2447,70 @@ function validatePassword(password) {
   return null;
 }
 
+/* SIGNUP AND CODE EMAIL LIMITS, 2026-11-12, from a security checklist the
+   owner sent. None of these was a way into anybody's account; each was a way
+   to use this server against somebody else, or against its own mail.
+   1. register took ANY value as an email. Not a string and it threw, a 500 and
+      a Sentry event per request; any string at all became an account and was
+      sent a verification email through Brevo. Bounces from made up addresses
+      are what get a sending account throttled, and Brevo carries every code
+      and reset email this product sends.
+   2. One address could be sent code emails without limit. emailLimiter is per
+      IP, so forgot-password for a stranger's address, or resend-verification on
+      an account registered under it, could fill one inbox from rotated
+      addresses. takeCodeEmail caps it per ADDRESS, one budget shared by the
+      verification, resend and reset emails, so an inbox gets at most five
+      Trimio code emails an hour however they are asked for.
+   Only NEW accounts get the format check. Login and reset take the type and
+   length guard alone, so an account registered before this existed can still
+   sign in and reset its password. */
+const EMAIL_MAX_LENGTH = 254;
+
+function cleanEmail(value) {
+  if (typeof value !== 'string') return null;
+  const email = value.trim().toLowerCase();
+  return email && email.length <= EMAIL_MAX_LENGTH ? email : null;
+}
+
+// Deliberately loose: one @, a local part, and a domain with a dot in it.
+function isPlausibleEmail(email) {
+  return /^[^\s@]{1,64}@[^\s@.]+(\.[^\s@.]+)+$/.test(email);
+}
+
+/* Records a code email and answers whether it may go. Called only for an
+   address that HAS an account, so filling the map to push somebody's entry out
+   would take ten thousand real accounts. In memory like loginFailures: a
+   restart forgets the counts, which only ever allows a few more emails. */
+const CODE_EMAILS_PER_HOUR = 5;
+const CODE_EMAIL_WINDOW_MS = 60 * 60 * 1000;
+const CODE_EMAIL_MAP_LIMIT = 10000;
+const codeEmailsSent = new Map();
+
+function takeCodeEmail(email, now = Date.now()) {
+  const entry = codeEmailsSent.get(email);
+  if (entry && now - entry.first < CODE_EMAIL_WINDOW_MS) {
+    if (entry.count >= CODE_EMAILS_PER_HOUR) return false;
+    entry.count += 1;
+    return true;
+  }
+  if (codeEmailsSent.size >= CODE_EMAIL_MAP_LIMIT) {
+    for (const [key, value] of codeEmailsSent) {
+      if (now - value.first >= CODE_EMAIL_WINDOW_MS) codeEmailsSent.delete(key);
+    }
+    if (codeEmailsSent.size >= CODE_EMAIL_MAP_LIMIT) codeEmailsSent.delete(codeEmailsSent.keys().next().value);
+  }
+  codeEmailsSent.set(email, { count: 1, first: now });
+  return true;
+}
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { password, name } = req.body;
-    const email = req.body.email?.trim().toLowerCase();
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    if (req.body.email == null || req.body.email === '' || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    const email = cleanEmail(req.body.email);
+    if (!email || !isPlausibleEmail(email)) return res.status(400).json({ error: 'Please enter a valid email address' });
     const pwError = validatePassword(password);
     if (pwError) return res.status(400).json({ error: pwError });
     if (name != null && (typeof name !== 'string' || name.trim().length > 80)) {
@@ -2462,7 +2542,9 @@ app.post('/api/auth/register', async (req, res) => {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
-    await sendVerificationEmail(email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
+    if (takeCodeEmail(email)) {
+      await sendVerificationEmail(email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
+    }
 
     const { accessToken, refreshToken } = await issueTokens(user.id);
     res.json({ token: accessToken, refreshToken, user: formatUser(user) });
@@ -2518,8 +2600,10 @@ function noteLoginFailure(email, now = Date.now()) {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { password } = req.body;
-    const email = req.body.email?.trim().toLowerCase();
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+    const email = cleanEmail(req.body.email);
+    if (!email || typeof password !== 'string' || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
     if (loginLocked(email)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -2828,7 +2912,7 @@ app.get('/api/trpc/referrals.me', authMiddleware, async (req, res) => {
 
 app.post('/api/trpc/referrals.redeem', authMiddleware, async (req, res) => {
   try {
-    const code = req.body.code?.trim().toUpperCase();
+    const code = typeof req.body.code === 'string' ? req.body.code.trim().toUpperCase() : '';
     if (!code) return res.status(400).json({ error: 'Referral code required' });
 
     const meResult = await pool.query('SELECT * FROM users WHERE id = $1', [req.userId]);
@@ -2855,11 +2939,13 @@ app.post('/api/trpc/referrals.redeem', authMiddleware, async (req, res) => {
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   try {
-    const email = req.body.email?.trim().toLowerCase();
+    const email = cleanEmail(req.body.email);
     if (!email) return res.status(400).json({ error: 'Email required' });
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user) return res.json({ success: true });
+    // Past the cap: the same answer, and the code already sent stays valid.
+    if (!takeCodeEmail(email)) return res.json({ success: true });
 
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
@@ -2878,7 +2964,7 @@ const resetAttempts = new Map();
 
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
-    const email = req.body.email?.trim().toLowerCase();
+    const email = cleanEmail(req.body.email);
     const { code, newPassword } = req.body;
     if (!email || !code || !newPassword) return res.status(400).json({ error: 'Email, code and new password required' });
     const pwError = validatePassword(newPassword);
@@ -2920,6 +3006,9 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     const user = result.rows[0];
     if (!user) return res.status(404).json({ error: 'User not found' });
     if (user.is_verified) return res.json({ success: true, alreadyVerified: true });
+    if (!takeCodeEmail(user.email)) {
+      return res.status(429).json({ error: 'Too many requests. Please try again in an hour.' });
+    }
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);

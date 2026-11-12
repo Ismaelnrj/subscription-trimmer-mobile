@@ -25,7 +25,9 @@ function slice(startMarker, endMarker) {
   return SRC.slice(a, b);
 }
 
-const helpers = slice("const LOGIN_MAX_FAILURES", "app.post('/api/auth/login'");
+// The login handler reads the email through cleanEmail (signup-limits.test.js).
+const emailHelpers = slice("const EMAIL_MAX_LENGTH", "app.post('/api/auth/register'");
+const helpers = emailHelpers + slice("const LOGIN_MAX_FAILURES", "app.post('/api/auth/login'");
 const handlerStart = SRC.indexOf("app.post('/api/auth/login'");
 const handlerSrc = SRC.slice(handlerStart, SRC.indexOf("\n});\n", handlerStart) + 4);
 
