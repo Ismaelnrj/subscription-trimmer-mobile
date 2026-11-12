@@ -8,7 +8,37 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const crypto = require('crypto');
-const rateLimit = require('express-rate-limit');
+const expressRateLimit = require('express-rate-limit');
+/* EVERY LIMITER COUNTS AN IPv6 CLIENT BY ITS /64, added 2026-11-12. Version 7
+   of express-rate-limit keys on the full address, and one subscriber is given
+   at least a /64 (2^64 addresses), so stepping through them bought a fresh
+   budget on every limiter here: sign up, login, codes, all of it. A /64 is
+   what one phone or one home network gets, so this counts IPv6 the way IPv4
+   already counts behind a router. Every limiter is built through this. */
+const rateLimit = (opts) => expressRateLimit({ keyGenerator: rateLimitKey, ...opts });
+
+/* IPv4, and IPv4 written inside IPv6 (::ffff:1.2.3.4), stay the address
+   itself. Anything it cannot read falls back to the address too: a key
+   function that threw would refuse every request it guards, sign in included. */
+function rateLimitKey(req) {
+  const ip = String((req && req.ip) || '');
+  try {
+    if (/^::ffff:\d+\.\d+\.\d+\.\d+$/i.test(ip)) return ip.slice(7);
+    if (!ip.includes(':')) return ip;
+    const halves = ip.split('%')[0].split('::');
+    if (halves.length > 2) return ip;
+    const left = halves[0] ? halves[0].split(':') : [];
+    const right = halves.length === 2 && halves[1] ? halves[1].split(':') : [];
+    const groups = halves.length === 2
+      ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right]
+      : left;
+    const head = groups.slice(0, 4);
+    if (head.length < 4 || !head.every((g) => /^[0-9a-f]{1,4}$/i.test(g))) return ip;
+    return `${head.map((g) => parseInt(g, 16).toString(16)).join(':')}::/64`;
+  } catch {
+    return ip;
+  }
+}
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
