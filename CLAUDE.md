@@ -2342,6 +2342,27 @@ last one left off without needing a recap typed out.
   line, which only shows when an update is waiting, so the NEXT publish is
   the first that can show it; and the paywall's yearly badge reading 47% now
   that Play charges 3.99 and 24.99.
+- PUBLISHED THROUGH 6368c438 AND CONFIRMED ON A REAL DEVICE (2026-11-12),
+  read off a screenshot of the Build Info panel: `App version: 1.0.4`,
+  `Native build: 41`, `Channel: production`, `Runtime version: 1.0.1`,
+  `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1d160-2583-7995-95dd-988d1c9e0a2e`, `Update published:
+  2026-11-12T20:08:21.635Z`, `You are on the latest version.` DIFFERENT ID
+  AND LATER than `01a1bff4-...` at 2026-11-09T10:57:45.709Z. The same
+  screenshot shows the panel on the cool grey ground with a white card, so the
+  palette is on the phone. Timestamp cross-check: `5aab701d` was committed
+  19:55:16Z and reached master after CI run 775, with nothing after it, so the
+  tree carried it (the owner's `git rev-parse` was not read). It is CLAUDE.md
+  only; the last client commit is `6368c438`, which names the baseline.
+  WHAT WENT OUT across `3596ff00..6368c438`: the palette (cool grey ground,
+  white cards, ink for chosen, mint only for good news), the switch tokens,
+  the dark mode refresh arrow on Insights and Alerts, and the German "50,00 €"
+  threshold. `needs_native_build.py 3596ff00` said OTA IS ENOUGH. The backend
+  half went live with the push of `5aab701d` to master: the signup limits and
+  the site off cream; the redirect guard is a test only.
+  STILL CREAM UNTIL THE NEXT NATIVE BUILD: the launch screen, on purpose.
+  NOT YET EXERCISED: the switches seen on Android itself (only the web preview
+  was read), and dark mode on the phone.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
