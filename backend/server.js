@@ -626,6 +626,8 @@ const ERROR_TEXT_DE = {
   'Email and password required': 'Bitte gib E-Mail-Adresse und Passwort ein.',
   'Email required': 'Bitte gib deine E-Mail-Adresse ein.',
   'Please enter a valid email address': 'Bitte gib eine gültige E-Mail-Adresse ein.',
+  'This account holds the most subscriptions one account can have.':
+    'Dieses Konto enthält bereits die Höchstzahl an Abos.',
   'Too many new accounts from this network today. Please try again tomorrow.':
     'Von diesem Netzwerk wurden heute zu viele neue Konten erstellt. Bitte versuche es morgen erneut.',
   'Password required': 'Bitte gib dein Passwort ein.',
@@ -3458,7 +3460,13 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     }
     const allRows = await db.query('SELECT COUNT(*) AS c FROM subscriptions WHERE user_id = $1', [req.userId]);
     if (parseInt(allRows.rows[0].c, 10) >= MAX_SUBSCRIPTIONS_PER_ACCOUNT) {
-      return { status: 403, body: { error: 'ACCOUNT_LIMIT_REACHED', limit: MAX_SUBSCRIPTIONS_PER_ACCOUNT } };
+      /* 409 AND A SENTENCE, NOT 403 AND A CODE. The app's offline queue reads
+         a 403 other than FREE_LIMIT_REACHED as a session problem and parks
+         the entry, retrying every 30 seconds and holding back every entry
+         behind it; both add paths also show `error` verbatim. Any other 4xx
+         is kept as a refusal the person decides on, so installed builds get
+         this right with no update. The code rides beside it for new clients. */
+      return { status: 409, body: { error: 'This account holds the most subscriptions one account can have.', code: 'ACCOUNT_LIMIT_REACHED', limit: MAX_SUBSCRIPTIONS_PER_ACCOUNT } };
     }
     if (!isPaid) {
       /* CANCELLED ROWS DO NOT COUNT AGAINST THE FREE TIER, and this is the line

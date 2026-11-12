@@ -204,6 +204,23 @@ describe("refusals stay visible and are the person's to decide", () => {
     expect(items()).toHaveLength(0);
   });
 
+  it("the account ceiling (409 with a sentence) is a refusal, and the entry behind it is still sent", async () => {
+    // Until 2026-11-12 the server answered it 403, which the 401/403 rule
+    // above reads as a session problem: the entry was parked for good and
+    // held back every entry queued after it.
+    const full = payload("Full");
+    await addOffline(full);
+    await addOffline(payload("Next"));
+    replies = [
+      () => { throw httpErr(409, { error: "Dieses Konto enthält bereits die Höchstzahl an Abos.", code: "ACCOUNT_LIMIT_REACHED", limit: 500 }); },
+      (x) => row(104, x),
+    ];
+    await P.flushPending();
+    expect(items()).toHaveLength(1);
+    expect(items()[0].ref).toBe(full.clientRef);
+    expect(items()[0].refusal).toEqual({ code: "Dieses Konto enthält bereits die Höchstzahl an Abos.", limit: 500 });
+  });
+
   it("a validation refusal keeps the server's own text, already in the reader's language", async () => {
     await addOffline(payload("Q"));
     replies = [() => { throw httpErr(400, { error: "Ungültiges nächstes Abrechnungsdatum" }); }];
