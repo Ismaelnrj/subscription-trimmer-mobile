@@ -35,7 +35,7 @@ const makeStyles = (c: AppColors) =>
       alignItems: "center",
       gap: 10,
       backgroundColor: c.card,
-      borderColor: c.border,
+      borderColor: c.cardBorder,
       borderWidth: 1,
       borderRadius: 10,
       paddingVertical: 10,

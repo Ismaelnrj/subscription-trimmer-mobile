@@ -1,7 +1,29 @@
 import { useColorScheme } from "react-native";
 import { useThemeStore } from "./theme-store";
 
-/* Trimio brand palette: Ink Navy, Warm White, Soft Mint, with Slate, Warm
+/* THE LIGHT GROUND IS NO LONGER CREAM, 2026-11-12, the owner's call: a warm
+   cream ground has become one of the most recognisable marks of AI generated
+   design, and the owner read the app that way. The ground is #F3F5F6 and the
+   rules #E2E6E9, both mixed from Ink Navy's own hue (204 degrees) rather than
+   taken from a UI kit (Tailwind's gray-100 is #F3F4F6, which the first sheet
+   of this change used by accident). Cards are pure white and carry NO outline
+   in light: `cardBorder` equals the card, so a card is told from the ground by
+   its fill alone, the way a grouped list is on a phone's own settings screen.
+   Chips, inputs, plan rows and other controls keep `border`. Dark keeps its
+   outline, because there the fill difference alone is too small.
+   Measured, not guessed: textMuted 4.55:1 on the new ground and 4.98:1 on a
+   card; the category palette passes all five dataviz gates on both.
+   Mint now marks good news only: the logo, money a person keeps, and
+   something done and fine. __tests__/mint-only-for-good-news.test.js holds
+   every place it may appear. DARK FOLLOWS THE SAME RULE: its `primary` and
+   active tab were the mint #2F8E71 / #55C6A3, so spinners, the free limit
+   meter, the top weekly bar and the active tab were green for no reason.
+   They are the light ink now, exactly as light mode draws them in navy, and
+   `primaryLight` is a neutral tint rather than a green one. The paragraph
+   below about white on dark primary is history: nothing sits on it, and
+   ink under white is not a pairing anything uses.
+
+   Trimio brand palette: Ink Navy, Warm White, Soft Mint, with Slate, Warm
    Amber and Muted Coral in supporting roles. The light theme's ground,
    card, rule, ink, slate and mint are the same values the landing page
    uses, so the app and the site read as one product. The intended weighting is
@@ -70,9 +92,10 @@ import { useThemeStore } from "./theme-store";
  *   tint, the limit meter, a border, the top weekly bar), where 3:1 is the
  *   floor and 3.94:1 clears it. __tests__/dark-mode-fills.test.js keeps it so. */
 export const LIGHT = {
-  bg: "#F7F6F1",
-  card: "#FCFBF8",
-  border: "#DCDEDB",
+  bg: "#F3F5F6",
+  card: "#FFFFFF",
+  cardBorder: "#FFFFFF",
+  border: "#E2E6E9",
   text: "#142B3A",
   textSecondary: "#52616B",
   textMuted: "#67717A",
@@ -89,24 +112,25 @@ export const LIGHT = {
   success: "#1F7A62",
   inputBg: "#FFFFFF",
   placeholder: "#67717A",
-  tabBar: "#FCFBF8",
-  tabBarBorder: "#DCDEDB",
+  tabBar: "#FFFFFF",
+  tabBarBorder: "#E2E6E9",
   tabBarActive: "#142B3A",
   tabBarInactive: "#67717A",
   overlay: "rgba(20,43,58,0.55)",
-  skeleton: "#E9E6DE",
-  skeletonHighlight: "#F3F1EA",
+  skeleton: "#E5E9EB",
+  skeletonHighlight: "#F0F3F4",
 } as const;
 
 export const DARK = {
   bg: "#0E1A22",
   card: "#16242E",
+  cardBorder: "#24343E",
   border: "#24343E",
   text: "#F2F1EC",
   textSecondary: "#93A3AD",
   textMuted: "#8695A0",
-  primary: "#2F8E71",
-  primaryLight: "#16342C",
+  primary: "#F2F1EC",
+  primaryLight: "#22323C",
   accent: "#55C6A3",
   accentLight: "#16342C",
   danger: "#F0857A",
@@ -120,7 +144,7 @@ export const DARK = {
   placeholder: "#8695A0",
   tabBar: "#101E28",
   tabBarBorder: "#24343E",
-  tabBarActive: "#55C6A3",
+  tabBarActive: "#F2F1EC",
   tabBarInactive: "#8695A0",
   overlay: "rgba(0,0,0,0.7)",
   skeleton: "#24343E",

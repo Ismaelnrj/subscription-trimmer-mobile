@@ -81,14 +81,16 @@ describe("white on a primary fill, which no call site uses since 2026-11-08", ()
     expect(ratio("#FFFFFF", LIGHT.primary)).toBeGreaterThanOrEqual(NORMAL_TEXT);
   });
 
-  it("clears only the LARGE text floor in the dark theme, a known gap", () => {
-    // 4.02:1. Until 2026-11-08 some 36 call sites put white on it; now none do
-    // (buttons fill with text and label with bg, see dark-mode-fills.test.js),
-    // so the gap reaches nobody. Asserted at 3:1 so it stays VISIBLE here: a
-    // fill that comes back would bring it back. If the token is ever raised,
-    // tighten this to NORMAL_TEXT in the same commit.
-    expect(ratio("#FFFFFF", DARK.primary)).toBeGreaterThanOrEqual(LARGE_TEXT);
-    expect(ratio("#FFFFFF", DARK.primary)).toBeLessThan(NORMAL_TEXT);
+  it("is ink in the dark theme too, so the known gap is gone rather than hidden", () => {
+    // Until 2026-11-12 dark primary was the mint #2F8E71, 4.02:1 under white,
+    // asserted here as a visible known gap. Since then primary is the same
+    // light ink as text, because mint marks only good news
+    // (mint-only-for-good-news.test.js). Nothing puts white on it
+    // (dark-mode-fills.test.js), and as a non-text mark on the card it clears
+    // the 3:1 floor by a wide margin.
+    expect(DARK.primary).toBe(DARK.text);
+    expect(DARK.tabBarActive).toBe(DARK.text);
+    expect(ratio(DARK.primary, DARK.card)).toBeGreaterThanOrEqual(LARGE_TEXT);
   });
 
   it("does not let dark primary become the bright mint", () => {

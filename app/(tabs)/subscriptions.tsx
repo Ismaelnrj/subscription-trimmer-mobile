@@ -1467,7 +1467,7 @@ export default function SubscriptionsScreen() {
                   value={!!formData.isFreeTrial}
                   onValueChange={(v) => setFormData({ ...formData, isFreeTrial: v })}
                   accessibilityLabel={t("subscriptions.isFreeTrialLabel")}
-                  trackColor={{ false: c.textSecondary, true: c.success }}
+                  trackColor={{ false: c.textSecondary, true: c.text }}
                   thumbColor={c.card}
                 />
               </View>
@@ -1609,7 +1609,7 @@ function makeStyles(c: AppColors) {
     searchInput: { flex: 1, ...typeScale.body, color: c.text, paddingVertical: space.s },
     listCard: {
       backgroundColor: c.card, borderRadius: radius.m, paddingHorizontal: space.l,
-      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.cardBorder,
     },
     exportCard: { marginTop: space.xl },
     subItem: {},

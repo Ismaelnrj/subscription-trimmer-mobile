@@ -185,7 +185,7 @@ function makeStyles(c: AppColors) {
        display size; the share button sits under it at full width. */
     codeCard: {
       backgroundColor: c.card, borderRadius: radius.m, padding: space.l, marginBottom: space.s,
-      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, gap: space.l,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.cardBorder, gap: space.l,
     },
     codeText: { ...typeScale.display, color: c.text, letterSpacing: 2, textAlign: "center" },
     shareButton: {

@@ -550,7 +550,7 @@ function makeStyles(c: AppColors) {
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     cardAfter: { marginTop: space.xl },
     row: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingVertical: space.m, gap: space.m },

@@ -247,7 +247,7 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.m, paddingVertical: space.s,
+      borderColor: c.cardBorder, paddingHorizontal: space.m, paddingVertical: space.s,
     },
     header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.xs },
     navButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },

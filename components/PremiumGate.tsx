@@ -59,7 +59,7 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     container: {
       backgroundColor: c.card, borderRadius: radius.m, padding: space.l,
-      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.cardBorder,
     },
     crownRow: { flexDirection: "row", alignItems: "center", gap: space.xs, marginBottom: space.s },
     premiumLabel: { ...typeScale.label, color: c.warning },

@@ -95,7 +95,7 @@ function makeStyles(c: AppColors) {
     noteText: { ...typeScale.body, flex: 1, color: c.textSecondary },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l, marginBottom: space.xl,
+      borderColor: c.cardBorder, paddingHorizontal: space.l, marginBottom: space.xl,
     },
     stepRow: { flexDirection: "row", gap: space.m, alignItems: "flex-start", paddingVertical: space.l },
     rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },

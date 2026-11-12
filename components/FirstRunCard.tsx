@@ -125,7 +125,7 @@ export function FirstRunCard({ verifyBanner }: Props) {
       </View>
 
       <View style={styles.privacyRow}>
-        <MaterialCommunityIcons name="shield-check-outline" size={16} color={c.success} />
+        <MaterialCommunityIcons name="shield-check-outline" size={16} color={c.textSecondary} />
         <Text style={styles.privacyText}>{t("firstRun.privacy")}</Text>
       </View>
 
@@ -146,7 +146,7 @@ function makeStyles(c: AppColors) {
     subtitle: { ...typeScale.body, color: c.textSecondary, marginTop: space.s },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     stepRow: { flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 52, paddingVertical: space.m },
     rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },

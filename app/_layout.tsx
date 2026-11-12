@@ -99,7 +99,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 const errStyles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24, backgroundColor: "#F7F6F1" },
+  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24, backgroundColor: "#F3F5F6" },
   title: { fontSize: 20, fontWeight: "700", color: "#142B3A", marginBottom: 12 },
   message: { fontSize: 13, color: "#52616B", textAlign: "center", marginBottom: 24 },
   button: { backgroundColor: "#142B3A", paddingVertical: 12, paddingHorizontal: 32, borderRadius: 8 },

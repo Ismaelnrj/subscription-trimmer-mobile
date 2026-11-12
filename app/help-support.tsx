@@ -187,7 +187,7 @@ function makeStyles(c: AppColors) {
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     faqCard: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, overflow: "hidden",
+      borderColor: c.cardBorder, overflow: "hidden",
     },
     faqItem: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
     faqItemLast: { borderBottomWidth: 0 },
@@ -200,7 +200,7 @@ function makeStyles(c: AppColors) {
     faqAnswerText: { ...typeScale.body, color: c.textSecondary },
     contactCard: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, overflow: "hidden",
+      borderColor: c.cardBorder, overflow: "hidden",
     },
     contactItem: {
       flexDirection: "row", alignItems: "center", gap: space.m, minHeight: 64,

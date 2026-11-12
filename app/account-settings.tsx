@@ -424,7 +424,7 @@ function makeStyles(c: AppColors) {
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, padding: space.l,
+      borderColor: c.cardBorder, padding: space.l,
     },
     /* c.danger is the deepened coral, the value the palette rules require for
        coral carrying text on a light ground. */
@@ -480,7 +480,7 @@ function makeStyles(c: AppColors) {
     deleteSection: { marginTop: space.xxl, marginBottom: space.s },
     deleteCard: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, padding: space.l,
+      borderColor: c.cardBorder, padding: space.l,
     },
     deleteDesc: { ...typeScale.body, color: c.textSecondary, marginBottom: space.l },
     deleteButton: {

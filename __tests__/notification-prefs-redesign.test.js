@@ -23,7 +23,7 @@ describe("the notification preferences screen", () => {
   });
 
   it("draws an off switch that shows", () => {
-    expect(SRC).toMatch(/const track = \{ false: c\.textSecondary, true: c\.success \}/);
+    expect(SRC).toMatch(/const track = \{ false: c\.textSecondary, true: c\.text \}/);
     expect(SRC).not.toMatch(/false: c\.border/);
   });
 

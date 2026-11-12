@@ -522,7 +522,7 @@ function makeStyles(c: AppColors) {
     sectionNote: { ...typeScale.label },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     gateGap: { marginTop: space.l },
     tipRow: { flexDirection: "row", alignItems: "flex-start", gap: space.m, paddingVertical: space.l },

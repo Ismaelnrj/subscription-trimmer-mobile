@@ -310,7 +310,7 @@ function makeStyles(c: AppColors) {
     sectionHeaderNote: { ...typeScale.caption, color: c.textSecondary },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     emptyCard: { paddingVertical: space.xl, alignItems: "center" },
     chartCard: { paddingTop: space.l, paddingBottom: space.m },

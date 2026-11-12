@@ -23,7 +23,9 @@ export const DEFAULT_CATEGORIES = [
    thing left in the app.
 
    All ten real categories are a validated categorical palette rather than
-   colours chosen by eye. Checked against the warm white ground (#F7F6F1) on
+   colours chosen by eye. Checked against the warm white ground (#F7F6F1), and
+   again on 2026-11-12 against the cool ground (#F3F5F6) and white cards that
+   replaced it, with identical results, on
    the adjacent pairlist, which is the right one for a donut: slices touch only
    their neighbours, the same geometry as a stacked bar, and the chart carries
    a legend with names and amounts so identity is never colour alone. All five

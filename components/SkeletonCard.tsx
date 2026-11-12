@@ -38,7 +38,7 @@ function makeStyles(c: AppColors) {
   return StyleSheet.create({
     card: {
       backgroundColor: c.card, borderRadius: 12, padding: 16, marginBottom: 12,
-      borderWidth: 1, borderColor: c.border, flexDirection: "row",
+      borderWidth: 1, borderColor: c.cardBorder, flexDirection: "row",
       justifyContent: "space-between", alignItems: "flex-start",
     },
     bar: { height: 10, borderRadius: 4, backgroundColor: c.skeleton, marginBottom: 8 },

@@ -121,7 +121,7 @@ function makeStyles(c: AppColors) {
     scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: space.xxl },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     row: { flexDirection: "row", alignItems: "flex-start", gap: space.m, paddingVertical: space.l },
     rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },

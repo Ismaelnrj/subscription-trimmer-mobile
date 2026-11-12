@@ -60,7 +60,9 @@ export default function NotificationPreferencesScreen() {
 
   /* Off is a visible track: c.border measured 1.31:1 against the card, so an
      off switch read as missing. Same tokens as the add form's trial switch. */
-  const track = { false: c.textSecondary, true: c.success };
+  /* On is ink, the app's colour for "chosen", never mint: since 2026-11-12
+     mint marks only the logo and good news about money (lib/theme.ts). */
+  const track = { false: c.textSecondary, true: c.text };
 
   /* prefs stays undefined when the request fails, so the old
      "isLoading || !prefs" check spun forever with no way out. */
@@ -112,7 +114,7 @@ export default function NotificationPreferencesScreen() {
                 onValueChange={(v) => toggle("pushEnabled", v)}
                 disabled={updateMutation.isLoading}
                 trackColor={track}
-                thumbColor="#FFFFFF"
+                thumbColor={c.card}
                 accessibilityLabel={t("notifPrefs.pushNotifications")}
               />
             </View>
@@ -127,7 +129,7 @@ export default function NotificationPreferencesScreen() {
                   onValueChange={(v) => toggle("renewalAlerts", v)}
                   disabled={updateMutation.isLoading}
                   trackColor={track}
-                  thumbColor="#FFFFFF"
+                  thumbColor={c.card}
                   accessibilityLabel={t("notifPrefs.renewalAlerts")}
                 />
               </View>
@@ -175,7 +177,7 @@ export default function NotificationPreferencesScreen() {
                     onValueChange={(v) => toggle("emailReminders", v)}
                     disabled={updateMutation.isLoading}
                     trackColor={track}
-                    thumbColor="#FFFFFF"
+                    thumbColor={c.card}
                     accessibilityLabel={t("notifPrefs.emailReminders")}
                   />
                 ) : (
@@ -244,7 +246,7 @@ function makeStyles(c: AppColors) {
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     row: { flexDirection: "row", alignItems: "center", gap: space.l, paddingVertical: space.l },
     rowColumn: { paddingVertical: space.l, gap: space.m },

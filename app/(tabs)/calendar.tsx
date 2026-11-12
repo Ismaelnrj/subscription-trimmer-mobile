@@ -464,7 +464,7 @@ function makeStyles(c: AppColors) {
 
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border, paddingHorizontal: space.l,
+      borderColor: c.cardBorder, paddingHorizontal: space.l,
     },
     row: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingVertical: space.m, gap: space.m },
     rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },

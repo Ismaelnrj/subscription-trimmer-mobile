@@ -272,7 +272,7 @@ export default function UpgradeScreen() {
       <MaterialCommunityIcons
         name={v ? "check" : "minus"}
         size={20}
-        color={v ? c.success : c.textSecondary}
+        color={v ? c.text : c.textSecondary}
         accessibilityLabel={v ? t("upgrade.included") : t("upgrade.notIncluded")}
       />
     );
@@ -411,7 +411,7 @@ function makeStyles(c: AppColors) {
     section: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.m },
     card: {
       backgroundColor: c.card, borderRadius: radius.l, padding: space.l,
-      borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
+      borderWidth: StyleSheet.hairlineWidth, borderColor: c.cardBorder,
     },
     cardAfter: { marginBottom: space.s },
     cardFirst: { marginTop: space.l },
