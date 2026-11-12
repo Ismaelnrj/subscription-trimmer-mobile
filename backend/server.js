@@ -4289,7 +4289,7 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
           <p style="color:#52616B;margin-bottom:20px">${c.intro}</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#FFFFFF;border-radius:8px;overflow:hidden;border:1px solid #E2E6E9">
             <thead>
-              <tr style="background:#E9E6DE">
+              <tr style="background:#E7EBEE">
                 <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colService}</th>
                 <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colPrice}</th>
                 <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colDate}</th>
