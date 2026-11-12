@@ -2361,8 +2361,8 @@ last one left off without needing a recap typed out.
   half went live with the push of `5aab701d` to master: the signup limits and
   the site off cream; the redirect guard is a test only.
   STILL CREAM UNTIL THE NEXT NATIVE BUILD: the launch screen, on purpose.
-  NOT YET EXERCISED: the switches seen on Android itself (only the web preview
-  was read), and dark mode on the phone.
+  SEEN ON THE PHONE, 2026-11-12 (owner's report, "the phone [is] ok", not a
+  screenshot): the switch tokens in light and dark mode on Android itself.
 - AN AUDIT OF 2026-11-12's OWN WORK, the same evening, at the owner's request
   ("do a deep audit on everything we just did"). Three defects, each its own
   commit, all backend, so they reach Railway with the push and need no app
@@ -2398,6 +2398,8 @@ last one left off without needing a recap typed out.
   the publish gap; it rides the next real client change. The signup cap of 20
   per address per day stays hardcoded: watch it before any campaign that could
   bring more than about 100 signups a day through one carrier's shared IPv4.
+  THE RAILWAY DEPLOY CARRYING ALL THREE IS GREEN, 2026-11-12 (owner's report,
+  not a screenshot), so the IPv6 limiter key booted and sign in survived it.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
