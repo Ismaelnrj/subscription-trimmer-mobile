@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#F7F6F1" />
+  <meta name="theme-color" content="#F3F5F6" />
   <meta name="description" content="Trimio zeigt dir, was deine Abos kosten und wann sie sich verlängern, bevor abgebucht wird. Ohne Bankzugang und ohne Kartendaten." />
   <title>Trimio: Abo Tracker | Wissen, bevor abgebucht wird</title>
   <link rel="canonical" href="https://www.subtrimio.com/de" />
@@ -450,6 +450,21 @@ img { display: block; max-width: 100%; }
   .hero-actions .button { width: 100%; }
 }
 
+
+/* 19. palette pass, 2026-11-12, tools/build-landing.py: no cream, mint only for good news. */
+:root { --warm: #F3F5F6; --paper: #FFFFFF; }
+.step-card, .feature-card { border-color: transparent; }
+.hero h1 span { color: inherit; }
+.trust-row span::before, .account-points span::before { background: #A9B4BB; }
+.step-no { color: #52616B; }
+.avatar, .feature-icon, .mini-visual { background: #EEF1F3; color: var(--navy); }
+.button-mint { background: var(--navy); color: #FFFFFF; }
+.final-cta .button-mint { background: #FFFFFF; color: var(--navy); }
+.final-cta-inner::before { display: none; }
+.demo-buttons button.active { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; }
+.kicker.light { color: rgba(255,255,255,.72); }
+.founder-mark { color: #A9B4BB; }
+.check-row input { accent-color: var(--navy); }
 .hero h1 { font-size: clamp(48px, 5vw, 76px); }
 @media (max-width: 640px) { .hero h1 { font-size: clamp(38px, 11vw, 52px); } }
 </style>
@@ -514,7 +529,6 @@ img { display: block; max-width: 100%; }
     <main id="top">
       <section class="hero container">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="pulse"></span> Klarheit über deine Abos, vor der Abbuchung</div>
           <h1>Sieh, was auf dich zukommt, <span>bevor abgebucht wird.</span></h1>
           <p class="hero-lead">Trimio zeigt dir jede Verlängerung rechtzeitig, dazu Schritt-für-Schritt-Anleitungen zum Kündigen für über 30 Dienste. Ohne Zugriff auf dein Bankkonto.</p>
           <div class="hero-actions">
@@ -571,13 +585,11 @@ img { display: block; max-width: 100%; }
       </section>
 
       <section class="statement container reveal">
-        <p class="kicker">Was Trimio anders macht</p>
         <h2>Die meisten Finanz-Apps sagen dir, was passiert ist. Trimio sagt dir, was gleich passiert.</h2>
       </section>
 
       <section id="how" class="how container">
         <div class="section-heading reveal">
-          <p class="kicker">So funktioniert es</p>
           <h2>Drei kleine Schritte. Jeden Monat mehr Kontrolle.</h2>
         </div>
         <div class="steps-grid">
@@ -605,7 +617,6 @@ img { display: block; max-width: 100%; }
       <section id="demo" class="demo-wrap">
         <div class="demo container">
           <div class="demo-copy reveal">
-            <p class="kicker light">Eine Erinnerung, die rechtzeitig kommt</p>
             <h2>Nützlich ist die Benachrichtigung, die kommt, bevor das Geld weg ist.</h2>
             <p>Wähle unten ein Abo. So sieht der Moment aus, für den es Trimio gibt.</p>
             <div class="demo-buttons" role="group" aria-label="Demo einer Abo-Erinnerung">
@@ -629,7 +640,6 @@ img { display: block; max-width: 100%; }
 
       <section id="features" class="features container">
         <div class="section-heading reveal">
-          <p class="kicker">Mehr als Erinnerungen</p>
           <h2>Ein klares Bild davon, wohin dein Geld geht.</h2>
         </div>
         <div class="feature-grid">
@@ -691,7 +701,6 @@ img { display: block; max-width: 100%; }
       <section class="final-cta container reveal">
         <div class="final-cta-inner">
           <img src="/mark.svg" alt="Trimio-Symbol" />
-          <p class="kicker">Wissen, bevor abgebucht wird</p>
           <h2>Denk einmal kurz über jedes Abo nach, bevor es sich verlängert.</h2>
           <p>Starte kostenlos mit bis zu fünf Abos.</p>
           <a class="button button-mint" href="https://play.google.com/store/apps/details?id=com.trimio.app">Trimio bei Google Play holen</a>
@@ -701,7 +710,6 @@ img { display: block; max-width: 100%; }
       <section class="account-section container" id="account">
         <div class="account-panel reveal">
           <div class="account-copy">
-            <div class="kicker light">Dein Trimio-Konto</div>
             <h2>Deine Abos, wo immer du dich anmeldest.</h2>
             <p>Mit einem Konto sind deine Abos bei jeder Anmeldung sofort wieder da.</p>
             <div class="account-points">

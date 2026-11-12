@@ -110,7 +110,7 @@ const FONTS = [[400, "Regular"], [700, "Bold"], [800, "ExtraBold"]]
 // deepened mint #1F7A62 on paper 5.05:1, white on navy 14.62:1, the CTA's 82%
 // white on navy 9.88:1.
 const CSS = `${FONTS}
-:root { --navy: #142B3A; --mint: #55C6A3; --mint-deep: #1F7A62; --mint-soft: #DDF4EC; --warm: #F7F6F1; --paper: #FCFBF8; --slate: #52616B; --line: rgba(20,43,58,.12); }
+:root { --navy: #142B3A; --mint: #55C6A3; --mint-deep: #1F7A62; --mint-soft: #DDF4EC; --warm: #F3F5F6; --paper: #FFFFFF; --slate: #52616B; --line: rgba(20,43,58,.12); }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--warm); color: var(--navy); font-family: Montserrat, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.6; }
@@ -131,13 +131,13 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1.05; letter-spacing: -.035
 .meta { font-size: 14px; color: var(--slate); margin: 0 0 28px; }
 .meta strong { color: var(--mint-deep); }
 .steps { list-style: none; padding: 0; margin: 0 0 24px; counter-reset: step; display: grid; gap: 12px; }
-.steps li { counter-increment: step; position: relative; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 18px 18px 18px 64px; font-size: 17px; }
+.steps li { counter-increment: step; position: relative; background: var(--paper); border: 1px solid transparent; border-radius: 18px; padding: 18px 18px 18px 64px; font-size: 17px; }
 .steps li::before { content: counter(step); position: absolute; left: 16px; top: 16px; width: 34px; height: 34px; border-radius: 50%; background: var(--navy); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px; }
 .button { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 24px; border-radius: 999px; font-weight: 700; text-decoration: none; text-align: center; }
 .button-dark { background: var(--navy); color: #fff; }
 .button-light { background: #fff; color: var(--navy); }
 .button-ghost { border: 1px solid rgba(255,255,255,.35); color: #fff; }
-.note { margin: 28px 0 0; padding: 18px 20px; border-left: 4px solid var(--mint); background: var(--paper); border-radius: 0 16px 16px 0; }
+.note { margin: 28px 0 0; padding: 18px 20px; border-left: 4px solid var(--slate); background: var(--paper); border-radius: 0 16px 16px 0; }
 .note h2 { font-size: 15px; margin: 0 0 6px; }
 .note p { margin: 0; color: var(--slate); }
 .cta { margin: 40px 0 0; background: var(--navy); color: #fff; border-radius: 28px; padding: 28px 24px; }
@@ -147,8 +147,8 @@ h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1.05; letter-spacing: -.035
 .more { margin: 40px 0 0; }
 .more h2 { font-size: 20px; margin: 0 0 12px; }
 .more ul, .index ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-.more a, .index a { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 12px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; font-weight: 700; text-decoration: none; }
-.more a::after, .index a::after { content: "\\203A"; color: var(--mint-deep); font-size: 22px; }
+.more a, .index a { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 12px 18px; background: var(--paper); border: 1px solid transparent; border-radius: 16px; font-weight: 700; text-decoration: none; }
+.more a::after, .index a::after { content: "\\203A"; color: var(--slate); font-size: 22px; }
 footer { border-top: 1px solid var(--line); padding: 24px 0 40px; font-size: 14px; color: var(--slate); display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; }
 footer nav { display: flex; flex-wrap: wrap; gap: 4px 18px; }
 footer a { display: inline-flex; min-height: 44px; align-items: center; }
@@ -193,7 +193,7 @@ function shell({ lang, title, description, canonicalPath, altPaths, guide, body 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(title)}</title>
   <meta name="description" content="${esc(description)}" />
-  <meta name="theme-color" content="#F7F6F1" />
+  <meta name="theme-color" content="#F3F5F6" />
   <link rel="canonical" href="${SITE}${canonicalPath}" />
   <link rel="alternate" hreflang="en" href="${SITE}${altPaths.en}" />
   <link rel="alternate" hreflang="de" href="${SITE}${altPaths.de}" />

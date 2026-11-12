@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#F7F6F1" />
+  <meta name="theme-color" content="#F3F5F6" />
   <meta name="description" content="Trimio helps you see subscription renewals before you pay, without linking your bank." />
   <title>Trimio: Subscription Tracker | Know before you pay</title>
   <link rel="canonical" href="https://www.subtrimio.com/" />
@@ -450,6 +450,21 @@ img { display: block; max-width: 100%; }
   .hero-actions .button { width: 100%; }
 }
 
+
+/* 19. palette pass, 2026-11-12, tools/build-landing.py: no cream, mint only for good news. */
+:root { --warm: #F3F5F6; --paper: #FFFFFF; }
+.step-card, .feature-card { border-color: transparent; }
+.hero h1 span { color: inherit; }
+.trust-row span::before, .account-points span::before { background: #A9B4BB; }
+.step-no { color: #52616B; }
+.avatar, .feature-icon, .mini-visual { background: #EEF1F3; color: var(--navy); }
+.button-mint { background: var(--navy); color: #FFFFFF; }
+.final-cta .button-mint { background: #FFFFFF; color: var(--navy); }
+.final-cta-inner::before { display: none; }
+.demo-buttons button.active { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; }
+.kicker.light { color: rgba(255,255,255,.72); }
+.founder-mark { color: #A9B4BB; }
+.check-row input { accent-color: var(--navy); }
 </style>
 <noscript><style>.reveal { opacity: 1 !important; transform: none !important; }</style></noscript>
   <link rel="preload" href="/fonts/Montserrat-Bold.woff2" as="font" type="font/woff2" crossorigin />
@@ -512,7 +527,6 @@ img { display: block; max-width: 100%; }
     <main id="top">
       <section class="hero container">
         <div class="hero-copy">
-          <div class="eyebrow"><span class="pulse"></span> Subscription clarity, before the charge</div>
           <h1>See what is coming <span>before you pay.</span></h1>
           <p class="hero-lead">Trimio shows every renewal in time, plus step by step cancellation guides for over 30 services. No bank access, ever.</p>
           <div class="hero-actions">
@@ -569,13 +583,11 @@ img { display: block; max-width: 100%; }
       </section>
 
       <section class="statement container reveal">
-        <p class="kicker">The Trimio difference</p>
         <h2>Most money apps tell you what happened. Trimio tells you what is about to happen.</h2>
       </section>
 
       <section id="how" class="how container">
         <div class="section-heading reveal">
-          <p class="kicker">How it works</p>
           <h2>Three small steps. More control every month.</h2>
         </div>
         <div class="steps-grid">
@@ -603,7 +615,6 @@ img { display: block; max-width: 100%; }
       <section id="demo" class="demo-wrap">
         <div class="demo container">
           <div class="demo-copy reveal">
-            <p class="kicker light">A reminder that arrives in time</p>
             <h2>The useful notification is the one that comes before the money leaves.</h2>
             <p>Choose any subscription below and preview the moment Trimio is built around.</p>
             <div class="demo-buttons" role="group" aria-label="Subscription reminder demo">
@@ -627,7 +638,6 @@ img { display: block; max-width: 100%; }
 
       <section id="features" class="features container">
         <div class="section-heading reveal">
-          <p class="kicker">More than reminders</p>
           <h2>A clear picture of what your subscriptions are doing.</h2>
         </div>
         <div class="feature-grid">
@@ -689,7 +699,6 @@ img { display: block; max-width: 100%; }
       <section class="final-cta container reveal">
         <div class="final-cta-inner">
           <img src="/mark.svg" alt="Trimio icon" />
-          <p class="kicker">Know before you pay</p>
           <h2>Give every subscription a moment of thought before it renews.</h2>
           <p>Start free with up to five subscriptions.</p>
           <a class="button button-mint" href="https://play.google.com/store/apps/details?id=com.trimio.app">Get Trimio on Google Play</a>
@@ -699,7 +708,6 @@ img { display: block; max-width: 100%; }
       <section class="account-section container" id="account">
         <div class="account-panel reveal">
           <div class="account-copy">
-            <div class="kicker light">Your Trimio account</div>
             <h2>Keep your subscriptions in sync with you.</h2>
             <p>Create an account to keep your Trimio data connected to you and ready whenever you sign in.</p>
             <div class="account-points">

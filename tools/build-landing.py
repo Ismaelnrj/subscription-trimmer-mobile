@@ -533,6 +533,54 @@ def germanise(page, table):
     return page, hits
 
 
+# 19. the cream ground and the template tells, 2026-11-12. The owner read the
+#     product as AI generated, and the page carried the most recognisable
+#     marks of it: a warm cream ground, an uppercase letter spaced label above
+#     8 of its 9 sections (one of them a mint pill with a pulsing dot), words
+#     in the headline picked out in green, a mint glow behind the final call
+#     to action, and mint used as decoration everywhere. The app made the same
+#     move the same day (lib/theme.ts): ground #F3F5F6 and white cards, both
+#     mixed from Ink Navy's hue, and mint only for good news.
+#     Here: the same ground and cards, cards without outlines, seven of the
+#     eight labels removed ("Privacy by design" stays, as the one), the
+#     headline in one colour, the glow gone, dots and icon tiles neutral, and
+#     the main buttons ink (white on the navy fields), as the app draws them.
+#     Kept on purpose: the logo, the privacy list's positive marks and the
+#     success tick, which are good news. Done as an override block plus exact
+#     removals so a fresh handoff still builds and every removal is asserted.
+REMOVE_LABELS = [
+    '<div class="eyebrow"><span class="pulse"></span> Subscription clarity, before the charge</div>',
+    '<p class="kicker">The Trimio difference</p>',
+    '<p class="kicker">How it works</p>',
+    '<p class="kicker light">A reminder that arrives in time</p>',
+    '<p class="kicker">More than reminders</p>',
+    '<p class="kicker">Know before you pay</p>',
+    '<div class="kicker light">Your Trimio account</div>',
+]
+for label in REMOVE_LABELS:
+    s, n = re.subn(r"\n[ \t]*" + re.escape(label), "", s)
+    assert n == 1, f"label to remove not found exactly once: {label}"
+assert s.count('<meta name="theme-color" content="#F7F6F1" />') == 1
+s = s.replace('<meta name="theme-color" content="#F7F6F1" />', '<meta name="theme-color" content="#F3F5F6" />')
+PALETTE_PASS = """
+/* 19. palette pass, 2026-11-12, tools/build-landing.py: no cream, mint only for good news. */
+:root { --warm: #F3F5F6; --paper: #FFFFFF; }
+.step-card, .feature-card { border-color: transparent; }
+.hero h1 span { color: inherit; }
+.trust-row span::before, .account-points span::before { background: #A9B4BB; }
+.step-no { color: #52616B; }
+.avatar, .feature-icon, .mini-visual { background: #EEF1F3; color: var(--navy); }
+.button-mint { background: var(--navy); color: #FFFFFF; }
+.final-cta .button-mint { background: #FFFFFF; color: var(--navy); }
+.final-cta-inner::before { display: none; }
+.demo-buttons button.active { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; }
+.kicker.light { color: rgba(255,255,255,.72); }
+.founder-mark { color: #A9B4BB; }
+.check-row input { accent-color: var(--navy); }
+"""
+assert s.count("</style>") >= 1
+s = s.replace("</style>", PALETTE_PASS + "</style>", 1)
+
 # 17. the handoff's greens and its quiet grey fail the contrast floor, every
 #     one of them measured rather than eyeballed. This is the same defect the
 #     APP carried in lib/theme.ts until 2026-09-21, on the page that sells the

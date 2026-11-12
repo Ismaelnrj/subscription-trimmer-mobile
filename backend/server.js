@@ -211,8 +211,8 @@ function unsubscribePage(title, body, lang = 'en', extra = '') {
   return `<!doctype html><html lang="${lang === 'de' ? 'de' : 'en'}"><head><meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title} · Trimio</title></head>
-    <body style="margin:0;font-family:system-ui,-apple-system,sans-serif;background:#F7F6F1;color:#142B3A">
-      <div style="max-width:440px;margin:12vh auto;padding:40px 32px;background:#FCFBF8;border:1px solid #DCDEDB;border-radius:12px;text-align:center">
+    <body style="margin:0;font-family:system-ui,-apple-system,sans-serif;background:#F3F5F6;color:#142B3A">
+      <div style="max-width:440px;margin:12vh auto;padding:40px 32px;background:#FFFFFF;border:1px solid #E2E6E9;border-radius:12px;text-align:center">
         <h1 style="font-size:22px;margin:0 0 12px">${title}</h1>
         <p style="color:#52616B;font-size:15px;line-height:1.6;margin:0">${body}</p>
         ${extra}
@@ -503,10 +503,10 @@ function legalPage(title, updated, intro, sections, lang) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>
-  body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #1F2937; line-height: 1.6; }
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #142B3A; background: #FFFFFF; line-height: 1.6; }
   h1 { font-size: 26px; } h2 { font-size: 18px; margin-top: 32px; }
-  p { color: #374151; }
-  .updated { color: #6B7280; font-size: 13px; }
+  p { color: #142B3A; }
+  .updated { color: #52616B; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -983,7 +983,7 @@ async function sendCodeEmail(kind, email, code, lang) {
   await sendEmail(
     email,
     c.subject,
-    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F3F5F6;border-radius:12px">
       <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
       <p style="color:#52616B">${c.body}</p>
       <div style="font-size:40px;font-weight:900;letter-spacing:12px;color:#142B3A;text-align:center;padding:24px 0">${code}</div>
@@ -1037,7 +1037,7 @@ async function sendAccountDeletedEmail(to, wantsGerman) {
   await sendEmail(
     to,
     c.subject,
-    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+    `<div style="font-family:sans-serif;max-width:400px;margin:auto;padding:32px;background:#F3F5F6;border-radius:12px">
       <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
       <p style="color:#52616B;line-height:1.6">${c.body}</p>
       <p style="color:#52616B;line-height:1.6">${c.warn}
@@ -1248,7 +1248,7 @@ async function sendReferralRewardEmail({ email, language, grantedDays, expiresAt
   await sendEmail(
     email,
     c.subject,
-    `<div style="font-family:sans-serif;max-width:440px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+    `<div style="font-family:sans-serif;max-width:440px;margin:auto;padding:32px;background:#F3F5F6;border-radius:12px">
       <h2 style="color:#142B3A;margin-bottom:8px">${c.heading}</h2>
       <p style="color:#52616B;line-height:1.6">${why}</p>
       <p style="color:#142B3A;line-height:1.6;font-size:16px">${c.granted(grantedDays, formatBonusDate(expiresAt, language))}</p>
@@ -4178,19 +4178,19 @@ app.post('/api/trpc/reminders.sendEmailReminders', async (req, res) => {
          "$15.99" for anybody whose setting said dollars. */
       const rows = subsResult.rows.map(s =>
         `<tr>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(s.name || '')}</td>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(formatEmailPrice(s.price, s.currency, user.currency_symbol, s.billing_cycle, lang))}</td>
-          <td style="padding:8px;border-bottom:1px solid #DCDEDB">${escapeHtml(formatEmailDate(s.next_billing_date, lang))}</td>
+          <td style="padding:8px;border-bottom:1px solid #E2E6E9">${escapeHtml(s.name || '')}</td>
+          <td style="padding:8px;border-bottom:1px solid #E2E6E9">${escapeHtml(formatEmailPrice(s.price, s.currency, user.currency_symbol, s.billing_cycle, lang))}</td>
+          <td style="padding:8px;border-bottom:1px solid #E2E6E9">${escapeHtml(formatEmailDate(s.next_billing_date, lang))}</td>
         </tr>`
       ).join('');
 
       const delivered = await sendEmail(
         user.email,
         c.subject(subsResult.rows.length),
-        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F3F5F6;border-radius:12px">
           <h2 style="color:#142B3A;margin-bottom:4px">${escapeHtml(c.greeting(user.name))}</h2>
           <p style="color:#52616B;margin-bottom:20px">${c.intro}</p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#FCFBF8;border-radius:8px;overflow:hidden;border:1px solid #DCDEDB">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:#FFFFFF;border-radius:8px;overflow:hidden;border:1px solid #E2E6E9">
             <thead>
               <tr style="background:#E9E6DE">
                 <th style="padding:10px;text-align:left;font-size:12px;color:#52616B">${c.colService}</th>
@@ -4258,7 +4258,7 @@ app.post('/api/trpc/reminders.sendWinBackEmails', async (req, res) => {
       const delivered = await sendEmail(
         user.email,
         c.subject(user.name),
-        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F7F6F1;border-radius:12px">
+        `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:32px;background:#F3F5F6;border-radius:12px">
           <h2 style="color:#142B3A;margin-bottom:8px">${escapeHtml(c.heading(user.last_plan))}</h2>
           <p style="color:#52616B">${c.body}</p>
           <div style="text-align:center;margin-top:24px">
