@@ -80,6 +80,20 @@ export function sanitiseAmountInput(raw: string): string {
   return whole + "." + decimals;
 }
 
+/** What an amount field SHOWS, given the text sanitiseAmountInput keeps.
+ *
+ *  The kept text always uses a period, so every parseFloat that reads it stays
+ *  right. A German reader is shown a comma instead, the separator their
+ *  keyboard offers and the field's own placeholder ("z. B. 9,99") promises.
+ *  Until 2026-11-12 the comma they typed turned into a period under their
+ *  finger. Display only: the next keystroke goes back through
+ *  sanitiseAmountInput, which reads the comma as the decimal point again, so
+ *  the round trip is exact.
+ */
+export function amountForDisplay(text: string, language?: string | null): string {
+  return String(language ?? "").toLowerCase().startsWith("de") ? text.replace(".", ",") : text;
+}
+
 /** Parse a YYYY-MM-DD string as a local date (avoids UTC off-by-one). */
 export function parseLocalDate(dateStr: string): Date {
   const [y, m, d] = dateStr.split("-").map(Number);

@@ -33,10 +33,15 @@ describe("formatMoney", () => {
     expect(formatMoney(1.005, "€", 2, "de")).toBe(`1,01${NBSP}€`);
   });
 
-  it("leaves English exactly as it always was", () => {
+  it("writes English with the symbol first and a comma for thousands", () => {
     expect(formatMoney(13.99, "€", 2, "en")).toBe("€13.99");
-    expect(formatMoney(1500, "¥", 0, "en")).toBe("¥1500");
+    expect(formatMoney(1500, "¥", 0, "en")).toBe("¥1,500");
+    expect(formatMoney(1403.4, "$", 2, "en")).toBe("$1,403.40");
+    expect(formatMoney(1234567.891, "$", 2, "en")).toBe("$1,234,567.89");
+    expect(formatMoney(999.999, "$", 2, "en")).toBe("$1,000.00");
     expect(formatMoney(13.99, "€", 2, undefined)).toBe("€13.99");
+    // The sign stays where it always was, after the symbol.
+    expect(formatMoney(-5, "€", 2, "en")).toBe("€-5.00");
   });
 
   it("keeps the symbol on the amount's line: a no-break space, never a plain one", () => {

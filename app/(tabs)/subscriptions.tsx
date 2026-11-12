@@ -22,7 +22,7 @@ import { useCategoryLabel } from "../../lib/category-label";
 import { formatMoney } from "../../lib/currencies";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
-import { normaliseDateInput, sanitiseAmountInput, daysUntil, parseApiDate } from "../../lib/utils";
+import { normaliseDateInput, sanitiseAmountInput, amountForDisplay, daysUntil, parseApiDate } from "../../lib/utils";
 import { parseSubscriptionEmail } from "../../lib/parse-subscription";
 import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { useDateFormat } from "../../lib/date-locale";
@@ -1421,7 +1421,7 @@ export default function SubscriptionsScreen() {
                   placeholder={t("subscriptions.pricePlaceholder")}
                   placeholderTextColor={c.placeholder}
                   keyboardType="decimal-pad"
-                  value={formData.price}
+                  value={amountForDisplay(formData.price, i18n.language)}
                   onChangeText={(t) => setFormData({ ...formData, price: sanitiseAmountInput(t) })}
                 />
                 <Text style={styles.priceCurrency}>{baseCurrencyCode}</Text>

@@ -21,11 +21,15 @@ export const CURRENCIES = [
 /* HOW MONEY IS WRITTEN, in one place for every surface that writes it.
 
    German writes a decimal COMMA, groups thousands with a POINT and puts the
-   symbol AFTER the amount: "13,99 €", "1.500,00 €". English keeps the form
-   the app has always used, "€13.99", untouched, so nothing changes for an
-   English reader. The reminders and the server's emails already wrote German
-   this way while every screen in the app wrote "€13.99" in German too, so the
-   same charge read two different ways depending on where you met it.
+   symbol AFTER the amount: "13,99 €", "1.500,00 €". English puts the symbol
+   first and groups thousands with a COMMA: "€13.99", "$1,403.40". The reminders
+   and the server's emails already wrote German this way while every screen in
+   the app wrote "€13.99" in German too, so the same charge read two different
+   ways depending on where you met it.
+
+   English grouping came later, 2026-11-12: the first version left English
+   ungrouped to change nothing for an English reader, and the store screenshots
+   then showed "$1403.40 a year" on the dashboard, which no American writes.
 
    The space before the symbol is a NO-BREAK space, so a narrow cell can never
    leave "€" alone on the next line.
@@ -41,11 +45,10 @@ function roundMoney(amount: number, decimals: number): number {
 }
 
 export function formatMoney(amount: number, symbol: string, decimals: number, language?: string | null): string {
-  if (!String(language ?? "").toLowerCase().startsWith("de")) {
-    return `${symbol}${roundMoney(amount, decimals).toFixed(decimals)}`;
-  }
+  const german = String(language ?? "").toLowerCase().startsWith("de");
   const sign = amount < 0 ? "-" : "";
   const [whole, fraction] = roundMoney(Math.abs(amount), decimals).toFixed(decimals).split(".");
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, german ? "." : ",");
+  if (!german) return `${symbol}${sign}${grouped}${fraction ? `.${fraction}` : ""}`;
   return `${sign}${grouped}${fraction ? `,${fraction}` : ""}${NBSP}${symbol}`;
 }

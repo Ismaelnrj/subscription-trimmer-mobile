@@ -1,4 +1,4 @@
-import { normaliseDateInput, parseLocalDate, sanitiseAmountInput } from "../lib/utils";
+import { normaliseDateInput, parseLocalDate, sanitiseAmountInput, amountForDisplay } from "../lib/utils";
 
 describe("normaliseDateInput", () => {
   it("accepts YYYY-MM-DD unchanged", () => {
@@ -100,3 +100,29 @@ describe("sanitiseAmountInput", () => {
   });
 });
 
+
+/* A German reader typed "10,99" and watched the comma turn into a period under
+   their finger, while the field's own placeholder said "z. B. 9,99". The kept
+   text still uses a period (every parseFloat reads it); only what is SHOWN
+   changes, so typing through the field must round trip exactly. */
+describe("amountForDisplay", () => {
+  it("shows a comma to a German reader and a period to everyone else", () => {
+    expect(amountForDisplay("10.99", "de")).toBe("10,99");
+    expect(amountForDisplay("10.99", "de-AT")).toBe("10,99");
+    expect(amountForDisplay("10.99", "en")).toBe("10.99");
+    expect(amountForDisplay("10.99", undefined)).toBe("10.99");
+    expect(amountForDisplay("", "de")).toBe("");
+    expect(amountForDisplay("50", "de")).toBe("50");
+  });
+
+  it("round trips every keystroke a German keyboard can send", () => {
+    // Simulate the field: what is shown, plus the next key, goes back through
+    // the sanitiser, and the kept text must equal typing it directly.
+    for (const typed of ["10,99", "1,", "0,5", "1234,56", "10,999", "7"]) {
+      let kept = "";
+      for (const key of typed) kept = sanitiseAmountInput(amountForDisplay(kept, "de") + key);
+      expect(kept).toBe(sanitiseAmountInput(typed));
+      expect(parseFloat(kept)).toBe(parseFloat(sanitiseAmountInput(typed)));
+    }
+  });
+});

@@ -13,7 +13,7 @@ import { PremiumGate } from "../components/PremiumGate";
 import { isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
 import apiClient from "../lib/api";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
-import { sanitiseAmountInput } from "../lib/utils";
+import { sanitiseAmountInput, amountForDisplay } from "../lib/utils";
 import { signInWithGoogle } from "../lib/google-auth";
 import * as SecureStore from "expo-secure-store";
 
@@ -26,7 +26,7 @@ export default function AccountSettingsScreen() {
   const queryClient = useQueryClient();
   const c = useTheme();
   const styles = makeStyles(c);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [name, setName] = useState(user?.name || "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -224,7 +224,7 @@ export default function AccountSettingsScreen() {
               <Text style={styles.label}>{t("accountSettings.monthlyLimit", { symbol: currency.symbol })}</Text>
               <TextInput
                 style={styles.input}
-                value={budgetInput}
+                value={amountForDisplay(budgetInput, i18n.language)}
                 onChangeText={(v) => { setBudgetDirty(true); setBudgetInput(sanitiseAmountInput(v)); }}
                 placeholder={t("accountSettings.limitPlaceholder")}
                 placeholderTextColor={c.placeholder}
@@ -263,7 +263,7 @@ export default function AccountSettingsScreen() {
                 <Text style={styles.prefixSymbol}>{currency.symbol}</Text>
                 <TextInput
                   style={[styles.input, styles.prefixInput]}
-                  value={alertThresholdInput}
+                  value={amountForDisplay(alertThresholdInput, i18n.language)}
                   onChangeText={(v) => { setThresholdDirty(true); setAlertThresholdInput(sanitiseAmountInput(v)); }}
                   placeholder={t("accountSettings.thresholdPlaceholder")}
                   placeholderTextColor={c.placeholder}
