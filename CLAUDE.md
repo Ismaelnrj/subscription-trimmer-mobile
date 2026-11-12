@@ -5701,6 +5701,26 @@ last one left off without needing a recap typed out.
   `android/app/debug.keystore` on the old `gh-pages` branch, so anybody could
   sign a fake com.trimio.app with it. `google-services.json` lists no OAuth
   clients, so this cannot be read from the repo.
+  THE OAUTH OVERVIEW PAGE (Google Auth Platform), read off the owner's
+  screenshot the same day, flags "Usa flujos seguros: Trimio Android does not
+  use the state parameter" and "no Cloud Billing account". THE STATE WARNING
+  IS TRUE AND NOT FIXABLE IN JS: Google computes it from real sign in traffic,
+  and `@react-native-google-signin/google-signin` 16.1.2 (the free Original API)
+  calls the LEGACY Android Google Sign-In, `GoogleSignInClient` from
+  play-services-auth 21.4.0, read off its own build.gradle and sources. That
+  stack sends no state and takes no nonce. What state guards, a forged redirect
+  callback, Trimio does not have: the ID token goes from Play services to the
+  app to the server, which checks signature, audience and email_verified. The
+  impersonation half is the package name plus SHA-1 on the Android client
+  (the item above). THE REAL FIX IS A NATIVE CHANGE: Google deprecated legacy
+  Google Sign-In for Credential Manager, so moving (the library's paid
+  Universal API, or another Credential Manager wrapper) is a native dependency,
+  a Codemagic build and a runtimeVersion bump. Plan it into the next native
+  build, which is already owed (the cream splash, SDK 54); whether Google's
+  check then clears is NOT known. BILLING STAYS UNLINKED on purpose: sign in
+  needs none, and with no billing account nothing done with the public
+  Firebase key can cost money. If it is ever linked, restrict that key and set
+  a budget alert first.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
