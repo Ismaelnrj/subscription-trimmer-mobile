@@ -270,7 +270,7 @@ export default function AccountSettingsScreen() {
                   keyboardType="decimal-pad"
                 />
               </View>
-              <Text style={styles.infoText}>{t("accountSettings.thresholdHint", { symbol: currency.symbol })}</Text>
+              <Text style={styles.infoText}>{t("accountSettings.thresholdHint", { amount: fmtC(50, currency.code) })}</Text>
               <TouchableOpacity style={[styles.saveButton, { marginTop: space.m }]} onPress={handleSaveAlertThreshold} disabled={settingsMutation.isLoading}>
                 {settingsMutation.isLoading
                   ? <ActivityIndicator color={c.bg} />

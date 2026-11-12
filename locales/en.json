@@ -427,7 +427,7 @@
     "premiumThresholdDesc": "Choose your own limit for the 'expensive subscription' alert instead of the default.",
     "alertWhen": "Alert me when a subscription exceeds",
     "thresholdPlaceholder": "e.g. 50",
-    "thresholdHint": "Subscriptions costing more than this per month will be flagged in Recommendations. Default: {{symbol}}50/mo.",
+    "thresholdHint": "Subscriptions costing more than this per month will be flagged in Recommendations. Default: {{amount}} a month.",
     "saveThreshold": "Save threshold",
     "displayName": "Display name",
     "namePlaceholder": "Your name",

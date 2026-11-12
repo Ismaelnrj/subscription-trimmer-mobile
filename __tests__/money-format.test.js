@@ -73,6 +73,19 @@ describe("every place that writes money goes through it", () => {
     expect(hits).toEqual([]);
   });
 
+  it("no translation glues a symbol to a number either", () => {
+    /* Account settings said "Standard: €50/Monat" to German readers until
+       2026-11-12: "{{symbol}}50" in a locale string, which the screen scan
+       above cannot see. A default amount is passed in formatted instead. */
+    const glued = [];
+    for (const lang of ["en", "de"]) {
+      const walk = (o, at) => Object.entries(o).forEach(([k, v]) =>
+        typeof v === "string" ? /\{\{symbol\}\}\s*\d/.test(v) && glued.push(`${lang}.${at}${k}`) : walk(v, `${at}${k}.`));
+      walk(JSON.parse(read(`locales/${lang}.json`)), "");
+    }
+    expect(glued).toEqual([]);
+  });
+
   it("the service picker's chips read German in German", () => {
     const netflix = SERVICE_TEMPLATES.find((t) => t.currency === "EUR" && t.billingCycle === "monthly");
     expect(formatTemplatePrice(netflix, "de")).toBe(`${formatMoney(netflix.defaultPrice, "€", 2, "de")}/Monat`);
