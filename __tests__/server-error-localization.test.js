@@ -123,7 +123,7 @@ describe('coverage, by scan', () => {
   // clients compare by value, the one string register.tsx inspects, and
   // errors only a developer or a third party can provoke.
   const DECIDED_ENGLISH = new Set([
-    'FREE_LIMIT_REACHED', 'DUPLICATE_SUBSCRIPTION', 'PREMIUM_VERIFICATION_UNAVAILABLE',
+    'FREE_LIMIT_REACHED', 'ACCOUNT_LIMIT_REACHED', 'DUPLICATE_SUBSCRIPTION', 'PREMIUM_VERIFICATION_UNAVAILABLE',
     'GOOGLE_ID_TOKEN_REQUIRED',
     'Email already registered',
     'subscriptionId required', 'Subscription id required', 'id and isActive required',

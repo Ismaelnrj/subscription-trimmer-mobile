@@ -15,6 +15,13 @@ on:
   # The same run by hand: Actions tab > Checks > Run workflow.
   workflow_dispatch:
 
+# Read only, whatever the repository's default token setting says. This job
+# runs third party actions pinned by tag, and master deploys to production on
+# push, so a token that could write would let a compromised action ship code.
+# Nothing here needs more: it checks out, installs and tests.
+permissions:
+  contents: read
+
 jobs:
   checks:
     # Pinned, not ubuntu-latest. On 2026-10-31 ubuntu-latest moved to 26.04 and

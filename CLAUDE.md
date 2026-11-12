@@ -5555,6 +5555,47 @@ last one left off without needing a recap typed out.
   overrides dashboard settings this repo cannot see), and spending limits or
   usage alerts on Railway. NOT WORTH IT YET: staging, feature flags, load
   testing, audit logs, contract or end to end suites, dead letter queues.
+- THREE SKILL PACKS INSTALLED, 2026-11-12, at the owner's request: superpowers
+  7.0.0 and mattpocock-skills 1.3.1 from Anthropic's official marketplace
+  (`claude-plugins-official` was not configured; `claude plugin marketplace add
+  anthropics/claude-plugins-official` added it), and Cloudflare's
+  security-audit skill, cloned at `c1c8a8c1` and copied to
+  `~/.claude/skills/security-audit` (what `npx skills add` does, without
+  running a third party CLI). All three were read first: no network calls, and
+  superpowers' SessionStart hook only injects its own SKILL.md. USER SCOPE IN
+  THE CLOUD CONTAINER ONLY, so they vanish with it and nothing is in the repo;
+  the owner's machine needs the commands run there.
+  THE SECURITY PASS WITH THE CLOUDFLARE SKILL (guidance mode, by hand) found
+  three things, all fixed in one commit with
+  `__tests__/security-pass-2026-11-12.test.js` (10 assertions, all 10 failing
+  before). LIVE via Railway with the push; no app update.
+  1. OPENING THE UNSUBSCRIBE LINK UNSUBSCRIBED YOU. GET /unsubscribe wrote
+     `email_opt_out` on arrival, and mail security scanners open links to check
+     them, so a reminder could switch its reader's reminders off unseen. GET
+     now shows a button (`verifyUnsubscribe`, no write); the form POST with
+     `confirm=1` acts and shows the page; the RFC 8058 one-click POST is
+     unchanged.
+  2. NOTHING BOUNDED ROWS PER ACCOUNT. The free limit counts only active rows
+     and only for free accounts, so Premium, every reverse trial account (free)
+     or a free create and cancel loop could add about 86,000 rows a day at the
+     API limit. `MAX_SUBSCRIPTIONS_PER_ACCOUNT` = 500 counts ALL rows, every
+     account, inside the lock, after the client_ref replay (so a retry of a
+     saved row still gets its row). Refusal is 403 `ACCOUNT_LIMIT_REACHED`.
+  3. `checks.yml` HAD NO PERMISSIONS BLOCK while running tag pinned third party
+     actions on a repo whose master deploys on push. Now `contents: read`.
+  MEASURED by booting HEAD and the fix on PostgreSQL 16: before, a GET left
+  the account opted out and row 501 saved; after, the GET changed nothing, the
+  button opted out, one-click still opted out, and row 501 got the 403.
+  CHECKED AND CLEAN, so the next pass does not repeat it: nothing reads the
+  Host header (links come from PUBLIC_URL); deep links only select data the
+  server already scopes; the reminder job cannot be stopped by one bad row
+  (`formatEmailPrice` catches a bad currency, `advanceBillingDate` bounds its
+  loop and treats an unknown cycle as monthly); the profile cannot change the
+  email. KNOWN AND LEFT: `price_history` and notification rows still grow
+  with repeated price edits, bounded only by the API limit (deliberate
+  actions, low); deleting and re-registering an address earns a new 14 day
+  trial (same reasoning as referral abuse); and a deleted account's old Brevo
+  contact keeps its attributes, which only the owner can delete in Brevo.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is

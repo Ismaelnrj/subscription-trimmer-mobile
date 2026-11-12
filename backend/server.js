@@ -207,7 +207,7 @@ app.get('/icon.png', (req, res) => {
    Somebody who wants to stop receiving email should never be asked to log in
    first, and an unsubscribe that needs a password is an unsubscribe that does
    not work. */
-function unsubscribePage(title, body, lang = 'en') {
+function unsubscribePage(title, body, lang = 'en', extra = '') {
   return `<!doctype html><html lang="${lang === 'de' ? 'de' : 'en'}"><head><meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title} · Trimio</title></head>
@@ -215,20 +215,32 @@ function unsubscribePage(title, body, lang = 'en') {
       <div style="max-width:440px;margin:12vh auto;padding:40px 32px;background:#FCFBF8;border:1px solid #DCDEDB;border-radius:12px;text-align:center">
         <h1 style="font-size:22px;margin:0 0 12px">${title}</h1>
         <p style="color:#52616B;font-size:15px;line-height:1.6;margin:0">${body}</p>
+        ${extra}
         <p style="margin-top:28px"><a href="${PUBLIC_URL}" style="color:#1F7A62;font-size:14px">www.subtrimio.com</a></p>
       </div></body></html>`;
 }
 
-async function applyUnsubscribe(req) {
+/* Reads the user id out of the link and checks its HMAC, and CHANGES NOTHING.
+   Split out of applyUnsubscribe because opening the link must not act: mail
+   security scanners open every link in an email to check it, so a GET that
+   unsubscribed would switch reminders off before the reader ever saw them.
+   Returns the user id for a good link, null otherwise. */
+function verifyUnsubscribe(req) {
   const id = parseInt(req.query.u ?? req.body?.u, 10);
   const token = req.query.t ?? req.body?.t;
-  if (!id || !token) return false;
+  if (!id || !token) return null;
   const expected = unsubscribeToken(id);
   // Constant time, so the endpoint cannot be used as an oracle to guess a
   // token one character at a time.
   const a = Buffer.from(String(token));
   const b = Buffer.from(expected);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  return id;
+}
+
+async function applyUnsubscribe(req) {
+  const id = verifyUnsubscribe(req);
+  if (!id) return false;
   await pool.query('UPDATE users SET email_opt_out = TRUE WHERE id = $1', [id]);
   await pool.query(
     'UPDATE notification_preferences SET email_reminders = FALSE WHERE user_id = $1',
@@ -247,31 +259,56 @@ const UNSUBSCRIBE_PAGE = {
     okBody: 'You will not receive any more emails from Trimio. Push notifications and the app itself are unaffected, and you can turn email reminders back on any time in Account Settings.',
     badTitle: 'That link did not work',
     badBody: 'It may have been altered or truncated by your email client. You can turn email reminders off directly in the app under Account Settings.',
+    confirmTitle: 'Unsubscribe from Trimio emails?',
+    confirmBody: 'Renewal reminders and other emails from Trimio will stop. Push notifications and the app itself are not affected.',
+    confirmButton: 'Unsubscribe',
   },
   de: {
     okTitle: 'Du bist abgemeldet',
     okBody: 'Du bekommst keine E-Mails mehr von Trimio. Push-Benachrichtigungen und die App selbst sind davon nicht betroffen, und du kannst E-Mail-Erinnerungen jederzeit in den Kontoeinstellungen wieder einschalten.',
     badTitle: 'Der Link hat nicht funktioniert',
     badBody: 'Dein E-Mail-Programm hat ihn vielleicht verändert oder gekürzt. Du kannst E-Mail-Erinnerungen auch direkt in der App unter Kontoeinstellungen ausschalten.',
+    confirmTitle: 'Von E-Mails von Trimio abmelden?',
+    confirmBody: 'Erinnerungen an anstehende Verlängerungen und andere E-Mails von Trimio kommen dann nicht mehr. Push-Benachrichtigungen und die App selbst sind davon nicht betroffen.',
+    confirmButton: 'Abmelden',
   },
 };
 
+/* OPENING THE LINK ONLY ASKS. Mail security scanners open the links in an
+   email to check them, so a GET that acted unsubscribed people from the
+   reminders they pay for without them ever clicking. The page carries a
+   button that posts the same link back; the POST below is what acts. */
 app.get('/unsubscribe', async (req, res) => {
   try {
-    const ok = await applyUnsubscribe(req);
+    const id = verifyUnsubscribe(req);
     const lang = languageOf(req);
     const c = UNSUBSCRIBE_PAGE[lang];
-    res.status(ok ? 200 : 400).type('html').send(
-      ok ? unsubscribePage(c.okTitle, c.okBody, lang) : unsubscribePage(c.badTitle, c.badBody, lang)
-    );
+    if (!id) return res.status(400).type('html').send(unsubscribePage(c.badTitle, c.badBody, lang));
+    const form = `<form method="post" action="/unsubscribe" style="margin-top:24px">
+          <input type="hidden" name="u" value="${id}" />
+          <input type="hidden" name="t" value="${escapeHtml(String(req.query.t))}" />
+          <input type="hidden" name="confirm" value="1" />
+          <button type="submit" style="font:inherit;font-weight:600;font-size:15px;color:#fff;background:#142B3A;border:0;border-radius:8px;padding:12px 28px;min-height:48px;cursor:pointer">${c.confirmButton}</button>
+        </form>`;
+    res.type('html').send(unsubscribePage(c.confirmTitle, c.confirmBody, lang, form));
   } catch (err) {
     handleError(err, res);
   }
 });
 
+/* Two callers. A mail provider's RFC 8058 one-click POST, which must act with
+   no confirmation and wants a bare 2xx; and the button on the page above,
+   which sends confirm=1 and gets the page that says it worked. */
 app.post('/unsubscribe', express.urlencoded({ extended: false }), async (req, res) => {
   try {
     const ok = await applyUnsubscribe(req);
+    if (req.body?.confirm === '1') {
+      const lang = languageOf(req);
+      const c = UNSUBSCRIBE_PAGE[lang];
+      return res.status(ok ? 200 : 400).type('html').send(
+        ok ? unsubscribePage(c.okTitle, c.okBody, lang) : unsubscribePage(c.badTitle, c.badBody, lang)
+      );
+    }
     // One-click senders want a 2xx and nothing else; a body or a redirect here
     // gets read as a failure by some providers.
     res.sendStatus(ok ? 200 : 400);
@@ -2094,6 +2131,16 @@ const REFERRAL_MAX_BONUS_MONTHS = (() => {
    own copy. It used to hold `const FREE_LIMIT = 5` and this file's own notes
    claimed it did not, which is exactly the drift that makes a configurable
    limit dangerous instead of useful. */
+/* A CEILING ON EVERY ROW ONE ACCOUNT CAN HOLD, cancelled included, for every
+   account. The free limit above counts only active rows and only applies to
+   free accounts, so a Premium account (and since the reverse trial every new
+   account, free of charge) or a free one cycling create and cancel could grow
+   the database without end, about 86,000 rows a day at the API rate limit.
+   It also bounds a runaway client, which the offline queue makes thinkable.
+   500 is far above any real person (the funnel has never seen anyone near 50)
+   and a constant on purpose: it guards the service, not a product tier. */
+const MAX_SUBSCRIPTIONS_PER_ACCOUNT = 500;
+
 const FREE_SUBSCRIPTION_LIMIT = (() => {
   const raw = process.env.FREE_SUBSCRIPTION_LIMIT;
   if (raw == null || raw === '') return 5;
@@ -3319,6 +3366,10 @@ app.post('/api/trpc/subscriptions.create', authMiddleware, async (req, res) => {
     if (clientRef) {
       const prior = await db.query('SELECT * FROM subscriptions WHERE user_id = $1 AND client_ref = $2', [req.userId, clientRef]);
       if (prior.rows.length > 0) return { row: prior.rows[0], replay: true };
+    }
+    const allRows = await db.query('SELECT COUNT(*) AS c FROM subscriptions WHERE user_id = $1', [req.userId]);
+    if (parseInt(allRows.rows[0].c, 10) >= MAX_SUBSCRIPTIONS_PER_ACCOUNT) {
+      return { status: 403, body: { error: 'ACCOUNT_LIMIT_REACHED', limit: MAX_SUBSCRIPTIONS_PER_ACCOUNT } };
     }
     if (!isPaid) {
       /* CANCELLED ROWS DO NOT COUNT AGAINST THE FREE TIER, and this is the line

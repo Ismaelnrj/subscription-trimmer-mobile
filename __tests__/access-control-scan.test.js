@@ -183,13 +183,19 @@ describe("access control scan of backend/server.js", () => {
     expect(ALL.find((r) => r.key === "POST /api/webhooks/revenuecat").body).toMatch(/timingSafeEqual\(/);
     const funnel = SRC.slice(SRC.indexOf("async function adminFunnel"), SRC.indexOf("app.get('/api/admin/funnel'"));
     expect(funnel).toMatch(/secretMatches\(req\.headers\['x-cron-secret'\]/);
-    // Both unsubscribe routes go through applyUnsubscribe, which reads the user
-    // id from the link (?u=) and acts only after the HMAC check passes.
+    // Both unsubscribe routes read the user id from the link (?u=) through
+    // verifyUnsubscribe, which checks the HMAC in constant time. Only POST
+    // acts, through applyUnsubscribe, and only after that check passes. GET
+    // writes nothing, since mail scanners open links (2026-11-12).
+    const verify = SRC.slice(SRC.indexOf("function verifyUnsubscribe"), SRC.indexOf("async function applyUnsubscribe"));
+    expect(verify.indexOf("timingSafeEqual(")).toBeGreaterThan(-1);
+    expect(verify).not.toMatch(/pool\.query\(/);
     const apply = SRC.slice(SRC.indexOf("async function applyUnsubscribe"), SRC.indexOf("app.get('/unsubscribe'"));
-    expect(apply.indexOf("timingSafeEqual(")).toBeGreaterThan(-1);
-    expect(apply.indexOf("timingSafeEqual(")).toBeLessThan(apply.indexOf("pool.query("));
-    for (const key of ["GET /unsubscribe", "POST /unsubscribe"]) {
-      expect(ALL.find((r) => r.key === key).body).toMatch(/applyUnsubscribe\(req\)/);
-    }
+    expect(apply.indexOf("verifyUnsubscribe(req)")).toBeGreaterThan(-1);
+    expect(apply.indexOf("verifyUnsubscribe(req)")).toBeLessThan(apply.indexOf("pool.query("));
+    const get = ALL.find((r) => r.key === "GET /unsubscribe").body;
+    expect(get).toMatch(/verifyUnsubscribe\(req\)/);
+    expect(get).not.toMatch(/pool\.query\(|applyUnsubscribe\(/);
+    expect(ALL.find((r) => r.key === "POST /unsubscribe").body).toMatch(/applyUnsubscribe\(req\)/);
   });
 });
