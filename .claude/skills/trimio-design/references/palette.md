@@ -8,39 +8,44 @@ suspect drift.
 
 | Role | Hex | Where it lives |
 |---|---|---|
-| Ink Navy | `#142B3A` | Light theme primary, app.json primaryColor, headings, fills behind white |
-| Warm White | `#F7F6F1` | The page and app ground |
-| Card | `#FCFBF8` | Card surfaces. Warm paper, not white |
-| Rule | `#DCDEDB` | Hairlines, dividers, borders |
+| Ink Navy | `#142B3A` | Light theme primary and text, app.json primaryColor, headings, fills behind white |
+| Ground | `#F3F5F6` | The page and app ground since 2026-11-12, mixed from Ink Navy's hue. Was the cream `#F7F6F1` |
+| Card | `#FFFFFF` | Card surfaces, no outline in light. Was the warm paper `#FCFBF8` |
+| Rule | `#E2E6E9` | Hairlines, dividers, control borders. Was `#DCDEDB` |
 | Slate | `#52616B` | Secondary and supporting text |
-| Soft Mint | `#55C6A3` | Ornament only. Fills, rules, dots, trim tabs |
-| Deepened Mint | `#1F7A62` | Type that must read as mint, on a light ground |
-| Dark primary | `#2F8E71` | `lib/theme.ts` dark theme primary, and the notification tint |
+| Soft Mint | `#55C6A3` | The logo, and good news only. Never text, never behind white |
+| Deepened Mint | `#1F7A62` | Good news that is text, on a light ground |
+| Dark ink | `#F2F1EC` | Dark theme text AND primary since 2026-11-12. Dark primary was `#2F8E71`, still the notification tint in app.json |
 | Warm Amber | `#E6A34A` | Ornament |
 | Amber text | `#96631B` | Amber that carries text on light |
 | Muted Coral | `#D96B62` | Ornament |
-| Coral text | `#C4544A` | Coral that carries text on light |
+| Coral text | `#B8473D` | Coral that carries text on light (`danger`). Not `#C4544A`, see below |
 
-The app's light theme deliberately uses the same six values as the landing page
-for ground, card, rule, ink, slate and mint. If either side changes, change
-both, or the site and the app stop looking like one product.
+The app's light theme deliberately uses the same values as the landing page,
+the guide pages and the emails for ground, card, rule, ink, slate and mint. If
+either side changes, change both, or the site and the app stop looking like
+one product. Both moved together on 2026-11-12.
 
 ## Measured pairings
 
-Floors: 4.5:1 normal text, 3:1 large text and UI boundaries.
+Floors: 4.5:1 normal text, 3:1 large text and UI boundaries. Recomputed
+2026-11-12 with `scripts/check_contrast.py --palette`.
 
-### On the warm white ground
+### On the light ground `#F3F5F6`
 
 | Colour | Ratio | Verdict |
 |---|---|---|
-| Ink Navy | 13.51:1 | Safe for anything |
-| Slate | 5.92:1 | Body text fine |
-| Deepened Mint | 4.83:1 | Body text fine |
-| Amber text `#96631B` | 4.74:1 | Body text fine |
-| **Coral text `#C4544A`** | **4.12:1** | **Large text only, see below** |
-| **Muted Coral** | **3.12:1** | Large text only, barely |
-| **Soft Mint** | **1.94:1** | **Fails every floor** |
-| **Warm Amber** | **2.00:1** | **Fails every floor** |
+| Ink Navy | 13.37:1 | Safe for anything |
+| Slate | 5.85:1 | Body text fine |
+| Deepened Mint | 4.78:1 | Body text fine |
+| Amber text `#96631B` | 4.69:1 | Body text fine |
+| Coral text `#B8473D` | 4.79:1 | Body text fine |
+| **Muted Coral** | **3.08:1** | Large text only, barely |
+| **Soft Mint** | **1.92:1** | **Fails every floor** |
+| **Warm Amber** | **1.98:1** | **Fails every floor** |
+
+On a white card every one of these is higher (Ink Navy 14.62, Slate 6.40,
+Deepened Mint 5.23).
 
 ### White text on fills
 
@@ -48,12 +53,11 @@ Floors: 4.5:1 normal text, 3:1 large text and UI boundaries.
 |---|---|---|
 | Ink Navy | 14.62:1 | Safe |
 | Deepened Mint | 5.23:1 | Safe for anything |
-| Dark primary `#2F8E71` | 4.02:1 | Large text |
 | **Muted Coral** | **3.37:1** | Large text only |
 | **Soft Mint** | **2.10:1** | **Fails every floor** |
 | **Warm Amber** | **2.16:1** | **Fails every floor** |
 
-### The coral text colour does not quite reach the body floor
+### The coral text colour did not reach the body floor (RESOLVED 2026-09-21: the app uses `#B8473D`)
 
 `#C4544A` is documented as the coral to use when coral must carry text on a
 light ground, by analogy with `#96631B` for amber. Amber's version works:
@@ -81,25 +85,19 @@ the site header uses Deepened Mint and the navy footer uses the bright one.
 
 The rule that resolves it: **mint marks things, it never carries them.**
 
-## lib/theme.ts, the both-directions constraint
+## lib/theme.ts, primary is for marks
 
-`primary` is used as a fill behind white text *and* as text on a surface, so it
-must pass both ways at once.
-
-- Light primary: Ink Navy. Trivially fine in both directions.
-- Dark primary: `#2F8E71`, which is 4.0:1 under white and 3.9:1 on the card.
-  Balanced rather than optimal in either direction, which is the point.
-- Bright mint lives in `accent`, a separate token, precisely so it cannot leak
-  into a fill.
-
-Until 2026-11-08 roughly 36 call sites put white on a primary fill, so setting
-dark `primary` to `#55C6A3` would have dropped them all to 2.1:1. None do now:
-fills use `text` with a `bg` label, and a scan test keeps it that way.
+`primary` used to be a fill behind white text and a text colour at once, and
+dark mode's mint `#2F8E71` (4.0:1 under white, 3.9:1 on the card) passed
+neither for text. Since 2026-11-08 no screen puts text on or in it, and since
+2026-11-12 it is ink in both themes: Ink Navy in light, `#F2F1EC` in dark. It
+colours spinners, the limit meter and the top weekly bar. Bright mint lives in
+`accent`, which no screen uses; the mint guard test keeps it that way.
 
 ## lib/categories.ts and the adjacency constraint
 
 Ten real categories plus `other`. The set was validated against the warm white
-ground on the **adjacent** pairlist, which is the correct test for a donut:
+ground (and on 2026-11-12 against `#F3F5F6` and white, same results) on the **adjacent** pairlist, which is the correct test for a donut:
 slices only ever touch their neighbours, so non-adjacent pairs may legitimately
 look similar.
 

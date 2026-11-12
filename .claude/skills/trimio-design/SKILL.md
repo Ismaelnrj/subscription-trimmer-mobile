@@ -11,7 +11,7 @@ white text on it or set headings in it, and both fail contrast badly enough to
 be unreadable for some users. Every rule below exists because something broke.
 
 The single most useful habit this skill encodes: **measure, do not eyeball.**
-Contrast is not intuitable. Soft Mint on warm white looks fine to most people
+Contrast is not intuitable. Soft Mint on the light ground looks fine to most people
 with good vision on a good screen and measures 1.9:1, which is under even the
 loosest floor there is.
 
@@ -20,7 +20,7 @@ loosest floor there is.
 Run the checker rather than guessing:
 
 ```bash
-python3 scripts/check_contrast.py "#55C6A3" "#F7F6F1"     # two colours
+python3 scripts/check_contrast.py "#55C6A3" "#F3F5F6"     # two colours
 python3 scripts/check_contrast.py --palette                # the whole palette
 python3 scripts/check_contrast.py --image frame.jpg        # sample an image
 ```
@@ -113,9 +113,10 @@ it and NEITHER IS INSTALLED, for the same reason as the Vercel rules above:
   ITS OWN FIRST RUN FOUND THREE TELLS IN THE FIRST REDESIGNED SCREEN, written
   by the same session that later read the list: two middle dots and an arrow
   on the dashboard. Check a screen against this list BEFORE showing it.
-  ONE TELL IS THE BRAND AND STAYS: a warm cream ground near `#F4F1EA` is
-  trait one on that list, and Trimio's Warm White is `#F7F6F1`. The palette is
-  the brief, so it wins; the cure is everything else on this list.
+  THE CREAM TELL IS GONE, 2026-11-12: a warm cream ground near `#F4F1EA` is
+  trait one on that list, Trimio's ground was `#F7F6F1`, and the owner read
+  the app as AI made. The ground is `#F3F5F6` now (mixed from Ink Navy's hue,
+  not a UI kit grey) with white cards. Navy, mint and the icon stayed.
 - `nextlevelbuilder/ui-ux-pro-max-skill` (read at `b7d5353`). A searchable
   database of styles and palettes for generating a design system from
   nothing, which Trimio does not need, plus a React Native file of generic
@@ -138,37 +139,42 @@ light one at 2.85:1, under even the 3:1 floor.
 Do not duplicate that here. Use `check_contrast.py` for a pairing that is not
 yet in the theme, and `check_screens.py` for what the gate cannot see.
 
-THE OLD GAP NO LONGER REACHES ANYBODY: white on dark `primary` #2F8E71 is
-4.02:1, and primary as text on the dark card is 3.94:1, both under the 4.5:1
-text floor. Since 2026-11-08 no screen does either. A button, a chosen state,
+THE OLD GAP IS CLOSED: dark `primary` was the mint #2F8E71 (4.02:1 under
+white, 3.94:1 as text on the dark card). Since 2026-11-08 no screen puts text
+on it or sets text in it, and since 2026-11-12 it is the light ink #F2F1EC,
+the same as `text`, which the theme test asserts. A button, a chosen state,
 the add button or a status toast fills with `text` (or the status colour) and
-labels with `bg`; in light that is the same Ink Navy as before, in dark it is
-legible. `__tests__/dark-mode-fills.test.js` scans for a primary fill, a
-literal white label and primary as a text colour, and fails on any of them.
-The theme test still asserts the 4.02:1 at 3:1, so the gap stays visible.
+labels with `bg`. `__tests__/dark-mode-fills.test.js` scans for a primary
+fill, a literal white label and primary as a text colour, and for a pull to
+refresh that sets its arrow colour without its circle (Android draws the
+circle white, so a light arrow on it vanished in dark mode).
 
 ## The palette
 
 | Role | Hex | Notes |
 |---|---|---|
 | Ink Navy | `#142B3A` | The workhorse. White on it is about 12:1, always safe |
-| Warm White | `#F7F6F1` | The ground. Not pure white, which reads cold beside it |
-| Card | `#FCFBF8` | Warm paper, not white, for the same reason |
-| Rule | `#DCDEDB` | Hairlines and dividers |
+| Ground | `#F3F5F6` | Light grey mixed from Ink Navy's hue (204 degrees). Was the cream `#F7F6F1` until 2026-11-12 |
+| Card | `#FFFFFF` | Pure white, no outline in light (`cardBorder`); dark keeps its outline |
+| Rule | `#E2E6E9` | Hairlines, dividers, control borders |
 | Slate | `#52616B` | Secondary text |
 | Soft Mint | `#55C6A3` | **Marks things. Never carries them.** See below |
-| Deepened Mint | `#1F7A62` | Use when type must read as mint. 4.8:1 on warm white |
+| Deepened Mint | `#1F7A62` | Use when type must read as mint. 4.78:1 on the ground, 5.23:1 on a card |
 | Warm Amber | `#E6A34A` | Text version `#96631B` |
 | Muted Coral | `#D96B62` | Text version `#B8473D`. **Not `#C4544A`**, which this table claimed for months: measured it is 4.12:1 on the ground and 3.93:1 on `dangerLight`, where an error message actually sits |
 
-Intended weighting is roughly 60% warm white, 25% navy, 10% mint, 5% the rest.
+MINT MEANS GOOD NEWS AND NOTHING ELSE, since 2026-11-12: money a person keeps,
+or something done and fine. Anything that only wants emphasis (a switch that
+is on, a tick in a table, a selected item, an icon) takes ink. Decorative mint
+is the template look. `__tests__/mint-only-for-good-news.test.js` lists every
+place a green token may appear, with its reason, and fails on a new one.
 The restraint is the point. When a design feels flat, the fix is hierarchy and
 spacing, not more mint.
 
 ## The mint rule, which is the one that keeps getting broken
 
 Soft Mint `#55C6A3` measures **2.1:1 under white text** and **1.9:1 as text on
-warm white**. Both are under the 3:1 large-text floor, so there is no size at
+the light ground**. Both are under the 3:1 large-text floor, so there is no size at
 which either becomes acceptable.
 
 **Mint is for:** fills, rules, underlines, offset shadows, dots, trim tabs,
@@ -178,7 +184,7 @@ progress tracks, and pills where navy sits on mint (7.0:1, comfortable).
 caption over video.
 
 When something must read as mint, use `#1F7A62`. It is close enough that
-nobody notices the substitution and it measures 4.8:1 on warm white.
+nobody notices the substitution and it measures 4.78:1 on the ground.
 
 A decorative rule in mint is fine at any contrast, because a rule is not text
 and contrast floors do not apply to it. Do not "fix" those.
@@ -192,8 +198,9 @@ the colour of spinners, the refresh tint, the limit meter, one border and the
 top weekly bar, where the floor is 3:1.
 
 - Light theme primary is Ink Navy.
-- Dark theme primary is `#2F8E71`, chosen because it balances both ways: 4.0:1
-  under white, 3.9:1 on the card.
+- Dark theme primary is the light ink `#F2F1EC`, the same as `text`, since
+  2026-11-12. It was the mint `#2F8E71` before, which made spinners, the limit
+  meter, the top weekly bar and the active tab green for no reason.
 - The bright mint lives in the separate `accent` token.
 
 **Do not put text on a primary fill, and do not set text in primary.** That was
@@ -205,7 +212,8 @@ where white on dark success, which is Soft Mint, was 2.10:1.
 ## lib/categories.ts: declaration order is load bearing
 
 The ten real categories are a validated categorical palette, checked against
-the warm white ground on the **adjacent** pairlist, which was the right test
+the warm white ground (and again on 2026-11-12 on the cool ground `#F3F5F6`
+and on white, same results) on the **adjacent** pairlist, which was the right test
 for the old Stats donut, whose slices only touched their neighbours. The split
 bar that replaced it (2026-11-07) draws parts by amount, not in declaration
 order, so adjacency there is not guaranteed by this file: identity rests on

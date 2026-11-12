@@ -2200,6 +2200,21 @@ last one left off without needing a recap typed out.
   Switch/index.js` (thumbCurrentColor) to fall back to thumbColor; never the
   repo. Also set `ss_review_renewal_state_v2` in the shoot script, or the
   review prompt covers the subscriptions list.
+  CI GREEN on all three, runs 767, 768 and 769.
+  AN AUDIT OF IT, the same day at the owner's request, found what the
+  screenshots could not: in dark mode on Android the pull to refresh arrow on
+  Insights and Alerts was the new light ink on Android's default WHITE circle,
+  1.13:1, invisible. They pass `progressBackgroundColor={c.card}` now (14:1)
+  and `dark-mode-fills.test.js` fails on any RefreshControl that sets
+  `colors` without it. The web preview cannot draw an Android RefreshControl,
+  which is why it got past. The audit also found the design skill, its
+  palette reference and `check_contrast.py --palette` still describing the
+  cream, the old dark primary and the wrong coral `#C4544A`; all three are
+  current now. AND A CORRECTION: the launch screen is not "a brief flash".
+  `AnimatedSplash` holds the cream illustrated splash for 1.1 s plus a 0.32 s
+  fade on EVERY launch until the next native build. Changing only its JS half
+  would show a cream to grey jump after the OS splash, so both wait for the
+  build.
   NEXT ON THE AGREED PLAN, not started: the cancel moment as the one big
   mint figure (peak end rule), a "1 of 3 added" line after the first
   subscription, then new Play screenshots once the update is on phones.
@@ -5005,7 +5020,8 @@ last one left off without needing a recap typed out.
   went from Soft Mint (2.1:1, invisible to keyboard users) to a 2px
   `#1F7A62` outline (5.05:1 on the card); and the two hero weights (700, 400,
   measured) are preloaded. Still failing that script ON PURPOSE: eyebrow
-  labels on 8 of 9 sections, a taste call left for the owner.
+  labels on 8 of 9 sections, a taste call left for the owner. RESOLVED
+  2026-11-12: 7 removed, 1 of 9 left, and the rule passes.
 - PUBLIC CANCELLATION GUIDE PAGES, pilot of five, 2026-10-11: Netflix,
   Spotify, Disney+, Amazon Prime, YouTube Premium, at `/cancel/<slug>` and
   `/de/kuendigen/<slug>` plus an index each, linked from both landing footers
@@ -5071,7 +5087,8 @@ last one left off without needing a recap typed out.
   CI STEP "Landing page layout" runs `check_landing.js --ci` in Chromium with
   Playwright 1.56.1 installed by pnpm in /tmp: hero button above the fold,
   lead at most 20 words, no sideways scroll. `--ci` reports the eyebrow rule
-  as a note instead of failing, since that is an open taste call.
+  as a note instead of failing, since that is an open taste call. (It passes
+  outright since 2026-11-12, at 1 of 9 sections.)
   `cancel-guide-pages.test.js` fails when a published guide is past six months
   since its check. ON PURPOSE, tied to today: when it goes red on an unrelated
   commit, re-check that guide or unpublish it, never freeze the clock.
@@ -5669,7 +5686,9 @@ last one left off without needing a recap typed out.
   `#52616B`, Warm Amber `#E6A34A` and Muted Coral `#D96B62` supporting.
   Intended weighting is roughly 60% warm white, 25% navy, 10% mint, 5%
   the rest. The restraint is the point, mint marks things, it never
-  carries them.
+  carries them. THE GROUND AND THE WEIGHTING ARE SUPERSEDED since
+  2026-11-12 (THE CREAM IS GONE): ground `#F3F5F6`, white cards, and mint
+  only for good news.
 - The one rule that keeps that palette legible, measured not guessed:
   Soft Mint carries white text at only 2.1:1 and reads as text on warm
   white at 1.9:1, under even the 3:1 large-text floor. So mint is NEVER a
@@ -5684,8 +5703,11 @@ last one left off without needing a recap typed out.
   that balances both ways (4.0:1 under white, 3.9:1 on the card) the way
   the old violet did. The bright mint lives in the separate `accent`
   token. Do not set dark `primary` to `#55C6A3`: 36 call sites put white
-  on a primary fill, and they would all drop to 2.1:1.
-- Landing page layout: warm white throughout with two navy fields (the
+  on a primary fill, and they would all drop to 2.1:1. SUPERSEDED: since
+  2026-11-08 nothing puts white on primary, and since 2026-11-12 dark
+  `primary` is the light ink `#F2F1EC`, the same as `text`.
+- Landing page layout: cool grey `#F3F5F6` throughout (warm white until
+  2026-11-12) with two navy fields (the
   demo and the account section) and a navy final call to action. Hero,
   statement, how it works, features, privacy, founder quote, account,
   footer. The phone mockup in the hero is deliberately NOT a .reveal: it
@@ -5761,9 +5783,9 @@ last one left off without needing a recap typed out.
   signature. When any exported symbol changes shape, grep the WHOLE repo
   for it, tests included: `grep -rn "<name>" --include=*.ts --include=*.tsx .`
 - The app's light theme uses the SAME values as the landing page for
-  ground, card, rule, ink, slate and mint (`#F7F6F1`, `#FCFBF8`,
-  `#DCDEDB`, `#142B3A`, `#52616B`, `#55C6A3`). Cards are warm paper, not
-  pure white: pure white reads cold against the warm ground. Keep them in
+  ground, card, rule, ink, slate and mint: since 2026-11-12 `#F3F5F6`,
+  `#FFFFFF`, `#E2E6E9`, `#142B3A`, `#52616B`, `#55C6A3` (it was the cream
+  `#F7F6F1` and warm paper `#FCFBF8`; see THE CREAM IS GONE). Keep them in
   step if either side changes.
 - LEGAL PAGES: `/privacy-policy` and `/terms`, both server rendered from
   section arrays in `backend/server.js` through one shared `legalPage()`

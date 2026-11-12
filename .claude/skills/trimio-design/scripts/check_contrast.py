@@ -3,7 +3,7 @@
 
 Three modes:
 
-    check_contrast.py "#55C6A3" "#F7F6F1"   one pairing
+    check_contrast.py "#55C6A3" "#F3F5F6"   one pairing
     check_contrast.py --palette             every pairing that matters
     check_contrast.py --image frame.jpg     sample a screenshot or video frame
 
@@ -18,17 +18,16 @@ import sys
 
 PALETTE = {
     "Ink Navy":       "#142B3A",
-    "Warm White":     "#F7F6F1",
-    "Card":           "#FCFBF8",
-    "Rule":           "#DCDEDB",
+    "Ground":         "#F3F5F6",
+    "Card":           "#FFFFFF",
+    "Rule":           "#E2E6E9",
     "Slate":          "#52616B",
     "Soft Mint":      "#55C6A3",
     "Deepened Mint":  "#1F7A62",
     "Warm Amber":     "#E6A34A",
     "Amber text":     "#96631B",
     "Muted Coral":    "#D96B62",
-    "Coral text":     "#C4544A",
-    "Dark primary":   "#2F8E71",
+    "Coral text":     "#B8473D",
     "White":          "#FFFFFF",
 }
 
@@ -86,7 +85,7 @@ def mode_pair(a, b):
     print(f"  large text  (3.0:1) {'pass' if r >= LARGE_TEXT else 'FAIL'}")
     if r < LARGE_TEXT:
         print("\n  Under every floor. If this needs to read as mint, "
-              "use Deepened Mint #1F7A62 (4.83:1 on warm white).")
+              "use Deepened Mint #1F7A62 (4.78:1 on the ground, 5.23:1 on a card).")
         print("  A decorative rule or dot is exempt: contrast floors apply to "
               "text, not ornament.")
     print()
@@ -94,23 +93,23 @@ def mode_pair(a, b):
 
 
 def mode_palette():
-    ww = parse_hex(PALETTE["Warm White"])
+    ww = parse_hex(PALETTE["Ground"])
     card = parse_hex(PALETTE["Card"])
     navy = parse_hex(PALETTE["Ink Navy"])
     white = parse_hex(PALETTE["White"])
     mint = parse_hex(PALETTE["Soft Mint"])
 
-    print("\nText on the warm white ground")
+    print("\nText on the light ground")
     for name in ("Ink Navy", "Slate", "Soft Mint", "Deepened Mint",
                  "Warm Amber", "Amber text", "Muted Coral", "Coral text"):
-        report_pair(name, parse_hex(PALETTE[name]), "Warm White", ww)
+        report_pair(name, parse_hex(PALETTE[name]), "Ground", ww)
 
     print("\nText on the card")
-    for name in ("Ink Navy", "Slate", "Dark primary"):
+    for name in ("Ink Navy", "Slate", "Deepened Mint"):
         report_pair(name, parse_hex(PALETTE[name]), "Card", card)
 
     print("\nWhite text on fills")
-    for name in ("Ink Navy", "Soft Mint", "Deepened Mint", "Dark primary",
+    for name in ("Ink Navy", "Soft Mint", "Deepened Mint",
                  "Warm Amber", "Muted Coral"):
         report_pair("White", white, name, parse_hex(PALETTE[name]))
 
@@ -118,7 +117,7 @@ def mode_palette():
     report_pair("Ink Navy", navy, "Soft Mint", mint)
 
     print("\nThe two traps")
-    print("  White on Soft Mint and Soft Mint as text on warm white are both")
+    print("  White on Soft Mint and Soft Mint as text on the light ground are both")
     print("  under 3:1. Mint marks things, it never carries them.")
     print()
     return 0
@@ -175,7 +174,7 @@ def mode_image(path, top):
         for colour, share, r in failing[:top]:
             print(f"    {to_hex(colour)}  {r:5.2f}:1   {share:5.2f}% of frame")
         print("\n  If any of these carries text, that is the thing to change.")
-        print("  Mint text on warm white lands here every time: it looks fine")
+        print("  Mint text on the light ground lands here every time: it looks fine")
         print("  and measures about 2:1. Deepened Mint #1F7A62 is the fix.")
     else:
         print("\n  No text-weight colour falls under the floors.")
@@ -196,7 +195,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("colours", nargs="*", metavar="HEX",
-                    help="foreground and background, e.g. '#55C6A3' '#F7F6F1'")
+                    help="foreground and background, e.g. '#55C6A3' '#F3F5F6'")
     ap.add_argument("--palette", action="store_true",
                     help="check every pairing that matters in Trimio")
     ap.add_argument("--image", metavar="PATH",
