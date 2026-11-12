@@ -5818,10 +5818,10 @@ last one left off without needing a recap typed out.
   last changed 2026-08-14, read by nothing), and `PROJECT_STATUS.md` still
   described it as live. DELETED 2026-11-12 with the owner's yes ("delete it
   then"), after checking nothing in tools/, CI, Codemagic, the app or the
-  server image (built from backend/ alone) read it. `PROJECT_STATUS.md` lost
-  its Netlify lines and now opens with SUPERSEDED: it is a June snapshot that
-  told every session to read it first. Deleting that whole file is the
-  owner's call and was not asked for.
+  server image (built from backend/ alone) read it. `PROJECT_STATUS.md`, a
+  June snapshot that told every session to read it first, was DELETED the same
+  day at the owner's word ("delete it"); nothing referenced it. Git history
+  keeps both.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
