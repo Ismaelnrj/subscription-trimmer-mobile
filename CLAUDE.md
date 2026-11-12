@@ -2170,6 +2170,39 @@ last one left off without needing a recap typed out.
   `lib/iap.ts` is stubbed to answer 3.99 and 24.99 with no lifetime package;
   never apply that to the repo. The demo account sits at 5 of 5, so to open
   the add form shoot with a fresh account (the trial makes it Premium).
+- THE CREAM IS GONE, 2026-11-12, the owner's call ("the cream background
+  ... seems to be a signal of AI slop"). App in `8fa4e35e`, site in
+  `c34b9989`, plus `7b075c64` (German "Standard: €50/Monat" fixed on the way).
+  THE BRAND STAYS: Ink Navy, Soft Mint and the icon are unchanged, because
+  a new colour means a new icon (native build), redone store assets, and
+  throwing away the Instagram posts already published in this look. The
+  owner weighed a full recolour and chose "keep the colours, improve how
+  they're used". Google's AI suggested palettes the owner sent were
+  Tailwind's defaults hex for hex (#4F46E5, #3B82F6, #10B981, #EF4444...),
+  which is the AI look itself; do not adopt them.
+  THE RULES NOW: light ground #F3F5F6 and rules #E2E6E9, mixed from the
+  navy's hue (NOT Tailwind gray-100 #F3F4F6); cards pure white with no
+  outline in light (`cardBorder`); ink for anything chosen or primary, in
+  both themes (dark `primary` and active tab are the light ink now); mint
+  ONLY for good news (money kept, something done and fine), listed place by
+  place in `__tests__/mint-only-for-good-news.test.js`. On the site, 7 of 8
+  section labels are gone and check_landing's eyebrow rule passes at 1 of 9.
+  WAITING ON THE OWNER'S YES to the before and after (both sent 2026-11-12)
+  before master: the site half deploys on merge, the app half needs an
+  `eas update` (`needs_native_build.py bf3c6706` says OTA IS ENOUGH).
+  NOT CHANGED, ON PURPOSE: the OS splash (`app.json` backgroundColor) and
+  `AnimatedSplash.tsx` stay warm white until the next native build, since
+  changing only the JS half would flash; the chevron in the mark is warm
+  white artwork and stays.
+  WEB PREVIEW TRAP: react-native-web draws an ON switch's knob in its own
+  teal (#009688) and ignores `thumbColor`, which Android honours. For honest
+  screenshots, patch the scratch copy's `react-native-web/dist/exports/
+  Switch/index.js` (thumbCurrentColor) to fall back to thumbColor; never the
+  repo. Also set `ss_review_renewal_state_v2` in the shoot script, or the
+  review prompt covers the subscriptions list.
+  NEXT ON THE AGREED PLAN, not started: the cancel moment as the one big
+  mint figure (peak end rule), a "1 of 3 added" line after the first
+  subscription, then new Play screenshots once the update is on phones.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
