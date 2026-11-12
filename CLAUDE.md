@@ -5721,6 +5721,33 @@ last one left off without needing a recap typed out.
   needs none, and with no billing account nothing done with the public
   Firebase key can cost money. If it is ever linked, restrict that key and set
   a budget alert first.
+  THE OWNER ITEM IS DONE, 2026-11-12, read off the owner's screenshots, not
+  reported. "Trimio Android" carries package `com.trimio.app` and SHA-1
+  `51:A9:D1:2F:97:12:86:10:20:8D:50:B3:BE:84:FB:E6:AE:BC:43:8B`, which is
+  EXACTLY Play Console's app signing key (Protegida con Play > Firma de
+  aplicaciones, pasted by the owner), and not the debug key. Whether a second
+  Android client exists was not shown; with the Play key on this one, a second
+  could only add a key, never remove the working one. "Trimio Web" (type
+  Aplicación web, the `googleWebClientId` audience) has NO JavaScript origins
+  and NO redirect URIs. NEVER DELETE "Trimio Web": every Google sign in is
+  checked against its id. NEVER PRESS "Actualizar clave" on that Play page:
+  rotating the signing key stops matching the Android client and breaks Google
+  sign in for every install signed with the new key.
+  Google Auth Platform > Branding now lists authorized domain `subtrimio.com`.
+  It must be the bare domain: Google refuses `www.subtrimio.com` as "not a
+  top private domain", and the bare one covers www. "Verificación de la app de
+  OAuth" read green afterwards.
+  PLAY INTEGRITY API IS OFF ON PURPOSE (0 of 7 in Protegida con Play), the
+  recommendation given 2026-11-12: everything billable is enforced on the
+  server, it needs a native build, and enforcing it locks out phones without
+  Play Services. Revisit on evidence of bot abuse in `/api/admin/funnel`.
+  THE OLD PRIVACY POLICY IS `trimio-privacyp.netlify.app`, fed by hand from the
+  repo's `legal/` folder (last changed 2026-08-14, English only, nothing links
+  to it). Current is `/privacy-policy` and `/de/datenschutz` on
+  www.subtrimio.com. Recommended: replace the Netlify site with a `_redirects`
+  to subtrimio.com rather than delete it, so nobody can claim the freed name.
+  Deleting `legal/` and the stale Netlify lines in `PROJECT_STATUS.md` waits on
+  the owner's yes.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
