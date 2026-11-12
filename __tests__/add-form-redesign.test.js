@@ -63,8 +63,9 @@ describe("the add form", () => {
     expect(SUBS).toMatch(/<Switch[\s\S]{0,200}value=\{!!formData\.isFreeTrial\}/);
     expect(SUBS).not.toContain("styles.trialToggle");
     // c.border as the off track measured 1.31:1 on the card: a switch nobody can see is off.
-    // On is ink since 2026-11-12: mint marks only the logo and money kept.
-    expect(SUBS).toContain("trackColor={{ false: c.textSecondary, true: c.text }}");
+    // Since 2026-11-12 the switch has its own tokens, measured in
+    // theme-contrast.test.js; mint marks only the logo and money kept.
+    expect(SUBS).toContain("trackColor={{ false: c.switchOff, true: c.switchOn }}");
   });
 
   it("marks the chosen category by inverting it, not with white on primary", () => {

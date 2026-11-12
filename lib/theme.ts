@@ -119,6 +119,9 @@ export const LIGHT = {
   overlay: "rgba(20,43,58,0.55)",
   skeleton: "#E5E9EB",
   skeletonHighlight: "#F0F3F4",
+  switchOn: "#142B3A",
+  switchOff: "#8A959D",
+  switchThumb: "#FFFFFF",
 } as const;
 
 export const DARK = {
@@ -149,8 +152,22 @@ export const DARK = {
   overlay: "rgba(0,0,0,0.7)",
   skeleton: "#24343E",
   skeletonHighlight: "#2E3F4A",
+  switchOn: "#93A3AD",
+  switchOff: "#485259",
+  switchThumb: "#F2F1EC",
 } as const;
 
+/* THE SWITCH TOKENS, 2026-11-12. Android draws a React Native Switch with
+   SwitchCompat: the knob is wider than the track and spills onto the card.
+   When "on" moved from green to ink the off track stayed textSecondary, only
+   2.28:1 from on in light and 2.30:1 in dark, and the dark knob was the card's
+   own colour, so its overhang vanished and the switch read as a bitten pill.
+   Light: navy on, a grey mixed from navy toward white for off (3.06:1 on the
+   card), white knob as Android always draws it; on and off 4.78:1 apart.
+   Dark: the knob is the light ink, 14:1 on the card, so the switch is never
+   missing; the tracks sit under it, on 3.08:1 from off. On is not the ink
+   there because a light knob on a light track disappears.
+   __tests__/theme-contrast.test.js holds every one of these numbers. */
 export type AppColors = Record<keyof typeof LIGHT, string>;
 
 /* THE TYPE, SPACING AND RADIUS SCALE, 2026-11-07. Until then every screen

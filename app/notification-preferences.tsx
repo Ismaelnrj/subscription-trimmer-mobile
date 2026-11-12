@@ -60,9 +60,10 @@ export default function NotificationPreferencesScreen() {
 
   /* Off is a visible track: c.border measured 1.31:1 against the card, so an
      off switch read as missing. Same tokens as the add form's trial switch. */
-  /* On is ink, the app's colour for "chosen", never mint: since 2026-11-12
-     mint marks only the logo and good news about money (lib/theme.ts). */
-  const track = { false: c.textSecondary, true: c.text };
+  /* Never mint: since 2026-11-12 mint marks only good news about money. The
+     switch has its own tokens because Android's knob spills onto the card;
+     why each value is what it is lives beside them in lib/theme.ts. */
+  const track = { false: c.switchOff, true: c.switchOn };
 
   /* prefs stays undefined when the request fails, so the old
      "isLoading || !prefs" check spun forever with no way out. */
@@ -114,7 +115,7 @@ export default function NotificationPreferencesScreen() {
                 onValueChange={(v) => toggle("pushEnabled", v)}
                 disabled={updateMutation.isLoading}
                 trackColor={track}
-                thumbColor={c.card}
+                thumbColor={c.switchThumb}
                 accessibilityLabel={t("notifPrefs.pushNotifications")}
               />
             </View>
@@ -129,7 +130,7 @@ export default function NotificationPreferencesScreen() {
                   onValueChange={(v) => toggle("renewalAlerts", v)}
                   disabled={updateMutation.isLoading}
                   trackColor={track}
-                  thumbColor={c.card}
+                  thumbColor={c.switchThumb}
                   accessibilityLabel={t("notifPrefs.renewalAlerts")}
                 />
               </View>
@@ -177,7 +178,7 @@ export default function NotificationPreferencesScreen() {
                     onValueChange={(v) => toggle("emailReminders", v)}
                     disabled={updateMutation.isLoading}
                     trackColor={track}
-                    thumbColor={c.card}
+                    thumbColor={c.switchThumb}
                     accessibilityLabel={t("notifPrefs.emailReminders")}
                   />
                 ) : (

@@ -100,6 +100,56 @@ describe("white on a primary fill, which no call site uses since 2026-11-08", ()
   });
 });
 
+/* On and off must look different, not only sit in different places. When "on"
+   moved from green to ink on 2026-11-12 the off track stayed textSecondary, and
+   the two tracks were 2.28:1 apart in light and 2.30:1 in dark; in dark the
+   knob was also the card's own colour, so the part Android draws over the card
+   disappeared. */
+describe("a switch reads as on or off at a glance", () => {
+  for (const [name, p] of [["LIGHT", LIGHT], ["DARK", DARK]]) {
+    it(`${name}: on and off tracks are clearly apart`, () => {
+      expect(ratio(p.switchOn, p.switchOff)).toBeGreaterThanOrEqual(LARGE_TEXT);
+    });
+    it(`${name}: the switch is visible on the card in both states`, () => {
+      // The knob or the track must carry it: Android's white knob relies on a
+      // drawn shadow in light, so there the track has to clear 3:1 itself.
+      for (const track of [p.switchOn, p.switchOff]) {
+        expect(Math.max(ratio(track, p.card), ratio(p.switchThumb, p.card))).toBeGreaterThanOrEqual(LARGE_TEXT);
+      }
+      if (name === "LIGHT") expect(ratio(p.switchOff, p.card)).toBeGreaterThanOrEqual(LARGE_TEXT);
+      // In dark no shadow outlines the knob, and the part of it Android draws
+      // over the card vanishes when the two are close: the bitten pill.
+      if (name === "DARK") expect(ratio(p.switchThumb, p.card)).toBeGreaterThanOrEqual(LARGE_TEXT);
+    });
+    it(`${name}: the knob shows against the track it sits on`, () => {
+      expect(ratio(p.switchThumb, p.switchOn)).toBeGreaterThanOrEqual(2);
+      expect(ratio(p.switchThumb, p.switchOff)).toBeGreaterThanOrEqual(LARGE_TEXT);
+    });
+  }
+
+  it("every Switch in the app uses the switch tokens", () => {
+    const files = [];
+    const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
+      const f = path.join(d, e.name);
+      if (e.isDirectory()) walk(f); else if (/\.tsx$/.test(e.name)) files.push(f);
+    });
+    ["app", "components"].forEach(d => walk(path.join(__dirname, "..", d)));
+    const tracks = [];
+    const thumbs = [];
+    for (const f of files) {
+      const src = fs.readFileSync(f, "utf8");
+      if (!/<Switch\b/.test(src)) continue;
+      const rel = path.relative(path.join(__dirname, ".."), f);
+      for (const m of src.matchAll(/\{\s*false:\s*([\w.]+),\s*true:\s*([\w.]+)\s*\}/g)) tracks.push(`${rel}: ${m[1]} / ${m[2]}`);
+      for (const m of src.matchAll(/thumbColor=\{?([^}\s]+)\}?/g)) thumbs.push(`${rel}: ${m[1]}`);
+    }
+    expect(tracks.length).toBeGreaterThanOrEqual(2);
+    expect(thumbs.length).toBeGreaterThanOrEqual(4);
+    for (const t of tracks) expect(t).toMatch(/: c\.switchOff \/ c\.switchOn$/);
+    for (const t of thumbs) expect(t).toMatch(/: c\.switchThumb$/);
+  });
+});
+
 describe("the category palette is left alone on purpose", () => {
   it("keeps #8B949C as the other category, which is a dot and not text", () => {
     // The old failing grey still lives here legitimately. It belongs to a

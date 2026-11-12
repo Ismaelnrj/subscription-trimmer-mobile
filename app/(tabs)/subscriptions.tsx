@@ -1467,8 +1467,8 @@ export default function SubscriptionsScreen() {
                   value={!!formData.isFreeTrial}
                   onValueChange={(v) => setFormData({ ...formData, isFreeTrial: v })}
                   accessibilityLabel={t("subscriptions.isFreeTrialLabel")}
-                  trackColor={{ false: c.textSecondary, true: c.text }}
-                  thumbColor={c.card}
+                  trackColor={{ false: c.switchOff, true: c.switchOn }}
+                  thumbColor={c.switchThumb}
                 />
               </View>
 
