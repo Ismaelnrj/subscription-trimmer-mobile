@@ -5679,6 +5679,28 @@ last one left off without needing a recap typed out.
   THE ONE REAL RESIDUAL IS INFRASTRUCTURE, NOT CODE: the database is reached
   over Railway's PUBLIC proxy, so its password (rotated 2026-10-24) is the only
   lock on it. See the private address entry before trying to move it.
+  A SECOND REEL THE SAME DAY, on OAuth redirects ("exact redirect allowlist,
+  never trust the request, state parameter, test it yourself, review OAuth
+  settings"). NOTHING TO HIT: there is no browser OAuth flow (Google sign in is
+  the native ID token check, audience pinned, email_verified required), the
+  server has no `res.redirect` at all, and the app opens no URL from a link,
+  notification or route. MEASURED by booting the server and sending 14
+  redirect and traversal probes: 0 Location headers. A state parameter only
+  protects a callback, so with no callback there is none to add; a nonce on the
+  native token would stop a stolen token being replayed within its hour, a
+  client change judged not worth it. `__tests__/no-open-redirect.test.js`
+  keeps it true: a redirect built from the request, a Location header, an
+  openURL from outside data or a route held in a variable fails, 7 planted
+  defects caught, a fixed `redirect(301, '/de')` still passes.
+  OWNER ITEM, GOOGLE CLOUD CONSOLE > Credentials: the Web client should list NO
+  redirect URIs or JavaScript origins (none are used; a leftover on a domain no
+  longer held, like the old Netlify site, could receive sign in codes), and the
+  Android client for com.trimio.app must NOT carry SHA-1
+  `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`. That is React
+  Native's public template debug key, byte identical to the
+  `android/app/debug.keystore` on the old `gh-pages` branch, so anybody could
+  sign a fake com.trimio.app with it. `google-services.json` lists no OAuth
+  clients, so this cannot be read from the repo.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
