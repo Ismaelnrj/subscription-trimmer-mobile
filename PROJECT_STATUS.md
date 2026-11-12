@@ -1,7 +1,8 @@
 # Trimio — Project Status
 
-**Last updated:** June 19, 2026
-**Maintained for:** continuity across Claude Code sessions. Read this file first in any new session before doing anything else.
+**SUPERSEDED.** This is a June 19, 2026 snapshot and is no longer maintained.
+`CLAUDE.md` is the current record and wins wherever the two disagree; read
+that instead. Kept for history only.
 
 ---
 
@@ -9,7 +10,7 @@
 
 All 19 fixes from the "Trimio — Complete Fix Guide" (3 priority groups) are
 **complete, committed, and pushed to `master`**. Backend auto-deploys on
-push. The Netlify legal page is live and confirmed matching. The only
+push. The only
 remaining step is for the user to **trigger the Codemagic build** — see
 "Next step" below.
 
@@ -29,16 +30,9 @@ remaining step is for the user to **trigger the Codemagic build** — see
   per `app.json` apiUrl: `subscription-trimmer-mobile-production.up.railway.app`).
 - **Mobile app does NOT auto-deploy** — building/shipping the app requires
   manually triggering Codemagic (see `codemagic.yaml`) or EAS.
-- **Netlify legal site does NOT auto-deploy from this repo.** There is no
-  Netlify config/webhook in this repo. Live site:
-  `https://trimio-privacyp.netlify.app/`. Updates to `legal/*.html` require
-  manually dragging files (or a zip of them) onto Netlify's manual-deploy
-  drop zone. Confirmed working as of this session.
-- Terms of Service is served **two ways**: in-app via `app/terms-of-service.tsx`,
-  and now also as a static page (`legal/terms.html`) on Netlify, linked from
-  the new `legal/index.html` landing page. Until this session, only
-  `legal/privacy.html` was deployed on Netlify — `terms.html` going live was
-  new.
+- **The Netlify legal site and the repo's `legal/` folder are retired**
+  (folder deleted 2026-11-12). The privacy policy and terms are served by
+  `backend/server.js` at www.subtrimio.com, in English and German.
 
 ---
 
@@ -93,7 +87,7 @@ remaining step is for the user to **trigger the Codemagic build** — see
     Expo project slug `subtrimmer` untouched, as instructed).
 14. **eas.json** — removed duplicate `preview2`/`preview3` build profiles
     (confirmed unreferenced anywhere else).
-15. **Netlify legal landing page** — `legal/index.html` was a byte-identical
+15. **Netlify legal landing page** (retired 2026-11-12, `legal/` deleted) — `legal/index.html` was a byte-identical
     duplicate of `privacy.html`; replaced with a real landing page linking
     to `privacy.html` and `terms.html`. **Deployed and confirmed live** via
     screenshot in this session (drag-and-drop a zip of all three files onto

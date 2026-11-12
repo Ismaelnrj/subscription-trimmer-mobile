@@ -5814,8 +5814,12 @@ last one left off without needing a recap typed out.
   still exists; nothing in the app or the listings links to it. The repo's
   `legal/` folder is that site's old source (three English only HTML files,
   last changed 2026-08-14, read by nothing), and `PROJECT_STATUS.md` still
-  describes it as live. Recommended: delete both stale parts. Waits on the
-  owner's yes, since it is a delete.
+  described it as live. DELETED 2026-11-12 with the owner's yes ("delete it
+  then"), after checking nothing in tools/, CI, Codemagic, the app or the
+  server image (built from backend/ alone) read it. `PROJECT_STATUS.md` lost
+  its Netlify lines and now opens with SUPERSEDED: it is a June snapshot that
+  told every session to read it first. Deleting that whole file is the
+  owner's call and was not asked for.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
