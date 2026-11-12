@@ -2224,9 +2224,39 @@ last one left off without needing a recap typed out.
   fade on EVERY launch until the next native build. Changing only its JS half
   would show a cream to grey jump after the OS splash, so both wait for the
   build.
-  NEXT ON THE AGREED PLAN, not started: the cancel moment as the one big
-  mint figure (peak end rule), a "1 of 3 added" line after the first
-  subscription, then new Play screenshots once the update is on phones.
+  THE AGREED PLAN IS BUILT, 2026-11-12 evening, at the owner's word ("do the
+  play screenshots and then continue with the rest"). NOT YET PUBLISHED: all
+  three app changes below need one `eas update`, and `needs_native_build.py
+  6368c438` says OTA IS ENOUGH (25 files, none native).
+  `cb905f40` THE CANCEL MOMENT: "I cancelled it" shows a white card whose one
+  large figure is the yearly amount kept, in mint, the only mint on it
+  ("191,88 € behältst du jedes Jahr"). The old sentence is the screen reader
+  label, a polite live region. THE FIRST THREE: from the first subscription to
+  the third the dashboard shows "1 of 3 added", three ink segments and "Add
+  another" (opens the add form), dismissible for good, tracked as
+  first_run_action "another".
+  `cab9b740` MONEY IN BOTH LANGUAGES, two defects the screenshots showed:
+  English had no thousands separator ("$1403.40 a year" on the dashboard; now
+  "$1,403.40", and "¥1,500"), and a German amount field turned the comma the
+  reader typed into a period under a placeholder reading "z. B. 9,99". The
+  field still KEEPS a period, so every parseFloat is unchanged; only
+  `amountForDisplay` shows a comma to a German reader, round trip tested
+  keystroke by keystroke, and a scan makes every decimal-pad field use it.
+  THE PLAY SCREENSHOTS are in `store-assets/screenshots/{en,de}/`, six each,
+  1080x1920 24 bit PNG, made from the real app with the above already in it,
+  recipe in `tools/store-screenshots/README.md`. Order: dashboard ("Know before
+  you pay"), cancel guide, paste, calendar grid, Stats, dark mode ("No bank
+  login needed"). Demo data is catalogue prices with a `verified` date only.
+  UPLOAD THEM AFTER THE UPDATE LANDS, not before: they show the new money
+  formats, and store art ahead of the app advertises what phones do not do.
+  Success bar: store listing conversion, read with the listing text around
+  2026-12-08 (direction, not a result, at this traffic).
+  WEB PREVIEW TRAP, a third one: react-native-web's Alert is a no-op, so any
+  flow behind an Alert (the delete dialog's "I cancelled it") cannot be shot.
+  Patch the scratch copy's `react-native-web/dist/exports/Alert/index.js` to
+  record `window.__alerts` and press the button from Playwright; never the
+  repo. The local server's register limiter (10 per 15 minutes) also stops
+  account making mid shoot: sign in to an existing demo account instead.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on

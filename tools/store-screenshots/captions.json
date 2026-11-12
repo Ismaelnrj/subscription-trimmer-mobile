@@ -1,0 +1,18 @@
+{
+  "en": [
+    ["dashboard", "light", "navy", "Know before you pay", "Reminders before renewals and before free trials end"],
+    ["cancel", "light", "navy", "Cancel, step by step", "Guides for over 30 services, from Netflix to Spotify"],
+    ["paste", "light", "navy", "Paste a confirmation email", "Name, price and billing cycle are filled in for you"],
+    ["calendar", "light", "navy", "Every payment day at a glance", "Your whole month on one screen"],
+    ["stats", "light", "navy", "See where your money goes", "Spending by category and by week"],
+    ["dashboard", "dark", "grey", "No bank login needed", "Nothing to connect. Just add what you pay for."]
+  ],
+  "de": [
+    ["dashboard", "light", "navy", "Wissen, bevor abgebucht wird", "Erinnert dich vor Verlängerungen und vor dem Ende jeder Testphase"],
+    ["cancel", "light", "navy", "Kündigen, Schritt für Schritt", "Anleitungen für über 30 Dienste, von Netflix bis Spotify"],
+    ["paste", "light", "navy", "Bestätigungsmail einfügen", "Name, Preis und Zeitraum werden für dich ausgefüllt"],
+    ["calendar", "light", "navy", "Jeder Abbuchungstag im Blick", "Dein ganzer Monat auf einem Bildschirm"],
+    ["stats", "light", "navy", "Sieh, wohin dein Geld geht", "Ausgaben nach Kategorie und Woche"],
+    ["dashboard", "dark", "grey", "Kein Bankzugang nötig", "Nichts verbinden. Trag einfach ein, was du zahlst."]
+  ]
+}
