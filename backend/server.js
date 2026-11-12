@@ -268,7 +268,7 @@ const UNSUBSCRIBE_PAGE = {
     okBody: 'Du bekommst keine E-Mails mehr von Trimio. Push-Benachrichtigungen und die App selbst sind davon nicht betroffen, und du kannst E-Mail-Erinnerungen jederzeit in den Kontoeinstellungen wieder einschalten.',
     badTitle: 'Der Link hat nicht funktioniert',
     badBody: 'Dein E-Mail-Programm hat ihn vielleicht verändert oder gekürzt. Du kannst E-Mail-Erinnerungen auch direkt in der App unter Kontoeinstellungen ausschalten.',
-    confirmTitle: 'Von E-Mails von Trimio abmelden?',
+    confirmTitle: 'Von Trimio-E-Mails abmelden?',
     confirmBody: 'Erinnerungen an anstehende Verlängerungen und andere E-Mails von Trimio kommen dann nicht mehr. Push-Benachrichtigungen und die App selbst sind davon nicht betroffen.',
     confirmButton: 'Abmelden',
   },
