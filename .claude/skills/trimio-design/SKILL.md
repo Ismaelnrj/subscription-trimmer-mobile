@@ -209,6 +209,28 @@ The rule now: fill with `text`, label with `bg`. For a status colour (success,
 danger) keep the fill and label with `bg`: 4.83:1 and above in both themes,
 where white on dark success, which is Soft Mint, was 2.10:1.
 
+## Two Android controls the web preview cannot show you
+
+Both shipped wrong on 2026-11-12 after passing every rendered screenshot,
+because react-native-web draws neither the way Android does. Read the code for
+these, and ask for a phone screenshot before calling them fine.
+
+- **Switch.** Android draws React Native's Switch with SwitchCompat: the knob
+  is wider than the track and spills onto the card. So the knob has to show
+  against the CARD, not only the track, and on and off have to differ by more
+  than knob position. Use the theme's `switchOn`, `switchOff` and
+  `switchThumb`, never ad hoc colours. When "on" moved from green to ink, the
+  off track was left at `textSecondary`, 2.28:1 from on, and the dark knob was
+  the card's own colour, so its overhang vanished. Light: navy on, a navy-grey
+  off (3.06:1 on the card), white knob. Dark: a light ink knob (14:1 on the
+  card) over tracks 3.08:1 apart; on is not ink there, since a light knob on a
+  light track disappears. `theme-contrast.test.js` measures every pairing and
+  fails on any Switch not using the tokens.
+- **RefreshControl.** Android draws the pull to refresh arrow on its own
+  WHITE circle. A light tint (dark mode's ink) on that circle is 1.13:1, so
+  any `colors` must come with `progressBackgroundColor={c.card}`.
+  `dark-mode-fills.test.js` fails without it.
+
 ## lib/categories.ts: declaration order is load bearing
 
 The ten real categories are a validated categorical palette, checked against

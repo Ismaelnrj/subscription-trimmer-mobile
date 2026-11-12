@@ -2363,6 +2363,41 @@ last one left off without needing a recap typed out.
   STILL CREAM UNTIL THE NEXT NATIVE BUILD: the launch screen, on purpose.
   NOT YET EXERCISED: the switches seen on Android itself (only the web preview
   was read), and dark mode on the phone.
+- AN AUDIT OF 2026-11-12's OWN WORK, the same evening, at the owner's request
+  ("do a deep audit on everything we just did"). Three defects, each its own
+  commit, all backend, so they reach Railway with the push and need no app
+  update:
+  `a3b13f92` THE ACCOUNT CEILING WEDGED THE OFFLINE QUEUE. It answered 403
+  `ACCOUNT_LIMIT_REACHED`, and `lib/pending-subscriptions.ts` reads a 403 that
+  is not FREE_LIMIT_REACHED as a session problem: the entry was parked,
+  retried every 30 s, and every entry behind it held back; both add paths also
+  showed the raw code. It is 409 with a translated sentence and `code` beside
+  it now, which installed builds already treat as a refusal. Measured on the
+  real server with 500 rows, both languages. `create-refusal-contract.test.js`
+  fails if a create refusal other than the free limit is ever a 403 again.
+  `0a1eb8b1` THE RENEWAL EMAIL KEPT A BEIGE HEADER ROW (#E9E6DE), missed by the
+  palette sweep because nothing scanned email templates. #E7EBEE now (5.34:1
+  under the slate header text); `server-palette.test.js` bans the retired
+  cream from server.js.
+  `2364845c` EVERY RATE LIMIT COUNTED EACH IPv6 ADDRESS ALONE (express-rate-limit
+  7 keys on the full address), so a /64 bought unlimited fresh budgets; see the
+  signup entry. All limiters go through one wrapper keyed on the /64 now.
+  THE DESIGN SKILL GREW "Two Android controls the web preview cannot show
+  you" (Switch, RefreshControl), the gap both of today's Android bugs came
+  through.
+  CHECKED AND CLEAN, so it is not repeated: `check_screens.py` on this morning's
+  tree and tonight's gives identical target, type and form findings (the one
+  changed hex is the crash screen, hardcoded on purpose); the category palette
+  passes the dataviz validator on #F3F5F6 and #FFFFFF (dark stays at 2.79 and
+  2.82 for two hues, the known case the calendar legend answers); the site's
+  `--warm`/`--paper` variables still read cream at line 48 but are redefined
+  grey and white at line 455, so only the names are stale.
+  LEFT ON PURPOSE: `lib/theme.ts`'s header comment (around lines 40 and 86)
+  still describes dark `primary` as the mint #2F8E71. Comment only, guarded by
+  theme-contrast.test.js, and correcting it alone would put a client file in
+  the publish gap; it rides the next real client change. The signup cap of 20
+  per address per day stays hardcoded: watch it before any campaign that could
+  bring more than about 100 signups a day through one carrier's shared IPv4.
 - A SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP, learned
   2026-11-07. This corrects every entry here saying a cloud session has no
   node_modules: `pnpm install --frozen-lockfile` at the repo root takes seconds
@@ -5698,7 +5733,8 @@ last one left off without needing a recap typed out.
   address per hour, ONE budget across verification, resend and reset (past it
   reset answers success without rotating the code, resend answers 429);
   `signupLimiter`, 20 created accounts per IP per day, counting only
-  successes, beside authLimiter. Login, reset, redeem and validatePassword take
+  successes, beside authLimiter (per IPv6 /64 since `2364845c` the same day;
+  until then every IPv6 address counted alone, so this was an IPv4 cap). Login, reset, redeem and validatePassword take
   the same type guard. MEASURED by booting master and the fix on PostgreSQL
   16: the old server answered 500 to five malformed bodies, created accounts
   named `nope` and a 300 character string, and sent one inbox 15 code emails
@@ -5771,13 +5807,15 @@ last one left off without needing a recap typed out.
   recommendation given 2026-11-12: everything billable is enforced on the
   server, it needs a native build, and enforcing it locks out phones without
   Play Services. Revisit on evidence of bot abuse in `/api/admin/funnel`.
-  THE OLD PRIVACY POLICY IS `trimio-privacyp.netlify.app`, fed by hand from the
-  repo's `legal/` folder (last changed 2026-08-14, English only, nothing links
-  to it). Current is `/privacy-policy` and `/de/datenschutz` on
-  www.subtrimio.com. Recommended: replace the Netlify site with a `_redirects`
-  to subtrimio.com rather than delete it, so nobody can claim the freed name.
-  Deleting `legal/` and the stale Netlify lines in `PROJECT_STATUS.md` waits on
-  the owner's yes.
+  NO OLD PRIVACY POLICY IS IN USE, the owner's correction later on 2026-11-12:
+  what they took for one was something else, and every console carries the
+  current `/privacy-policy` (and `/de/datenschutz`) on www.subtrimio.com. A
+  sandbox cannot reach netlify.app to see whether `trimio-privacyp.netlify.app`
+  still exists; nothing in the app or the listings links to it. The repo's
+  `legal/` folder is that site's old source (three English only HTML files,
+  last changed 2026-08-14, read by nothing), and `PROJECT_STATUS.md` still
+  describes it as live. Recommended: delete both stale parts. Waits on the
+  owner's yes, since it is a delete.
 - THE REPOSITORY IS PUBLIC ON PURPOSE, the owner's decision, reconfirmed
   2026-10-12. Do not raise it again. What it means, so nobody re-derives it:
   nothing the app, site or eas update does depends on visibility; no secret is
