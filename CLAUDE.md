@@ -2286,6 +2286,27 @@ last one left off without needing a recap typed out.
   "Netflix verlängert sich in 3 Tagen" (2026-10-22; the app says "Netflix wird
   in 3 Tagen verlängert"). "We asked people" (2026-11-13) stands only if a real
   poll happened. Captions are edited in the Instagram app; the owner was told.
+- SIX REELS FROM THE REAL APP, 2026-11-13, at the owner's request ("create the
+  videos ... from and for the app"). Three ideas in English and German:
+  cancel (Netflix guide), trial (the dashboard's trial card, then reminder
+  settings) and paste (a receipt in, name, price and cycle out). Each opens on
+  the app, not a text card, because the baseline's 57 to 87% skip came from
+  reels whose first frame was text. Recipe and measured crops in
+  `tools/reels/` (README, `shoot.js`, `make-specs.py`), rendered by
+  `tools/make-cut.py`; a clean rerun from the committed scripts matched the
+  delivered files to 0.13/255. SENT TO THE OWNER, NOT POSTED: every post still
+  needs their yes. `reel-paste-de` shows the German price field as "10,99",
+  which is `cab9b740` and reaches phones only with the pending `eas update`,
+  so it goes out after that lands; the other five show nothing phones lack.
+  Silent on purpose: Instagram's music library is only reachable in its app.
+  SUCCESS BAR, the baseline's: by 2026-12-13 one reel at 500+ views or one
+  share or save, and 5+ link taps in 30 days.
+  FOUND WHILE MAKING THEM, fixed in `866ef328` (CI run 797, on master): the
+  German Spotify guide said "Probe-Abo", the one break of the Testphase rule,
+  in the app and on `/de/kuendigen/spotify`. The page is live with the Railway
+  deploy; the app half rides the pending update.
+  `__tests__/german-terminology.test.js` scans every German surface except the
+  store listing, which uses Probeabo once on purpose.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
