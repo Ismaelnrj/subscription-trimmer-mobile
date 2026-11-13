@@ -2257,6 +2257,16 @@ last one left off without needing a recap typed out.
   record `window.__alerts` and press the button from Playwright; never the
   repo. The local server's register limiter (10 per 15 minutes) also stops
   account making mid shoot: sign in to an existing demo account instead.
+- INSTAGRAM IS CONNECTED TO vidIQ, 2026-11-13, the owner's request: account
+  `@trimio.subscriptiontracker` (platformAccountId `29062187126774065`),
+  OAuth, `canPublish: true`, scopes basic, content publish and manage
+  insights, read off `vidiq_social_account_list` rather than reported. It is a
+  professional account, which the business scopes require. THE FIRST LINK
+  FAILED: a bare URL full of underscores in chat can be read as italics and
+  broken, and each link is single use and short lived. Send it as a markdown
+  link plus a code block copy, freshly generated. PUBLISHING IS OUTWARD
+  FACING: every post still gets the owner's yes first, the connection is not a
+  standing licence to post.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
