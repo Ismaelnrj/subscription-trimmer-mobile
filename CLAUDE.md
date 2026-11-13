@@ -2307,6 +2307,24 @@ last one left off without needing a recap typed out.
   deploy; the app half rides the pending update.
   `__tests__/german-terminology.test.js` scans every German surface except the
   store listing, which uses Probeabo once on purpose.
+  THE OWNER CANNOT PLAY AN MP4 SENT AS A FILE, so the reels went out as a
+  private artifact page, "Trimio Reels Review"
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW), with players, captions
+  and copy buttons. Use a page, not file cards, for anything to watch.
+  THE FOUR BAD CAPTIONS ARE BAD IMAGES, read off the posts through
+  vidiq_get_images, and a caption edit cannot fix a picture. All four are
+  generated mockups of UI Trimio does not have: a "New price $15.99, was
+  $12.99" reminder (10-19), "Your inbox is the only login you need" (11-02),
+  iPhone frames with invented screens (10-25, 10-22). WORSE, the 10-26 post
+  ("The notice went to spam", `De9nAy5iAzs`) carries the wordmark "DANGO", a
+  brand name the image generator invented. The 10-22 carousel's slide 1 is an
+  invented screen too, with true claims. Recommended: archive the five (an
+  Instagram archive is restorable), the carousel is the owner's call. The 13
+  posts before 2026-10-18 were NOT checked. THE LESSON is this file's
+  generated video rule one level out: a generated image smears the brand as
+  readily as the UI, so no generated picture shows a wordmark or a screen.
+  THE OWNER REPORTED THE `eas update` DONE, 2026-11-13. Not yet read off the
+  Build Info panel, so not yet a baseline.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
