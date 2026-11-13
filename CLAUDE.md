@@ -2267,6 +2267,25 @@ last one left off without needing a recap typed out.
   link plus a code block copy, freshly generated. PUBLISHING IS OUTWARD
   FACING: every post still gets the owner's yes first, the connection is not a
   standing licence to post.
+- INSTAGRAM BASELINE, read 2026-11-13 through vidIQ owner insights (last 30
+  days, 2026-10-14 to 2026-11-13): 676 views, 383 accounts reached, 5 accounts
+  engaged, 170 interactions, 0 profile link taps, 7 followers, 28 posts. Of the
+  last 25 posts: 11 reels, median 22 views and 17 reach, best 150 views (the
+  2026-10-23 "One question decides it" reel); 14 feed images, median 8.5 views
+  and 5 reach, none above 15. ZERO shares and ZERO saves on all 25. Reel skip
+  rates 57 to 87%. Read: reach is real but nothing spreads and nobody taps
+  through, so Instagram has not driven installs (Play installs were flat too).
+  THE BIO LINK IS LINKTREE (`linktr.ee/trimio.SubscriptionTracker`), not the
+  tagged site link in `marketing-links.md`, so no visit from it is attributed.
+  FOUR CAPTIONS MAKE CLAIMS THE APP DOES NOT BACK, found the same day: "The only
+  thing you connect is your inbox" (2026-11-02; nothing is connected, emails are
+  pasted); "Trimio watches the number ... warns you before the new amount is
+  taken" (2026-10-19; a price is only known when the user edits it, nothing
+  watches a provider's price); "Forward a renewal email" (2026-10-25; there is
+  no forwarding address); and the German line quoted as the app's reminder,
+  "Netflix verlängert sich in 3 Tagen" (2026-10-22; the app says "Netflix wird
+  in 3 Tagen verlängert"). "We asked people" (2026-11-13) stands only if a real
+  poll happened. Captions are edited in the Instagram app; the owner was told.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
