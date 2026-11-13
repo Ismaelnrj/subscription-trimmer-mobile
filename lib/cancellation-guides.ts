@@ -66,7 +66,7 @@ const GUIDES: Record<string, LocalizedGuide> = {
     url: "https://www.spotify.com/account/",
     note: {
       en: "Premium stays until your next billing date, then your account switches to Spotify Free and keeps your playlists. A free trial cancelled early ends at once. On Family or Duo only the plan manager can cancel. If the option is missing, you probably pay through a partner such as your mobile provider, Google Play or Apple: cancel there.",
-      de: "Premium bleibt bis zum nächsten Rechnungsdatum, danach wechselt dein Konto zu Spotify Free und deine Playlists bleiben erhalten. Ein kostenloses Probe-Abo endet bei Kündigung sofort. Bei Family oder Duo kann nur der Hauptnutzer kündigen. Fehlt die Option, zahlst du vermutlich über einen Partner wie deinen Mobilfunkanbieter, Google Play oder Apple: Kündige dort.",
+      de: "Premium bleibt bis zum nächsten Rechnungsdatum, danach wechselt dein Konto zu Spotify Free und deine Playlists bleiben erhalten. Eine kostenlose Testphase endet bei Kündigung sofort. Bei Family oder Duo kann nur der Hauptnutzer kündigen. Fehlt die Option, zahlst du vermutlich über einen Partner wie deinen Mobilfunkanbieter, Google Play oder Apple: Kündige dort.",
     },
     verified: "2026-10-11",
   },
