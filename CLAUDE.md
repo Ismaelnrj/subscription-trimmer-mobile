@@ -2445,11 +2445,21 @@ last one left off without needing a recap typed out.
   `e465afc5-be41-483e-ae66-cc4d94828960`) and a draft cannot drop one. Never
   publish it whole: that posts the reel twice. Add YouTube to it and publish
   with `publicationIds` naming the YouTube publication only.
-  YOUTUBE IS NOT CONNECTED to vidIQ yet; `vidiq_connect_youtube_channel`
-  gives the owner a sign in link. THE FIRST ONE DIED, 2026-11-14 ("This
-  verification link is no longer available"): it was generated about 17:00Z
-  and then RE-SENT in a later reply instead of a fresh one being made, the
-  rule two entries up. A link is only good in the reply that generated it.
+  `vidiq_connect_youtube_channel` gives the owner a sign in link. THE FIRST
+  ONE DIED, 2026-11-14 ("This verification link is no longer available"): it
+  was generated about 17:00Z and then RE-SENT in a later reply instead of a
+  fresh one being made, the rule two entries up. A link is only good in the
+  reply that generated it.
+  THE YOUTUBE CHANNEL CONNECTED ON 2026-11-14 IS THE OWNER'S PERSONAL ONE,
+  NOT A TRIMIO CHANNEL: the default channel of their own Google account, 0
+  videos, 0 subscribers, under their own name and a handle that must never
+  sit beside the brand. NEVER POST TRIMIO THERE, private or not. Nothing was
+  drafted for it. Recommended instead: a Trimio Brand Account channel
+  (youtube.com/account > Add or manage your channels > Create a channel),
+  then a fresh vidIQ link, choosing that channel at Google's account picker.
+  When it exists, post from a NEW YouTube-only draft, never by adding YouTube
+  to the leftover draft above, so publishing it whole cannot post to
+  Instagram twice.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
