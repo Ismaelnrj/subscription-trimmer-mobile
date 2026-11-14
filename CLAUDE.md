@@ -2386,14 +2386,32 @@ last one left off without needing a recap typed out.
   real app recorded full screen, and the mood turns from frustrated to happy
   once Trimio has the answer (the owner's direction). Cancel Amazon Prime, EN
   and DE, 14.7 s, on the review page
-  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW), NOT POSTED: it needs
-  the owner's yes per post. Cost 176 of 1010 credits. Method and traps in
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW), each downloadable with
+  or without its music (an instrumental from Higgsfield's elevenlabs model,
+  about 2 credits). Cost 176 of 1010 credits. Method and traps in
   `tools/reels/README.md`, "The second method": the model drew an iPhone and
   then a phone brand's logo before a blank black case fixed it, and the
   Netflix guide names Apple. Higgsfield jobs: opening shot final
   `1c95bdfb-6891-4ede-a611-850fb3fadda8`, happy shot final
   `2bdcac58-31d7-4ed4-bf95-f89c4be6bbea`; reuse them as references for the
   next reels so it is the same woman.
+  THE ENGLISH ONE IS POSTED, 2026-11-14, on the owner's "post it" to the
+  draft shown: English with music, regular Reel, Instagram's AI label ON
+  (`isAiGenerated`, which cannot be changed after posting), through
+  `vidiq_instagram_publish_reel`, which answered PUBLISHED with
+  https://www.instagram.com/reel/DfushsQjuGn/ (media `18455392387123340`).
+  THE AI LABEL IS THE RULE FOR EVERY REEL WITH A GENERATED PERSON: Meta asks
+  for it on realistic generated video, and YouTube asks for its "altered or
+  synthetic content" box. vidIQ's YouTube upload has no field for that box,
+  so YouTube goes up PRIVATE (the owner's choice), the owner ticks the box in
+  YouTube Studio, then makes it public. The German one goes 2 to 3 days later.
+  A LEFTOVER vidIQ DRAFT, `c06ef544-6043-4487-b7dd-84941ebe7eae`, holds an
+  Instagram destination for the SAME video (publication
+  `e465afc5-be41-483e-ae66-cc4d94828960`) and a draft cannot drop one. Never
+  publish it whole: that posts the reel twice. Add YouTube to it and publish
+  with `publicationIds` naming the YouTube publication only.
+  YOUTUBE IS NOT CONNECTED to vidIQ yet; `vidiq_connect_youtube_channel`
+  gives the owner a sign in link.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
