@@ -54,3 +54,30 @@ THE OWNER'S YES, per post (CLAUDE.md, the vidIQ entry). Instagram's own music
 library is only reachable from the app, so a reel published through vidIQ goes
 out silent; adding a track in the Instagram app when posting is the owner's
 call.
+
+## The second method (2026-11-14): Higgsfield for the person, the real app full screen
+
+The six reels above were rejected ("not good enough"): stills in a small box
+on navy, a 4% push as the only motion. The pilot that replaced them:
+
+1. **The person** is generated with Higgsfield (Seedance 2.5, 9:16, no audio),
+   a 4 s draft first (12 credits), finalised at 1080p only once it passes (64).
+   The phone's SCREEN is never in shot, and the prompt asks for "a plain matte
+   black protective case, completely blank back, no logo". Without that the
+   model drew an iPhone (Trimio is Android only), and then a real phone
+   brand's logo; both drafts were thrown away. Keep a second shot consistent
+   by passing the first as `video_references` in `omni_reference` mode.
+   Finalising needs the same prompt sent again with `draft_job_id`.
+2. **The app** is recorded with `record-guide.js`: real taps with a touch dot,
+   Chrome's screencast at 1170x2079, encoded with
+   `ffmpeg -f concat -safe 0 -i <frames>/list.txt -vf scale=1080:1920,fps=30`.
+3. **The cut** is `tools/make-cut.py` with `footage` scenes (full frame,
+   caption plate, `anchor` inside 0.25 to 0.75, clear of the face) and `clip`
+   scenes for uncaptioned app footage. Two `clip` scenes from one recording
+   make an invisible jump cut over a still stretch.
+
+THE NETFLIX GUIDE IS NOT USED: it opens on a note naming Apple, and in English
+the page is too short to scroll it out of view. The Amazon Prime guide carries
+no such note (checked across the five verified guides: only Amazon).
+Downloading Higgsfield output needs `d8j0ntlcm91z4.cloudfront.net` allowed in
+the environment (added to the owner's Default, 2026-11-14) and the owner's yes.

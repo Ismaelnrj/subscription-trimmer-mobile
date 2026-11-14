@@ -2380,6 +2380,20 @@ last one left off without needing a recap typed out.
   (`ef79d2db`), since the permission was asked once, after an add, with no way
   back; the channel is named in the app's language (`e5fdf9f4`). THE NEXT STEP
   IS THE OWNER'S PANEL: those four lines and a test tap settle the cause.
+- A PILOT REEL MADE WITH HIGGSFIELD, 2026-11-14, at the owner's request ("use
+  higgsfield to help you create the reels"), after the six reels were rejected.
+  The person is generated (her phone screen never in shot), the app is the
+  real app recorded full screen, and the mood turns from frustrated to happy
+  once Trimio has the answer (the owner's direction). Cancel Amazon Prime, EN
+  and DE, 14.7 s, on the review page
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW), NOT POSTED: it needs
+  the owner's yes per post. Cost 176 of 1010 credits. Method and traps in
+  `tools/reels/README.md`, "The second method": the model drew an iPhone and
+  then a phone brand's logo before a blank black case fixed it, and the
+  Netflix guide names Apple. Higgsfield jobs: opening shot final
+  `1c95bdfb-6891-4ede-a611-850fb3fadda8`, happy shot final
+  `2bdcac58-31d7-4ed4-bf95-f89c4be6bbea`; reuse them as references for the
+  next reels so it is the same woman.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
