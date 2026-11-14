@@ -106,4 +106,20 @@ describe("the Build Info panel prints them", () => {
     expect(src).toMatch(/sendTestReminder\(t\("helpSupport\.testReminderTitle"\)/);
     expect(src).toMatch(/AppState\.addEventListener\("change"/);
   });
+
+  /* 2026-11-14: on the owner's phone, with Trimio's notifications off in
+     Android, the button said "A test reminder arrives in 10 seconds" and
+     nothing came. Android accepts the schedule and shows nothing, so the
+     promise has to be gated on the permission, read again at the tap. */
+  it("never promises a test while Android blocks Trimio, and offers the fix instead", () => {
+    const tap = src.slice(src.indexOf("const onTestReminder"), src.indexOf("const pad ="));
+    expect(tap).toMatch(/readReminderDiagnostics\(\)/);
+    expect(tap.indexOf("isBlocked(now)")).toBeGreaterThan(-1);
+    expect(tap.indexOf("isBlocked(now)")).toBeLessThan(tap.indexOf("sendTestReminder("));
+    expect(src).toMatch(/d\.permission !== "granted"/);
+    expect(src).toMatch(/\{blocked \? \(/);
+    expect(src).toContain('t("notifPrefs.blockedBody")');
+    expect(src).toContain('t("notifPrefs.blockedOpenSettings")');
+    expect(src).toMatch(/Linking\.openSettings\(\)/);
+  });
 });

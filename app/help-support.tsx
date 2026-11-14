@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Updates from "expo-updates";
 import { nativeBuild } from "../lib/app-build";
-import { readReminderDiagnostics, sendTestReminder, type ReminderDiagnostics } from "../lib/notifications";
+import { readReminderDiagnostics, sendTestReminder, registerForPushNotificationsAsync, type ReminderDiagnostics } from "../lib/notifications";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 /* The canonical host, not the Railway one: the bare service hostname was
@@ -103,7 +103,30 @@ export default function HelpSupportScreen() {
     const sub = AppState.addEventListener("change", (s) => { if (s === "active") refreshReminders(); });
     return () => sub.remove();
   }, [refreshReminders]);
+  /* A BLOCKED PHONE GETS THE FIX, NOT THE TEST. Android accepts a scheduled
+     notification while Trimio's notifications are off and then shows nothing,
+     so the test used to say "arrives in 10 seconds" about something that could
+     not arrive (the owner's phone, 2026-11-14). The permission is read again at
+     the tap, since it changes in Android's settings, outside this screen. */
+  const isBlocked = (d: ReminderDiagnostics | null) =>
+    !!d && (d.permission !== "granted" || (d.channelImportance != null && d.channelImportance <= 2));
+  const blocked = isBlocked(reminders);
+  const canAsk = reminders?.permission === "undetermined";
+  const fixBlocked = async () => {
+    if (canAsk) {
+      await registerForPushNotificationsAsync().catch(() => {});
+      refreshReminders();
+    } else {
+      Linking.openSettings().catch(() => {});
+    }
+  };
   const onTestReminder = async () => {
+    const now = await readReminderDiagnostics().catch(() => null);
+    if (now) setReminders(now);
+    if (isBlocked(now)) {
+      setTestSent(false);
+      return;
+    }
     try {
       await sendTestReminder(t("helpSupport.testReminderTitle"), t("helpSupport.testReminderBody"), 10);
       setTestSent(true);
@@ -200,16 +223,35 @@ export default function HelpSupportScreen() {
                 Next reminder: {reminders?.next ? `${localStamp(reminders.next.at)} ${reminders.next.title}` : reminders ? "none" : "…"}
               </Text>
             </View>
-            <TouchableOpacity
-              style={styles.updateButton}
-              onPress={onTestReminder}
-              accessibilityRole="button"
-              accessibilityLabel={t("helpSupport.sendTestReminder")}
-            >
-              <MaterialCommunityIcons name="bell-ring-outline" size={20} color={c.text} />
-              <Text style={styles.updateButtonText}>{t("helpSupport.sendTestReminder")}</Text>
-            </TouchableOpacity>
-            {testSent && <Text style={styles.updateStatus}>{t("helpSupport.testReminderSent")}</Text>}
+            {blocked ? (
+              <>
+                <Text style={styles.updateStatus}>{t("notifPrefs.blockedBody")}</Text>
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={fixBlocked}
+                  accessibilityRole="button"
+                  accessibilityLabel={canAsk ? t("notifPrefs.blockedAllow") : t("notifPrefs.blockedOpenSettings")}
+                >
+                  <MaterialCommunityIcons name="bell-off-outline" size={20} color={c.text} />
+                  <Text style={styles.updateButtonText}>
+                    {canAsk ? t("notifPrefs.blockedAllow") : t("notifPrefs.blockedOpenSettings")}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={onTestReminder}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("helpSupport.sendTestReminder")}
+                >
+                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color={c.text} />
+                  <Text style={styles.updateButtonText}>{t("helpSupport.sendTestReminder")}</Text>
+                </TouchableOpacity>
+                {testSent && <Text style={styles.updateStatus}>{t("helpSupport.testReminderSent")}</Text>}
+              </>
+            )}
             {Updates.isEnabled ? (
               <TouchableOpacity
                 style={styles.updateButton}
