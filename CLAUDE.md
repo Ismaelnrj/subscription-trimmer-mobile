@@ -2352,6 +2352,34 @@ last one left off without needing a recap typed out.
   a person checking the big services' prices. The server sends NO push: the
   app fetches an Expo push token (`lib/notifications.ts`) and nothing stores
   it, so a push would also need FCM credentials in EAS. Not built; offered.
+  BUILT 2026-11-14 with the owner's yes, card and server list only (email
+  and push later): `040c4b3c` and the commit before it. The dashboard shows
+  one card under the totals when a tracked row is priced below its service's
+  checked price (exact name, the ROW's currency, same cycle, check under six
+  months old, no exchange rate): "Netflix Standard kostet jetzt mehr", with
+  "Auf 17,99 € ändern" and "Mein Preis stimmt". Every account, not Premium.
+  TO CHANGE A PRICE: check the provider (two sources), edit
+  `backend/catalogue-prices.json` (price AND verified date), push. Railway
+  deploys it and phones pick it up within about an hour, no `eas update`.
+  `catalogue-prices.test.js` refuses an unknown id, a different name,
+  currency or cycle, or an older date than the bundle. A NEW service still
+  needs an app update: the app ignores ids it does not bundle.
+  NOT YET: the add form and the first-run tiles still prefill the BUNDLED
+  price, and the Insights market price tip still reads the bundle. Neither
+  contradicts the card (both only ever say less), but both lag a server
+  change. The 16 verified prices date from September and October.
+- PHONE REMINDERS, 2026-11-14: the owner reported emails arrive and phone
+  reminders do not. The app's path was read end to end and holds; the
+  likely causes are on the phone (permission refused, channel muted, battery
+  saving) and NOT YET CONFIRMED for the owner's phone. Fixed on the way, all
+  client, on master through `e5fdf9f4`: reminders never named their channel,
+  so they went to expo's "Miscellaneous" (`ad6868b4`); Build Info now prints
+  `Notifications allowed`, `Reminder channel`, `Reminders queued`, `Next
+  reminder` and has "Send a test reminder" (`1ae9aaa3`); Notification settings
+  warns when Android blocks Trimio and offers the dialog or Android's settings
+  (`ef79d2db`), since the permission was asked once, after an add, with no way
+  back; the channel is named in the app's language (`e5fdf9f4`). THE NEXT STEP
+  IS THE OWNER'S PANEL: those four lines and a test tap settle the cause.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
