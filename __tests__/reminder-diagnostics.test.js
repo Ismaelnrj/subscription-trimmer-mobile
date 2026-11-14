@@ -11,10 +11,14 @@
 const fs = require("fs");
 const path = require("path");
 
-const mockState = { permission: { status: "granted", canAskAgain: true }, channel: { importance: 6 }, requests: [], scheduled: [] };
+const mockState = { permission: { status: "granted", canAskAgain: true }, channel: { importance: 6 }, requests: [], scheduled: [], channels: [] };
 
 jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
-jest.mock("expo-device", () => ({ isDevice: true }));
+jest.mock("expo-device", () => ({ isDevice: false }));
+jest.mock("../lib/i18n", () => ({
+  __esModule: true,
+  default: { t: (k) => (k === "notifPrefs.channelName" ? "Verlängerungserinnerungen" : k) },
+}));
 jest.mock("expo-constants", () => ({ __esModule: true, default: { expoConfig: { extra: { eas: { projectId: "x" } } } } }));
 jest.mock("expo-notifications", () => ({
   setNotificationHandler: jest.fn(),
@@ -24,9 +28,10 @@ jest.mock("expo-notifications", () => ({
   getNotificationChannelAsync: jest.fn(async () => mockState.channel),
   getAllScheduledNotificationsAsync: jest.fn(async () => mockState.requests),
   scheduleNotificationAsync: jest.fn(async (r) => { mockState.scheduled.push(r); return "id"; }),
+  setNotificationChannelAsync: jest.fn(async (id, c) => { mockState.channels.push({ id, ...c }); }),
 }));
 
-const { readReminderDiagnostics, sendTestReminder } = require("../lib/notifications");
+const { readReminderDiagnostics, sendTestReminder, prepareNotifications } = require("../lib/notifications");
 const { REMINDER_CHANNEL_ID } = require("../lib/reminder-channel");
 
 describe("readReminderDiagnostics", () => {
@@ -72,6 +77,23 @@ describe("sendTestReminder", () => {
     await sendTestReminder("Trimio test reminder", "body", 10);
     expect(mockState.scheduled).toHaveLength(1);
     expect(mockState.scheduled[0].trigger).toEqual({ type: "timeInterval", seconds: 10, channelId: REMINDER_CHANNEL_ID });
+  });
+});
+
+describe("the channel is named in the app's language", () => {
+  /* Android shows the name under Settings > Apps > Trimio > Notifications,
+     the screen somebody opens to switch reminders back on. */
+  it("creates it under the translated name, at high importance", async () => {
+    mockState.channels = [];
+    await prepareNotifications();
+    expect(mockState.channels).toEqual([
+      expect.objectContaining({ id: REMINDER_CHANNEL_ID, name: "Verlängerungserinnerungen", importance: 6 }),
+    ]);
+  });
+
+  it("has the name in both locale files", () => {
+    expect(require("../locales/en.json").notifPrefs.channelName).toBe("Renewal reminders");
+    expect(require("../locales/de.json").notifPrefs.channelName).toBe("Verlängerungserinnerungen");
   });
 });
 

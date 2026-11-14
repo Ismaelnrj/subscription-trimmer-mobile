@@ -493,7 +493,8 @@
     "blockedTitle": "Benachrichtigungen für Trimio sind aus",
     "blockedBody": "Deine Erinnerungen sind eingerichtet, aber Android zeigt sie erst an, wenn du Benachrichtigungen für Trimio erlaubst.",
     "blockedAllow": "Benachrichtigungen erlauben",
-    "blockedOpenSettings": "Android-Einstellungen öffnen"
+    "blockedOpenSettings": "Android-Einstellungen öffnen",
+    "channelName": "Verlängerungserinnerungen"
   },
   "insights": {
     "spendingSnapshot": "Ausgabenüberblick",

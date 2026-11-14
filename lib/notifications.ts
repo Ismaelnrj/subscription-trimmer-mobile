@@ -3,6 +3,7 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { REMINDER_CHANNEL_ID } from "./reminder-channel";
+import i18n from "./i18n";
 
 // Set up notification handler
 Notifications.setNotificationHandler({
@@ -18,10 +19,24 @@ Notifications.setNotificationHandler({
 // Android 8+ won't show a heads-up banner (and on some OEM skins, won't
 // show anything at all) for notifications posted without an explicit
 // channel. It silently falls back to a low-importance default channel.
+/* The channel's name is what Android shows under Settings > Apps > Trimio >
+   Notifications, which is exactly where somebody goes to switch reminders
+   back on, so it is written in the app's language. Android lets an app
+   rename its own channel, so each launch (after the language has loaded, see
+   app/_layout.tsx) brings it up to date. A failure here must not stop the
+   channel being created, hence the English fallback. */
+function reminderChannelName(): string {
+  try {
+    const name = i18n.t("notifPrefs.channelName");
+    if (typeof name === "string" && name && name !== "notifPrefs.channelName") return name;
+  } catch {}
+  return "Renewal reminders";
+}
+
 async function ensureReminderChannel() {
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-      name: "Renewal reminders",
+      name: reminderChannelName(),
       importance: Notifications.AndroidImportance.HIGH,
       sound: "default",
       vibrationPattern: [0, 250, 250, 250],

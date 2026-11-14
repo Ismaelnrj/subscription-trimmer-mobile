@@ -493,7 +493,8 @@
     "blockedTitle": "Notifications are off for Trimio",
     "blockedBody": "Your reminders are set, but Android will not show them until you allow notifications for Trimio.",
     "blockedAllow": "Allow notifications",
-    "blockedOpenSettings": "Open Android settings"
+    "blockedOpenSettings": "Open Android settings",
+    "channelName": "Renewal reminders"
   },
   "insights": {
     "spendingSnapshot": "Spending snapshot",
