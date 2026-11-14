@@ -2325,6 +2325,33 @@ last one left off without needing a recap typed out.
   readily as the UI, so no generated picture shows a wordmark or a screen.
   THE OWNER REPORTED THE `eas update` DONE, 2026-11-13. Not yet read off the
   Build Info panel, so not yet a baseline.
+  THE OWNER REJECTED THE SIX REELS, 2026-11-14 ("not good enough"). Agreed on
+  why: stills of the app in a small box on a navy field, a 4% push as the only
+  motion, the UI smaller than on a real phone, the bottom third empty. Do not
+  reuse the `tools/reels/` layout for posts. The fix offered: the owner screen
+  records the real app on their phone and the cut is edited full bleed.
+  ARCHIVE STATE, read off the media API 2026-11-14 (archived posts drop out
+  of it): the 26 Oct "Dango" post and the 19 Oct fake price reminder are
+  archived. STILL LIVE with invented UI: 22 Oct "The same reminder"
+  (`DezDMjcgMRn`, the German one the owner could not find), 25 Oct
+  (`De6O4D7jWIa`), 2 Nov (`DfPNa4IlwU8`), and two newer ones of the same kind
+  found the same day: 4 Nov `DfUTx7zG5_1` (an invented "Unused memberships
+  found" screen; Trimio has no usage data) and 12 Nov `Dfo9IPcDmPx` (the
+  25 Oct iPhone screen again). Every feed image from 18 Oct on is now checked;
+  the 13 older posts are not.
+  A PRICE RISE ALERT WAS ASKED ABOUT, 2026-11-14 ("trimio doesn't do that,
+  yet! But can it be done?"), because the archived 19 Oct image promised one.
+  WHAT EXISTS: the Insights tip "{{name}} may have gone up in price", which
+  compares a tracked row against a catalogue row with a fresh `verified` date
+  (16 rows), buried in Recommendations and cut to two tips for free users;
+  and the server's "ist um 2,00 € teurer geworden" row when a user edits a
+  price up. WHAT DOES NOT: anything that watches a provider. Trimio cannot see
+  a bill, so the honest feature is "a service raised its public price for your
+  plan", needing the verified prices served from the server (so a change does
+  not wait for an `eas update`), a dashboard card with one tap to update, and
+  a person checking the big services' prices. The server sends NO push: the
+  app fetches an Expo push token (`lib/notifications.ts`) and nothing stores
+  it, so a push would also need FCM credentials in EAS. Not built; offered.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
