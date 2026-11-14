@@ -802,5 +802,12 @@
     "body": "Trimio reminds you a few days before each charge, so you have time to cancel. Android will ask you to allow notifications.",
     "accept": "Yes, remind me",
     "decline": "Not now"
+  },
+  "priceRise": {
+    "title": "{{name}} costs more now",
+    "body": "The price is now {{to}} per {{cycle}} (checked {{date}}). Trimio still has {{from}}.",
+    "update": "Update to {{to}}",
+    "keep": "My price is right",
+    "failed": "The price could not be updated. Check your connection and try again."
   }
 }

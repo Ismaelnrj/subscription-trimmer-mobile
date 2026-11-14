@@ -802,5 +802,12 @@
     "body": "Trimio erinnert dich ein paar Tage vor jeder Abbuchung, damit du rechtzeitig kündigen kannst. Android fragt dich gleich, ob du Benachrichtigungen erlaubst.",
     "accept": "Ja, erinnere mich",
     "decline": "Jetzt nicht"
+  },
+  "priceRise": {
+    "title": "{{name}} kostet jetzt mehr",
+    "body": "Der Preis liegt jetzt bei {{to}} pro {{cycle}} (geprüft am {{date}}). In Trimio stehen noch {{from}}.",
+    "update": "Auf {{to}} ändern",
+    "keep": "Mein Preis stimmt",
+    "failed": "Der Preis konnte nicht geändert werden. Prüf deine Verbindung und versuch es noch einmal."
   }
 }

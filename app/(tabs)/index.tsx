@@ -24,6 +24,7 @@ import { USER_ESTIMATE_KEY } from "../onboarding";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
 import { PendingNotice } from "../../components/PendingNotice";
+import { PriceRiseCard } from "../../components/PriceRiseCard";
 import { track } from "../../lib/analytics";
 
 const RECO_BANNER_DISMISSED_UNTIL_KEY = "reco_banner_dismissed_until";
@@ -421,6 +422,12 @@ export default function DashboardScreen() {
             </View>
           )}
         </View>
+
+        {/* A tracked price below the service's checked public price: the one
+            warning allowed above everything else, since it is about money that
+            is about to be taken. components/PriceRiseCard.tsx and
+            lib/price-watch.ts. */}
+        <PriceRiseCard subscriptions={subscriptions as any} />
 
         {showGoal && (
           <View style={[styles.card, styles.goal]}>
