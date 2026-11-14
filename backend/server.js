@@ -3884,6 +3884,31 @@ app.get('/api/trpc/subscriptions.exportCsv', authMiddleware, async (req, res) =>
   }
 });
 
+// ── Checked catalogue prices ──────────────────────────────────────────────────
+
+/* The public prices the app's price rise card compares tracked rows against
+   (lib/price-watch.ts). Served from here so a provider's price change reaches
+   phones with a backend deploy rather than an app update: edit
+   catalogue-prices.json after checking the provider, push, done. The app lays
+   these over its bundled catalogue and ignores anything malformed, so a bad
+   row here costs a missing card, never a wrong one.
+   Behind authMiddleware like every /api route: the figures are public, but
+   only a signed in app asks for them, and the shared API limiter applies. */
+const CATALOGUE_PRICES = (() => {
+  try {
+    const rows = require('./catalogue-prices.json').prices;
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    console.error('catalogue-prices.json could not be read; serving no prices:', err.message);
+    return [];
+  }
+})();
+
+app.get('/api/trpc/catalogue.prices', authMiddleware, (req, res) => {
+  res.set('Cache-Control', 'private, max-age=3600');
+  res.json(trpc({ prices: CATALOGUE_PRICES }));
+});
+
 // ── User Settings ─────────────────────────────────────────────────────────────
 
 app.get('/api/trpc/settings.get', authMiddleware, async (req, res) => {

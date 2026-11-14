@@ -1,0 +1,133 @@
+{
+  "_note": "Checked public prices the app compares tracked subscriptions against (the price rise card, lib/price-watch.ts). Served by GET /api/trpc/catalogue.prices, so editing a price here reaches phones with a backend deploy, no app update. Change a row only after checking the provider (two independent sources), and move its verified date to the day you checked. Never add a row the app does not bundle: the app ignores unknown ids. __tests__/catalogue-prices.test.js keeps this in step with lib/service-templates.ts.",
+  "prices": [
+    {
+      "id": "netflix-standard",
+      "name": "Netflix Standard",
+      "price": 19.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "netflix-premium",
+      "name": "Netflix Premium",
+      "price": 26.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "amazon-prime",
+      "name": "Amazon Prime",
+      "price": 14.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "spotify",
+      "name": "Spotify Premium",
+      "price": 12.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "youtube-premium",
+      "name": "YouTube Premium",
+      "price": 15.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-10-06"
+    },
+    {
+      "id": "xbox-game-pass",
+      "name": "Xbox Game Pass Ultimate",
+      "price": 22.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "adobe-cc",
+      "name": "Adobe Creative Cloud",
+      "price": 54.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "ms365-personal",
+      "name": "Microsoft 365 Personal",
+      "price": 6.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "icloud-50gb",
+      "name": "iCloud+ 50GB",
+      "price": 0.99,
+      "currency": "USD",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "netflix-de-standard",
+      "name": "Netflix Standard",
+      "price": 15.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "netflix-de-basis",
+      "name": "Netflix Basis m. Werbung",
+      "price": 6.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "disney-plus-de",
+      "name": "Disney+",
+      "price": 10.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "amazon-prime-de",
+      "name": "Amazon Prime",
+      "price": 8.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "spotify-de",
+      "name": "Spotify Premium",
+      "price": 12.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-05"
+    },
+    {
+      "id": "xbox-game-pass-de",
+      "name": "Xbox Game Pass Ultimate",
+      "price": 20.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-09-16"
+    },
+    {
+      "id": "youtube-premium-de",
+      "name": "YouTube Premium",
+      "price": 14.99,
+      "currency": "EUR",
+      "billingCycle": "monthly",
+      "verified": "2026-10-06"
+    }
+  ]
+}
