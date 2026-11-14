@@ -489,7 +489,11 @@
     "errSave": "Failed to save preferences. Please try again.",
     "couldntLoad": "Couldn't load your notification settings.",
     "retry": "Retry",
-    "emailSection": "Email"
+    "emailSection": "Email",
+    "blockedTitle": "Notifications are off for Trimio",
+    "blockedBody": "Your reminders are set, but Android will not show them until you allow notifications for Trimio.",
+    "blockedAllow": "Allow notifications",
+    "blockedOpenSettings": "Open Android settings"
   },
   "insights": {
     "spendingSnapshot": "Spending snapshot",

@@ -489,7 +489,11 @@
     "errSave": "Einstellungen konnten nicht gespeichert werden. Erneut versuchen.",
     "couldntLoad": "Benachrichtigungseinstellungen konnten nicht geladen werden.",
     "retry": "Erneut versuchen",
-    "emailSection": "E-Mail"
+    "emailSection": "E-Mail",
+    "blockedTitle": "Benachrichtigungen für Trimio sind aus",
+    "blockedBody": "Deine Erinnerungen sind eingerichtet, aber Android zeigt sie erst an, wenn du Benachrichtigungen für Trimio erlaubst.",
+    "blockedAllow": "Benachrichtigungen erlauben",
+    "blockedOpenSettings": "Android-Einstellungen öffnen"
   },
   "insights": {
     "spendingSnapshot": "Ausgabenüberblick",

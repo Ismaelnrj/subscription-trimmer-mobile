@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Switch, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, Switch, StyleSheet, Alert, TouchableOpacity, AppState, Linking } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useAuthStore } from "../lib/auth-store";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { fetchSubscriptionList } from "../lib/subscription-list";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { useDateFormat, dayMonthPattern } from "../lib/date-locale";
 import { parseApiDate } from "../lib/utils";
+import { useEffect, useState } from "react";
+import { readReminderDiagnostics, registerForPushNotificationsAsync, type ReminderDiagnostics } from "../lib/notifications";
 
 /* How many days before a renewal the reminder email actually goes out.
 
@@ -52,6 +54,33 @@ export default function NotificationPreferencesScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] }),
     onError: () => Alert.alert(t("common.error"), t("notifPrefs.errSave")),
   });
+
+  /* WHAT ANDROID ALLOWS, beside what Trimio is set to. The switch below is a
+     Trimio preference stored on the server; Android's own permission and the
+     reminder channel are separate, and either can be off while that switch
+     reads on. Nothing said so until 2026-11-14, so a refused permission meant
+     reminders queued every day and never shown, with no sign anywhere. The
+     question is asked once at most after an add (lib/reminder-primer.ts), so
+     somebody who refused it then had no way back from inside the app.
+     Re-read on returning to the app, since the fix happens in Android. */
+  const [phone, setPhone] = useState<ReminderDiagnostics | null>(null);
+  useEffect(() => {
+    const read = () => readReminderDiagnostics().then(setPhone).catch(() => {});
+    read();
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") read(); });
+    return () => sub.remove();
+  }, []);
+  const channelOff = phone?.channelImportance != null && phone.channelImportance <= 2;
+  const blocked = !!phone && (phone.permission !== "granted" || channelOff);
+  const canAsk = phone?.permission === "undetermined";
+  const fixBlocked = async () => {
+    if (canAsk) {
+      await registerForPushNotificationsAsync().catch(() => {});
+      readReminderDiagnostics().then(setPhone).catch(() => {});
+    } else {
+      Linking.openSettings().catch(() => {});
+    }
+  };
 
   const toggle = (key: string, value: boolean | number) => {
     if (!prefs) return;
@@ -103,6 +132,20 @@ export default function NotificationPreferencesScreen() {
       <Stack.Screen options={{ title: t("profile.notifications") }} />
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.scrollContent}>
+          {blocked && prefs.pushEnabled !== false && (
+            <View style={styles.blockedCard} accessibilityRole="alert">
+              <View style={styles.blockedHead}>
+                <MaterialCommunityIcons name="bell-off-outline" size={20} color={c.warning} />
+                <Text style={styles.blockedTitle}>{t("notifPrefs.blockedTitle")}</Text>
+              </View>
+              <Text style={styles.blockedBody}>{t("notifPrefs.blockedBody")}</Text>
+              <TouchableOpacity style={styles.blockedButton} onPress={fixBlocked} accessibilityRole="button">
+                <Text style={styles.blockedButtonText}>
+                  {canAsk ? t("notifPrefs.blockedAllow") : t("notifPrefs.blockedOpenSettings")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <Text style={styles.sectionTitle}>{t("notifPrefs.alerts")}</Text>
           <View style={styles.card}>
             <View style={styles.row}>
@@ -245,6 +288,20 @@ function makeStyles(c: AppColors) {
     scrollContent: { paddingHorizontal: space.l, paddingTop: space.s, paddingBottom: space.xxl },
 
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
+    /* Warning, not mint: this is not good news. Ink button, the app's rule
+       for a primary action (never white on primary). */
+    blockedCard: {
+      backgroundColor: c.warningLight, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.warningBorder, padding: space.l, gap: space.s, marginTop: space.l,
+    },
+    blockedHead: { flexDirection: "row", alignItems: "center", gap: space.s },
+    blockedTitle: { ...typeScale.bodyStrong, color: c.text, flex: 1 },
+    blockedBody: { ...typeScale.body, color: c.text },
+    blockedButton: {
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 48,
+      paddingHorizontal: space.l, justifyContent: "center", alignItems: "center", marginTop: space.xs,
+    },
+    blockedButtonText: { ...typeScale.bodyStrong, color: c.bg },
     card: {
       backgroundColor: c.card, borderRadius: radius.m, borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.cardBorder, paddingHorizontal: space.l,
