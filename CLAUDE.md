@@ -2411,7 +2411,25 @@ last one left off without needing a recap typed out.
   publish it whole: that posts the reel twice. Add YouTube to it and publish
   with `publicationIds` naming the YouTube publication only.
   YOUTUBE IS NOT CONNECTED to vidIQ yet; `vidiq_connect_youtube_channel`
-  gives the owner a sign in link.
+  gives the owner a sign in link. THE FIRST ONE DIED, 2026-11-14 ("This
+  verification link is no longer available"): it was generated about 17:00Z
+  and then RE-SENT in a later reply instead of a fresh one being made, the
+  rule two entries up. A link is only good in the reply that generated it.
+- REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
+  at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
+  "Turn websites into APIs", MIT). It drives a browser through a site, records
+  the network traffic and has a model write a client for the site's private
+  API. READ FIRST: no telemetry; the only outbound calls are a PyPI version
+  check and the model. `uv tool install "reverse-api-engineer==0.15.0"`, its
+  skill copied to `~/.claude/skills/reverse-api-engineer`, and
+  `~/.reverse-api/config.json` set to `agent_provider: "auto"` (headless
+  Playwright, keeps a HAR), because the default `chrome-mcp` needs a Chrome
+  with a person at it. `agent --dry-run --headless` passes. IT VANISHES WITH
+  THE CONTAINER, like the skill packs. NOT YET RUN FOR REAL: whether the
+  Claude SDK inside it finds a login without ANTHROPIC_API_KEY is unknown,
+  and the sandbox's egress policy blocks most real sites, so a capture here
+  only works on an allowed host. Use only on sites Trimio may access, within
+  their terms; a HAR holds cookies and tokens and never goes in a commit.
 - THE REVERSE TRIAL IS BUILT, 2026-11-07, the owner's choice (see the
   pricing entry). Every NEW account, email or Google, gets 14 days of Premium
   with no card, written into `bonus_premium_until`, so every Premium check on
