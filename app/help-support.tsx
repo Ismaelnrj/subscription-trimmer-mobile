@@ -1,10 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Linking, ActivityIndicator, AppState } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack } from "expo-router";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Updates from "expo-updates";
 import { nativeBuild } from "../lib/app-build";
+import { readReminderDiagnostics, sendTestReminder, type ReminderDiagnostics } from "../lib/notifications";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 /* The canonical host, not the Railway one: the bare service hostname was
@@ -89,6 +90,45 @@ export default function HelpSupportScreen() {
     }
   };
 
+  /* The phone's side of reminders, read rather than assumed. Re-read when the
+     app comes back to the front, because the fix for "notifications are off"
+     happens in Android's settings, outside this screen. */
+  const [reminders, setReminders] = useState<ReminderDiagnostics | null>(null);
+  const [testSent, setTestSent] = useState(false);
+  const refreshReminders = useCallback(() => {
+    readReminderDiagnostics().then(setReminders).catch(() => {});
+  }, []);
+  useEffect(() => {
+    refreshReminders();
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") refreshReminders(); });
+    return () => sub.remove();
+  }, [refreshReminders]);
+  const onTestReminder = async () => {
+    try {
+      await sendTestReminder(t("helpSupport.testReminderTitle"), t("helpSupport.testReminderBody"), 10);
+      setTestSent(true);
+    } catch {
+      setTestSent(false);
+    }
+    refreshReminders();
+  };
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const localStamp = (ms: number) => {
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  /* English like the lines above it: these are read back by the owner and
+     quoted when diagnosing, not part of the product's voice. 2 is Android's
+     IMPORTANCE_NONE, which is what switching the channel off sets. */
+  const permissionLine = !reminders ? "…"
+    : reminders.permission === "granted" ? "yes"
+    : reminders.permission === "denied" ? "no (blocked in Android settings)"
+    : "no (never asked)";
+  const channelLine = !reminders ? "…"
+    : reminders.channelImportance == null ? "not created yet"
+    : reminders.channelImportance <= 2 ? "off"
+    : `on (importance ${reminders.channelImportance})`;
+
   const updateStatusLine =
     updateState.kind === "checking" ? t("helpSupport.checkingForUpdates")
     : updateState.kind === "downloading" ? t("helpSupport.downloadingUpdate")
@@ -153,7 +193,23 @@ export default function HelpSupportScreen() {
               <Text style={styles.debugText}>Embedded launch (no OTA applied): {String(Updates.isEmbeddedLaunch)}</Text>
               <Text style={styles.debugText}>Update ID: {Updates.updateId ?? "none"}</Text>
               <Text style={styles.debugText}>Update published: {Updates.createdAt?.toISOString() ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Notifications allowed: {permissionLine}</Text>
+              <Text style={styles.debugText}>Reminder channel: {channelLine}</Text>
+              <Text style={styles.debugText}>Reminders queued: {reminders ? reminders.queued : "…"}</Text>
+              <Text style={styles.debugText}>
+                Next reminder: {reminders?.next ? `${localStamp(reminders.next.at)} ${reminders.next.title}` : reminders ? "none" : "…"}
+              </Text>
             </View>
+            <TouchableOpacity
+              style={styles.updateButton}
+              onPress={onTestReminder}
+              accessibilityRole="button"
+              accessibilityLabel={t("helpSupport.sendTestReminder")}
+            >
+              <MaterialCommunityIcons name="bell-ring-outline" size={20} color={c.text} />
+              <Text style={styles.updateButtonText}>{t("helpSupport.sendTestReminder")}</Text>
+            </TouchableOpacity>
+            {testSent && <Text style={styles.updateStatus}>{t("helpSupport.testReminderSent")}</Text>}
             {Updates.isEnabled ? (
               <TouchableOpacity
                 style={styles.updateButton}

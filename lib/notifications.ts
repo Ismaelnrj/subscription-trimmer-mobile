@@ -136,3 +136,53 @@ export async function sendScheduledNotification(
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: REMINDER_CHANNEL_ID },
   });
 }
+
+/* WHAT THE PHONE ITSELF SAYS ABOUT REMINDERS, for the Build Info panel.
+
+   Added 2026-11-14, when the owner reported that reminder emails arrive and
+   phone reminders do not. Every link this app controls was read and holds:
+   the scheduler queues, expo-notifications sets a real alarm and posts it.
+   What nothing could see is the phone's side: whether Android lets Trimio
+   post at all, whether the channel was switched off, and whether anything is
+   actually waiting in the queue. Each of those fails silently, so the panel
+   reads them out rather than leaving them to be guessed. */
+export type ReminderDiagnostics = {
+  permission: ReminderPermission;
+  /** Android's own importance for the reminder channel; null when the
+      channel does not exist (or the platform has no channels). 2 is NONE,
+      which is what switching the channel off in Android's settings sets. */
+  channelImportance: number | null;
+  queued: number;
+  /** The earliest date-triggered notification waiting, if any. */
+  next: { at: number; title: string } | null;
+};
+
+export async function readReminderDiagnostics(): Promise<ReminderDiagnostics> {
+  const permission = await getReminderPermission().catch(() => "denied" as ReminderPermission);
+  let channelImportance: number | null = null;
+  if (Platform.OS === "android") {
+    const channel = await Notifications.getNotificationChannelAsync(REMINDER_CHANNEL_ID).catch(() => null);
+    channelImportance = channel ? channel.importance : null;
+  }
+  const requests = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  let next: ReminderDiagnostics["next"] = null;
+  for (const r of requests) {
+    /* Android hands a date trigger back as { type: "date", value: <ms> }
+       (DateTrigger.toBundle in expo-notifications 0.31), not as the
+       { date } it was given, so read value and accept date as a fallback. */
+    const t: any = r.trigger;
+    const at = typeof t?.value === "number" ? t.value : t?.date != null ? new Date(t.date).getTime() : NaN;
+    if (!Number.isFinite(at)) continue;
+    if (!next || at < next.at) next = { at, title: String(r.content?.title ?? "") };
+  }
+  return { permission, channelImportance, queued: requests.length, next };
+}
+
+/** One notification in a few seconds, through the same alarm and channel as
+    a real reminder, so a person can see whether this phone shows them. */
+export async function sendTestReminder(title: string, body: string, seconds = 10): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: { title, body, sound: true },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: REMINDER_CHANNEL_ID },
+  });
+}

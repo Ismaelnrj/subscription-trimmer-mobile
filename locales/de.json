@@ -661,7 +661,11 @@
     "updateReady": "Update geladen. Schließe Trimio ganz (aus den letzten Apps wischen) und öffne die App erneut, um es zu nutzen.",
     "upToDate": "Du hast die neueste Version.",
     "updateCheckFailed": "Suche nach Updates fehlgeschlagen: {{message}}",
-    "updatesDisabled": "Over the Air Updates sind in diesem Build deaktiviert."
+    "updatesDisabled": "Over the Air Updates sind in diesem Build deaktiviert.",
+    "sendTestReminder": "Test-Erinnerung senden",
+    "testReminderSent": "In 10 Sekunden kommt eine Test-Erinnerung. Sperr dein Handy, dann siehst du sie so, wie eine echte ankommt.",
+    "testReminderTitle": "Trimio Test-Erinnerung",
+    "testReminderBody": "Wenn du das lesen kannst, kommen Erinnerungen auf diesem Handy an."
   },
   "referFriend": {
     "screenTitle": "Freunde einladen",

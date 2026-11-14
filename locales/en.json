@@ -661,7 +661,11 @@
     "updateReady": "Update downloaded. Close Trimio fully (swipe it away from recent apps) and open it again to use it.",
     "upToDate": "You are on the latest version.",
     "updateCheckFailed": "Could not check for updates: {{message}}",
-    "updatesDisabled": "Over the air updates are off in this build."
+    "updatesDisabled": "Over the air updates are off in this build.",
+    "sendTestReminder": "Send a test reminder",
+    "testReminderSent": "A test reminder arrives in 10 seconds. Lock the phone to see it the way a real one arrives.",
+    "testReminderTitle": "Trimio test reminder",
+    "testReminderBody": "If you can read this, reminders reach this phone."
   },
   "referFriend": {
     "screenTitle": "Refer a Friend",
