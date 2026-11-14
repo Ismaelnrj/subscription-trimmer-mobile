@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import { getUpcomingOccurrences, livePlanned } from "./recurrence";
 import { CURRENCIES, formatMoney } from "./currencies";
 import { registerForPushNotificationsAsync } from "./notifications";
+import { REMINDER_CHANNEL_ID } from "./reminder-channel";
 import { parseLocalDate } from "./utils";
 import i18n from "./i18n";
 
@@ -303,7 +304,7 @@ async function performSchedule(
                 : undefined,
               data: { subscriptionId: sub.id },
             },
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at, channelId: REMINDER_CHANNEL_ID },
           },
           myGeneration
         );
@@ -329,7 +330,7 @@ async function performSchedule(
                   : undefined,
                 data: { subscriptionId: sub.id },
               },
-              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trialReminder },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: trialReminder, channelId: REMINDER_CHANNEL_ID },
             },
             myGeneration
           );
@@ -351,7 +352,7 @@ async function performSchedule(
               title: i18n.t("notifications.reminders.freePremiumTitle", { count: reminder.daysBefore }),
               body: i18n.t("notifications.reminders.freePremiumBody"),
             },
-            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at },
+            trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: reminder.at, channelId: REMINDER_CHANNEL_ID },
           },
           myGeneration
         );

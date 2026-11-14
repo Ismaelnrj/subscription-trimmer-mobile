@@ -2,6 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { REMINDER_CHANNEL_ID } from "./reminder-channel";
 
 // Set up notification handler
 Notifications.setNotificationHandler({
@@ -19,7 +20,7 @@ Notifications.setNotificationHandler({
 // channel. It silently falls back to a low-importance default channel.
 async function ensureReminderChannel() {
   if (Platform.OS === "android") {
-    await Notifications.setNotificationChannelAsync("default", {
+    await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
       name: "Renewal reminders",
       importance: Notifications.AndroidImportance.HIGH,
       sound: "default",
@@ -114,7 +115,7 @@ export async function sendLocalNotification(
       sound: true,
       badge: 1,
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2 },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 2, channelId: REMINDER_CHANNEL_ID },
   });
 }
 
@@ -132,6 +133,6 @@ export async function sendScheduledNotification(
       sound: true,
       badge: 1,
     },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds, channelId: REMINDER_CHANNEL_ID },
   });
 }
