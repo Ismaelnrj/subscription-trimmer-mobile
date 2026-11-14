@@ -2380,6 +2380,41 @@ last one left off without needing a recap typed out.
   (`ef79d2db`), since the permission was asked once, after an add, with no way
   back; the channel is named in the app's language (`e5fdf9f4`). THE NEXT STEP
   IS THE OWNER'S PANEL: those four lines and a test tap settle the cause.
+  SETTLED, 2026-11-14, read off the owner's screenshot of the panel:
+  `Notifications allowed: no (blocked in Android settings)`, `Reminder
+  channel: on (importance 6)` (expo's HIGH), `Reminders queued: 11`, `Next
+  reminder: 2026-11-15 09:00 DAZN renews tomorrow`. So scheduling works and
+  ANDROID'S APP LEVEL SWITCH for Trimio is off; the OS drops every reminder.
+  The crossed bell in that screenshot's status bar is the phone's silent
+  mode, which mutes sound and blocks nothing. Fix is the owner's: Android
+  Settings > Apps > Trimio > Notifications, or the Open Android settings
+  button. NOT YET SEEN: a reminder arriving after that.
+  THE TEST BUTTON LIED IN EXACTLY THAT STATE: Android accepts a schedule while
+  the app is blocked and shows nothing, and the panel said "A test reminder
+  arrives in 10 seconds". Fixed the same evening: while blocked the panel
+  shows the blocked sentence and Allow / Open Android settings instead of the
+  test, and the tap re-reads the permission first
+  (`__tests__/reminder-diagnostics.test.js`, fails against the old screen).
+  Client only, rides the next `eas update`.
+- PUBLISHED THROUGH 040c4b3c AND CONFIRMED ON A REAL DEVICE (2026-11-14),
+  read off a screenshot of the Build Info panel: `App version: 1.0.4`,
+  `Native build: 41`, `Channel: production`, `Runtime version: 1.0.1`,
+  `Embedded launch (no OTA applied): false`, `Update ID:
+  01a1db0a-2ba0-730d-98c4-b7a7bf07f500`, `Update published:
+  2026-11-14T17:10:39.264Z`, `You are on the latest version.` DIFFERENT ID
+  AND LATER than `01a1d160-...` at 2026-11-12T20:08:21.635Z (the 2026-11-13
+  publish the owner reported was never read; this one carries it too).
+  Timestamp cross-check: `cf3ec625` was committed 17:03:12Z and reached master
+  minutes later, `1c4444e5` not until 17:14:35Z, after the publish, so the
+  tree was `cf3ec625` or `74886d74`; both are docs and tools only, and the
+  last client commit is `040c4b3c`, which names the baseline. The panel's four
+  reminder lines are themselves proof the bundle landed: they exist only from
+  `1ae9aaa3`. WHAT WENT OUT across `6368c438..040c4b3c`, 15 client files: the
+  reminder channel and Build Info diagnostics, the blocked notifications
+  warning, the price rise card, the cancel moment, the first three line,
+  money in both languages and the German Spotify terminology fix.
+  `needs_native_build.py 6368c438` said OTA IS ENOUGH. THE PLAY SCREENSHOTS
+  can be uploaded now: what they show is on phones.
 - A PILOT REEL MADE WITH HIGGSFIELD, 2026-11-14, at the owner's request ("use
   higgsfield to help you create the reels"), after the six reels were rejected.
   The person is generated (her phone screen never in shot), the app is the
