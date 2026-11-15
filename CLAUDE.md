@@ -2443,23 +2443,28 @@ last one left off without needing a recap typed out.
   A LEFTOVER vidIQ DRAFT, `c06ef544-6043-4487-b7dd-84941ebe7eae`, holds an
   Instagram destination for the SAME video (publication
   `e465afc5-be41-483e-ae66-cc4d94828960`) and a draft cannot drop one. Never
-  publish it whole: that posts the reel twice. Add YouTube to it and publish
-  with `publicationIds` naming the YouTube publication only.
-  `vidiq_connect_youtube_channel` gives the owner a sign in link. THE FIRST
-  ONE DIED, 2026-11-14 ("This verification link is no longer available"): it
-  was generated about 17:00Z and then RE-SENT in a later reply instead of a
-  fresh one being made, the rule two entries up. A link is only good in the
-  reply that generated it.
-  THE YOUTUBE CHANNEL CONNECTED ON 2026-11-14 IS THE OWNER'S PERSONAL ONE,
-  NOT A TRIMIO CHANNEL: the default channel of their own Google account, 0
-  videos, 0 subscribers, under their own name and a handle that must never
-  sit beside the brand. NEVER POST TRIMIO THERE, private or not. Nothing was
-  drafted for it. Recommended instead: a Trimio Brand Account channel
-  (youtube.com/account > Add or manage your channels > Create a channel),
-  then a fresh vidIQ link, choosing that channel at Google's account picker.
-  When it exists, post from a NEW YouTube-only draft, never by adding YouTube
-  to the leftover draft above, so publishing it whole cannot post to
-  Instagram twice.
+  publish it whole: that posts the reel twice. It is dead weight now; leave
+  it unpublished.
+  `vidiq_connect_youtube_channel` gives the owner a sign in link, and it
+  EXPIRES WITHIN MINUTES (the owner's reading, 2026-11-15, after three died).
+  The first was re-sent in a later reply instead of made fresh; two more died
+  waiting while the owner set up the channel. What worked: generated only
+  once the owner was ready, sent ONLY as a code block to copy (no clickable
+  link), opened at once. Do that every time.
+  THE TRIMIO YOUTUBE CHANNEL IS @gettrimio, `UCfVu2GhQf1cSnq9RsRzkFiA`, a
+  Brand Account channel the owner created 2026-11-15 and connected to vidIQ,
+  read off `vidiq_social_account_list`. vidIQ ALSO lists the owner's PERSONAL
+  channel (their own name, 0 videos), connected by mistake on 2026-11-14:
+  NEVER POST TRIMIO THERE, private or not. Always pass the @gettrimio id.
+  THE AMAZON PRIME SHORT IS ON IT, 2026-11-15, on the owner's "yes, post it"
+  to the draft shown: a NEW YouTube-only draft (`4ef18c14-...`), English
+  with music (the Instagram file), PRIVATE, Howto & Style, description says
+  "link on the channel page" because links in a Short's description cannot
+  be tapped. https://www.youtube.com/watch?v=wLj0djy-DME, status completed.
+  STILL THE OWNER'S, in YouTube Studio: tick the altered or synthetic content
+  box ("Contenido alterado: Sí"), make it public, and add the channel link
+  `https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio` under
+  Personalización > Perfil > Enlaces. Not confirmed done.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
