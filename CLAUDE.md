@@ -2525,6 +2525,39 @@ last one left off without needing a recap typed out.
   draft tool cannot set the AI label), when the owner says so. NOTHING IS
   SCHEDULED to do it: offered a one time task, and the owner declined ("no,
   I'll tell you tomorrow").
+- PART 2 OF THE STORY REEL, "he cancels the gym", 2026-11-15, at the owner's
+  request ("do the third video as well"). NOT APPROVED, NOT POSTED: on the
+  review page (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) waiting for
+  the owner's yes. 19.4 s, English. It continues the sofa scene with two
+  Seedance forward extensions of take B, so the same couple and voices: ext1
+  `5f19b2c5-111d-4cdc-a04e-6099e675de6f` ("Fine. I'm cancelling the gym." /
+  "You won't." / "Give me the phone."), ext2
+  `181635ad-7313-4602-a1e6-7de30857b901` ("359 euros?" / "A year." / "So...
+  Lisbon?" / "Lisbon."), with the real app between (Gym, Delete, the card
+  "Gym marked as cancelled, €358.80 a year you keep"). 78 credits: 30, 24 and
+  a 24 retake (the first ext2, `bc514b40-...`, scowled and looked into the
+  camera). Built by `tools/reels/story/record-cancel.js` and
+  `assemble-part2.py`; README items 15 to 19. THE DIALOG IS NOT IN THE
+  FOOTAGE: the web preview cannot draw Android's "I cancelled it" dialog, so
+  the cut goes from the Delete tap to the card, whose text says "marked as
+  cancelled". Proposed caption and YouTube title ("He finally cancelled the
+  gym") are on the page; post two or three days after Part 1.
+- A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
+  owner's yes to the test. `tools/reels/upscale/` (README there) runs
+  Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
+  rebuilt from the published weights because PyTorch cannot be installed:
+  zero credits, about 3 s a frame, 14 minutes a 10 s take, against 336
+  credits Higgsfield quoted to finish Part 1's two takes. Part 1 rebuilt with
+  the committed `assemble.py` on the upscaled takes is the same 27.53 s, frame
+  for frame in time; sharper eyes, hair, knit and sofa fabric, skin slightly
+  smoother. Denoise strength 0.5 (Real-ESRGAN's default), because 1.0 made
+  faces waxy. Measured shimmer in a still area: 0.12/255 a frame against 0.09
+  now, faces unchanged. NOT COMPARED with Higgsfield's paid finish, which
+  re-renders rather than sharpens. The owner has not yet chosen which Part 1
+  file goes to Instagram; the page recommends the sharpened one.
+  WHISPER FOR CHECKING DIALOGUE works offline: sherpa-onnx from PyPI plus
+  `sherpa-onnx-whisper-tiny.en` from k2-fsa/sherpa-onnx's GitHub releases
+  (Hugging Face and alphacephei.com are refused here).
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
