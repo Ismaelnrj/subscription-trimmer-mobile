@@ -2472,10 +2472,18 @@ last one left off without needing a recap typed out.
   publishedAt 2026-11-15T10:11:51Z, title "How to cancel Amazon Prime
   membership in 4 steps" (changed from "... Prime in 4 steps" because
   vidIQ put "how to cancel amazon prime membership" near 6,500 searches a
-  month against under 750 for the bare phrase; rough estimates). NOT
-  CONFIRMED: the channel link
-  `https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio` under
-  Personalización > Perfil > Enlaces.
+  month against under 750 for the bare phrase; rough estimates).
+  THE CHANNEL LINKS ARE UP, 2026-11-15 (owner's report, not read: a sandbox
+  cannot reach youtube.com). Three, in this order, under Personalización >
+  Perfil > Enlaces: "Get Trimio on Google Play" (the Play link tagged
+  `utm_source=youtube`, `utm_campaign=channel`, see `marketing-links.md`),
+  then the English and the German site with `utm_source=youtube`. A Short's
+  own description and comment links cannot be tapped, so this is the only
+  way in, and both Shorts' "link on the channel page" is now true. Play
+  first because the app is Android only. SUCCESS BAR: one install tagged
+  youtube / channel in Play Console by 2026-12-15; none once the Shorts pass
+  about 1,000 views together means viewers are not reaching the channel,
+  and the link is not the problem.
   A ONE TIME REMINDER EXISTS, with the owner's explicit yes on 2026-11-15
   ("yes, set the reminder for 22 November"): `send_later` into the session
   that posted the Short, `trig_01Kj8cRPJ2dFSPugwgdpAqr6`, fires ONCE at
