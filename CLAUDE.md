@@ -2476,6 +2476,12 @@ last one left off without needing a recap typed out.
   CONFIRMED: the channel link
   `https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio` under
   Personalización > Perfil > Enlaces.
+  A ONE TIME REMINDER EXISTS, with the owner's explicit yes on 2026-11-15
+  ("yes, set the reminder for 22 November"): `send_later` into the session
+  that posted the Short, `trig_01Kj8cRPJ2dFSPugwgdpAqr6`, fires ONCE at
+  2026-11-22T09:00Z (10:00 Berlin). It reads the Short's first week through
+  vidIQ, sends the owner a push notification with the headline numbers,
+  and records them here. It disables itself after firing.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
