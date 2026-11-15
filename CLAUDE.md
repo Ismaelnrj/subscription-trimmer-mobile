@@ -2464,13 +2464,18 @@ last one left off without needing a recap typed out.
   with music (the Instagram file), PRIVATE, Howto & Style, description says
   "link on the channel page" because links in a Short's description cannot
   be tapped. https://www.youtube.com/watch?v=wLj0djy-DME, status completed.
-  STILL THE OWNER'S, in YouTube Studio ON A COMPUTER: the AI disclosure,
-  which YouTube RENAMED in 2026 from "Altered content" to "AI use" under
-  an Attributes section of the video details (Spanish UI: look for "Uso de
-  IA"; the owner could not find "Contenido alterado", which is the old
-  name), make it public, and add the channel link
+  THE AI DISCLOSURE IS NOW CALLED "Uso de IA" ("AI use") in the video's
+  details, YouTube's 2026 rename of "Altered content"; "Contenido alterado"
+  no longer exists, which cost the owner a search. Answer Sí for a generated
+  person. SET BY THE OWNER, 2026-11-15 (their report; the API does not
+  expose it). THE SHORT IS PUBLIC, read off `vidiq_get_videos_by_ids`:
+  publishedAt 2026-11-15T10:11:51Z, title "How to cancel Amazon Prime
+  membership in 4 steps" (changed from "... Prime in 4 steps" because
+  vidIQ put "how to cancel amazon prime membership" near 6,500 searches a
+  month against under 750 for the bare phrase; rough estimates). NOT
+  CONFIRMED: the channel link
   `https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio` under
-  Personalización > Perfil > Enlaces. Not confirmed done.
+  Personalización > Perfil > Enlaces.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
