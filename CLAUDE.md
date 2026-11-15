@@ -2493,8 +2493,11 @@ last one left off without needing a recap typed out.
   YOUTUBE: uploaded PRIVATE to @gettrimio 2026-11-15,
   https://www.youtube.com/watch?v=g4iHBnntRrM (vidIQ post
   `755a68dd-46ae-48e8-9840-b487718d9f5f`), title "We only pay for Netflix"
-  (then she counted), Howto & Style. The owner sets "Uso de IA" = Sí, then
-  makes it public; neither is confirmed yet.
+  (then she counted), Howto & Style. PUBLIC since 2026-11-15T16:36:04Z, read
+  off `vidiq_get_videos_by_ids`; the owner also shortened the title to "We
+  only pay for Netflix" and dropped "Then she counted." from the description.
+  "Uso de IA" = Sí is NOT confirmed (the owner did not say, and the API does
+  not expose it).
   INSTAGRAM: NOT POSTED, held for 2026-11-16 at the owner's word ("Instagram
   leave it for tomorrow"). Everything is approved: account
   29062187126774065, regular Reel, `isAiGenerated: true`, this caption
@@ -2507,7 +2510,8 @@ last one left off without needing a recap typed out.
   signed URL runs to about 2026-11-22; `vidiq_video_upload` with that
   uploadId refreshes it). Post with `vidiq_instagram_publish_reel` (the
   draft tool cannot set the AI label), when the owner says so. NOTHING IS
-  SCHEDULED to do it.
+  SCHEDULED to do it: offered a one time task, and the owner declined ("no,
+  I'll tell you tomorrow").
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
