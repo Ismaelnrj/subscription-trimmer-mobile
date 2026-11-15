@@ -49,8 +49,14 @@ TikTok only allows a bio link from 1,000 followers or on a business account.
 | Instagram bio, German | https://www.subtrimio.com/de?utm_source=instagram&utm_medium=bio |
 | TikTok bio, English | https://www.subtrimio.com/?utm_source=tiktok&utm_medium=bio |
 | TikTok bio, German | https://www.subtrimio.com/de?utm_source=tiktok&utm_medium=bio |
+| YouTube channel links, FIRST (Play) | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dyoutube%26utm_medium%3Dbio%26utm_campaign%3Dchannel |
 | YouTube channel links, English | https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio |
 | YouTube channel links, German | https://www.subtrimio.com/de?utm_source=youtube&utm_medium=bio |
+
+On YouTube the FIRST channel link is the one shown on the channel header and
+the one a Shorts viewer reaches in two taps, so it is the Play link: the app is
+Android only and the website would add a hop before the install. Its campaign
+is `channel`, not a month, because a channel link stays up for months.
 
 ## 3. Cancellation guides ("how to cancel X" content)
 
