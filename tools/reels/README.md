@@ -113,3 +113,33 @@ Costs read off `get_cost`: Seedance 2.5 is 3 credits a second as a 480p
 draft, 7 a second at 720p and 16 a second at 1080p, audio included. A full
 18 s scene: 54 draft, 126 final at 720p, 288 at 1080p. Keep any TV out of
 shot, or the model may draw a streaming service's logo on it.
+
+### What "really weird" was, and the fix (2026-11-15, same day)
+
+The owner judged the one 18 s take of the whole sofa scene (`669ce784-...`)
+"nice but really weird", with the last line cut off. Read frame by frame:
+a hidden jump cut at 9 s (the camera moved in and the phone appeared in her
+hand), five seconds of her pouting (from the word "deadpan" in the prompt),
+and a waved hand instead of counting fingers. All from cramming six beats
+and nine lines into one generation.
+
+5. **A previous take as `video_references` gets COPIED, not just its
+   faces.** Passing that 18 s take back in to fix it (job
+   `89069cf5-1a4d-4fdd-9fd6-1c336baa371c`, 30 credits, discarded) returned
+   the same timing, the same pout, the same hands and the same audio, pitch
+   for pitch, whatever the new prompt said. Reference only a clip whose
+   ACTION differs (the pilot's happy shot works for her face), and describe
+   anyone else in words.
+6. **Split the scene, then extend.** Take one (`02365117-7e9c-4856-aceb-1e4d134dc076`,
+   10 s, her face from the pilot, him in words) carries one beat; take two
+   is `mode: "video_extension"`, `extension_mode: "forward"` on take one
+   (`36464a27-c7f6-4582-ab6f-63405d963d98`, 11 s, 33 credits as a draft).
+   The extension keeps the same people, room and voices (his 77 to 127 Hz,
+   hers 186 to 222 Hz across both), and the seam measured 1.6/255. It returns
+   only the NEW seconds, so the scene is take one then take two, concatenated.
+7. **Direct the acting in plain words**: "understated, natural acting like a
+   real couple at home, small believable reactions, no exaggerated
+   expressions, no pouting", "locked-off static camera, the framing never
+   changes, no zoom, no cuts", and at most about five short lines per 10 s.
+   A prop the person will use goes in the opening frame ("her phone lies
+   face down on the sofa beside her") so it does not appear from nowhere.
