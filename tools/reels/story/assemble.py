@@ -27,7 +27,12 @@ OUT.mkdir(parents=True, exist_ok=True)
 W, H = 1080, 1920
 
 A_SRC, A_END = TAKE_A, 9.6          # cut as she lifts the phone
-B_SRC, B_IN, B_END = TAKE_B, 2.2, 11.0  # back in as he leans over
+B_SRC, B_IN, B_END = TAKE_B, 2.2, 9.85  # back in as he leans over
+# Take B ends with him gaping and half winking after "You said that in March"
+# (9.9 to 10.4 s), which the owner rightly called weird. The scene stops at
+# 9.85 on her knowing look and him staring ahead, and that frame holds while
+# the room sound fades, long enough to read the line before the end card.
+FREEZE = 0.6
 APP_IN, APP_LIST_END, APP_END = 0.45, 6.95, 8.37     # form, search, save, list
 APP_SPEED, HOLD = 1.5, 1.3                           # then dashboard at 1x, held
 A_TAIL = 10.04 - A_END
@@ -50,7 +55,7 @@ LINES = [
     ('B', 'F', 4.0, 5.0, 'A year.'),
     ('B', 'F', 5.45, 7.2, 'So. The gym?'),
     ('B', 'M', 7.5, 8.9, 'I’m going tomorrow.'),
-    ('B', 'F', 8.95, 10.6, 'You said that in March.'),
+    ('B', 'F', 8.95, 10.45, 'You said that in March.'),
 ]
 MAX_CPS, MIN_DUR = 17.5, 0.9
 
@@ -93,8 +98,10 @@ def main():
     up = f'scale={W}:{H}:flags=lanczos,unsharp=5:5:0.5:5:5:0,fps=30,setsar=1,format=yuv420p'
     run([FF, '-y', '-v', 'error', '-i', str(A_SRC), '-t', str(A_END), '-vf', up,
          '-af', 'aresample=48000', '-c:v', 'libx264', '-crf', '17', '-c:a', 'pcm_s16le', str(OUT / 'a.mov')])
-    run([FF, '-y', '-v', 'error', '-ss', str(B_IN), '-i', str(B_SRC), '-t', str(B_END - B_IN), '-vf', up,
-         '-af', f'aresample=48000,apad,atrim=0:{B_END - B_IN},afade=t=out:st={B_END - B_IN - 0.5}:d=0.5', '-c:v', 'libx264', '-crf', '17', '-c:a', 'pcm_s16le', str(OUT / 'b.mov')])
+    b_len = B_END - B_IN + FREEZE
+    run([FF, '-y', '-v', 'error', '-ss', str(B_IN), '-i', str(B_SRC), '-t', f'{b_len:.3f}',
+         '-vf', f'trim=0:{B_END - B_IN:.3f},' + up + f',tpad=stop_mode=clone:stop_duration={FREEZE},trim=end_frame={round(b_len * 30)}',
+         '-af', f'aresample=48000,apad,atrim=0:{b_len:.3f},afade=t=out:st={b_len - 0.45:.3f}:d=0.45', '-c:v', 'libx264', '-crf', '17', '-c:a', 'pcm_s16le', str(OUT / 'b.mov')])
     # The app: form to list sped up, the dashboard at real speed, then held.
     fc = (f'[0:v]setsar=1,trim={APP_IN}:{APP_LIST_END},setpts=(PTS-STARTPTS)/{APP_SPEED}[s1];'
           f'[0:v]setsar=1,trim={APP_LIST_END}:{APP_END},setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration={HOLD}[s2];'
@@ -127,6 +134,7 @@ def main():
             assert t1 <= A_END + 1e-6, f'line {i} runs into the insert'
         else:
             assert t0 >= A_END + INSERT - 1e-6, f'line {i} starts over the insert'
+            assert e <= B_END + FREEZE + 1e-6, f'line {i} outlasts the scene'
         p = OUT / f'cap{i:02d}.png'
         plate(text, who, i).save(p)
         inputs += ['-i', str(p)]
@@ -137,7 +145,7 @@ def main():
          '-map', f'[{prev}]', '-map', '0:a', '-c:v', 'libx264', '-crf', '17', '-preset', 'slow',
          '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', str(OUT / 'story-captioned.mp4')])
     json.dump({'insert': INSERT, 'b_off': B_OFF, 'lines': report}, open(OUT / 'timeline.json', 'w'), indent=1)
-    print(f'A 0-{A_END}  app {A_END}-{A_END + INSERT:.2f}  B {A_END + INSERT:.2f}-{B_OFF + B_END:.2f}')
+    print(f'A 0-{A_END}  app {A_END}-{A_END + INSERT:.2f}  B {A_END + INSERT:.2f}-{B_OFF + B_END + FREEZE:.2f} (held {FREEZE}s)')
     for r in report:
         print(r)
 

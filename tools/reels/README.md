@@ -189,3 +189,10 @@ frame for frame and sample for sample (framemd5 of both).
 13. **Match the app to the scene.** The dashboard greets by the local hour,
    so the first recording said "Good afternoon" over an evening room.
    `record-app.js` sets a time zone where it is evening.
+14. **Silent reactions get overacted.** "He opens his mouth to answer, then
+   closes it" came out as a wide jaw drop and a half wink right before the
+   end card, and the owner called it weird. Fixed for free by ending the
+   scene on the frame before it (her knowing look, him staring ahead) and
+   holding that frame 0.6 s, which also gives the last caption time to be
+   read. When writing a take, end on a line or describe stillness ("says
+   nothing, keeps looking ahead"), never a gesture of almost speaking.
