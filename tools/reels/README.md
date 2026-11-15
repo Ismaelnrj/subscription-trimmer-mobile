@@ -196,3 +196,42 @@ frame for frame and sample for sample (framemd5 of both).
    holding that frame 0.6 s, which also gives the last caption time to be
    read. When writing a take, end on a line or describe stillness ("says
    nothing, keeps looking ahead"), never a gesture of almost speaking.
+
+### Part 2, "he cancels the gym" (2026-11-15)
+
+The third reel continues the story reel's sofa scene for 78 credits of drafts,
+against about 290 for the first one, because nothing had to be found again:
+
+```
+node tools/reels/story/record-cancel.js /tmp/rec /tmp/tokens en   # fresh tokens, Gym reset first
+python3 tools/reels/story/assemble-part2.py ext1.mp4 ext2.mp4 app-cancel.mp4 build/
+python3 tools/brand-video.py build/part2-captioned.mp4 --out build/part2-en.mp4 --lang en --no-bug
+```
+
+15. **Extend the last approved take instead of starting a new scene.** Both
+    shots are `video_extension` forward: ext1 on take B, ext2 on ext1. Same
+    faces, room and voices at 3 credits a second as a 480p draft, with no
+    reference hunting. A new reel in the same series is a new script, not a
+    new cast.
+16. **"Surprised" comes out as a scowl, and "smile" as a look into the
+    camera.** The first ext2 (`bc514b40-...`) had her frowning hard on "359
+    euros?" and saying "Lisbon?" straight to camera. The retake asked for
+    "eyebrows rise slightly in mild, quiet surprise", "no frowning, no
+    scowling, no grimaces" and "Nobody ever looks at the camera"; the ending
+    was fixed, the frown only softened.
+17. **Hide a bad face with the sound running ahead of the picture.** The
+    remaining frown sits on her one line, so the app's card stays on screen
+    while "Done." and "359 euros?" play, and the picture returns to the sofa
+    on "A year." Free, and the card is the thing worth looking at anyway.
+18. **Check the words, not just the timing.** Whisper tiny.en runs offline
+    through sherpa-onnx (`pip install sherpa-onnx`; the model is a GitHub
+    release asset of k2-fsa/sherpa-onnx, `asr-models/sherpa-onnx-whisper-tiny.en`,
+    reachable from a sandbox where Hugging Face is not). It caught a stray
+    early "Done." in ext1 and a "Yeah." at the start of ext2, both cut. It
+    misheard "A year?" as "Is that you?" once, so it confirms lines, it does
+    not replace listening.
+19. **The web preview cannot show Android's dialog.** "I cancelled it" is
+    pressed from the recorded `window.__alerts`, so the footage goes from the
+    Delete tap straight to the card, whose own text says "Gym marked as
+    cancelled". Refresh tokens rotate on use: log in again before each
+    recording run, or the second run lands on the sign in screen.
