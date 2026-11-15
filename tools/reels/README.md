@@ -81,3 +81,35 @@ the page is too short to scroll it out of view. The Amazon Prime guide carries
 no such note (checked across the five verified guides: only Amazon).
 Downloading Higgsfield output needs `d8j0ntlcm91z4.cloudfront.net` allowed in
 the environment (added to the owner's Default, 2026-11-14) and the owner's yes.
+
+## Dialogue scenes (2026-11-15): what the first test settled
+
+The story reel ("We only pay for Netflix") needs two people talking. Two cheap
+480p Seedance 2.5 drafts of the opening shot (15 and 18 credits, jobs
+`fd090e01-8db6-45e6-a450-3fa5100e4298` and
+`860b8934-1247-486d-acfd-885f0cf4ed2c`) settled four things:
+
+1. **The woman carries over.** Passing the pilot's happy shot
+   (`2bdcac58-...`) as `video_references` in `omni_reference` mode gives the
+   same face, hair and sweater, so the reels read as one series.
+2. **An `audio_references` clip does NOT fix the voice.** Fixed voices were
+   made first (ElevenLabs v4 dialogue, 0.23 credits, job
+   `548718f2-8903-4134-a592-dc7a3ddea1f4`) and passed in. Measured by median
+   pitch: the made male voice sits at 182 Hz, the drafts' man at 130 and
+   119 Hz, so the model invents its own. Separate shots can therefore give him
+   a different voice each time. Answer: generate the whole conversation as ONE
+   continuous take (up to 30 s) and cut the app shots in over it.
+3. **The image model will not take a video job as a reference**
+   (`gpt_image_2_6` with a video job id failed, not charged). A still of the
+   woman needs uploading, and the sandbox refused the upload: the Default
+   environment now allows `upload.higgsfield.ai` (owner approved 2026-11-15)
+   but the session's safety check still blocked the PUT. So Higgsfield Intone,
+   which lip syncs to supplied audio but needs character IMAGES, was not tried.
+4. **Framing has to be stated.** "Upper half of the frame" gave cropped heads;
+   "medium two shot, camera two metres back, both heads fully in frame" fixed
+   him and pushed her to the edge. Ask for both centred.
+
+Costs read off `get_cost`: Seedance 2.5 is 3 credits a second as a 480p
+draft, 7 a second at 720p and 16 a second at 1080p, audio included. A full
+18 s scene: 54 draft, 126 final at 720p, 288 at 1080p. Keep any TV out of
+shot, or the model may draw a streaming service's logo on it.
