@@ -2388,7 +2388,10 @@ last one left off without needing a recap typed out.
   The crossed bell in that screenshot's status bar is the phone's silent
   mode, which mutes sound and blocks nothing. Fix is the owner's: Android
   Settings > Apps > Trimio > Notifications, or the Open Android settings
-  button. NOT YET SEEN: a reminder arriving after that.
+  button. A REMINDER ARRIVED ON THE PHONE, 2026-11-15, once Trimio's
+  notifications were switched on in Android (owner's report, "the
+  notification came", not a screenshot). So the path works end to end; the
+  only fault was Android's app level switch.
   THE TEST BUTTON LIED IN EXACTLY THAT STATE: Android accepts a schedule while
   the app is blocked and shows nothing, and the panel said "A test reminder
   arrives in 10 seconds". Fixed the same evening: while blocked the panel
@@ -2461,8 +2464,11 @@ last one left off without needing a recap typed out.
   with music (the Instagram file), PRIVATE, Howto & Style, description says
   "link on the channel page" because links in a Short's description cannot
   be tapped. https://www.youtube.com/watch?v=wLj0djy-DME, status completed.
-  STILL THE OWNER'S, in YouTube Studio: tick the altered or synthetic content
-  box ("Contenido alterado: Sí"), make it public, and add the channel link
+  STILL THE OWNER'S, in YouTube Studio ON A COMPUTER: the AI disclosure,
+  which YouTube RENAMED in 2026 from "Altered content" to "AI use" under
+  an Attributes section of the video details (Spanish UI: look for "Uso de
+  IA"; the owner could not find "Contenido alterado", which is the old
+  name), make it public, and add the channel link
   `https://www.subtrimio.com/?utm_source=youtube&utm_medium=bio` under
   Personalización > Perfil > Enlaces. Not confirmed done.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
