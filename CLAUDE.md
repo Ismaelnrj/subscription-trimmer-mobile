@@ -2482,6 +2482,32 @@ last one left off without needing a recap typed out.
   2026-11-22T09:00Z (10:00 Berlin). It reads the Short's first week through
   vidIQ, sends the owner a push notification with the headline numbers,
   and records them here. It disables itself after firing.
+- THE STORY REEL, "We only pay for Netflix", 2026-11-15, approved by the
+  owner ("Is ready to be posted!"). A couple on a sofa: he says they only
+  pay for Netflix, she lists four more, the real app adds them up (Disney+
+  added, dashboard 90,86 a month, 1.090,32 a year for 5), he: "A year?".
+  27.5 s, English, test quality takes (480p enlarged): the owner chose NOT to
+  spend 336 credits sharpening; the bar to revisit is 500 views or one
+  share or save in 30 days. Built by `tools/reels/story/` (README items 8 to
+  14). The ending stops before his overacted jaw drop, the owner's catch.
+  YOUTUBE: uploaded PRIVATE to @gettrimio 2026-11-15,
+  https://www.youtube.com/watch?v=g4iHBnntRrM (vidIQ post
+  `755a68dd-46ae-48e8-9840-b487718d9f5f`), title "We only pay for Netflix"
+  (then she counted), Howto & Style. The owner sets "Uso de IA" = Sí, then
+  makes it public; neither is confirmed yet.
+  INSTAGRAM: NOT POSTED, held for 2026-11-16 at the owner's word ("Instagram
+  leave it for tomorrow"). Everything is approved: account
+  29062187126774065, regular Reel, `isAiGenerated: true`, this caption
+  verbatim:
+  "We only pay for Netflix." Then she counted.
+  Trimio adds up every subscription you track, shows what they cost you in a year and reminds you before each one renews. What's your number?
+  Free on Google Play, link in bio.
+  #subscriptions #personalfinance #budgeting #savemoney #moneytips
+  The video is vidIQ upload `b9766023-8c3d-46d7-8c93-d2071bc2a643` (its
+  signed URL runs to about 2026-11-22; `vidiq_video_upload` with that
+  uploadId refreshes it). Post with `vidiq_instagram_publish_reel` (the
+  draft tool cannot set the AI label), when the owner says so. NOTHING IS
+  SCHEDULED to do it.
 - REVERSE-API-ENGINEER IS INSTALLED IN THE CLOUD CONTAINER ONLY, 2026-11-14,
   at the owner's request (a GitHub card: kalil0321/reverse-api-engineer,
   "Turn websites into APIs", MIT). It drives a browser through a site, records
