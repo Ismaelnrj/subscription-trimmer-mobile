@@ -5540,6 +5540,40 @@ last one left off without needing a recap typed out.
   the file that proves it. `test_needs_native_build.py` beside it pins 20 rules
   in throwaway repos and runs in CI; four deliberate breaks of the script were
   each caught.
+- THE SECOND DEPENDABOT ROUND, 2026-11-15, at the owner's request ("if the
+  app and anything else can be compromised ... fix everything"). GitHub said
+  128 (1 critical, 69 high); `pnpm audit` said critical 1, high 74, moderate
+  43, low 14. FIXED with `pnpm.overrides` in package.json, each pinned INSIDE
+  the major already in use, so nothing changes API: after it, critical 0,
+  high 3, moderate 6, low 2. The critical was shell-quote 1.9.0 in the React
+  Native CLI (command injection through `quote()`), developer and CI only.
+  HOW TO TELL WHAT REACHES A PHONE, and the method to reuse: `CI=1 npx expo
+  export --platform android --output-dir dist/x --source-maps` (the output dir
+  must be inside the project), then list the packages in the source map's
+  `sources`. Only `nanoid` and `decode-uri-component` of the vulnerable ones
+  were in the bundle. Exported again after the overrides: 2984 sources both
+  times, exactly ONE changed (nanoid's loop guard, same output at the default
+  size), so no `eas update` is owed for it; it rides the next one.
+  `needs_native_build.py` said OTA IS ENOUGH; `expo prebuild --platform
+  android` and `react-native config` (10 native modules, com.trimio.app) both
+  still work, which is the Codemagic path most of these packages run in.
+  LEFT, EACH NEEDING A MAJOR: decode-uri-component 0.2.2 (in the bundle via
+  React Navigation's query-string 7; 0.5.1 is ESM only and query-string
+  `require`s it, so overriding it risks a crash at launch; the worst a crafted
+  link can do is freeze the app until it is reopened, no data is reachable),
+  image-size 1.x (metro reading our own images), fast-xml-parser, uuid, glob
+  and minimatch (build tools). They clear with the next Expo SDK.
+  THE BACKEND had moderates only, in Sentry's build-time bundler plugin:
+  @sentry/node 11.6.0 to 11.12.0 cleared them. nodemon's minimatch remains and
+  is dev only (the Dockerfile runs `npm install --omit=dev`). Before shipping
+  it the privacy capture was re-run on BOTH versions (fake DSN on localhost,
+  envelope read): identical, only the route tag and accept-language,
+  content-type and user-agent; no token, cookie, IP, password, name, price,
+  unsubscribe id or email. A TRAP IN THAT CAPTURE: Sentry attaches the source
+  lines around the throw, so test secrets written as literals in the harness
+  show up as "leaked". Build them at runtime. The real server.js booted on
+  PostgreSQL 16 with 11.12.0 and Sentry ON: register, login, create, list,
+  the site pages and the 401 all behaved.
 - THE BACKEND REACHES POSTGRES OVER THE PUBLIC TCP PROXY AND THE PRIVATE
   ADDRESS DOES NOT WORK, found 2026-10-24 while hardening after Railway's
   21 October security disclosure. Backend `DATABASE_URL` points at
