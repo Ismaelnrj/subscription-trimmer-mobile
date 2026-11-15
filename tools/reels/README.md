@@ -143,3 +143,49 @@ and nine lines into one generation.
    changes, no zoom, no cuts", and at most about five short lines per 10 s.
    A prop the person will use goes in the opening frame ("her phone lies
    face down on the sofa beside her") so it does not appear from nowhere.
+
+### The whole story reel (2026-11-15)
+
+The approved dialogue (version 3) is take A `f6b34188-1b64-4218-b2da-70d6a6028b6a`
+(10 s) and its forward extension, take B `2328bdcc-d934-469e-9c78-75e52f7284a5`
+(11 s). `story/` builds the reel from them plus the real app:
+
+```
+node tools/reels/story/make-demo-account.js en /tmp/tokens      # local backend
+node tools/reels/story/record-app.js /tmp/rec /tmp/tokens        # web preview
+python3 tools/reels/story/assemble.py A.mp4 B.mp4 app.mp4 build/
+python3 tools/brand-video.py build/story-captioned.mp4 --out build/story-en.mp4 --lang en --no-bug
+```
+
+A clean rerun of the committed script matched the reel sent for review
+frame for frame and sample for sample (framemd5 of both).
+
+8. **Finishing a draft costs more than the price table says.** `get_cost`
+   with `draft_job_id` answered 16 credits a second at 720p AND at 1080p
+   (take A 160, take B 176), not the 7 a second a fresh 720p generation
+   costs. I quoted 147 to the owner from the table before checking; the
+   real figure was 336. Ask `get_cost` with the `draft_job_id` before
+   quoting a finish.
+9. **`ip_detected` is the likeness filter.** A job that ends in that status
+   was refused because a person looked too much like someone real (here a
+   clean shaven man in a navy t-shirt). It is not charged. Describing a
+   more ordinary, specific person (short brown beard, grey hoodie, round
+   face) passed.
+10. **Cut the app in where the hand goes to the phone, and come back on the
+   reaction.** Take A ends as she lifts the phone; the insert is the app
+   (form to list at 1.5x, the dashboard at real speed, held 1.3 s); the cut
+   returns to take B at 2.2 s, mid lean, so "A year?" lands 0.9 s later.
+   Cutting away hides any trim of take B, so its slow lean can be shortened.
+11. **Never let the room go silent under an insert.** The sound under the app
+   is take A's real tail, then room tone looped from a quiet stretch of take
+   B (her phone taps included, which fits), then take B's real start, joined
+   with 0.15 s crossfades. Digital silence there reads as a dropout.
+12. **Captions under the speaker.** His on the left, hers ending at the 85%
+   line, at 0.66 of the height (over the sweaters, clear of faces and of the
+   platform's bottom strip), timed to the measured speech at no more than
+   17.5 characters a second. make-cut's 0.4 s a word rule is for cards and
+   cannot fit dialogue; a break chosen by sense ("And Disney. / The gym.
+   Your Xbox.") beats a balanced wrap.
+13. **Match the app to the scene.** The dashboard greets by the local hour,
+   so the first recording said "Good afternoon" over an evening room.
+   `record-app.js` sets a time zone where it is evening.
