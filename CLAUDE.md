@@ -2473,8 +2473,13 @@ last one left off without needing a recap typed out.
   membership in 4 steps" (changed from "... Prime in 4 steps" because
   vidIQ put "how to cancel amazon prime membership" near 6,500 searches a
   month against under 750 for the bare phrase; rough estimates).
-  THE CHANNEL LINKS ARE UP, 2026-11-15 (owner's report, not read: a sandbox
-  cannot reach youtube.com). Three, in this order, under Personalización >
+  THE CHANNEL LINKS ARE UP, 2026-11-15, READ OFF the public channel page
+  (ytInitialData of `www.youtube.com/@gettrimio`): the header link is the
+  Play link exactly as below, then "and 2 more links", both site links
+  carrying `utm_source=youtube`. `www.youtube.com` was added to the Default
+  environment's allowed hosts that day, at the owner's request, so a
+  sandbox can read public YouTube pages with curl now (no other YouTube
+  host is allowed). Three, in this order, under Personalización >
   Perfil > Enlaces: "Get Trimio on Google Play" (the Play link tagged
   `utm_source=youtube`, `utm_campaign=channel`, see `marketing-links.md`),
   then the English and the German site with `utm_source=youtube`. A Short's
