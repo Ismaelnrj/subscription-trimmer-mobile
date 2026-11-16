@@ -59,9 +59,11 @@ the one a Shorts viewer reaches in two taps, so it is the Play link: the app is
 Android only and the website would add a hop before the install. Its campaign
 is `channel`, not a month, because a channel link stays up for months.
 
-The Instagram bio follows the same reasoning (added 2026-11-16): the Play link
-is the one to use, campaign `profile` for the same reason. Play Console then
-counts bio taps as store listing visitors and installs by source. The two
+The Instagram bio Play link (added 2026-11-16, campaign `profile`) is NOT
+pasted into the bio itself: the owner keeps Linktree there, since a long
+tagged URL in a bio reads as spam. Use it as the target of the Linktree
+button, where nobody sees the URL and Play Console still counts installs by
+source. The two
 website rows stay for a second bio link: they are counted only in PostHog,
 because the site's own Play buttons carry no referrer, so an install that went
 through the site arrives in Play Console untagged.

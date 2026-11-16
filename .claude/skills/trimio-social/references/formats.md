@@ -53,11 +53,12 @@ format here: nothing goes out without the owner's yes, naming the platform.
 - The name field (30 characters, bold, searched by Instagram) read "Ismael"
   on 2026-11-16. Searched words do the work there, for example
   "Trimio | Subscription Tracker" (29). The owner's call.
-- The bio link was Linktree, so nothing counted a tap on it. The tagged Play
-  link (`marketing-links.md`, Instagram bio, Play) lets Play Console count
-  store visits and installs from the bio. The tagged website link is counted
-  only in PostHog: the site's Play buttons carry no referrer, so an install
-  that went through the site shows in Play Console untagged.
+- The bio link is Linktree and stays Linktree, the owner's call on
+  2026-11-16: a long tagged URL in a bio reads as spam. Count bio taps with
+  Linktree's own click numbers. If installs by source are wanted, the tagged
+  Play link (`marketing-links.md`, Instagram bio, Play) goes behind a Linktree
+  button, where nobody sees it. The tagged website link is counted only in
+  PostHog: the site's Play buttons carry no referrer.
 - Pin three posts with three jobs: the best proof, the clearest "what it
   does", and a cancellation guide.
 

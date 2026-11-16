@@ -2287,7 +2287,12 @@ last one left off without needing a recap typed out.
   `profile` (now the first Instagram bio row in `marketing-links.md`), so
   Play Console counts bio taps and installs by source. Not the tagged website
   link, which PostHog counts but Play Console cannot: the site's Play buttons
-  carry no referrer. Whether the owner swapped it is not yet known.
+  carry no referrer. THE OWNER DECLINED IT, 2026-11-16 ("that link is too big
+  and too sketchy ... I will leave linktree"): a long referrer URL in a bio
+  reads as spam. LINKTREE STAYS. Two ways to still measure it, neither
+  pursued unless the owner asks: Linktree's own click count per button (the
+  "5+ link taps" bar can be read there), and the tagged Play link as the
+  TARGET of the Linktree button, where nobody sees the URL.
   FOUR CAPTIONS MAKE CLAIMS THE APP DOES NOT BACK, found the same day: "The only
   thing you connect is your inbox" (2026-11-02; nothing is connected, emails are
   pasted); "Trimio watches the number ... warns you before the new amount is
@@ -2606,6 +2611,17 @@ last one left off without needing a recap typed out.
   schedule a post, and nothing scheduled is created without asking, so it
   is posted when the owner opens the session that day or on a one-time
   `send_later` they say yes to.
+  THE OWNER SAID YES TO THE ONE-TIME POST, 2026-11-16 ("you can make it even
+  earlier. not a problem."): `send_later` `trig_01GQy8Cut5TJYTWJ4LMZYscZ`,
+  "Post Part 2 reel to Instagram", fires ONCE at 2026-11-17T14:00Z (15:00
+  Berlin, the time of day Part 1 went out and about 24 hours after it), read
+  off the tool's answer. When it fires: check no Part 2 reel is already live,
+  refresh vidIQ upload `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7` (checked the
+  same evening: 19.53 s, 1080x1920, 6,006,865 bytes, byte for byte the
+  corrected `part2r` sharpened file, NOT the first version with the other
+  man), publish with the caption above and `isAiGenerated: true`, send ONE
+  push notification with the link or the error, and record it here. It
+  disables itself after firing. NOT YET FIRED.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
