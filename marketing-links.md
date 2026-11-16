@@ -45,6 +45,7 @@ TikTok only allows a bio link from 1,000 followers or on a business account.
 
 | Channel | Link |
 |---|---|
+| Instagram bio, FIRST (Play) | https://play.google.com/store/apps/details?id=com.trimio.app&referrer=utm_source%3Dinstagram%26utm_medium%3Dbio%26utm_campaign%3Dprofile |
 | Instagram bio, English | https://www.subtrimio.com/?utm_source=instagram&utm_medium=bio |
 | Instagram bio, German | https://www.subtrimio.com/de?utm_source=instagram&utm_medium=bio |
 | TikTok bio, English | https://www.subtrimio.com/?utm_source=tiktok&utm_medium=bio |
@@ -57,6 +58,13 @@ On YouTube the FIRST channel link is the one shown on the channel header and
 the one a Shorts viewer reaches in two taps, so it is the Play link: the app is
 Android only and the website would add a hop before the install. Its campaign
 is `channel`, not a month, because a channel link stays up for months.
+
+The Instagram bio follows the same reasoning (added 2026-11-16): the Play link
+is the one to use, campaign `profile` for the same reason. Play Console then
+counts bio taps as store listing visitors and installs by source. The two
+website rows stay for a second bio link: they are counted only in PostHog,
+because the site's own Play buttons carry no referrer, so an install that went
+through the site arrives in Play Console untagged.
 
 ## 3. Cancellation guides ("how to cancel X" content)
 

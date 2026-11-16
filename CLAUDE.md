@@ -2283,6 +2283,11 @@ last one left off without needing a recap typed out.
   those is read, the "5+ link taps" bar below cannot be measured.
   THE BIO LINK IS LINKTREE (`linktr.ee/trimio.SubscriptionTracker`), not the
   tagged site link in `marketing-links.md`, so no visit from it is attributed.
+  THE FIX SENT TO THE OWNER, 2026-11-16: the tagged PLAY link, campaign
+  `profile` (now the first Instagram bio row in `marketing-links.md`), so
+  Play Console counts bio taps and installs by source. Not the tagged website
+  link, which PostHog counts but Play Console cannot: the site's Play buttons
+  carry no referrer. Whether the owner swapped it is not yet known.
   FOUR CAPTIONS MAKE CLAIMS THE APP DOES NOT BACK, found the same day: "The only
   thing you connect is your inbox" (2026-11-02; nothing is connected, emails are
   pasted); "Trimio watches the number ... warns you before the new amount is
@@ -2594,6 +2599,13 @@ last one left off without needing a recap typed out.
   the cut goes from the Delete tap to the card, whose text says "marked as
   cancelled". Proposed caption and YouTube title ("He finally cancelled the
   gym") are on the page; post two or three days after Part 1.
+  THE OWNER SAID INSTAGRAM, TOMORROW, 2026-11-16 ("About the video for
+  Instagram, should be post tomorrow!"), after the caption above was shown:
+  so Part 2 goes to Instagram on 2026-11-17 with that caption,
+  `isAiGenerated: true`, regular Reel, the sharpened file. vidIQ cannot
+  schedule a post, and nothing scheduled is created without asking, so it
+  is posted when the owner opens the session that day or on a one-time
+  `send_later` they say yes to.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
@@ -6194,6 +6206,14 @@ last one left off without needing a recap typed out.
   NOT PRESSURE TESTED WITH SUBAGENTS, which superpowers' writing-skills asks
   for: this session starts none unless asked. Its failing tests are the real
   failures above, recorded before it was written.
+  THE THIRTEEN PLAYBOOKS CAME BACK THE SAME DAY, AS READING, at the owner's
+  word ("use the one you need in the moment you need, so they are in peace
+  with each other"). They are in `.claude/skills/trimio-social/references/ig/`,
+  byte for byte from upstream, and trimio-social's table says which one to
+  open for which job. Not reinstalled as skills: side by side they all claim
+  the same tasks and put thirteen descriptions into every session, and the
+  container copies vanished with the container anyway. The README beside
+  them maps their script paths and lists where Trimio's rules win.
   FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
   Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
   Tracker" (29 of 30); the owner's call, not changed.

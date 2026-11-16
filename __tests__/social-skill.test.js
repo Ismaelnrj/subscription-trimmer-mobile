@@ -80,6 +80,16 @@ describe("trimio-social: provenance and the posting gate", () => {
     expect(skill).toMatch(/naming the platform/);
   });
 
+  it("routes to playbooks that exist, with the rules that win over them", () => {
+    const skill = read("SKILL.md");
+    const named = [...skill.matchAll(/`(references\/ig\/[a-z-]+\.md)`/g)].map((m) => m[1]);
+    expect(new Set(named).size).toBe(13); // one row per upstream playbook
+    for (const rel of named) expect(fs.existsSync(path.join(SKILL, rel))).toBe(true);
+    const readme = read("references/ig/README.md");
+    expect(readme).toMatch(/## Where Trimio's rules win/);
+    expect(readme).toMatch(/check_copy\.py/);
+  });
+
   it("is listed in CLAUDE.md's skill table", () => {
     const claude = fs.readFileSync(path.join(__dirname, "..", "CLAUDE.md"), "utf8");
     expect(claude).toMatch(/\| `trimio-social` \|/);

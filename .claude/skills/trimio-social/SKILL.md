@@ -85,6 +85,30 @@ Origin and local changes: `scripts/UPSTREAM.md`.
 
 Carousels, stories, comments, replies and DMs: `references/formats.md`.
 
+## The thirteen Instagram playbooks, one at a time
+
+The instagram-agent-skill playbooks are in `references/ig/`, unchanged from
+upstream. Open the one the task needs, when it needs it, after this file: this
+file holds the gate and Trimio's rules, the playbook holds the craft. Where
+they differ, `references/ig/README.md` lists what wins and where their scripts
+are.
+
+| The task | Open |
+|---|---|
+| A reel or Short: hooks, script, on screen text, timing | `references/ig/ig-reel.md` |
+| A caption, hashtags, search terms | `references/ig/ig-caption.md` |
+| Making an English draft sound like a person | `references/ig/ig-human.md` |
+| A carousel | `references/ig/ig-carousel.md` |
+| Stories and stickers | `references/ig/ig-story.md` |
+| Replies under Trimio's own posts | `references/ig/ig-reply.md` |
+| A comment on another account's post | `references/ig/ig-comment.md` |
+| A DM to someone who engaged | `references/ig/ig-dm.md` |
+| The profile: name field, bio, link, pinned posts | `references/ig/ig-profile.md` |
+| What to post this week | `references/ig/ig-plan.md` |
+| Cutting one long video into several posts | `references/ig/ig-repurpose.md` |
+| What works in the niche right now | `references/ig/ig-viral.md` |
+| What worked on Trimio's own account | `references/ig/ig-audit.md` |
+
 ## Reading results
 
 - **Against the account's own median**, never raw views: the reel median was

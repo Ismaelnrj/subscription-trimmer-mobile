@@ -53,14 +53,17 @@ format here: nothing goes out without the owner's yes, naming the platform.
 - The name field (30 characters, bold, searched by Instagram) read "Ismael"
   on 2026-11-16. Searched words do the work there, for example
   "Trimio | Subscription Tracker" (29). The owner's call.
-- The bio link is Linktree, so visits from it are not attributed. A tagged
-  link from `marketing-links.md` would let Play Console count them.
+- The bio link was Linktree, so nothing counted a tap on it. The tagged Play
+  link (`marketing-links.md`, Instagram bio, Play) lets Play Console count
+  store visits and installs from the bio. The tagged website link is counted
+  only in PostHog: the site's Play buttons carry no referrer, so an install
+  that went through the site shows in Play Console untagged.
 - Pin three posts with three jobs: the best proof, the clearest "what it
   does", and a cancellation guide.
 
 ## A week
 
-Upstream suggests four to five posts and 20 minutes of commenting a day. That
+Upstream suggests four to five posts a week and 20 minutes of commenting a day. That
 is a full time cadence for a solo owner; treat it as a ceiling, not a target,
 and measure against the success bars in `../SKILL.md` before adding volume.
 

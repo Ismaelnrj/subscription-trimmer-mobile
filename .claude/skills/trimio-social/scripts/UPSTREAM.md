@@ -44,3 +44,9 @@ vidIQ's outlier tools answer the same question. The thirteen upstream
 `SKILL.md` files are not copied: what applies to Trimio is folded into
 `../SKILL.md` and `../references/formats.md`, rewritten around Trimio's rules,
 so there is one skill and nothing to disagree with it.
+
+The thirteen upstream `SKILL.md` files were added back on 2026-11-16, at the
+owner's request to use each one when it is needed, as reading rather than as
+skills: `../references/ig/`, byte for byte, with `ig-profile`'s `rubric.json`.
+`../references/ig/README.md` says why, maps their script paths to this folder
+and lists where Trimio's rules win.
