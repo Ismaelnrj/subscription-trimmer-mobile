@@ -328,6 +328,7 @@ a loaded skill does not.
 | `code-review` | a second pass on a diff that is about to merge |
 | `security-review` | an audit of a branch, as its own pass |
 | `dataviz` | the Stats split bar or any chart |
+| `trimio-social` | any Instagram or YouTube post, reel script, caption, comment, reply or DM, any vidIQ publish call, and any generated image or video meant for a post |
 
 THE REST DO NOT APPLY HERE. xlsx, pptx, docx, pdf, morning, keybindings and the
 artifact skills have nothing to do with this repo, and reaching for one is a
@@ -2526,6 +2527,12 @@ last one left off without needing a recap typed out.
   Instagram post, so taking it down is the owner's, in the Instagram app;
   recommended: delete it and post it again once both parts are public on
   YouTube, since an archived reel restored later keeps its old date.
+  THAT RECOMMENDATION IS WITHDRAWN: THE REEL STAYS, the owner's call on
+  2026-11-16 ("why would I need to delete the number 1 in Instagram? Has
+  already have +130 views!"). Read off owner insights the same evening: 132
+  views, 112 reached, 3 likes, 0 comments, 0 shares, 0 saves, skip rate
+  45.7% (the account's lowest yet; the baseline ran 57 to 87%), average watch
+  7.9 s of 27. The order below now applies from Part 2 on.
   YOUTUBE FIRST, THEN INSTAGRAM is the owner's order for this series: both
   parts public on YouTube before either goes to Instagram. And a go-ahead
   that names no platform is not one: ask which platform before posting.
@@ -2557,12 +2564,14 @@ last one left off without needing a recap typed out.
   CUTTING, not after: face crops of every take against Part 1, including
   Part 1's own turned pose (take B at 1.5 s) for the shots where he turns to
   her; same man throughout. Part 2 cost 132 credits in all (78 rejected, 54
-  kept). YOUTUBE DRAFT READY, NOTHING PUBLISHED: vidIQ draft
-  `4f6f534e-2626-45a3-b15c-6725a51a181a` (revision `b013254f`), @gettrimio,
-  private, Howto & Style, title "He finally cancelled the gym", the
-  sharpened file (upload `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7`), waiting
-  for the owner's yes; then the owner sets "Uso de IA" and makes it public,
-  as with Part 1. Built by `tools/reels/story/record-cancel.js` and
+  kept). ON YOUTUBE, PRIVATE, 2026-11-16, on the owner's "yes for YouTube":
+  vidIQ draft `4f6f534e-2626-45a3-b15c-6725a51a181a` (revision `b013254f`)
+  published to @gettrimio, status completed,
+  https://www.youtube.com/watch?v=bP9n0L-1_Us, Howto & Style, title "He
+  finally cancelled the gym", the sharpened file (upload
+  `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7`). NEXT IS THE OWNER'S: set "Uso de
+  IA" to Sí and make it public, as with Part 1. NOT ON INSTAGRAM, and not
+  until the owner says so naming Instagram. Built by `tools/reels/story/record-cancel.js` and
   `assemble-part2.py`; README items 15 to 19. THE DIALOG IS NOT IN THE
   FOOTAGE: the web preview cannot draw Android's "I cancelled it" dialog, so
   the cut goes from the Delete tap to the card, whose text says "marked as
@@ -6147,6 +6156,30 @@ last one left off without needing a recap typed out.
   would only throw away the reading. Its third step, a first win within five
   minutes, is the first-run card. Do not reopen pricing from a reel; bring
   `trial.paid` from `/api/admin/funnel`.
+  MERGED INTO ONE REPO SKILL THE SAME DAY, `.claude/skills/trimio-social`, at
+  the owner's request ("make it in order to avoid fighting with each other
+  ... or create a new one with those skills"). The thirteen container copies
+  were MOVED OUT of `~/.claude/skills` (not deleted; the clone at
+  `/home/user/jakeschincariol/instagram-agent-skill` is the source), so only
+  one skill answers a social task. What it carries: the posting gate (owner's
+  yes naming the platform, YouTube first for a series, @gettrimio only,
+  `isAiGenerated`, the draft never to publish), what a post may show and
+  claim, the caption rules, and five vendored tools with their measured
+  limits; `references/formats.md` adapts carousel, story, comments, replies,
+  DMs, profile and audit. `scripts/UPSTREAM.md` records every local change.
+  THE CAPTION LINTER WAS ENGLISH SHAPED TOO, found while merging: `#kündigen`
+  read as `#k` and "Link im Profil" counted as no ask; both fixed in the
+  vendored copy. Its "hook is concrete" check counts capitalised words, so it
+  means nothing in German, and the skill says so.
+  `__tests__/social-skill.test.js` fails if a newer upstream file is copied
+  over a changed one, and if the gate's channel id, account id, AI label or
+  forbidden draft id is trimmed out of SKILL.md. `trimio-design` points to it.
+  NOT PRESSURE TESTED WITH SUBAGENTS, which superpowers' writing-skills asks
+  for: this session starts none unless asked. Its failing tests are the real
+  failures above, recorded before it was written.
+  FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
+  Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
+  Tracker" (29 of 30); the owner's call, not changed.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than

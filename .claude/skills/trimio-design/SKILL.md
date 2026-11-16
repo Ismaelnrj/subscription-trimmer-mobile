@@ -466,6 +466,15 @@ That compares key names **and** the `{{...}}` tokens inside each value.
 4. Check the mark: a chevron pointing right, inner edge a V, outer edge a
    circular arc, with a mint triangle nesting into the V.
 
+## Instagram and YouTube posts
+
+Load `trimio-social` as well for anything posted: it holds the posting gate,
+what a post may claim, and the caption tools. This skill's `check_copy.py`
+still runs on every caption, in both languages. Its humanizer is English only
+and its data was changed so it no longer strips the no-break space in
+"15,99 €", the "…" or German „…“ quotes; never run an unchanged upstream copy
+on Trimio text.
+
 ## When a rule here conflicts with what looks good
 
 Say so plainly and give the measured numbers, then offer the nearest option
