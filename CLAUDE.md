@@ -6119,6 +6119,34 @@ last one left off without needing a recap typed out.
   actions, low); deleting and re-registering an address earns a new 14 day
   trial (same reasoning as referral abuse); and a deleted account's old Brevo
   contact keeps its attributes, which only the owner can delete in Brevo.
+- THE INSTAGRAM SKILL PACK, 2026-11-16, at the owner's request:
+  Jakeschincariol/instagram-agent-skill at `d03c56bb`, MIT, thirteen `ig-*`
+  skills plus five Python tools. Read in full first: standard library only, no
+  network, nothing posts (every skill ends with "you post it"). INSTALLED IN THE
+  CLOUD CONTAINER ONLY (`~/.claude/skills/ig-*`), so it vanishes with it;
+  nothing is in the repo. MEASURED ON TRIMIO'S OWN COPY before trusting it:
+  the humanizer (`ig-human`) deleted the no-break space in "15,99 €", turned
+  "…" into "...", broke the German „…“ quote pair and called five hashtags a
+  wall (with a LinkedIn message). Only its `slop.json` was edited to stop
+  that, recorded in `ig-human/TRIMIO-LOCAL-CHANGES.md` beside it; after the
+  edit the one change it makes to German copy is a clause dash to a comma.
+  THE SCORERS READ ENGLISH ONLY ([A-Za-z] word patterns): never run
+  hookscore, beats or swipe on German copy. WHAT HELPED: `caption.py` found
+  that the live Part 1 caption carries neither "subscription tracker" nor
+  "cancel subscriptions", the phrases Instagram search reads. WHAT DID NOT:
+  `hookscore.py` ranked "One question decides it." LAST of six (27.6 WEAK),
+  and that is the account's best feed reel (150 views, median 22). One point,
+  but the author's own measurement says the same (AUC 0.56 at picking
+  winners): use it to catch a greeting or a preamble, never to choose.
+  THE PDF SENT WITH IT, a transcript of an @getripping reel ("if you're giving
+  out a free trial in 2026, you might as well be lighting money on fire"), was
+  read and NOT ADOPTED. Its premise is per user AI compute, and Trimio's trial
+  costs nothing per user (no model is called anywhere). The reverse trial's
+  own fallback already is its advice (hard paywall with a priced Play trial if
+  none of the next 30 trial accounts pays within 30 days), so switching now
+  would only throw away the reading. Its third step, a first win within five
+  minutes, is the first-run card. Do not reopen pricing from a reel; bring
+  `trial.paid` from `/api/admin/funnel`.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
