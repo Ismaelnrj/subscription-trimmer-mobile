@@ -2574,9 +2574,21 @@ last one left off without needing a recap typed out.
   published to @gettrimio, status completed,
   https://www.youtube.com/watch?v=bP9n0L-1_Us, Howto & Style, title "He
   finally cancelled the gym", the sharpened file (upload
-  `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7`). NEXT IS THE OWNER'S: set "Uso de
-  IA" to Sí and make it public, as with Part 1. NOT ON INSTAGRAM, and not
-  until the owner says so naming Instagram. Built by `tools/reels/story/record-cancel.js` and
+  `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7`). PUBLIC SINCE 2026-11-16T18:39:02Z,
+  read off `vidiq_get_videos_by_ids`; "Uso de IA" set to Sí (owner's report,
+  the API does not expose it). So both parts are public on YouTube, which is
+  the owner's condition for Instagram. NOT ON INSTAGRAM YET, and not until
+  the owner says so naming Instagram. The caption proposed for it, passing
+  `caption.py` (READY, one ask, the search phrase in the feed window) and
+  `check_copy.py`:
+  Part 2: he actually cancelled the gym.
+  Trimio is a subscription tracker: mark one as cancelled and it shows what you keep in a year.
+  Part 1 is on our profile. Free on Google Play, link in bio.
+  #subscriptions #personalfinance #budgeting #savemoney #moneytips
+  The question Part 1 asked ("What's your number?") is dropped: it drew 0
+  comments, and two asks is none. Recommended timing: two to three days
+  after Part 1's Instagram post (2026-11-16T14:10Z), so the two do not
+  compete for the same viewers. Built by `tools/reels/story/record-cancel.js` and
   `assemble-part2.py`; README items 15 to 19. THE DIALOG IS NOT IN THE
   FOOTAGE: the web preview cannot draw Android's "I cancelled it" dialog, so
   the cut goes from the Delete tap to the card, whose text says "marked as
