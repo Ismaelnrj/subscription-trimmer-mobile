@@ -52,8 +52,8 @@ something the app does not do.
 | Post | Title or first line | Phrases | State |
 |---|---|---|---|
 | Amazon Prime Short | How to cancel Amazon Prime membership in 4 steps | how to cancel amazon prime membership | live |
-| Story reel Part 1 | Forgotten subscriptions: "We only pay for Netflix" | forgotten subscriptions, subscription audit | proposed 2026-11-16 |
-| Story reel Part 2 | Gym membership a waste of money? He finally cancelled it | why gym memberships are a waste of money, cancel subscriptions | proposed 2026-11-16 |
+| Story reel Part 1 | Forgotten subscriptions: "We only pay for Netflix" | forgotten subscriptions, subscription audit | YouTube live 2026-11-16; Instagram caption with the owner to paste |
+| Story reel Part 2 | Gym membership a waste of money? He finally cancelled it | why gym memberships are a waste of money, cancel subscriptions | YouTube live 2026-11-16; Instagram caption goes out with the scheduled post, 2026-11-17 |
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.

@@ -2622,6 +2622,14 @@ last one left off without needing a recap typed out.
   man), publish with the caption above and `isAiGenerated: true`, send ONE
   push notification with the link or the error, and record it here. It
   disables itself after firing. NOT YET FIRED.
+  ITS CAPTION WAS REPLACED THE SAME EVENING, on the owner's "Yes ! Update
+  it." to the keyword based rewrite: `update_trigger` swapped only the
+  caption, time unchanged, and its answer was read back. The caption above
+  is superseded; the scheduled post now carries this one verbatim:
+  Part 2: was his gym membership a waste of money? He finally cancelled it.
+  Cancel subscriptions you don't use and see what you keep. Trimio is a subscription tracker: mark one as cancelled and it shows the yearly amount. Here it was €358.80 a year.
+  Part 1 is on our profile. Free on Google Play, link in bio.
+  #cancelsubscriptions #gymmembership #subscriptions #personalfinance #savemoney
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
@@ -6237,7 +6245,19 @@ last one left off without needing a recap typed out.
   floor; the winnable ones with real volume are "forgotten subscriptions",
   "subscription audit", "cancel subscriptions" and "why gym memberships are a
   waste of money". New titles for both story reel Shorts and a new Part 2
-  Instagram caption were PROPOSED the same day, waiting on the owner's yes.
+  Instagram caption were proposed the same day and APPROVED ("Yes ! Update
+  it."). BOTH SHORTS ARE RETITLED, read back off `vidiq_get_videos_by_ids`:
+  `g4iHBnntRrM` is now `Forgotten subscriptions: "We only pay for Netflix"`
+  and `bP9n0L-1_Us` is `Gym membership a waste of money? He finally
+  cancelled it`, descriptions and tags rewritten to match (10 vidIQ
+  credits). The Part 2 caption rides the scheduled post above. THE PART 1
+  INSTAGRAM CAPTION IS THE OWNER'S TO PASTE (no tool here edits a live
+  caption), approved as:
+  "We only pay for Netflix." Then she counted the forgotten subscriptions.
+  A quick subscription audit: list every subscription you pay for, and Trimio, a subscription tracker, adds up what they cost in a year. Theirs came to over €1,000.
+  Free on Google Play, link in bio.
+  #forgottensubscriptions #subscriptiontracker #subscriptions #personalfinance #savemoney
+  Not yet confirmed pasted; read it off the post before calling it live.
   FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
   Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
   Tracker" (29 of 30); the owner's call, not changed.
