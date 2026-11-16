@@ -247,3 +247,13 @@ python3 tools/brand-video.py build/part2-captioned.mp4 --out build/part2-en.mp4 
     leans forward or ducks his head"), and before cutting, put face crops of
     every new take beside the previous reel's on one sheet and look. Take A
     to take B kept him because his face never left the frame.
+    THE REDO WORKED (2026-11-16, ext1 `b9ac2713-...`, ext2 `7e6a14bd-...`, 54
+    credits): that direction plus his description from take A ("early
+    thirties, short brown beard, slightly messy short brown hair, friendly
+    round face, grey hoodie") kept him in every frame. When a new shot turns
+    a face, compare it against the SAME pose in the earlier reel (take B
+    turns to her at 1.5 s), not against a frontal frame: a three-quarter
+    view reads narrower on anybody. Check words with Whisper base.en
+    (`sherpa-onnx-whisper-base.en`, same GitHub release as tiny.en, 208 MB):
+    tiny.en heard "Thank you" in a phone rustle and in a small laugh, base.en
+    heard neither, and its whole-take transcripts matched the script exactly.

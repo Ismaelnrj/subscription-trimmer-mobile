@@ -2511,37 +2511,42 @@ last one left off without needing a recap typed out.
   only pay for Netflix" and dropped "Then she counted." from the description.
   "Uso de IA" = Sí is NOT confirmed (the owner did not say, and the API does
   not expose it).
-  INSTAGRAM: NOT POSTED, held for 2026-11-16 at the owner's word ("Instagram
-  leave it for tomorrow"). Everything is approved: account
-  29062187126774065, regular Reel, `isAiGenerated: true`, this caption
-  verbatim:
+  INSTAGRAM: POSTED 2026-11-16 on the owner's "the Instagram video, you can
+  post it": https://www.instagram.com/reel/DfziBqkk5Zq/ (media
+  `17940363324127181`), PUBLISHED per `vidiq_instagram_publish_reel`. The
+  owner named no file, so the FREE SHARPENED one went up, as the review page
+  recommended (same cut frame for frame; vidIQ upload
+  `39e722d0-693d-4b5d-9c82-25c22f154a1d`), not the draft quality upload
+  below. So Instagram carries the sharpened picture and YouTube the draft.
+  Account 29062187126774065, regular Reel, `isAiGenerated: true`, this
+  caption verbatim:
   "We only pay for Netflix." Then she counted.
   Trimio adds up every subscription you track, shows what they cost you in a year and reminds you before each one renews. What's your number?
   Free on Google Play, link in bio.
   #subscriptions #personalfinance #budgeting #savemoney #moneytips
-  The video is vidIQ upload `b9766023-8c3d-46d7-8c93-d2071bc2a643` (its
-  signed URL runs to about 2026-11-22; `vidiq_video_upload` with that
-  uploadId refreshes it). Post with `vidiq_instagram_publish_reel` (the
-  draft tool cannot set the AI label), when the owner says so. NOTHING IS
-  SCHEDULED to do it: offered a one time task, and the owner declined ("no,
-  I'll tell you tomorrow").
+  The draft quality upload, `b9766023-8c3d-46d7-8c93-d2071bc2a643`, was
+  NOT used. Post with `vidiq_instagram_publish_reel` (the draft tool cannot
+  set the AI label). Nothing was scheduled to post it.
 - PART 2 OF THE STORY REEL, "he cancels the gym", 2026-11-15, at the owner's
   request ("do the third video as well"). NOT APPROVED, NOT POSTED: on the
   review page (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) waiting for
-  the owner's yes. 19.4 s, English. It continues the sofa scene with two
-  Seedance forward extensions of take B, meant to keep the same couple and
-  voices. HIS FACE DID NOT CARRY OVER, the owner's catch on 2026-11-16: in
-  ext1 he slumps forward, his head leaves the frame at 0.4 s, and he comes
-  back a different man (README item 20), so this version is NOT POSTABLE.
-  Fix offered: redo both extensions from take B with his face kept in view,
-  about 54 credits as drafts, waiting on the owner's yes. ext1
-  `5f19b2c5-111d-4cdc-a04e-6099e675de6f` ("Fine. I'm cancelling the gym." /
-  "You won't." / "Give me the phone."), ext2
-  `181635ad-7313-4602-a1e6-7de30857b901` ("359 euros?" / "A year." / "So...
+  the owner's yes. 19.5 s, English. It continues the sofa scene with two
+  Seedance forward extensions of take B. THE FIRST VERSION GAVE HIM A NEW
+  FACE, the owner's catch on 2026-11-16 ("is another man, shouldn't be the
+  same man?"): in ext1 `5f19b2c5-...` his head left the frame at 0.4 s and
+  came back as somebody else (README item 20), and ext2 `181635ad-...` (and
+  the scowling `bc514b40-...` before it) inherited him. REDONE THE SAME DAY
+  at the owner's yes ("Should be the same. Consistency."), 54 credits, with
+  him directed upright and his face in view: ext1
+  `b9ac2713-2498-4253-b452-ae51aec3edf0` ("Fine. I'm cancelling the gym." /
+  "You won't." / "Give me the phone." / "Done.") and ext2
+  `7e6a14bd-61a1-4996-aeea-9eb714f72a01` ("359 euros?" / "A year." / "So...
   Lisbon?" / "Lisbon."), with the real app between (Gym, Delete, the card
-  "Gym marked as cancelled, €358.80 a year you keep"). 78 credits: 30, 24 and
-  a 24 retake (the first ext2, `bc514b40-...`, scowled and looked into the
-  camera). Built by `tools/reels/story/record-cancel.js` and
+  "Gym marked as cancelled, €358.80 a year you keep"). CHECKED BEFORE
+  CUTTING, not after: face crops of every take against Part 1, including
+  Part 1's own turned pose (take B at 1.5 s) for the shots where he turns to
+  her; same man throughout. Part 2 cost 132 credits in all (78 rejected, 54
+  kept). Built by `tools/reels/story/record-cancel.js` and
   `assemble-part2.py`; README items 15 to 19. THE DIALOG IS NOT IN THE
   FOOTAGE: the web preview cannot draw Android's "I cancelled it" dialog, so
   the cut goes from the Delete tap to the card, whose text says "marked as

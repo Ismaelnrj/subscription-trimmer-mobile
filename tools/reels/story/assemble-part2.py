@@ -5,23 +5,28 @@
 
 ext1 and ext2 are Seedance 2.5 forward extensions of the story reel's take B
 (2328bdcc), so the same couple, room and voices carry over: ext1
-`5f19b2c5-111d-4cdc-a04e-6099e675de6f` (10 s, 30 credits) and ext2
-`181635ad-7313-4602-a1e6-7de30857b901` (8 s, 24 credits, extending ext1). A first
-ext2 (`bc514b40-...`) was thrown away: she scowled and said "Lisbon?" into the
-camera. The cut points and caption times below were measured from THESE takes'
-audio (speech.py energy and pitch, then Whisper tiny.en through sherpa-onnx).
+`b9ac2713-2498-4253-b452-ae51aec3edf0` (10 s, 30 credits) and ext2
+`7e6a14bd-61a1-4996-aeea-9eb714f72a01` (8 s, 24 credits, extending ext1), made
+2026-11-16 with his face kept in view the whole time (README item 20).
+THE FIRST VERSION WAS REJECTED by the owner because he came back a different
+man: ext1 `5f19b2c5-...` let his head drop out of shot at 0.4 s, and ext2
+`181635ad-...` (and the scowling `bc514b40-...` before it) inherited him. The
+cut points and caption times below were measured from THESE takes' audio
+(50 ms energy, then Whisper base.en through sherpa-onnx, which hears the two
+non-word sounds as non-words where tiny.en heard "Thank you").
 
-  picture  ext1 1.1-7.0 | the real app (Gym, Delete, "I cancelled it", the card) | ext2 2.6-7.8, held
-  sound    ext1 1.1-7.0 | room tone | ext1 9.4-10.0 ("Done.") then ext2 0-7.8
+  picture  ext1 0.9-7.0 | the real app (Gym, Delete, "I cancelled it", the card) | ext2 2.0-7.8, held
+  sound    ext1 0.9-7.0 | room tone | ext1 9.4-10.0 ("Done.") then ext2 0-7.8
 
 The sound runs ahead of the picture: "Done." lands as the card appears and her
-"359 euros?" plays over the card, so the picture returns to the sofa on "A
-year." That hides her frown on the line, which even the retake kept.
+"359 euros?" plays over the card, so the card stays up for 2.45 s and the
+picture returns to the sofa just as he says "A year."
 
-ext1 opens on the tail of take B's jaw drop (him slumping forward), so the reel
-starts at 1.1 s, once he has sat up. Between 7.0 and 9.4 he says "Done." too
-early, so that stretch is never used. ext2 opens with a stray "Yeah." under the
-card, muted. Room tone is a quiet second of ext1, joined with 0.15 s fades.
+ext1 starts with him already upright; the reel opens at 0.9 s, half a second
+before "Fine.". Between 7.0 and 9.4 nothing is said (the phone changing hands
+at 6.7 is a rustle, not a word), so that stretch is never used. ext2 opens
+with a short non-word sound under the card, muted. Room tone is a quiet second
+of ext1, joined with 0.15 s fades.
 """
 import json, pathlib, subprocess, sys
 from importlib import import_module
@@ -37,12 +42,12 @@ EXT1, EXT2, APP, OUT = (pathlib.Path(x) for x in sys.argv[1:])
 OUT.mkdir(parents=True, exist_ok=True)
 W, H = 1080, 1920
 
-A_IN, A_OUT = 1.1, 7.0          # from him sitting up to the phone in his hand
+A_IN, A_OUT = 0.9, 7.0          # from just before "Fine." to the phone in his hand
 APP_IN, CARD_AT = 0.6, 2.6      # app: just before the "..." tap; the card is up from 2.6 s
 B_IN, EXT1_END = 9.4, 10.0      # sound: ext1's last 0.6 s carry "Done." (at 9.65)
-PIC_BACK = 2.6                  # picture back on the sofa at ext2 2.6 s, before "A year."
+PIC_BACK = 2.0                  # picture back on the sofa at ext2 2.0 s, just before "A year."
 B2_END, FREEZE = 7.8, 0.6       # ext2: end on them smiling at each other, then hold
-MUTE = (0.35, 0.9)              # ext2's stray "Yeah." under the card
+MUTE = (0.25, 0.6)              # ext2's short non-word sound under the card
 TONE = (8.0, 9.0)               # a quiet second of ext1, looped as room tone
 DONE_AT = 9.65                  # "Done." starts 0.1 s after the card appears
 
@@ -55,13 +60,13 @@ B_OFF = A_OUT - A_IN + TONE_LEN - B_IN     # output time of B's t = 0 (B time: e
 
 # who: M left, F right. Times are ext1 seconds ('A') or B time ('B').
 LINES = [
-    ('A', 'M', 1.6, 3.3, "Fine. I'm cancelling the gym."),
-    ('A', 'F', 3.3, 4.25, "You won't."),
-    ('A', 'M', 4.25, 5.4, 'Give me the phone.'),
+    ('A', 'M', 1.4, 3.5, "Fine. I'm cancelling the gym."),
+    ('A', 'F', 3.65, 4.55, "You won't."),
+    ('A', 'M', 4.6, 5.75, 'Give me the phone.'),
     ('B', 'M', 9.6, 10.5, 'Done.'),
-    ('B', 'F', 10.95, 12.4, '359 euros?'),
-    ('B', 'M', 12.95, 13.85, 'A year.'),
-    ('B', 'F', 14.75, 16.2, 'So… Lisbon?'),
+    ('B', 'F', 10.6, 12.05, '359 euros?'),
+    ('B', 'M', 12.1, 13.1, 'A year.'),
+    ('B', 'F', 14.55, 16.1, 'So… Lisbon?'),
     ('B', 'M', 16.75, 17.75, 'Lisbon.'),
 ]
 MAX_CPS, MIN_DUR = 17.5, 0.9
