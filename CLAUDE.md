@@ -2518,6 +2518,17 @@ last one left off without needing a recap typed out.
   recommended (same cut frame for frame; vidIQ upload
   `39e722d0-693d-4b5d-9c82-25c22f154a1d`), not the draft quality upload
   below. So Instagram carries the sharpened picture and YouTube the draft.
+  THAT POST WAS A MISREAD: the owner answered "The two should be on YouTube
+  first. In Instagram not yet!" The "you can post it" named no platform and
+  was read as Instagram. At that point the reel had 22 views and 1 like, and
+  its live caption no longer carried "Then she counted." (edited after
+  posting; by whom is not known). NO TOOL HERE DELETES OR ARCHIVES an
+  Instagram post, so taking it down is the owner's, in the Instagram app;
+  recommended: delete it and post it again once both parts are public on
+  YouTube, since an archived reel restored later keeps its old date.
+  YOUTUBE FIRST, THEN INSTAGRAM is the owner's order for this series: both
+  parts public on YouTube before either goes to Instagram. And a go-ahead
+  that names no platform is not one: ask which platform before posting.
   Account 29062187126774065, regular Reel, `isAiGenerated: true`, this
   caption verbatim:
   "We only pay for Netflix." Then she counted.
@@ -2546,7 +2557,12 @@ last one left off without needing a recap typed out.
   CUTTING, not after: face crops of every take against Part 1, including
   Part 1's own turned pose (take B at 1.5 s) for the shots where he turns to
   her; same man throughout. Part 2 cost 132 credits in all (78 rejected, 54
-  kept). Built by `tools/reels/story/record-cancel.js` and
+  kept). YOUTUBE DRAFT READY, NOTHING PUBLISHED: vidIQ draft
+  `4f6f534e-2626-45a3-b15c-6725a51a181a` (revision `b013254f`), @gettrimio,
+  private, Howto & Style, title "He finally cancelled the gym", the
+  sharpened file (upload `9638ee4e-c7c8-4fa1-98be-d60ea4c03ab7`), waiting
+  for the owner's yes; then the owner sets "Uso de IA" and makes it public,
+  as with Part 1. Built by `tools/reels/story/record-cancel.js` and
   `assemble-part2.py`; README items 15 to 19. THE DIALOG IS NOT IN THE
   FOOTAGE: the web preview cannot draw Android's "I cancelled it" dialog, so
   the cut goes from the Delete tap to the card, whose text says "marked as
