@@ -47,6 +47,22 @@ apply to posts exactly as they apply to the app.
   example "Netflix wird in 3 Tagen verlängert".
 - **Prices** are catalogue prices with a `verified` date, or the person's own.
 
+## Titles and captions start from keywords
+
+The owner's rule, 2026-11-16: search for keywords that actually work BEFORE
+writing a title. So, in order:
+
+1. Read `references/keywords.md`. If the post is about something it does not
+   cover, run `vidiq_keyword_research` (research mode, then `questions`) and
+   add what you measured to that file.
+2. Pick one phrase with real volume (not vidIQ's `<750` floor) and
+   competition under about 50 that the video truly shows. Never a phrase that
+   claims what the app does not do.
+3. Put it in the YouTube title and in the caption's first line, worded the
+   way a person types it, then the story hook beside it.
+4. Two or three supporting phrases go in the body, the YouTube tags and up to
+   five hashtags.
+
 ## Captions
 
 - Run `check_copy.py` from `trimio-design` on every caption: no dash as clause

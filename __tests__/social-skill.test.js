@@ -90,6 +90,15 @@ describe("trimio-social: provenance and the posting gate", () => {
     expect(readme).toMatch(/check_copy\.py/);
   });
 
+  it("starts titles from measured keywords", () => {
+    const skill = read("SKILL.md");
+    expect(skill).toMatch(/## Titles and captions start from keywords/);
+    expect(skill).toContain("references/keywords.md");
+    const kw = read("references/keywords.md");
+    expect(kw).toMatch(/vidiq_keyword_research/);
+    expect(kw).toMatch(/## Searched and winnable/);
+  });
+
   it("is listed in CLAUDE.md's skill table", () => {
     const claude = fs.readFileSync(path.join(__dirname, "..", "CLAUDE.md"), "utf8");
     expect(claude).toMatch(/\| `trimio-social` \|/);

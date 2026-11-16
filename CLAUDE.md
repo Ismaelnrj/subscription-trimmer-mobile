@@ -6230,6 +6230,14 @@ last one left off without needing a recap typed out.
   the same tasks and put thirteen descriptions into every session, and the
   container copies vanished with the container anyway. The README beside
   them maps their script paths and lists where Trimio's rules win.
+  TITLES AND CAPTIONS START FROM KEYWORD RESEARCH, the owner's standing rule
+  of 2026-11-16 ("before create a title, search for keywords that actually
+  works"). `trimio-social` says how, and `references/keywords.md` holds what
+  vidIQ measured that day: most specific phrases sit under vidIQ's `<750`
+  floor; the winnable ones with real volume are "forgotten subscriptions",
+  "subscription audit", "cancel subscriptions" and "why gym memberships are a
+  waste of money". New titles for both story reel Shorts and a new Part 2
+  Instagram caption were PROPOSED the same day, waiting on the owner's yes.
   FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
   Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
   Tracker" (29 of 30); the owner's call, not changed.
