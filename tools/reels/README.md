@@ -134,7 +134,8 @@ and nine lines into one generation.
    10 s, her face from the pilot, him in words) carries one beat; take two
    is `mode: "video_extension"`, `extension_mode: "forward"` on take one
    (`36464a27-c7f6-4582-ab6f-63405d963d98`, 11 s, 33 credits as a draft).
-   The extension keeps the same people, room and voices (his 77 to 127 Hz,
+   The extension keeps the same people (while their faces stay in view, see
+   20), room and voices (his 77 to 127 Hz,
    hers 186 to 222 Hz across both), and the seam measured 1.6/255. It returns
    only the NEW seconds, so the scene is take one then take two, concatenated.
 7. **Direct the acting in plain words**: "understated, natural acting like a
@@ -210,9 +211,9 @@ python3 tools/brand-video.py build/part2-captioned.mp4 --out build/part2-en.mp4 
 
 15. **Extend the last approved take instead of starting a new scene.** Both
     shots are `video_extension` forward: ext1 on take B, ext2 on ext1. Same
-    faces, room and voices at 3 credits a second as a 480p draft, with no
+    room and voices at 3 credits a second as a 480p draft, with no
     reference hunting. A new reel in the same series is a new script, not a
-    new cast.
+    new cast. BUT THE FACE ONLY CARRIES OVER WHILE IT STAYS IN VIEW: see 20.
 16. **"Surprised" comes out as a scowl, and "smile" as a look into the
     camera.** The first ext2 (`bc514b40-...`) had her frowning hard on "359
     euros?" and saying "Lisbon?" straight to camera. The retake asked for
@@ -235,3 +236,14 @@ python3 tools/brand-video.py build/part2-captioned.mp4 --out build/part2-en.mp4 
     Delete tap straight to the card, whose own text says "Gym marked as
     cancelled". Refresh tokens rotate on use: log in again before each
     recording run, or the second run lands on the sign in screen.
+20. **A face that leaves the frame comes back as somebody else.** The owner
+    caught it: Part 2's man is not Part 1's. Measured on frames, not argued:
+    ext1 at 0.0 s is take B's man exactly; at 0.4 s he slumps forward and his
+    head drops out of shot; at 0.9 to 1.4 s he comes back up with a longer,
+    narrower face, a sparser beard and a different hairline, and ext2
+    inherits him. The extension continues pixels, not a person, so once the
+    face is gone it is redrawn. Direct it out ("he stays sitting upright,
+    his face fully visible and facing the camera the whole time, he never
+    leans forward or ducks his head"), and before cutting, put face crops of
+    every new take beside the previous reel's on one sheet and look. Take A
+    to take B kept him because his face never left the frame.

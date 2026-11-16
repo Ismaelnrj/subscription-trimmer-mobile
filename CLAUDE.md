@@ -2529,7 +2529,12 @@ last one left off without needing a recap typed out.
   request ("do the third video as well"). NOT APPROVED, NOT POSTED: on the
   review page (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) waiting for
   the owner's yes. 19.4 s, English. It continues the sofa scene with two
-  Seedance forward extensions of take B, so the same couple and voices: ext1
+  Seedance forward extensions of take B, meant to keep the same couple and
+  voices. HIS FACE DID NOT CARRY OVER, the owner's catch on 2026-11-16: in
+  ext1 he slumps forward, his head leaves the frame at 0.4 s, and he comes
+  back a different man (README item 20), so this version is NOT POSTABLE.
+  Fix offered: redo both extensions from take B with his face kept in view,
+  about 54 credits as drafts, waiting on the owner's yes. ext1
   `5f19b2c5-111d-4cdc-a04e-6099e675de6f` ("Fine. I'm cancelling the gym." /
   "You won't." / "Give me the phone."), ext2
   `181635ad-7313-4602-a1e6-7de30857b901` ("359 euros?" / "A year." / "So...
