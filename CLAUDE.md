@@ -2276,6 +2276,11 @@ last one left off without needing a recap typed out.
   and 5 reach, none above 15. ZERO shares and ZERO saves on all 25. Reel skip
   rates 57 to 87%. Read: reach is real but nothing spreads and nobody taps
   through, so Instagram has not driven installs (Play installs were flat too).
+  CORRECTION, 2026-11-16: "nobody taps through" overreads that 0. Meta's
+  `profile_links_taps` counts the call, email and address buttons, NOT the
+  bio website link, so it says nothing about the Linktree link. Bio clicks
+  are counted only by Linktree itself or by a tagged link; until one of
+  those is read, the "5+ link taps" bar below cannot be measured.
   THE BIO LINK IS LINKTREE (`linktr.ee/trimio.SubscriptionTracker`), not the
   tagged site link in `marketing-links.md`, so no visit from it is attributed.
   FOUR CAPTIONS MAKE CLAIMS THE APP DOES NOT BACK, found the same day: "The only
