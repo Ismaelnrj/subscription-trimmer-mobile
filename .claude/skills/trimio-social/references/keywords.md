@@ -38,6 +38,10 @@ a fresh `vidiq_keyword_research` call, never from a guess.
 | netflix subscription | ~4,800 | 41 | anything showing Netflix |
 | how to cancel amazon prime membership | ~6,500 | not read | the Amazon Prime Short (2026-11-15) |
 | personal finance tips | ~85,000 | 46 | tags and hashtags, too broad for a title |
+| how to cancel youtube premium free trial | ~8,300 | 55 | Part 3 of the story reel (read 2026-11-17); just over the line, but the exact topic |
+| how to cancel youtube premium subscription | ~4,300 | 51 | a YouTube Premium cancel guide post |
+| free trial | ~8,900 | 47 | the trial reminder; a word for the text, too broad for a title |
+| subscription trap | ~24,900 | 47 | a trial that turns into a charge; growing (+94% on vidIQ's reading, 2026-11-17) |
 
 ## Searched but crowded or off topic
 
@@ -54,6 +58,7 @@ something the app does not do.
 | Amazon Prime Short | How to cancel Amazon Prime membership in 4 steps | how to cancel amazon prime membership | live |
 | Story reel Part 1 | Forgotten subscriptions: "We only pay for Netflix" | forgotten subscriptions, subscription audit | YouTube live 2026-11-16; Instagram caption with the owner to paste |
 | Story reel Part 2 | Gym membership a waste of money? He finally cancelled it | why gym memberships are a waste of money, cancel subscriptions | YouTube live 2026-11-16; Instagram live 2026-11-17 (`Df17khHDlNf`) |
+| Story reel Part 3 | Part 3: how to cancel a YouTube Premium free trial before it charges you. | how to cancel youtube premium free trial, free trial, subscription trap | proposed 2026-11-17 |
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.

@@ -257,3 +257,63 @@ python3 tools/brand-video.py build/part2-captioned.mp4 --out build/part2-en.mp4 
     (`sherpa-onnx-whisper-base.en`, same GitHub release as tiny.en, 208 MB):
     tiny.en heard "Thank you" in a phone rustle and in a small laugh, base.en
     heard neither, and its whole-take transcripts matched the script exactly.
+
+### Part 3, "the trial in the kitchen" (2026-11-17)
+
+Same couple, a new place (their kitchen, the next morning), a new script: her
+Trimio says his YouTube Premium trial ends tomorrow, he says cancel it, the
+real app shows the trial card and the cancel steps, and "How did it know?" /
+"I added it when you signed up." keeps the claim honest (Trimio knows what you
+add, nothing more). 81.5 credits, of which 27 were wasted (see 22):
+
+```
+node tools/reels/story/record-trial.js /tmp/rec /tmp/tokens          # fresh tokens first
+node tools/reels/story/stills-part3.js /tmp/stills /tmp/tokens       # fresh tokens again
+python3 tools/reels/story/assemble-part3.py takeA.mp4 takeB.mp4 /tmp/rec/guide-* /tmp/stills build/
+python3 tools/brand-video.py build/part3-captioned.mp4 --out build/part3-en.mp4 --lang en --no-bug
+```
+
+21. **A new place keeps the cast when the references are the series' own.**
+    Start frame: `gpt_image_2_6` (0.5 credits) from uploaded Part 1 stills of
+    both faces, described into the new room; checked side by side against
+    Part 1 before any video. Take A (`60f6142d-...`, 10 s, 30 credits) is
+    `seedance_2_5` `omni_reference` with that start image, the two face stills
+    as `image_references`, and a clip of each of THEIR OWN Part 2 lines as
+    `audio_references`. Measured with speaker embeddings (23): his lines sit
+    at 0.74 to 0.84 against his reference, hers at 0.70 to 0.78 against hers
+    (one near tie, see 23).
+    Item 2's made ElevenLabs voices were a different voice to the one the
+    model already gave him; a clip of the model's own earlier take is not.
+    Take B (`811384b9-...`, 8 s, 24 credits) extends take A forward.
+22. **Pitch cannot tell who spoke a short line.** An autocorrelation pitch
+    check read his "What trial?" and "Cancel it." as a woman's voice (Part 2's
+    "Done." reads 291 Hz the same way), so take A was redone (`A2`, 27
+    credits) for nothing: the redo was worse and take A was right all along.
+    Use 23 instead, and never spend credits on a pitch reading alone.
+23. **Who speaks: speaker embeddings.** `who-speaks.py him.wav her.wav take.mp4
+    s e [s e ...]` scores each span against a reference clip of each voice
+    with WeSpeaker's ResNet34 (`wespeaker_en_voxceleb_resnet34.onnx`, a
+    release asset of k2-fsa/sherpa-onnx under `speaker-recongition-models`,
+    their spelling) through sherpa-onnx. Checked on Part 2's known lines
+    first: all correct. `speech-segments.py take.mp4` splits on silence and
+    transcribes each piece with Whisper base.en, so words and speakers are
+    checked span by span. A margin under about 0.1 is a tie, not an answer:
+    her "Doing it now." scored 0.76 against his 0.73 (and flipped to him on a
+    tighter span), and only the mouths settled it, hers moving and his shut.
+    So look at the faces on any close score.
+24. **Uploading to Higgsfield from a sandbox works with the signed header.**
+    `media_upload`, then `curl -X PUT -H "Content-Type: <type>" -H
+    "If-None-Match: *" --data-binary @file "<url>"`, then `media_confirm`.
+    The header is part of the signature; without it the PUT is refused. An
+    audio slot is `audio/mpeg`, so convert a wav to mp3 first.
+25. **Held app shots come from 3x screenshots, not the recording.** The web
+    preview's screencast delivers 390 px wide frames whatever the scale
+    factor, so only the taps stay a recording; `stills-part3.js` shoots the
+    dashboard and the guide at 1170 px and `assemble-part3.py` pushes in on
+    them slowly, drawn at 2x and reduced so the push never steps a pixel.
+26. **What a post may not show is cut out, never painted over.** YouTube's
+    guide opens with a note naming Apple and the page ends before it can
+    scroll away. So the taps stop one frame before the guide appears and the
+    steps are a crop of the still from below the note, placed left of
+    centre so the step text ends before the strip the platform's buttons
+    cover. The screen itself is unchanged.
