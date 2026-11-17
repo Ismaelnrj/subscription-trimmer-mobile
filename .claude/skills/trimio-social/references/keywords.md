@@ -58,7 +58,7 @@ something the app does not do.
 | Amazon Prime Short | How to cancel Amazon Prime membership in 4 steps | how to cancel amazon prime membership | live |
 | Story reel Part 1 | Forgotten subscriptions: "We only pay for Netflix" | forgotten subscriptions, subscription audit | YouTube live 2026-11-16; Instagram caption with the owner to paste |
 | Story reel Part 2 | Gym membership a waste of money? He finally cancelled it | why gym memberships are a waste of money, cancel subscriptions | YouTube live 2026-11-16; Instagram live 2026-11-17 (`Df17khHDlNf`) |
-| Story reel Part 3 | Part 3: how to cancel a YouTube Premium free trial before it charges you. | how to cancel youtube premium free trial, free trial, subscription trap | proposed 2026-11-17 |
+| Story reel Part 3 | Part 3: how to cancel a YouTube Premium free trial before it charges you. | how to cancel youtube premium free trial, free trial, subscription trap | YouTube uploaded private 2026-11-17 (`7Z1BJQQsmno`, title "How to cancel YouTube Premium free trial before it charges you"); Instagram scheduled once it is public |
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.

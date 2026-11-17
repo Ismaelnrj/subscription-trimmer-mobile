@@ -2704,10 +2704,29 @@ last one left off without needing a recap typed out.
   after firing. NOT YET FIRED. The owner had not seen the cut when it was
   scheduled; it is on the review page, and saying so in the session before
   then stops it (the prompt checks first).
-  YOUTUBE IS NOT SCHEDULED: the series order was YouTube first, but the owner
-  asked for Instagram tomorrow and named no YouTube upload, so it was offered
-  rather than done (title ready: "How to cancel YouTube Premium free trial
-  before it charges you").
+  YOUTUBE FIRST AFTER ALL, the owner's correction the same evening: "should
+  be posted 1 day after is published on youtube so to speak. you can post it
+  on youtube". So the series order holds: Instagram goes about a day after
+  YouTube makes it public. ON YOUTUBE, PRIVATE, 2026-11-17 about 18:00Z: vidIQ
+  post `999a6d2d-c132-498c-817b-3ab9fe80b214` (publication `c7557571-...`) to
+  @gettrimio, status completed, https://www.youtube.com/watch?v=7Z1BJQQsmno,
+  title "How to cancel YouTube Premium free trial before it charges you",
+  Howto & Style, the sharpened file, description ending "link on the channel
+  page". The owner sets "Uso de IA" to Sí and makes it public.
+  THE SCHEDULED INSTAGRAM POST NOW WAITS FOR THAT: its prompt was updated with
+  `update_trigger` (time unchanged, 2026-11-18T14:00Z, read back) to look up
+  7Z1BJQQsmno with `vidiq_get_videos_by_ids` first and post only if it is
+  public. MEASURED while private: that call answers "Could not find any of the
+  requested YouTube videos", so a private Short reads as not found, and the
+  post then waits and sends one push notification instead. A plain curl of
+  the watch page is NOT a usable check from here: www.youtube.com answered a
+  302 to google.com/sorry (its bot wall) on 2026-11-17.
+  THE OWNER ASKED, SAME MESSAGE, WHETHER THE NEXT ONE CAN KEEP THIS QUALITY ON
+  FEWER CREDITS. Part 3 without the wasted retake was 54.5 credits; the cheap
+  levers are in the reply and in README items 21 to 26: no retake on a pitch
+  reading (use who-speaks.py), shorter generated takes (3 credits a second),
+  more of the runtime carried by the real app, which is free, and the free
+  upscaler instead of a paid finish.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
