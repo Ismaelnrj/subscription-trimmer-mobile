@@ -329,6 +329,7 @@ a loaded skill does not.
 | `security-review` | an audit of a branch, as its own pass |
 | `dataviz` | the Stats split bar or any chart |
 | `trimio-social` | any Instagram or YouTube post, reel script, caption, comment, reply or DM, any vidIQ publish call, and any generated image or video meant for a post |
+| `trimio-founder` | a business question rather than code: pricing, positioning, competitors, unit economics, the trial or offer, a marketing, launch or business plan |
 
 THE REST DO NOT APPLY HERE. xlsx, pptx, docx, pdf, morning, keybindings and the
 artifact skills have nothing to do with this repo, and reaching for one is a
@@ -2655,6 +2656,18 @@ last one left off without needing a recap typed out.
   tail); do not credit them with this. THE NUMBER THAT MATTERS NEXT: the three
   Shorts total 829 views, near the 1,000 at which no Play install tagged
   `youtube` / `channel` means viewers are not reaching the channel page.
+  PART 2 IS ON INSTAGRAM, posted about 12:30Z on 2026-11-17 at the owner's
+  word ("Upload the second video on Instagram"), ahead of the scheduled 14:00
+  post, which was DISABLED first (`trig_01GQy8Cut5TJYTWJ4LMZYscZ`, enabled
+  false, kept rather than deleted) so it cannot post a second copy.
+  https://www.instagram.com/reel/Df17khHDlNf/ (media `18138282836501617`),
+  PUBLISHED per `vidiq_instagram_publish_reel`: regular Reel,
+  `isAiGenerated: true`, the keyword caption above verbatim, upload
+  `9638ee4e-...` checked first at 19.53 s, 1080x1920, 6,006,865 bytes. The
+  double post check found no gym reel, but it found TWO REELS this session did
+  not post, from the same morning: 09:04Z "The yearly charge does not warn
+  you..." and 10:04Z "Yearly subscriptions don't warn you...". So three reels
+  went out within three and a half hours; read Part 2's numbers against that.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
@@ -6286,6 +6299,23 @@ last one left off without needing a recap typed out.
   FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
   Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
   Tracker" (29 of 30); the owner's call, not changed.
+- THE FOUNDER PACK IS INSTALLED AS ONE SKILL, 2026-11-17, at the owner's
+  request (a reel showed Jakeschincariol/founder-skill, MIT, commit `fd9385b`):
+  `.claude/skills/trimio-founder`. Read in full first: eleven playbooks and
+  four standard library Python tools, no network, no hooks. Same shape as
+  trimio-social: the eleven `SKILL.md` files are renamed `PLAYBOOK.md` under
+  `upstream/` so they do not register as eleven skills fighting trimio-design
+  and trimio-social for "write my ads", "tagline", "brand voice", and one
+  `SKILL.md` routes to them behind a table of what the owner already decided
+  (price, reverse trial, free tier, name, look, competitors). A simulated buyer
+  panel never reopens the price; the funnel does. A panel is up to 100
+  subagents, so it is asked first and run at most three at a time.
+  `__tests__/founder-skill.test.js` fails if a SKILL.md reappears under
+  `upstream/` or the settled table is trimmed (negative tested). The tool
+  tests pass (22); upstream's `test_repo.py` fails here by design.
+  THE OTHER SKILL IN THAT REQUEST, itsflxkzy's "REEL KIT", is not public: the
+  reel says comment "KIT" to get it by DM, and a web search found no repo. It
+  installs once the owner forwards what arrives, after the same read.
 - A FULL AUDIT, 2026-11-17, at the owner's request ("do an audit with and for
   everything that we have. Use skills agents, etc"). FIVE READ-ONLY REVIEWERS
   (backend security, app correctness, privacy, design and copy, release and
