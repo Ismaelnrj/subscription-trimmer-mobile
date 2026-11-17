@@ -317,3 +317,34 @@ python3 tools/brand-video.py build/part3-captioned.mp4 --out build/part3-en.mp4 
     steps are a crop of the still from below the note, placed left of
     centre so the step text ends before the strip the platform's buttons
     cover. The screen itself is unchanged.
+
+### Part 4, "he adds his own" (2026-11-17)
+
+Straight on from Part 3's last line ("Add them yourself."): he asks how, she
+says paste the confirmation email, the real app's paste fills in the name,
+the price and the cycle, "And no bank login.", "Okay, that was easy." ONE
+take, 36 credits, against 81.5 for Part 3:
+
+```
+node tools/reels/story/record-paste.js /tmp/rec /tmp/tokens          # fresh tokens first
+python3 tools/reels/story/assemble-part4.py take.mp4 /tmp/rec/paste-* /tmp/rec/filled.png build/
+python3 tools/brand-video.py build/part4-captioned.mp4 --out build/part4-en.mp4 --lang en --no-bug
+```
+
+27. **The cheapest next part is one forward extension and no new frame.**
+    Seedance 2.5 `video_extension`, `extension_mode: "forward"`, Part 3's
+    take B (`811384b9-...`) as the one `video_references` entry, 12 s,
+    `draft: true`: job `75c2b3bd-c64b-489c-9212-0741adc07236`. No start
+    image, no face or voice references: the room, the faces and both voices
+    carry over from the take it extends. Checked before cutting, as in 23:
+    Whisper base.en heard every line as written, and speaker embeddings put
+    his three lines at 0.76 to 0.87 against him; her two scored 0.71 and
+    0.74 against her, ahead by 0.11 and 0.10, which is the tie line, so the
+    mouths were read on a frame sheet. Faces matched Part 3; phones stayed
+    blank black cases. The real app (free) carries 3.8 of the 12.4 s.
+28. **The pasted email is demo text at a checked price, and nothing is
+    saved.** `record-paste.js` pastes four lines naming Amazon Prime at the
+    catalogue's verified DACH price (8.99, 2026-09-05), never a copy of a
+    real email, and the take ends on the filled form, so the demo account
+    is unchanged. The caption over the form sits at 0.30 of the height so
+    the detected line, the name, the price and the cycle stay clear.
