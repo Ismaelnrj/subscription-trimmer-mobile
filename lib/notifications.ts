@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { REMINDER_CHANNEL_ID } from "./reminder-channel";
 import i18n from "./i18n";
@@ -96,20 +95,12 @@ export async function registerForPushNotificationsAsync() {
       return;
     }
 
-    try {
-      token = (
-        await Notifications.getExpoPushTokenAsync({
-          projectId: Constants.expoConfig?.extra?.eas?.projectId,
-        })
-      ).data;
-      console.log("Push token obtained");
-    } catch (err) {
-      // Getting a push token can fail for reasons outside our control (FCM
-      // registration, network, etc). All actual notifications in this app
-      // (renewal reminders, price alerts) are scheduled locally on-device
-      // and don't depend on this token, so it's safe to just log and move on.
-      console.warn("[Notifications] Could not get push token:", err);
-    }
+    /* NO PUSH TOKEN IS FETCHED, on purpose (2026-11-17). Every reminder in
+       this app is scheduled on the phone and needs none, nothing ever stored
+       or sent the token anywhere, and fetching it still sent device details
+       to Expo's push service on every launch with notifications allowed, a
+       data flow the privacy policy does not list. Fetch it again only
+       together with a server that uses it and a policy that names Expo. */
   } else {
     console.log("Must use physical device for Push Notifications");
   }

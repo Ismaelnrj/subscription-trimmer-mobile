@@ -18,7 +18,7 @@ import { PendingNotice } from "../../components/PendingNotice";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useFmt, useCurrencyStore } from "../../lib/currency-store";
 import { useCycleLabel, useCycleAdjective } from "../../lib/cycle-label";
-import { useCategoryLabel } from "../../lib/category-label";
+import { useCategoryLabel, canonicalCategory } from "../../lib/category-label";
 import { formatMoney } from "../../lib/currencies";
 import { useAuthStore } from "../../lib/auth-store";
 import { useLanguageStore } from "../../lib/language-store";
@@ -328,7 +328,9 @@ export default function SubscriptionsScreen() {
       // activation funnel, not what someone is personally paying for.
       track("subscription_added", {
         billing_cycle: data?.billingCycle,
-        category: data?.category,
+        // A built in category, or "other": a custom one is whatever the person
+        // typed, which the privacy policy says analytics never sees.
+        category: canonicalCategory(data?.category),
         is_first_subscription: (subscriptions?.length ?? 0) === 0,
       });
       invalidate();

@@ -15,6 +15,7 @@ import { useThemeStore } from "../lib/theme-store";
 import { prepareNotifications } from "../lib/notifications";
 import { retryPendingPremiumSync } from "../lib/iap";
 import { initAnalytics, track } from "../lib/analytics";
+import { canonicalCategory } from "../lib/category-label";
 import { startOfflineCache } from "../lib/offline-cache";
 import { startPendingSync } from "../lib/pending-subscriptions";
 import apiClient from "../lib/api";
@@ -52,7 +53,7 @@ startPendingSync({
   },
   // The same event an online add sends, flagged so the funnel can tell them apart.
   onSaved: (saved: any) =>
-    track("subscription_added", { billing_cycle: saved?.billingCycle, category: saved?.category, queued: true }),
+    track("subscription_added", { billing_cycle: saved?.billingCycle, category: canonicalCategory(saved?.category), queued: true }),
   appState: AppState,
 });
 
