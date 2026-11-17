@@ -2668,6 +2668,40 @@ last one left off without needing a recap typed out.
   not post, from the same morning: 09:04Z "The yearly charge does not warn
   you..." and 10:04Z "Yearly subscriptions don't warn you...". So three reels
   went out within three and a half hours; read Part 2's numbers against that.
+- PART 3 OF THE STORY REEL, "the trial in the kitchen", 2026-11-17, at the
+  owner's request ("The same woman and man, different dialogue, different
+  place, but about trimio", credits kept low). The couple in their kitchen the
+  next morning; her Trimio shows his YouTube Premium trial ending tomorrow
+  (the real dashboard card cuts in under "The free month. Then it's
+  €14.99."), "Cancel it.", the real row, "How to cancel" and the four steps,
+  then "How did it know?" / "I added it when you signed up." / "Add the rest
+  of mine." / "Add them yourself." The joke keeps the claim to what Trimio
+  does: it knows what you add. 22.6 s with the end card, sharpened free.
+  81.5 CREDITS: start frame 0.5, take A `60f6142d-...` 30, take B
+  `811384b9-...` 24, and 27 WASTED on a retake: a pitch check read two of his
+  lines as hers, the retake was worse, and speaker embeddings then showed
+  take A was right all along. Recorded as README items 21 to 26 with the tools
+  (`who-speaks.py`, `stills-part3.js`, `assemble-part3.py`). The guide's note
+  names Apple and cannot scroll away, so the steps are a crop from below it.
+  CAPTION (keyword research first: "how to cancel youtube premium free trial"
+  about 8,300 a month, "subscription trap" about 24,900), passing caption.py
+  and check_copy.py:
+  Part 3: how to cancel a YouTube Premium free trial before it charges you.
+  Trimio reminds you the day before a free trial turns into a charge, and shows how to cancel YouTube Premium in four steps. You add each trial when you start it, no bank login.
+  Parts 1 and 2 are on our profile. Free on Google Play, link in bio.
+  #freetrial #subscriptiontrap #cancelsubscriptions #youtubepremium #savemoney
+  ("the day before" is the scheduler's own rule: 09:00 the day before a
+  trial ends, `lib/notification-scheduler.ts`.)
+  THE OWNER ASKED FOR IT ON INSTAGRAM TOMORROW ("schedule the third for
+  Instagram tomorrow"), which names the platform and is the consent the
+  scheduling rule asks for. NOT YET SCHEDULED when this was written: the
+  sharpened file was still rendering, and the one time post is created only
+  once that file is uploaded and checked. This line is replaced with the
+  scheduled task's id and time once it exists.
+  YOUTUBE IS NOT SCHEDULED: the series order was YouTube first, but the owner
+  asked for Instagram tomorrow and named no YouTube upload, so it was offered
+  rather than done (title ready: "How to cancel YouTube Premium free trial
+  before it charges you").
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
