@@ -26,9 +26,11 @@ sess = ort.InferenceSession(model, so, providers=['CPUExecutionProvider'])
 dec = subprocess.Popen([ff, '-v', 'error', '-i', src, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE)
 enc = None
 if not png:
+    # No -shortest: a Seedance take's audio runs a little short of its picture (11.94 s
+    # against 12.00 s on Part 4's), and -shortest cut the last 5 of 288 frames off the end.
     enc = subprocess.Popen([ff, '-v', 'error', '-y', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}', '-r', fps, '-i', '-',
                             '-i', src, '-map', '0:v', '-map', '1:a?', '-c:v', 'libx264', '-crf', '12', '-preset', 'slow',
-                            '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-shortest', dst], stdin=subprocess.PIPE)
+                            '-pix_fmt', 'yuv420p', '-c:a', 'copy', dst], stdin=subprocess.PIPE)
 n, t0 = 0, time.time()
 while True:
     buf = dec.stdout.read(w * h * 3)
