@@ -57,3 +57,15 @@ something the app does not do.
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.
+
+## What the titles did (read the source, not the title)
+
+2026-11-17, `vidiq_get_videos_by_ids`: Part 2 had 747 views 17.6 hours after
+going public; Part 1, retitled with a keyword phrase the same day, had 16
+after 44 hours; the Amazon Prime Short 66 after 50. Part 2's views arrived in
+one steep climb between hour 4 and 6.5 and then stopped, which is a Shorts feed
+test batch, not search. So a keyword title did NOT make Part 2 and did not
+rescue Part 1. Keep writing them (free long tail), but before crediting a
+title with a result, read the video's traffic sources in Studio: "YouTube
+search" is the only row a title moves. The API returns them about two days
+late.

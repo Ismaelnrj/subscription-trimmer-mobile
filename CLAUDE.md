@@ -2630,6 +2630,31 @@ last one left off without needing a recap typed out.
   Cancel subscriptions you don't use and see what you keep. Trimio is a subscription tracker: mark one as cancelled and it shows the yearly amount. Here it was €358.80 a year.
   Part 1 is on our profile. Free on Google Play, link in bio.
   #cancelsubscriptions #gymmembership #subscriptions #personalfinance #savemoney
+  PART 2's FIRST DAY ON YOUTUBE, read 2026-11-17 12:17Z, 17.6 hours after it
+  went public: 747 views, 4 likes, 0 comments (`vidiq_get_videos_by_ids`), and
+  the owner's Studio screenshot a little earlier: 742 views, 1.1 hours watched,
+  average view 0:11 of 0:20. THE BEST POST TRIMIO HAS HAD on either platform:
+  Part 1's Short had 16 after 44 hours, the Amazon Prime Short 66 after 50, the
+  best Instagram reel 150. THE OWNER READ IT AS THE KEYWORD TITLE WORKING. The
+  evidence says the SHORTS FEED sent it: the Studio curve is flat for three
+  hours, climbs steeply from about hour 4 to 6.5, then goes flat (a feed test
+  batch, not search, which trickles); Part 1 got a keyword title the same day
+  ("Forgotten subscriptions", about 5,000 searches a month) and stayed at 16;
+  and about 4,100 searches a month cannot deliver 700 views in two hours to a
+  new channel. The flat line is the feed declining to widen it. 1.1 hours over
+  742 views is 5.3 s a view on a 20 s Short, so many of those views swiped
+  past early (views count from the first frame since 2026-08-27). Traffic
+  sources were empty through the API the same day (it lags about two days)
+  and the stayed to watch report needs the vidIQ browser extension, which is
+  not connected; the owner can read both in Studio (Alcance > traffic source
+  types; the Short's stayed to watch versus swiped away card). WHAT DIFFERS
+  FROM PART 1, any of which could be the cause and none is proven at n = 3: it
+  opens on a line of dialogue and a conflict, it is 8 s shorter, its YouTube
+  file is the sharpened one (Part 1's is the draft), the gym is a broader topic,
+  and it went out in the European evening. Keep keyword titles (free, long
+  tail); do not credit them with this. THE NUMBER THAT MATTERS NEXT: the three
+  Shorts total 829 views, near the 1,000 at which no Play install tagged
+  `youtube` / `channel` means viewers are not reaching the channel page.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
