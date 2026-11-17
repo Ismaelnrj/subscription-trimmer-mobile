@@ -20,6 +20,11 @@ interface CurrencyState {
   setCurrency: (c: Currency) => void;
   setBaseCurrency: (code: string) => void;
   loadCurrency: () => Promise<void>;
+  /* True once this phone holds a currency somebody chose (or one taken from
+     the account). Until then the account's own currency may be applied. */
+  storedChoice: boolean;
+  applyAccountCurrency: (code: string | null | undefined) => void;
+  clearCurrencyChoice: () => Promise<void>;
   fetchRates: () => Promise<void>;
   /* `fromCurrency` is the currency the AMOUNT is in, which for a subscription
      is the one it was entered in and stored on the row. Optional so all
@@ -32,6 +37,7 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   currency: CURRENCIES[0],
   baseCurrencyCode: "USD",
   rates: FALLBACK_RATES,
+  storedChoice: false,
 
   /* Picking a currency sets the one prices are entered in as well as the one
      they are shown in.
@@ -50,7 +56,32 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
   setCurrency: (currency) => {
     SecureStore.setItemAsync("selected_currency", JSON.stringify(currency)).catch(() => {});
     SecureStore.setItemAsync("base_currency_code", currency.code).catch(() => {});
-    set({ currency, baseCurrencyCode: currency.code });
+    set({ currency, baseCurrencyCode: currency.code, storedChoice: true });
+  },
+
+  /* THE ACCOUNT'S CURRENCY, ON A PHONE THAT HAS NONE OF ITS OWN. The choice
+     used to live only on the phone, so a reinstall, a new phone or a second
+     account signing in on this one started from the USD default, and every
+     row added then was saved as dollars: a euro user's "Netflix Standard
+     15.99" became 15.99 USD, and the price rise card then offered to "fix" it
+     to the US price (found 2026-11-17). The server already keeps the account's
+     choice, because Account settings writes it there whenever it is picked,
+     and its default is the same USD the phone starts on, so taking it when the
+     phone has no choice of its own cannot move anybody off a currency they
+     picked. A phone that already has one keeps it. */
+  applyAccountCurrency: (code) => {
+    if (get().storedChoice || typeof code !== "string") return;
+    const match = CURRENCIES.find((c) => c.code === code);
+    if (!match) return;
+    get().setCurrency(match);
+  },
+
+  /* Signing out leaves the currency with the account, not the phone, so the
+     next person to sign in starts from their own (applied above). */
+  clearCurrencyChoice: async () => {
+    await SecureStore.deleteItemAsync("selected_currency").catch(() => {});
+    await SecureStore.deleteItemAsync("base_currency_code").catch(() => {});
+    set({ currency: CURRENCIES[0], baseCurrencyCode: "USD", storedChoice: false });
   },
 
   setBaseCurrency: (code) => {
@@ -65,7 +96,7 @@ export const useCurrencyStore = create<CurrencyState>((set, get) => ({
         SecureStore.getItemAsync("base_currency_code"),
       ]);
       const currency = stored ? JSON.parse(stored) : null;
-      if (currency) set({ currency });
+      if (currency) set({ currency, storedChoice: true });
       // A stored base wins, so anyone who really did enter prices in dollars
       // keeps that reading. Otherwise the base follows the chosen currency
       // rather than falling back to USD, which is what left every existing

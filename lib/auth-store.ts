@@ -5,6 +5,7 @@ import { identifyUser, resetAnalytics } from "./analytics";
 import { resetQueryCache } from "./query-client";
 import { forgetOfflineCache, restoreOfflineCache } from "./offline-cache";
 import { forgetPending, loadPending } from "./pending-subscriptions";
+import { useCurrencyStore } from "./currency-store";
 import { isTransientFailure } from "./session-errors";
 
 /* The last user /auth/me returned, kept so a launch without a reachable server
@@ -75,6 +76,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         forgetOfflineCache();
         // Subscriptions waiting to be saved belong to the account that typed them.
         forgetPending();
+        // So does the currency: the next account starts from its own.
+        useCurrencyStore.getState().clearCurrencyChoice();
       }
       resetQueryCache();
       // Reminders belong to the session that scheduled them, so an identity
@@ -130,6 +133,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await SecureStore.deleteItemAsync(CACHED_USER_KEY).catch(() => {});
     await forgetOfflineCache();
     await forgetPending();
+    await useCurrencyStore.getState().clearCurrencyChoice();
     resetAnalytics();
     /* Cancel the OS notification queue too. Nothing did, so account A's
        subscription names and amounts stayed scheduled to appear on the lock

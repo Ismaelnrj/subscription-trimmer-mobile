@@ -110,6 +110,12 @@ export default function DashboardScreen() {
     queryFn: async () => (await apiClient.get("/trpc/settings.get")).data.result.data,
   });
 
+  // A phone with no currency of its own takes the account's (see
+  // applyAccountCurrency): a reinstall or a new phone no longer saves rows in USD.
+  useEffect(() => {
+    useCurrencyStore.getState().applyAccountCurrency(settings?.currency);
+  }, [settings?.currency]);
+
   const { data: alerts = [], refetch: refetchAlerts } = useQuery({
     queryKey: ["alerts", "list"],
     queryFn: async () => (await apiClient.get("/trpc/alerts.list")).data.result.data,
