@@ -1392,6 +1392,15 @@ function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+/* A row id from a request, or null. Handed to pg as is, a value that is not an
+   integer ("abc", 1.5, an object) makes Postgres throw, which answered a 500
+   and sent a Sentry event; refusing it here answers a 400 and reports nothing.
+   Accepts the digit strings a query string carries. */
+function requestId(value) {
+  const n = typeof value === 'string' && /^\d{1,10}$/.test(value) ? Number(value) : value;
+  return Number.isSafeInteger(n) && n > 0 && n <= 2147483647 ? n : null;
+}
+
 /* Compares a stored token hash against a code somebody supplied, in constant
  * time. The two callers are email verification and password reset.
  *
@@ -1498,6 +1507,10 @@ async function initDB() {
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_expires TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
+  // Guesses against the live reset and verification codes, claimed atomically
+  // before each comparison (see reset-password). A new code sets them to 0.
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_attempts INTEGER NOT NULL DEFAULT 0`);
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_attempts INTEGER NOT NULL DEFAULT 0`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS last_plan TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS win_back_sent_at TIMESTAMPTZ`);
@@ -2572,7 +2585,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2, verification_attempts = 0 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
     if (takeCodeEmail(email)) {
       await sendVerificationEmail(email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
@@ -2637,11 +2650,17 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
     if (loginLocked(email)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
+    /* RESERVED BEFORE THE FIRST AWAIT, and counted as a failure until it proves
+       otherwise. Noted after bcrypt, a burst of parallel guesses all passed the
+       check above before any of them had counted: 60 concurrent wrong
+       passwords were all compared against a lock of 10 (measured 2026-11-17).
+       Check and note now run in one synchronous step, so the eleventh request
+       in a burst is refused whatever the timing. A success clears it below. */
+    noteLoginFailure(email);
 
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
     if (!user || !user.password_hash || !(await bcrypt.compare(password, user.password_hash))) {
-      noteLoginFailure(email);
       return res.status(401).json({ error: 'Invalid email or password' });
     }
     loginFailures.delete(email);
@@ -2735,7 +2754,8 @@ app.post('/api/auth/google', async (req, res) => {
 app.post('/api/auth/refresh', async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (!refreshToken) return res.status(400).json({ error: 'Refresh token required' });
+    // A string, or hashToken throws: an unauthenticated 500 and a Sentry event.
+    if (typeof refreshToken !== 'string' || !refreshToken) return res.status(400).json({ error: 'Refresh token required' });
 
     const result = await pool.query('SELECT * FROM users WHERE refresh_token_hash = $1', [hashToken(refreshToken)]);
     const user = result.rows[0];
@@ -2799,9 +2819,10 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
          means guesses here and at /login add up to one budget per account. */
       const failureKey = user.email || `id:${user.id}`;
       if (loginLocked(failureKey)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
+      // Reserved before the await, as at /login, so a burst cannot all pass.
+      noteLoginFailure(failureKey);
       const valid = user.password_hash && (await bcrypt.compare(currentPassword, user.password_hash));
       if (!valid) {
-        noteLoginFailure(failureKey);
         return res.status(400).json({ error: 'Current password is incorrect' });
       }
       /* The same rule registration and reset use. This call is the fix: the
@@ -2819,7 +2840,7 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
          overwrites the one stored refresh token, so whoever held the old one is
          refused on their next refresh, and this device gets the new pair. */
       session = await issueTokens(req.userId);
-      loginFailures.delete(user.email);
+      loginFailures.delete(failureKey);
     }
 
     if (name !== undefined) {
@@ -2836,7 +2857,6 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
 });
 
 const VERIFY_MAX_ATTEMPTS = 5;
-const verifyAttempts = new Map();
 
 app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
   try {
@@ -2861,26 +2881,39 @@ app.post('/api/auth/verify-email', authMiddleware, async (req, res) => {
     }
     // Burned after too many wrong guesses (below), or never issued.
     if (!user.verification_token) return res.status(400).json({ error: 'Code expired. Request a new one.' });
-    if (!tokenMatches(user.verification_token, code)) {
-      /* A WRONG GUESS COUNTS AGAINST THE CODE, the same rule reset-password
-         has. codeLimiter is per IP, so guesses spread over many addresses were
-         bounded only by the code's 24 hours, and verifying an address you do
-         not own is what lets a squatted password survive the owner's later
-         Google sign in (see /api/auth/google). After VERIFY_MAX_ATTEMPTS wrong
-         guesses the code is burned and a new one has to be requested, which
-         goes to the real inbox. In memory, like resetAttempts. */
-      const tries = (verifyAttempts.get(user.id) || 0) + 1;
-      if (tries >= VERIFY_MAX_ATTEMPTS) {
-        verifyAttempts.delete(user.id);
-        await pool.query('UPDATE users SET verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
-      } else {
-        verifyAttempts.set(user.id, tries);
-      }
+    /* A GUESS COUNTS AGAINST THE CODE BEFORE IT IS COMPARED, the same rule and
+       the same mechanism as reset-password, which says why it lives in the
+       database: an in-memory count bumped after the lookup let a burst of
+       parallel guesses through (100 concurrent wrong codes were all compared,
+       measured 2026-11-17). codeLimiter is per IP, and verifying an address you
+       do not own is what lets a squatted password survive the owner's later
+       Google sign in (see /api/auth/google). After VERIFY_MAX_ATTEMPTS guesses
+       the code is burned and a new one has to be requested, which goes to the
+       real inbox. */
+    const claimed = await pool.query(
+      'UPDATE users SET verification_attempts = verification_attempts + 1 WHERE id = $1 AND verification_token IS NOT NULL AND is_verified IS NOT TRUE RETURNING verification_token, verification_expires, verification_attempts',
+      [req.userId]
+    );
+    const claim = claimed.rows[0];
+    if (!claim) return res.status(400).json({ error: 'Code expired. Request a new one.' });
+    const burn = () => pool.query(
+      'UPDATE users SET verification_token = NULL, verification_expires = NULL WHERE id = $1 AND verification_token = $2',
+      [req.userId, claim.verification_token]
+    );
+    if (claim.verification_attempts > VERIFY_MAX_ATTEMPTS) {
+      await burn();
+      return res.status(400).json({ error: 'Code expired. Request a new one.' });
+    }
+    if (!tokenMatches(claim.verification_token, code)) {
+      if (claim.verification_attempts >= VERIFY_MAX_ATTEMPTS) await burn();
       return res.status(400).json({ error: 'Invalid code' });
     }
-    verifyAttempts.delete(user.id);
-    if (new Date(user.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
-    await pool.query('UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE id = $1', [req.userId]);
+    if (new Date(claim.verification_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Request a new one.' });
+    const done = await pool.query(
+      'UPDATE users SET is_verified = TRUE, verification_token = NULL, verification_expires = NULL, verification_attempts = 0 WHERE id = $1 AND verification_token = $2 RETURNING id',
+      [req.userId, claim.verification_token]
+    );
+    if (done.rows.length === 0) return res.status(400).json({ error: 'Code expired. Request a new one.' });
 
     // The usual path: someone redeems a code before verifying, so the reward
     // waits here until the address is real.
@@ -2981,8 +3014,8 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const code = generateCode();
     const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
-    resetAttempts.delete(user.id);
+    // A fresh code starts its guess count again (see reset-password).
+    await pool.query('UPDATE users SET reset_token = $1, reset_expires = $2, reset_attempts = 0 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
     await sendPasswordResetEmail(email, code, languageOf(req));
     res.json({ success: true });
@@ -2992,7 +3025,6 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 });
 
 const RESET_MAX_ATTEMPTS = 5;
-const resetAttempts = new Map();
 
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
@@ -3001,30 +3033,48 @@ app.post('/api/auth/reset-password', async (req, res) => {
     if (!email || !code || !newPassword) return res.status(400).json({ error: 'Email, code and new password required' });
     const pwError = validatePassword(newPassword);
     if (pwError) return res.status(400).json({ error: pwError });
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-    const user = result.rows[0];
-    if (!user || !user.reset_token) return res.status(400).json({ error: 'Invalid or expired code' });
-    if (!tokenMatches(user.reset_token, code)) {
-      /* A WRONG GUESS COUNTS AGAINST THE CODE, NOT ONLY AGAINST THE IP. The rate
-         limiter is per address, so guesses spread across many addresses were
-         bounded only by the code's one hour life, and a six digit code is the
-         whole of what stands between a stranger and somebody's account. After
-         RESET_MAX_ATTEMPTS wrong guesses the code is burned and a new one has to
-         be requested, which emails the real owner. Held in memory: a restart
-         forgets the count, which only ever helps a guesser by a few tries. */
-      const tries = (resetAttempts.get(user.id) || 0) + 1;
-      if (tries >= RESET_MAX_ATTEMPTS) {
-        resetAttempts.delete(user.id);
-        await pool.query('UPDATE users SET reset_token = NULL, reset_expires = NULL WHERE id = $1', [user.id]);
-      } else {
-        resetAttempts.set(user.id, tries);
-      }
+    /* EVERY GUESS CLAIMS ITS NUMBER BEFORE IT IS COMPARED, in the database, in
+       one statement. A six digit code is the whole of what stands between a
+       stranger and somebody's account, so only RESET_MAX_ATTEMPTS guesses per
+       code are ever compared, and the last wrong one burns it (a new code has
+       to be requested, which emails the real owner).
+       THIS USED TO BE A COUNT IN MEMORY, BUMPED AFTER THE LOOKUP, and that let
+       a burst through: every request already waiting on the pool compared its
+       guess before any of them had counted, and the count restarted after each
+       burn. Measured 2026-11-17 on the real server and PostgreSQL 16: 100
+       parallel guesses with the right one at position 60 reset the password in
+       3 of 4 trials, after at least 65 wrong guesses against one live code.
+       An UPDATE takes the row lock, so concurrent requests get 1, 2, 3 ... in
+       turn and the sixth sees 6 whatever the timing; it also survives a
+       restart, which the in-memory count did not. */
+    const claimed = await pool.query(
+      'UPDATE users SET reset_attempts = reset_attempts + 1 WHERE email = $1 AND reset_token IS NOT NULL RETURNING id, reset_token, reset_expires, reset_attempts',
+      [email]
+    );
+    const user = claimed.rows[0];
+    if (!user) return res.status(400).json({ error: 'Invalid or expired code' });
+    // Burns THIS code only: a newer one the owner just asked for is left alone.
+    const burn = () => pool.query(
+      'UPDATE users SET reset_token = NULL, reset_expires = NULL WHERE id = $1 AND reset_token = $2',
+      [user.id, user.reset_token]
+    );
+    if (user.reset_attempts > RESET_MAX_ATTEMPTS) {
+      await burn();
       return res.status(400).json({ error: 'Invalid or expired code' });
     }
-    resetAttempts.delete(user.id);
+    if (!tokenMatches(user.reset_token, code)) {
+      if (user.reset_attempts >= RESET_MAX_ATTEMPTS) await burn();
+      return res.status(400).json({ error: 'Invalid or expired code' });
+    }
     if (new Date(user.reset_expires) < new Date()) return res.status(400).json({ error: 'Code expired. Please request a new one.' });
     const hash = await bcrypt.hash(newPassword, 10);
-    await pool.query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2', [hash, user.id]);
+    // Only if the code it was checked against is still the live one: a burn
+    // or a newer code in between means this guess no longer counts.
+    const done = await pool.query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, reset_attempts = 0, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2 AND reset_token = $3 RETURNING id',
+      [hash, user.id, user.reset_token]
+    );
+    if (done.rows.length === 0) return res.status(400).json({ error: 'Invalid or expired code' });
     loginFailures.delete(email);
     res.json({ success: true });
   } catch (err) {
@@ -3043,8 +3093,8 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     }
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3', [hashToken(code), expires, user.id]);
-    verifyAttempts.delete(user.id);
+    // A fresh code starts its guess count again (see verify-email).
+    await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2, verification_attempts = 0 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
     await sendVerificationEmail(user.email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
     res.json({ success: true });
@@ -3111,9 +3161,19 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
 
     if (user.password_hash) {
       if (!password) return res.status(400).json({ error: 'Password required' });
+      /* THE SAME GUESS LIMIT AS LOGIN, on the same counter, reserved before
+         the await. This check had none: somebody holding a stolen access token
+         could try passwords here from rotating addresses, and the first right
+         guess deleted the account for good (measured 2026-11-17: 25 more
+         wrong guesses after login was already locked, then the 26th deleted
+         it). */
+      const failureKey = user.email || `id:${user.id}`;
+      if (loginLocked(failureKey)) return res.status(429).json({ error: 'Too many attempts. Please try again in 15 minutes.' });
+      noteLoginFailure(failureKey);
       if (!(await bcrypt.compare(password, user.password_hash))) {
         return res.status(401).json({ error: 'Incorrect password' });
       }
+      loginFailures.delete(failureKey);
     } else {
       // Google-only accounts have no password — confirm deletion with a
       // fresh Google sign-in instead, matched against the account's stored
@@ -3677,7 +3737,7 @@ app.post('/api/trpc/subscriptions.update', authMiddleware, async (req, res) => {
 
 app.get('/api/trpc/subscriptions.priceHistory', authMiddleware, async (req, res) => {
   try {
-    const { subscriptionId } = req.query;
+    const subscriptionId = requestId(req.query.subscriptionId);
     if (!subscriptionId) return res.status(400).json({ error: 'subscriptionId required' });
     const result = await pool.query(
       `SELECT old_price, new_price, changed_at FROM price_history
@@ -3697,7 +3757,8 @@ app.get('/api/trpc/subscriptions.priceHistory', authMiddleware, async (req, res)
 
 app.post('/api/trpc/subscriptions.setActive', authMiddleware, async (req, res) => {
   try {
-    const { id, isActive } = req.body;
+    const { isActive } = req.body;
+    const id = requestId(req.body.id);
     if (!id || typeof isActive !== 'boolean') return res.status(400).json({ error: 'id and isActive required' });
 
     const result = await pool.query(
@@ -3723,7 +3784,8 @@ app.post('/api/trpc/subscriptions.setActive', authMiddleware, async (req, res) =
    from never having tracked it. */
 app.post('/api/trpc/subscriptions.setCancelled', authMiddleware, async (req, res) => {
   try {
-    const { id, cancelled } = req.body;
+    const { cancelled } = req.body;
+    const id = requestId(req.body.id);
     if (!id || typeof cancelled !== 'boolean') {
       return res.status(400).json({ error: 'id and cancelled required' });
     }
@@ -3842,7 +3904,8 @@ app.get('/api/trpc/subscriptions.cancelled', authMiddleware, async (req, res) =>
 
 app.post('/api/trpc/subscriptions.delete', authMiddleware, async (req, res) => {
   try {
-    const { id } = req.body;
+    const id = requestId(req.body.id);
+    if (!id) return res.status(400).json({ error: 'Subscription id required' });
     const check = await pool.query(
       'SELECT id FROM subscriptions WHERE id = $1 AND user_id = $2',
       [id, req.userId]
@@ -4187,7 +4250,9 @@ app.get('/api/trpc/notifications.getUnreadCount', authMiddleware, async (req, re
 
 app.post('/api/trpc/notifications.markAsRead', authMiddleware, async (req, res) => {
   try {
-    const id = req.body.id || req.body.notificationId;
+    const raw = req.body.id || req.body.notificationId;
+    const id = raw ? requestId(raw) : null;
+    if (raw && !id) return res.status(400).json({ error: 'Notification id required' });
     if (id) {
       await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [id, req.userId]);
     } else {

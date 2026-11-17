@@ -127,7 +127,7 @@ describe('coverage, by scan', () => {
     'GOOGLE_ID_TOKEN_REQUIRED',
     'Email already registered',
     'subscriptionId required', 'Subscription id required', 'id and isActive required',
-    'id and cancelled required', 'idToken required', 'Refresh token required',
+    'id and cancelled required', 'Notification id required', 'idToken required', 'Refresh token required',
     'Invalid token', 'Invalid or expired refresh token',
     'budgetGoal must be a positive number or null', 'alertThreshold must be a positive number',
     'currency must be a supported code', 'currencySymbol must be a short string',

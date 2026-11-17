@@ -38,6 +38,7 @@ const dateHelpers = SERVER.slice(
 );
 const avoidedSrc = slice("function chargesAvoidedSince", "\n}\n");
 const roundSrc = slice("function roundToCents", "\n}\n");
+const requestIdSrc = slice("function requestId", "\n}\n");
 const bonusSrc = slice("function hasBonusPremium", "\n}\n");
 /* The REAL constant, lifted rather than stubbed with a number, so these tests
    run against the same parsing and clamping the server does. Stubbing `= 5`
@@ -141,7 +142,7 @@ const app = {
 const authMiddleware = null;
 
 // eslint-disable-next-line no-eval
-eval(dateHelpers + roundSrc + bonusSrc + freeLimitSrc + lockSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
+eval(dateHelpers + roundSrc + requestIdSrc + bonusSrc + freeLimitSrc + lockSrc + avoidedSrc + setCancelledSrc + listCancelledSrc);
 
 function call(route, body) {
   let status = 200;

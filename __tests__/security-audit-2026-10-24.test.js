@@ -34,20 +34,27 @@ function call(handler, req) {
 
 describe("verification code guesses count against the account", () => {
   function build() {
-    const user = { id: 7, is_verified: false, verification_token: "H:123456", verification_expires: new Date(Date.now() + 3600e3) };
+    const user = { id: 7, is_verified: false, verification_token: "H:123456", verification_expires: new Date(Date.now() + 3600e3), verification_attempts: 0 };
     const writes = [];
+    // Models the atomic claim the handler makes before comparing (2026-11-17).
     const pool = {
       query: async (sql, params) => {
         if (/^SELECT \* FROM users/.test(sql)) return { rows: [{ ...user }] };
         writes.push(sql);
+        if (/verification_attempts = verification_attempts \+ 1/.test(sql)) {
+          if (!user.verification_token || user.is_verified) return { rows: [] };
+          user.verification_attempts += 1;
+          return { rows: [{ ...user }] };
+        }
+        if (/AND verification_token = \$2/.test(sql) && user.verification_token !== params[1]) return { rows: [] };
+        if (/is_verified = TRUE/.test(sql)) { user.is_verified = true; user.verification_token = null; return { rows: [{ id: 7 }] }; }
         if (/verification_token = NULL/.test(sql)) user.verification_token = null;
-        if (/is_verified = TRUE/.test(sql)) user.is_verified = true;
         return { rows: [] };
       },
     };
     let handler;
     const app = { post: (_p, _mw, fn) => { handler = fn; } };
-    const src = `const VERIFY_MAX_ATTEMPTS = 5;\nconst verifyAttempts = new Map();\n${handlerFrom("app.post('/api/auth/verify-email'")}`;
+    const src = `const VERIFY_MAX_ATTEMPTS = 5;\n${handlerFrom("app.post('/api/auth/verify-email'")}`;
     new Function(
       "app", "pool", "authMiddleware", "recordLanguage", "rewardReferral", "formatUser", "handleError", "tokenMatches",
       src,
@@ -81,7 +88,7 @@ describe("verification code guesses count against the account", () => {
 
   it("asking for a new code clears the count", () => {
     const resend = handlerFrom("app.post('/api/auth/resend-verification'");
-    expect(resend).toMatch(/verifyAttempts\.delete\(user\.id\)/);
+    expect(resend).toMatch(/verification_attempts = 0/);
   });
 });
 

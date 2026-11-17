@@ -25,13 +25,17 @@ describe("Google sign in cannot inherit a stranger's password", () => {
 
 describe("a reset code burns after a handful of wrong guesses", () => {
   const reset = handler("app.post('/api/auth/reset-password'");
-  it("counts wrong guesses per account and clears the code at the cap", () => {
+  /* The count moved into the database on 2026-11-17, claimed atomically before
+     each comparison, because an in-memory count bumped after the lookup let a
+     burst of parallel guesses through. guess-limit-concurrency.test.js drives
+     that behaviour; these pin its shape. */
+  it("counts every guess per account before comparing, and clears the code at the cap", () => {
     expect(SRC).toMatch(/const RESET_MAX_ATTEMPTS = 5;/);
-    expect(reset).toMatch(/resetAttempts\.get\(user\.id\)/);
-    expect(reset).toMatch(/tries >= RESET_MAX_ATTEMPTS[\s\S]*reset_token = NULL/);
+    expect(reset).toMatch(/reset_attempts = reset_attempts \+ 1[\s\S]*RETURNING/);
+    expect(reset).toMatch(/reset_attempts >= RESET_MAX_ATTEMPTS\) await burn\(\)/);
   });
   it("a fresh code from forgot-password starts the count again", () => {
-    expect(handler("app.post('/api/auth/forgot-password'")).toMatch(/resetAttempts\.delete\(user\.id\)/);
+    expect(handler("app.post('/api/auth/forgot-password'")).toMatch(/reset_attempts = 0/);
   });
 });
 
