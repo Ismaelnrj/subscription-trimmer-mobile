@@ -204,7 +204,7 @@ export default function AccountSettingsScreen() {
               <View style={styles.currencyButtonLeft}>
                 <Text style={styles.currencySymbol}>{currency.symbol}</Text>
                 <View>
-                  <Text style={styles.currencyName}>{currency.name}</Text>
+                  <Text style={styles.currencyName}>{t(`currencyNames.${currency.code}`, { defaultValue: currency.name })}</Text>
                   <Text style={styles.currencyCode}>{currency.code}</Text>
                 </View>
               </View>
@@ -357,7 +357,7 @@ export default function AccountSettingsScreen() {
                   <View style={{ flexDirection: "row", alignItems: "center", gap: space.m }}>
                     <Text style={styles.currencySymbol}>{item.symbol}</Text>
                     <View>
-                      <Text style={styles.currencyName}>{item.name}</Text>
+                      <Text style={styles.currencyName}>{t(`currencyNames.${item.code}`, { defaultValue: item.name })}</Text>
                       <Text style={styles.currencyCode}>{item.code}</Text>
                     </View>
                   </View>

@@ -69,3 +69,20 @@ describe("a phone with no currency of its own takes the account's", () => {
     expect((src.match(/clearCurrencyChoice\(\)/g) || []).length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("currency names read in the app's language (2026-11-17)", () => {
+  const de = require("../locales/de.json");
+  const en = require("../locales/en.json");
+  it("both locales name every currency the picker offers", () => {
+    for (const c of CURRENCIES) {
+      expect(`${c.code}: ${typeof en.currencyNames[c.code]}`).toBe(`${c.code}: string`);
+      expect(`${c.code}: ${typeof de.currencyNames[c.code]}`).toBe(`${c.code}: string`);
+    }
+    expect(de.currencyNames.GBP).toBe("Britisches Pfund");
+  });
+  it("Account settings shows the translated name, not the English literal", () => {
+    const src = require("fs").readFileSync(require("path").join(__dirname, "..", "app", "account-settings.tsx"), "utf8");
+    expect(src).not.toMatch(/\{(currency|item)\.name\}/);
+    expect((src.match(/t\(`currencyNames\.\$\{/g) || []).length).toBe(2);
+  });
+});

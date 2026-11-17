@@ -229,7 +229,9 @@
     "perCycle": "per {{cycle}}",
     "a11yActions": "Actions for {{name}}",
     "nameLabel": "Name",
-    "priceLabel": "Price"
+    "priceLabel": "Price",
+    "shareCalendarTitle": "Trimio calendar export",
+    "shareExportTitle": "Trimio export"
   },
   "profile": {
     "premiumMember": "Premium member",
@@ -649,7 +651,7 @@
     "faq2Q": "Can I edit a subscription?",
     "faq2A": "Yes. In My Subscriptions, tap the three dots next to a subscription, then Edit.",
     "faq3Q": "How is monthly spend calculated?",
-    "faq3A": "Weekly subscriptions are annualised (x52/12), yearly subscriptions are divided by 12, and monthly ones are taken as-is.",
+    "faq3A": "Weekly subscriptions are converted to a monthly figure (×52/12), yearly ones are divided by 12, and monthly ones are taken as they are.",
     "faq4Q": "Will my data be saved if I uninstall the app?",
     "faq4A": "Yes. Your data is stored securely on our server, so reinstalling the app and logging in restores everything.",
     "faq5Q": "How do I get renewal alerts?",
@@ -809,5 +811,16 @@
     "update": "Update to {{to}}",
     "keep": "My price is right",
     "failed": "The price could not be updated. Check your connection and try again."
+  },
+  "currencyNames": {
+    "USD": "US Dollar",
+    "EUR": "Euro",
+    "GBP": "British Pound",
+    "BRL": "Brazilian Real",
+    "CAD": "Canadian Dollar",
+    "AUD": "Australian Dollar",
+    "JPY": "Japanese Yen",
+    "MXN": "Mexican Peso",
+    "INR": "Indian Rupee"
   }
 }

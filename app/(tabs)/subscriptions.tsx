@@ -777,9 +777,9 @@ export default function SubscriptionsScreen() {
       const path = `${FileSystem.cacheDirectory}trimio-billing.ics`;
       await FileSystem.writeAsStringAsync(path, ics, { encoding: FileSystem.EncodingType.UTF8 });
       const shareUri = Platform.OS === "android" ? await FileSystem.getContentUriAsync(path) : path;
-      await Share.share({ url: shareUri, title: "Trimio Calendar Export" });
+      await Share.share({ url: shareUri, title: t("subscriptions.shareCalendarTitle") });
     } catch {
-      await Share.share({ message: ics, title: "Trimio Calendar Export" });
+      await Share.share({ message: ics, title: t("subscriptions.shareCalendarTitle") });
     }
   };
 
@@ -857,10 +857,10 @@ export default function SubscriptionsScreen() {
       const path = `${FileSystem.cacheDirectory}trimio-export.csv`;
       await FileSystem.writeAsStringAsync(path, rows, { encoding: FileSystem.EncodingType.UTF8 });
       const shareUri = Platform.OS === "android" ? await FileSystem.getContentUriAsync(path) : path;
-      await Share.share({ url: shareUri, title: "Trimio Export" });
+      await Share.share({ url: shareUri, title: t("subscriptions.shareExportTitle") });
     } catch {
       // Fallback: share as plain text if file sharing fails
-      await Share.share({ message: rows, title: "Trimio Export" });
+      await Share.share({ message: rows, title: t("subscriptions.shareExportTitle") });
     }
   };
 

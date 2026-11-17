@@ -149,7 +149,7 @@
     "priceDesc": "Preis",
     "namePlaceholder": "z. B. Netflix",
     "pricePlaceholder": "z. B. 9,99",
-    "datePlaceholder": "z.B. 15.06.2025 oder 2025-06-15",
+    "datePlaceholder": "z. B. 15.06.2025 oder 2025-06-15",
     "deleteTitle": "Abonnement löschen",
     "deleteConfirm": "\"{{name}}\" entfernen?",
     "delete": "Löschen",
@@ -229,7 +229,9 @@
     "perCycle": "pro {{cycle}}",
     "a11yActions": "Aktionen für {{name}}",
     "nameLabel": "Name",
-    "priceLabel": "Preis"
+    "priceLabel": "Preis",
+    "shareCalendarTitle": "Trimio-Kalenderexport",
+    "shareExportTitle": "Trimio-Export"
   },
   "profile": {
     "premiumMember": "Premium-Mitglied",
@@ -526,7 +528,7 @@
     "catTwoTitle": "2 Abos in \"{{category}}\"",
     "catTwoDetail": "{{first}} und {{second}} sind beide in derselben Kategorie. Nutzt du wirklich beide?",
     "streamingTitle": "{{count}} Streamingdienste, das ist viel",
-    "streamingDetail": "{{names}} kosten zusammen {{total}}/Mon. Die meisten Haushalte nutzen ein oder zwei. Sie abzuwechseln, eines pausieren während du das andere schaust, kann Geld sparen.",
+    "streamingDetail": "{{names}} kosten zusammen {{total}}/Mon. Die meisten Haushalte nutzen ein oder zwei. Sie abzuwechseln, eines zu pausieren, während du das andere schaust, kann Geld sparen.",
     "streamingHint": "Spare etwa {{amount}}/Mon., wenn du eines pausierst",
     "fitnessTitle": "{{count}} Abos für Gesundheit und Fitness",
     "fitnessDetail": "{{names}} überschneiden sich im Zweck. Nutzt du wirklich beide? Du gibst {{total}}/Mon. in dieser Kategorie aus.",
@@ -649,7 +651,7 @@
     "faq2Q": "Kann ich ein Abonnement bearbeiten?",
     "faq2A": "Ja. Tippe in Meine Abos auf die drei Punkte neben einem Abo und dann auf Bearbeiten.",
     "faq3Q": "Wie werden monatliche Ausgaben berechnet?",
-    "faq3A": "Wöchentliche Abonnements werden auf 12 Monate hochgerechnet (x52/12), jahresweise durch 12 geteilt, monatliche direkt übernommen.",
+    "faq3A": "Wöchentliche Abonnements werden in einen Monatsbetrag umgerechnet (×52/12), jährliche durch 12 geteilt, monatliche direkt übernommen.",
     "faq4Q": "Werden meine Daten gespeichert, wenn ich die App deinstalliere?",
     "faq4A": "Ja. Deine Daten werden sicher auf unserem Server gespeichert, sodass nach der Neuinstallation und Anmeldung alles wiederhergestellt wird.",
     "faq5Q": "Wie erhalte ich Verlängerungshinweise?",
@@ -809,5 +811,16 @@
     "update": "Auf {{to}} ändern",
     "keep": "Mein Preis stimmt",
     "failed": "Der Preis konnte nicht geändert werden. Prüf deine Verbindung und versuch es noch einmal."
+  },
+  "currencyNames": {
+    "USD": "US-Dollar",
+    "EUR": "Euro",
+    "GBP": "Britisches Pfund",
+    "BRL": "Brasilianischer Real",
+    "CAD": "Kanadischer Dollar",
+    "AUD": "Australischer Dollar",
+    "JPY": "Japanischer Yen",
+    "MXN": "Mexikanischer Peso",
+    "INR": "Indische Rupie"
   }
 }
