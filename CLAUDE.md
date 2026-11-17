@@ -2727,6 +2727,40 @@ last one left off without needing a recap typed out.
   reading (use who-speaks.py), shorter generated takes (3 credits a second),
   more of the runtime carried by the real app, which is free, and the free
   upscaler instead of a paid finish.
+  PART 3 IS PUBLIC ON YOUTUBE since 2026-11-17T18:11:15Z, read off
+  `vidiq_get_videos_by_ids` (22 views that evening), so the scheduled
+  Instagram post's YouTube check passes when it fires. "Uso de IA" is not
+  exposed by the API and was not confirmed.
+- PART 4 OF THE STORY REEL, "he adds his own", 2026-11-17, at the owner's word
+  ("the next one should be done then"). Straight on from Part 3's last line:
+  "Fine. How do I add mine?" / "Paste the confirmation email." / the real
+  app's paste fills in Amazon Prime, 8.99, Monthly / "It filled it all in." /
+  "And no bank login." / "Okay, that was easy." 12.4 s plus the end card.
+  36 CREDITS, against 81.5 for Part 3: ONE Seedance 2.5 forward extension of
+  Part 3's take B, job `75c2b3bd-c64b-489c-9212-0741adc07236`, with no start
+  frame and no face or voice references. Words checked with Whisper base.en,
+  speakers with who-speaks.py (his lines 0.76 to 0.87; hers ahead by 0.11 and
+  0.10, the tie line, so the mouths were read on the final frame sheet: hers
+  move, his are shut). Built by `tools/reels/story/record-paste.js` and
+  `assemble-part4.py`; README items 27 and 28. The pasted email is demo text
+  at the catalogue's checked price; nothing was saved.
+  NOT POSTED AND NOT SCHEDULED. On the review page
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) with this caption,
+  passing caption.py and check_copy.py:
+  Part 4: how to get all of your subscriptions under control, one pasted email at a time.
+  Trimio is a subscription tracker: paste a confirmation email and it fills in the name, the price and how often you pay. No bank login.
+  Parts 1 to 3 are on our profile. Free on Google Play, link in bio.
+  #subscriptiontracker #subscriptions #personalfinance #moneytips #savemoney
+  YouTube title proposed: "How to get all of your subscriptions under
+  control: just paste the email". YouTube first, at the owner's word.
+  THE FREE UPSCALER CUT THE LAST FRAMES OFF EVERY TAKE, found on this one:
+  its final mux passed `-shortest` against the take's own audio, which runs
+  short of the picture (11.94 s against 12.00 s), so 5 of 288 frames went.
+  Only from the END (middle frames matched the original at offset 0, so no
+  lip drift). Part 3's cuts stop before the lost frames; Part 4 loses 0.13 s
+  inside its closing hold; Parts 1 and 2 were not rechecked, and at worst
+  their closing hold is 0.2 s shorter. `-shortest` is gone from
+  `upscale_video.py`; measured, the same mux then keeps 288 of 288.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
@@ -6450,6 +6484,50 @@ last one left off without needing a recap typed out.
   publishes, so the SDK upgrade (native build, runtimeVersion bump) is owed.
   OWNER DASHBOARD CHECKS: PostHog > project settings "Discard client IP data";
   Railway's Dockerfile (above) and its healthcheck path `/health`.
+- A SECOND AUDIT THE SAME EVENING, 2026-11-17, at the owner's request ("make
+  an audit with everything in order to know that everything is safe to have
+  and safe to continue"), after the morning's fixes. Nothing new needed a code
+  fix except the upscaler (see Part 4).
+  CLEAN, read rather than remembered: master `1f6b2198`, Checks run 899 green;
+  no secret shape in any tracked file or in today's 16 commits; backend
+  production dependencies 0 advisories (nodemon's chain is dev only); since
+  the morning only docs, skills and tools reached master, so nothing new
+  deployed; no Claude settings or hooks in the repo, and the user settings
+  enable only superpowers and mattpocock-skills, whose one hook (superpowers'
+  SessionStart) reads its own SKILL.md and makes no network call; the only
+  network call in any skill script is `needs_native_build.py` fetching npm
+  tarballs checked against the lockfile's hashes; vidIQ holds no scheduled
+  post and no dated draft; the two live scheduled tasks are the two the owner
+  agreed to (Part 3 to Instagram 2026-11-18T14:00Z, the Short numbers on
+  2026-11-22).
+  ROOT DEPENDENCIES: critical 0, high 6, moderate 6, low 1 (`pnpm audit`).
+  ONE NEW HIGH, picomatch ReDoS (GHSA-fc5q-39xc-vjpf, every version up to
+  4.0.7, NO patched version exists), in metro, jest and the Expo CLI: it needs
+  an attacker to supply a glob pattern, and nothing here compiles one from
+  outside input. The rest are the 2026-11-15 residuals. Dependabot's image-size
+  and minimatch update jobs fail red in Actions for the same reason (each
+  needs a major); that red is expected, not a broken build.
+  OWED TO PHONES: an `eas update` carrying 13 client files since `040c4b3c`,
+  and `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Owner's yes first.
+  FOR THE OWNER, NOT CODE, in order:
+  1. Instagram: three posts with invented UI are STILL LIVE (25 Oct
+     `De6O4D7jWIa`, 2 Nov `DfPNa4IlwU8`, 12 Nov `Dfo9IPcDmPx`); 22 Oct and
+     4 Nov are gone. AND SIX POSTS SINCE 13 NOV CAME FROM OUTSIDE THIS SESSION
+     AND OUTSIDE vidIQ, three of which break the posting rules: 15 Nov
+     `DfxHOOXiD_Z` (a "cost per use" screen built on usage counts Trimio does
+     not have), 16 Nov `Dfy_Uqwjr2-` (a generated iPhone-shaped phone with an
+     invented screen and Netflix at €17.99, which no checked price says),
+     16 Nov `DfzQUohiJ7X` (invented UI cards). 17 Nov `Df1kKoCFZmk` and
+     `Df1rAs7CgEM` are the same yearly billing reel posted twice an hour
+     apart; its claim is true. 13 Nov `Dfrvqeqk74w` ("We asked people") has a
+     generated person, so it stands only if a real poll happened and carries
+     the AI label. Who is posting is NOT KNOWN here; whoever it is does not
+     have this file's rules.
+  2. vidIQ still has the owner's PERSONAL YouTube channel connected with
+     canPublish true. Disconnecting it in vidIQ removes the one way a post
+     could land there by mistake.
+  3. The standing items from the morning: Railway's Dockerfile and `/health`
+     healthcheck, PostHog "Discard client IP data", backups restore test.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
