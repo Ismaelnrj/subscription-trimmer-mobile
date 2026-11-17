@@ -518,11 +518,15 @@ describe("every live-row query learned about the new state", () => {
        If it still saw cancelled rows it would keep rolling the anchor forward,
        and the anchor is what the saved figure is projected from, so the count
        would drift every time anybody opened the app. */
-    const ALERTS = SERVER.slice(
-      SERVER.indexOf("app.get('/api/trpc/alerts.list'"),
-      SERVER.indexOf("UPDATE subscriptions SET next_billing_date")
-    );
+    const start = SERVER.indexOf("app.get('/api/trpc/alerts.list'");
+    const ALERTS = SERVER.slice(start, SERVER.indexOf("UPDATE subscriptions SET next_billing_date", start));
     expect(ALERTS).toMatch(/cancelled_at IS NULL/);
+  });
+
+  it("subscriptions.list advances dates too (2026-11-17), and only on rows that are not cancelled", () => {
+    const start = SERVER.indexOf("app.get('/api/trpc/subscriptions.list'");
+    const LIST = SERVER.slice(start, SERVER.indexOf("UPDATE subscriptions SET next_billing_date", start));
+    expect(LIST).toMatch(/s\.cancelled_at IS NULL/);
   });
 
   it("keeps the column nullable with no backfill", () => {

@@ -3482,6 +3482,29 @@ app.get('/api/trpc/subscriptions.list', authMiddleware, async (req, res) => {
        ORDER BY s.created_at DESC`,
       [req.userId]
     );
+    /* A PASSED BILLING DATE IS MOVED TO THE NEXT ONE HERE TOO, the same rule
+       and the same function alerts.list and the reminder email job already
+       use. Without it this list handed back the stale date: the dashboard
+       fires alerts.list in parallel and never refetches, so a Netflix renewed
+       on 5 November and not opened since read "Due today, 5 Nov" at the top of
+       Upcoming on the 17th, and the list said "Next: Nov 5" (found 2026-11-17).
+       Fixed here rather than in the app so every installed build gets it.
+       Today's date is never moved (advanceBillingDate stops at today), paused
+       rows are left alone exactly as alerts.list leaves them, and the write is
+       conditional on the stored value so a concurrent edit wins. */
+    const today = startOfUtcDay(new Date());
+    for (const r of result.rows) {
+      if (r.is_active === false || !r.next_billing_date) continue;
+      const stored = new Date(r.next_billing_date);
+      if (isNaN(stored.getTime()) || stored >= today) continue;
+      const { date, advanced } = advanceBillingDate(stored, r.billing_cycle, today, r.billing_anchor_day);
+      if (!advanced || date < today) continue;
+      await pool.query(
+        'UPDATE subscriptions SET next_billing_date = $1 WHERE id = $2 AND user_id = $3 AND next_billing_date = $4',
+        [date.toISOString(), r.id, req.userId, r.next_billing_date]
+      );
+      r.next_billing_date = date;
+    }
     res.json(trpc(result.rows.map(r => ({
       ...formatSub(r),
       priceIncrease: r.ph_changed_at ? {
