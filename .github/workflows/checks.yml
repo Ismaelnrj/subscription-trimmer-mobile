@@ -91,6 +91,44 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # THE BACKEND BOOTS, OR NOTHING MERGES. Master deploys to Railway on push,
+      # and until 2026-11-17 no step here even parsed backend/server.js: the
+      # audit appended a syntax error to it and all 128 suites still passed
+      # (lint ignores backend/, and the tests lift functions out of the file
+      # rather than loading it). This parses every backend file, installs the
+      # backend's own locked dependencies, boots the REAL server on the
+      # runner's PostgreSQL (so initDB and its migrations run) and requires
+      # /health to answer 200. Twice, because production runs initDB on every
+      # boot and a migration that only works once would take it down.
+      - name: Backend parses, installs and boots
+        run: |
+          for f in backend/*.js; do node --check "$f"; done
+          (cd backend && npm ci --omit=dev --no-audit --no-fund)
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -qc "ALTER USER postgres PASSWORD 'ci'"
+          sudo -u postgres psql -qc "CREATE DATABASE trimio_ci"
+          # The server insists on TLS to Postgres, as it does in production.
+          if [ "$(sudo -u postgres psql -tAc 'SHOW ssl')" != "on" ]; then
+            D=$(sudo -u postgres psql -tAc 'SHOW data_directory')
+            sudo openssl req -x509 -nodes -newkey rsa:2048 -days 2 -subj /CN=localhost -keyout "$D/ci.key" -out "$D/ci.crt"
+            sudo chown postgres:postgres "$D/ci.key" "$D/ci.crt" && sudo chmod 600 "$D/ci.key"
+            sudo -u postgres psql -qc "ALTER SYSTEM SET ssl_cert_file = '$D/ci.crt'"
+            sudo -u postgres psql -qc "ALTER SYSTEM SET ssl_key_file = '$D/ci.key'"
+            sudo -u postgres psql -qc "ALTER SYSTEM SET ssl = on"
+            sudo systemctl restart postgresql.service
+          fi
+          boot() {
+            DATABASE_URL=postgres://postgres:ci@127.0.0.1:5432/trimio_ci JWT_SECRET="$(openssl rand -hex 32)" PORT=3999 \
+              node backend/server.js > /tmp/server.log 2>&1 &
+            PID=$!
+            for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:3999/health && break; sleep 1; done
+            curl -sf http://127.0.0.1:3999/health || { cat /tmp/server.log; exit 1; }
+            echo
+            kill $PID; wait $PID 2>/dev/null || true
+          }
+          boot
+          boot
+
       # The site pages are generated, so a source edited without regenerating
       # leaves the live page saying something the source no longer says (and
       # the cancel guides would then disagree with the app, which reads the

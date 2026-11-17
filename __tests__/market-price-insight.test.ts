@@ -1,5 +1,16 @@
 import { buildTips, Sub } from "../app/insights";
 
+/* THE CLOCK IS FROZEN. These cases lean on real catalogue rows and their
+   `verified` dates, and isPriceFresh compares those dates with today, so on
+   the real clock this suite went red on its own from 2027-03-05, six months
+   after the rows were checked (found by the 2026-11-17 audit, measured with a
+   faked clock), and that red would have blocked every merge to master. The
+   suite tests the insight, not whether the catalogue is fresh: re-checking
+   prices is tracked in CLAUDE.md and the price rise card goes quiet by design
+   when they age. */
+beforeAll(() => { jest.useFakeTimers({ now: new Date("2026-11-17T12:00:00Z") }); });
+afterAll(() => { jest.useRealTimers(); });
+
 const fmtC = (n: number) => `$${n.toFixed(2)}`;
 // The tips are asserted on by id, never by copy, so echoing the key back is
 // enough to stand in for i18next here.
