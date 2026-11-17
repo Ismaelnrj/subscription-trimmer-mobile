@@ -6261,6 +6261,81 @@ last one left off without needing a recap typed out.
   FOUND WHILE READING THE ACCOUNT: the Instagram name field, the bold line
   Instagram search matches, reads "Ismael". Suggested "Trimio | Subscription
   Tracker" (29 of 30); the owner's call, not changed.
+- A FULL AUDIT, 2026-11-17, at the owner's request ("do an audit with and for
+  everything that we have. Use skills agents, etc"). FIVE READ-ONLY REVIEWERS
+  (backend security, app correctness, privacy, design and copy, release and
+  supply chain), every finding re-checked before anything changed, plus the
+  repo's own checks: typecheck clean, 128 suites green, lint 0 errors.
+  FIVE REVIEWERS AT ONCE HIT THE OWNER'S 5 HOUR USAGE LIMIT TWICE, stopping
+  them and this session; run at most three at a time, and resume a stopped
+  one with SendMessage rather than starting it again.
+  FIXED, each its own commit, CI green on each, all measured:
+  `6828c6f4` GUESS LIMITS DID NOT HOLD FOR A BURST, the worst find. Every per
+  account limit counted after the lookup, so requests waiting on the pool all
+  compared first. On the real server and PostgreSQL 16: 100 parallel reset
+  guesses with the right one at 60 reset the password in 3 of 4 trials
+  (account takeover from many IPs), 100 verification guesses were all
+  compared, 60 parallel wrong passwords all ran bcrypt against a lock of 10,
+  and account deletion had no limit at all. Codes now claim a number in the
+  database first (`reset_attempts`, `verification_attempts`, one UPDATE ...
+  RETURNING, so the row lock hands out 1, 2, 3), passwords reserve the attempt
+  before the first await, deletion shares the login counter. After: 0 of 4,
+  0 of 4, 10 compared, 429. Also non-string refresh tokens and malformed ids
+  answer 400, not a 500 and a Sentry event. Backend, live with the deploy.
+  `2fc36a94` subscriptions.list now advances a passed billing date like
+  alerts.list (a 5 Nov renewal read "Due today, 5 Nov" on the 17th). Backend.
+  `d5be573b` CI PARSES, INSTALLS AND BOOTS THE BACKEND on the runner's
+  PostgreSQL, twice, before anything merges: an appended syntax error passed
+  all 128 suites. And market-price-insight's clock is frozen (it went red on
+  its own from 2027-03-05).
+  `3cda75f6` the currency is the account's on a phone with none of its own
+  (a reinstall saved rows as USD); signing out clears it. App.
+  `d615083b` a removed waiting entry is never sent; the purchase checks the
+  live session, not the render's. App.
+  `c4834699` THE ROOT `Dockerfile` WAS STILL node:18-slim. Only
+  backend/Dockerfile moved to 22 in September, and which one Railway builds is
+  a dashboard setting. Both say Node 22 and NODE_ENV=production now and the
+  test checks both. If Railway builds the root one, production moved off an
+  unpatched runtime with this deploy. OWNER: read the first FROM line of the
+  next Railway build log, or Settings > Root Directory, and say which.
+  `cd3301be` AN EMAIL UNSUBSCRIBE WAS UNDONE BY ANY OTHER SWITCH: the screen
+  posted every field, getPreferences still said email on, and a push toggle
+  cleared email_opt_out. Measured both servers. Backend half live with the
+  deploy, app half (send only the changed switch) rides the update.
+  `a880dd47` no unused Expo push token fetch; a typed custom category never
+  reaches PostHog. App.
+  `f883c7ff` currency names and share titles in German, three copy fixes. Its
+  message says 752 keys a side; measured, 754 (743 + 9 + 2). Not amended.
+  AN `eas update` IS OWED, 15 client files since `040c4b3c` (the list is
+  `git diff --name-only 040c4b3c..HEAD -- app lib components locales`), and
+  `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Owner's yes first.
+  NOT FIXED, RECOMMENDED, in order:
+  1. ONE REFRESH TOKEN PER USER: any login (the website's form, a tablet)
+     signs the phone out within an hour, and a refused session discards
+     entries waiting offline. Needs a refresh_tokens table, one row per
+     session; an auth change, so it gets its own measured pass.
+  2. THE PRIVACY POLICY TEXT, a drafted pass for the owner's yes, both
+     languages: the win-back email has no stated purpose or legal basis;
+     Expo (EAS Update) and api.frankfurter.app are unlisted; section 2 omits
+     the Google name and id, language, referrals and IPs; it promises export
+     to every tier while the in-app export is Premium; it puts Sentry in the
+     US while the app's DSN is ingest.de (check the backend DSN host); the
+     date still reads 4 September.
+  3. Account deletion does not delete the RevenueCat subscriber.
+  4. At the next native build: check the AAB's targetSdk is 36 or more, since
+     fix-gradle.sh Fix 1 and Fix 9 only warn when their marker is missing;
+     `set -e` in the Codemagic Gradle steps.
+  KNOWN AND LEFT: pending_premium_sync is per phone (the webhook covers it);
+  the loginFailures map drops its oldest entry at 10,000; cron overlap could
+  double an email; CSV headers stay English; a few fontWeight beside a
+  matching Montserrat family; actions pinned by tag, not SHA.
+  DATES: 2027-03-05, 03-16 and 04-06 the 16 checked catalogue prices start
+  going quiet (the price rise card and the market tip need fresh checks);
+  2027-04-12 the five published guides fail cancel-guide-pages.test.js on
+  purpose. React Native 0.79 is past support and EAS may stop accepting SDK 53
+  publishes, so the SDK upgrade (native build, runtimeVersion bump) is owed.
+  OWNER DASHBOARD CHECKS: PostHog > project settings "Discard client IP data";
+  Railway's Dockerfile (above) and its healthcheck path `/health`.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
