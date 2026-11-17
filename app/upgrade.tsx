@@ -183,8 +183,12 @@ export default function UpgradeScreen() {
     if (sync.status !== "verified") return null;
     /* Never write another account's user into this session. The response is
        for whoever the request was authenticated as, so a mismatch means the
-       session changed underneath this call. */
-    if (!user || sync.user.id !== user.id) return null;
+       session changed underneath this call. Read from the store NOW, not the
+       `user` this render captured: the purchase awaits for seconds, and a sign
+       out and in underneath it is exactly the case this check exists for
+       (_layout.tsx's retry reads it at apply time for the same reason). */
+    const current = useAuthStore.getState().user;
+    if (!current || sync.user.id !== current.id) return null;
     setUser(sync.user as any);
     const paid = hasPaidPlan(sync.user as any);
     setIsPremium(paid);

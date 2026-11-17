@@ -316,3 +316,24 @@ describe("the entry the server will make", () => {
     expect(P.defaultBillingDate("monthly", "2025-11-30", today)).toBe("2026-02-28T00:00:00.000Z");
   });
 });
+
+describe("a removed entry is never sent (2026-11-17)", () => {
+  it("removing B while A's post hangs keeps B off the server", async () => {
+    const a = payload("A");
+    const b = payload("B");
+    await addOffline(a);
+    await addOffline(b);
+    posted.length = 0;
+    let release;
+    replies = [(x) => new Promise((r) => { release = () => r(row(201, x)); }), (x) => row(202, x)];
+    const pass = P.flushPending();
+    await tick();
+    expect(posted).toEqual([a.clientRef]);
+    P.removePending(b.clientRef);
+    release();
+    await pass;
+    expect(posted).toEqual([a.clientRef]);
+    expect(items()).toHaveLength(0);
+    expect(list().some((r) => r.name === "B")).toBe(false);
+  });
+});

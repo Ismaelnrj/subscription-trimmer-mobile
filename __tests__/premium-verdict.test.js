@@ -61,7 +61,7 @@ describe("the server's verdict is what decides premium", () => {
 
   it("it refuses a user that is not the authenticated account", () => {
     const code = codeOf("app/upgrade.tsx");
-    expect(code).toMatch(/sync\.user\.id !== user\.id/);
+    expect(code).toMatch(/useAuthStore\.getState\(\)\.user[\s\S]{0,80}sync\.user\.id !== current\.id/);
   });
 
   it("a charge the server has not confirmed is pending, never failed", () => {

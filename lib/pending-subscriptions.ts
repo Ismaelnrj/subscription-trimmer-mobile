@@ -337,6 +337,13 @@ async function sendAll(): Promise<number> {
   if (!poster || uid == null || usePendingStore.getState().userId !== uid) return 0;
   for (const item of waiting()) {
     if (gen !== generation) break;
+    /* STILL WAITING? The loop walks a snapshot, and one post can hang for up
+       to 20 s on a bad connection. An entry the person removed in that time
+       (or one refused meanwhile) must not be sent: before this check it was,
+       came back as a real row and reappeared in the list (found 2026-11-17,
+       measured on the real module with a slow first post). */
+    const still = usePendingStore.getState().items.find((i) => i.ref === item.ref);
+    if (!still || still.refusal) continue;
     let saved: unknown;
     try {
       saved = await poster(item.payload);
