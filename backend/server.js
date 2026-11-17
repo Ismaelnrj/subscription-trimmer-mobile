@@ -4292,7 +4292,10 @@ app.post('/api/trpc/notifications.markAsRead', authMiddleware, async (req, res) 
 app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, res) => {
   try {
     await pool.query('INSERT INTO notification_preferences (user_id) VALUES ($1) ON CONFLICT DO NOTHING', [req.userId]);
-    const result = await pool.query('SELECT * FROM notification_preferences WHERE user_id = $1', [req.userId]);
+    const result = await pool.query(
+      'SELECT np.*, u.email_opt_out FROM notification_preferences np JOIN users u ON u.id = np.user_id WHERE np.user_id = $1',
+      [req.userId]
+    );
     const p = result.rows[0];
     // A NULL left by the old full-overwrite update reads as the column default,
     // so the app never receives a value that is neither on nor off.
@@ -4301,7 +4304,14 @@ app.get('/api/trpc/notifications.getPreferences', authMiddleware, async (req, re
       spendingAlerts: p.spending_alerts ?? true,
       weeklySummary: p.weekly_summary ?? true,
       pushEnabled: p.push_enabled ?? true,
-      emailReminders: p.email_reminders ?? false,
+      /* OFF ONCE THEY HAVE UNSUBSCRIBED. The email link sets only
+         users.email_opt_out, so this used to report the switch as still on,
+         and the app posts every field on any change: turning push alerts off
+         sent emailReminders: true, which updatePreferences rightly reads as
+         consent and so cleared the unsubscribe. Somebody who had unsubscribed
+         was re-subscribed by touching an unrelated switch (found 2026-11-17).
+         Reporting what actually happens closes it for every installed build. */
+      emailReminders: (p.email_reminders ?? false) && p.email_opt_out !== true,
       renewalAlertDays: p.renewal_alert_days ?? 3,
     }));
   } catch (err) {

@@ -82,9 +82,13 @@ export default function NotificationPreferencesScreen() {
     }
   };
 
+  /* ONLY THE FIELD THAT CHANGED. The whole cached object used to go, so a
+     stale `emailReminders: true` rode along with any other switch and the
+     server took it as a fresh yes to email, undoing an unsubscribe (found
+     2026-11-17). updatePreferences is a partial update, so the rest stays. */
   const toggle = (key: string, value: boolean | number) => {
     if (!prefs) return;
-    updateMutation.mutate({ ...prefs, [key]: value });
+    updateMutation.mutate({ [key]: value });
   };
 
   /* Off is a visible track: c.border measured 1.31:1 against the card, so an
