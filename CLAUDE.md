@@ -2692,12 +2692,18 @@ last one left off without needing a recap typed out.
   #freetrial #subscriptiontrap #cancelsubscriptions #youtubepremium #savemoney
   ("the day before" is the scheduler's own rule: 09:00 the day before a
   trial ends, `lib/notification-scheduler.ts`.)
-  THE OWNER ASKED FOR IT ON INSTAGRAM TOMORROW ("schedule the third for
+  SCHEDULED FOR INSTAGRAM AT THE OWNER'S WORD ("schedule the third for
   Instagram tomorrow"), which names the platform and is the consent the
-  scheduling rule asks for. NOT YET SCHEDULED when this was written: the
-  sharpened file was still rendering, and the one time post is created only
-  once that file is uploaded and checked. This line is replaced with the
-  scheduled task's id and time once it exists.
+  scheduling rule asks for: `send_later` `trig_01BjGYp1RZ22eLJYRzwfHDSW`,
+  "Post Part 3 reel to Instagram", fires ONCE at 2026-11-18T14:00Z (15:00
+  Berlin), read off the tool's answer. It posts vidIQ upload
+  `884c6f39-6709-424b-b8f8-29073519c200` (checked 2026-11-17: 22.63 s,
+  1080x1920, 9,126,563 bytes, the sharpened cut) with the caption above and
+  `isAiGenerated: true`, after a double post check and a size check, then
+  sends ONE push notification with the link or the error. It disables itself
+  after firing. NOT YET FIRED. The owner had not seen the cut when it was
+  scheduled; it is on the review page, and saying so in the session before
+  then stops it (the prompt checks first).
   YOUTUBE IS NOT SCHEDULED: the series order was YouTube first, but the owner
   asked for Instagram tomorrow and named no YouTube upload, so it was offered
   rather than done (title ready: "How to cancel YouTube Premium free trial
