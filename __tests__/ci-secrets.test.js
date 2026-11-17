@@ -150,15 +150,24 @@ describe("CI uses the package manager and runtime the repo declares", () => {
     }
   });
 
-  it("the backend image and engines agree on Node 22", () => {
-    expect(read("backend/Dockerfile")).toMatch(/^FROM node:22-slim$/m);
+  /* BOTH images, because which one Railway builds is a dashboard setting this
+     repo cannot see. Only backend/Dockerfile was checked until 2026-11-17, and
+     the root one sat on node:18-slim, out of support since April 2025. */
+  const IMAGES = ["backend/Dockerfile", "Dockerfile"];
+
+  it("both backend images and engines agree on Node 22", () => {
+    for (const f of IMAGES) expect(`${f}: ${read(f).match(/^FROM .*$/m)[0]}`).toBe(`${f}: FROM node:22-slim`);
     expect(JSON.parse(read("backend/package.json")).engines.node).toBe(">=22");
   });
 
-  it("the backend image sets NODE_ENV, as defence in depth only", () => {
+  it("both backend images set NODE_ENV, as defence in depth only", () => {
     /* It must be set, because libraries read it, and it must NOT be what makes
        the JWT check fire. jwt-secret-required.test.js pins the second half. */
-    expect(read("backend/Dockerfile")).toMatch(/^ENV NODE_ENV=production$/m);
+    for (const f of IMAGES) expect(read(f)).toMatch(/^ENV NODE_ENV=production$/m);
+  });
+
+  it("neither image installs dev dependencies", () => {
+    for (const f of IMAGES) expect(read(f)).toMatch(/npm install --omit=dev/);
   });
 });
 

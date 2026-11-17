@@ -118,7 +118,7 @@ jobs:
             sudo systemctl restart postgresql.service
           fi
           boot() {
-            DATABASE_URL=postgres://postgres:ci@127.0.0.1:5432/trimio_ci JWT_SECRET="$(openssl rand -hex 32)" PORT=3999 \
+            NODE_ENV=production DATABASE_URL=postgres://postgres:ci@127.0.0.1:5432/trimio_ci JWT_SECRET="$(openssl rand -hex 32)" PORT=3999 \
               node backend/server.js > /tmp/server.log 2>&1 &
             PID=$!
             for i in $(seq 1 30); do curl -sf -o /dev/null http://127.0.0.1:3999/health && break; sleep 1; done
