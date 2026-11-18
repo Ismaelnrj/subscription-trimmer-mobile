@@ -2771,6 +2771,14 @@ last one left off without needing a recap typed out.
   inside its closing hold; Parts 1 and 2 were not rechecked, and at worst
   their closing hold is 0.2 s shorter. `-shortest` is gone from
   `upscale_video.py`; measured, the same mux then keeps 288 of 288.
+  ON YOUTUBE, PRIVATE, 2026-11-18, at the owner's word ("youtube part 4 and
+  5 as private, i will post it later myself"): vidIQ draft
+  `91017d7b-ade2-4e82-a316-6980aaf8586c` (revision `dbc47a00`) published to
+  @gettrimio, status completed, https://www.youtube.com/watch?v=hrSGbxiGt9Q,
+  the sharpened file. The OWNER makes it public and sets "Uso de IA" to Sí.
+  Read as not public right after (`vidiq_get_videos_by_ids` answers "Could
+  not find"). Instagram follows about a day after it is public, on the
+  owner's word naming Instagram.
 - PART 5 OF THE STORY REEL, "Netflix went up", 2026-11-18, at the owner's
   word ("do the videos as we spoke and also, a bit comedy or funny as well.
   keep the people engage!"). The funny one, same kitchen, straight on from
@@ -2799,6 +2807,15 @@ last one left off without needing a recap typed out.
   won't cancel it" (keyword "streaming price increase", about 3,500 a month,
   competition 37). Order: Part 4 to YouTube first; YouTube before Instagram
   for each part, and only on the owner's word naming the platform.
+  ON YOUTUBE, PRIVATE, 2026-11-18, the same word as Part 4: vidIQ upload
+  `4ed88fad-43a5-4d88-8dd1-1c3bc372030f` (14.93 s, 1080x1920, 4,890,210
+  bytes, byte for byte the review page file), draft
+  `dd0fa0e8-0a21-4f5b-9742-8b7a0451a930` (revision `518f83bb`) to @gettrimio,
+  status completed, https://www.youtube.com/watch?v=82s07QweNdw, title
+  "Netflix subscription price increase? He still won't cancel it", Howto &
+  Style, description ending "link on the channel page". Read as not public
+  right after. The OWNER makes it public and sets "Uso de IA" to Sí; NOT ON
+  INSTAGRAM, and not until the owner says so naming Instagram.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
