@@ -125,6 +125,24 @@ are.
 | What works in the niche right now | `references/ig/ig-viral.md` |
 | What worked on Trimio's own account | `references/ig/ig-audit.md` |
 
+## The seven Vyral playbooks, for depth on one surface
+
+The vyralcontent/content-skills playbooks are in `references/vyral/`, unchanged
+from upstream, as reading. Open one when the `ig/` playbook above is too thin
+for the job. `references/vyral/README.md` lists where Trimio's rules win; the
+first one is that every playbook ends with an advert for the author's paid
+tool, and that section is ignored.
+
+| The task | Open |
+|---|---|
+| A batch of hooks, or fixing a weak opening | `references/vyral/viral-hooks/PLAYBOOK.md` |
+| A Reel: sends, originality, Insights, why one flopped | `references/vyral/viral-instagram-reels/PLAYBOOK.md` |
+| A Short: swipe away rate, loops, the retention curve | `references/vyral/viral-youtube-shorts/PLAYBOOK.md` |
+| A caption, on screen text, the one ask, a pinned comment | `references/vyral/viral-captions-and-ctas/PLAYBOOK.md` |
+| A list of ideas, content pillars, mining comments | `references/vyral/viral-short-form-ideas/PLAYBOOK.md` |
+| A whole script, hook to payoff | `references/vyral/viral-short-form/PLAYBOOK.md` |
+| TikTok (not a Trimio channel today) | `references/vyral/viral-tiktok-content/PLAYBOOK.md` |
+
 ## Reading results
 
 - **Against the account's own median**, never raw views: the reel median was

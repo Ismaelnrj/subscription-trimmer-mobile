@@ -90,6 +90,28 @@ describe("trimio-social: provenance and the posting gate", () => {
     expect(readme).toMatch(/check_copy\.py/);
   });
 
+  it("keeps the Vyral playbooks as reading, with the advert overruled", () => {
+    // vyralcontent/content-skills, vendored 2026-11-18. A SKILL.md under
+    // references/ would register as a second skill fighting this one for
+    // "write my caption", so each is renamed PLAYBOOK.md.
+    const walk = (dir) =>
+      fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(path.join(dir, e.name)) : [path.join(dir, e.name)],
+      );
+    const vyral = path.join(SKILL, "references", "vyral");
+    const files = walk(vyral);
+    expect(files.filter((f) => path.basename(f) === "SKILL.md")).toEqual([]);
+    expect(read("references/vyral/LICENSE")).toMatch(/MIT License[\s\S]*Vyral/);
+    const skill = read("SKILL.md");
+    const named = [...skill.matchAll(/`(references\/vyral\/[a-z-]+\/PLAYBOOK\.md)`/g)].map((m) => m[1]);
+    expect(new Set(named).size).toBe(7);
+    for (const rel of named) expect(fs.existsSync(path.join(SKILL, rel))).toBe(true);
+    const readme = read("references/vyral/README.md");
+    expect(readme).toMatch(/## Where Trimio's rules win/);
+    expect(readme).toMatch(/Never pitch Vyral/);
+    expect(readme).toMatch(/23c/);
+  });
+
   it("starts titles from measured keywords", () => {
     const skill = read("SKILL.md");
     expect(skill).toMatch(/## Titles and captions start from keywords/);
