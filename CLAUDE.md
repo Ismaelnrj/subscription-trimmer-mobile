@@ -6645,6 +6645,23 @@ last one left off without needing a recap typed out.
      now fails CI on a tracked keystore, key, env or service account file or
      a live credential shape; planted, it caught the April keystore, a fake
      AWS key and a Postgres URL with a password.
+     "PROBABLY DEAD" WAS PROBABLY WRONG, found the same day. The build 41 log
+     prints `CM_KEY_ALIAS` as asterisks, and an unset alias would print
+     `trimio` in clear, so it was SET by hand and marked secure. `05f25d26`
+     (2026-05-06, "Debug keystore alias mismatch") shows why: the keystore
+     put in Codemagic did not hold `trimio`, and the only other keystore in
+     this history holds `subtrimmer` alone. The owner also believes it is
+     `subtrimmer`. THE FINGERPRINT THAT SETTLES IT: the leaked file is 2,736
+     bytes, and the same step logs `Keystore size: N bytes`. Any other number
+     rules it out; 2,736 is strong (four comparable keystores measured 2,712
+     to 2,752). The upload certificate in Play Console (Firma de aplicaciones,
+     download, open on Windows) would read Valid from 2 April 2026 if so.
+     HOW BAD IT IS: low. The password resisted 35 obvious guesses (offline,
+     the file only; never printed). An upload key alone ships nothing to
+     phones: Play re-signs with Google's key, so using it needs the Play
+     Console account too, which has 2FA. The upload key reset fixes it for
+     good; ORDER MATTERS: change Codemagic only AFTER Google confirms the new
+     key, or uploads are refused. Never "Actualizar clave" on that page.
   5. COMPONENTS: as on 2026-11-17. Backend production 0; root critical 0,
      high 6, all build tooling except decode-uri-component (a crafted link
      can freeze the app, nothing more). Outdated: Expo SDK 53 and React
