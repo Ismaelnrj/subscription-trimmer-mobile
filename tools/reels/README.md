@@ -388,3 +388,43 @@ python3 tools/brand-video.py build/part5-captioned.mp4 --out build/part5-en.mp4 
     date. The greeting must match the morning kitchen, so `REEL_TZ` picks a
     zone where it is morning when recording. The tap changes the row, so
     every run needs a fresh account.
+
+### Part 6, "the gym paid for the coffee" (2026-11-18)
+
+The same couple in a new place, at the owner's word ("number 6, in another
+location same people"): the Lisbon trip Part 2 ended on. "The gym paid for this
+trip." / she checks (the real Cancelled screen: €29.90 avoided, 1 charge so
+far) / "€29.90 so far." / "So… the coffee." / "The coffee." / "To the gym." x2,
+a toast. 33.5 credits: start frame `268123d1-57ab-4963-a673-2568752886d8` (0.5)
+and ONE `omni_reference` take, 11 s, `9b6e7df8-e400-47c5-83d9-705d990f53aa`
+(33), both made by item 21's recipe with the same five reference ids, no retake.
+
+```
+node tools/reels/story/make-demo-account-part6.js /tmp/tokens-part6     # then the two SQL lines in its header
+node tools/reels/story/record-cancelled.js /tmp/rec /tmp/tokens-part6
+python3 tools/reels/story/assemble-part6.py take.mp4 /tmp/rec/cancelled-*/ /tmp/rec/cancelled.png build/
+python3 tools/brand-video.py build/part6-captioned.mp4 --out build/part6-en.mp4 --lang en --no-bug
+```
+
+32. **A "saved so far" figure is staged by moving the date, never the number.**
+    The Cancelled screen counts a charge only once its billing date has
+    passed, so a gym cancelled today shows nothing. The demo account cancels
+    the Gym through the API, then backdates `cancelled_at` 33 days and the
+    stored billing date to 30 days ago by SQL, which is the story's own
+    timeline; the €29.90 and "1 charge so far" are then the server's
+    `chargesAvoidedSince`, read back off `subscriptions.cancelled` before
+    recording. A cancelled row is never advanced by the list, the alerts or
+    the reminder job, so the stored date stays put. Settings shows the
+    account's address, so the demo is renamed `mia@example.com`.
+33. **Place the insert by the measured lines, not the scripted ones.** The
+    prompt gave her a silent beat (2.5 to 4 s) to pick up the phone; the take
+    spent it on the pickup and put her number at 4.10 to 4.65. Cutting to the
+    app on his last syllable (1.93) and back on her "so far" (4.70) makes the
+    number appear on screen and then be said over it, and returns on her
+    deadpan for the end of the joke. Whisper small.en heard all six lines as
+    written; who-speaks.py was clear on four and within 0.08 on her two short
+    ones, whose mouths were read on a sheet (hers move, his are shut).
+34. **Take a held still after the tap, not by opening the URL.** Opening
+    `/cancelled` directly gives a screen with no back arrow (no history), so
+    it would not match the recording that just navigated there.
+    `record-cancelled.js` takes its 3x still at the end of the recording.

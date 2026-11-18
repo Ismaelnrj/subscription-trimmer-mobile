@@ -2816,6 +2816,35 @@ last one left off without needing a recap typed out.
   Style, description ending "link on the channel page". Read as not public
   right after. The OWNER makes it public and sets "Uso de IA" to Sí; NOT ON
   INSTAGRAM, and not until the owner says so naming Instagram.
+- PART 6 OF THE STORY REEL, "the gym paid for the coffee", 2026-11-18, at the
+  owner's word ("for the next video, number 6, in another location same
+  people"). The Lisbon trip Part 2 ended on: a cafe terrace, a month later.
+  "The gym paid for this trip." / she checks (the real Cancelled screen,
+  "€29.90 avoided, 1 charge so far") / "€29.90 so far." / "So… the coffee." /
+  "The coffee." / "To the gym." x2, a toast. The joke is on him, never on the
+  app: the screen only counts a charge once its date has passed. 11.4 s plus
+  the end card (14.0 s).
+  33.5 CREDITS, no retake: start frame `268123d1-57ab-4963-a673-2568752886d8`
+  (0.5) and one `omni_reference` take `9b6e7df8-e400-47c5-83d9-705d990f53aa`
+  (33), item 21's recipe with the same five reference ids. Whisper small.en
+  heard all six lines as written; speakers clear on four, her two short ones
+  settled on a mouth sheet. The €29.90 is the server's own count for a Gym
+  cancelled 33 days before recording (backdated by SQL to the story's
+  timeline; the figure itself is never typed). Built by
+  `make-demo-account-part6.js`, `record-cancelled.js` and `assemble-part6.py`;
+  README items 32 to 34.
+  NOT POSTED AND NOT UPLOADED. On the review page
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) with this caption,
+  passing caption.py (READY) and check_copy.py:
+  Part 6: you cancel subscriptions to save money, so what has the gym paid for so far?
+  Trimio is a subscription tracker: mark one as cancelled and it counts every charge you have avoided since, once its billing date has passed. One month after the gym: €29.90. The coffee is on the gym.
+  Parts 1 to 5 are on our profile. Free on Google Play, link in bio.
+  #cancelsubscriptions #savemoney #subscriptiontracker #personalfinance #lisbon
+  YouTube title proposed: "Cancel subscriptions to save money? The gym paid
+  for the coffee" ("cancel subscriptions" about 13,800 a month, competition
+  49; every gym phrase is under vidIQ's floor). "Parts 1 to 5 are on our
+  profile" is true only once Parts 4 and 5 are on Instagram, so Part 6 goes
+  after them. YouTube first, on the owner's word naming the platform.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,

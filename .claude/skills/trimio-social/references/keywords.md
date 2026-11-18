@@ -43,6 +43,8 @@ a fresh `vidiq_keyword_research` call, never from a guess.
 | free trial | ~8,900 | 47 | the trial reminder; a word for the text, too broad for a title |
 | subscription trap | ~24,900 | 47 | a trial that turns into a charge; growing (+94% on vidIQ's reading, 2026-11-17) |
 | streaming price increase | ~3,500 | 37 | a streaming price going up, the price card (read 2026-11-18) |
+| save money | ~113,000 | 40 | what cancelling keeps you; a word for the text and tags, too broad for a title (read 2026-11-18) |
+| saving money | ~109,000 | 34 | the same; tags (read 2026-11-18) |
 
 ## Searched but crowded or off topic
 
@@ -52,6 +54,12 @@ a fresh `vidiq_keyword_research` call, never from a guess.
 The Netflix specific phrases sit under the floor (`netflix price increase`,
 `netflix raises prices`, `netflix price`, all `<750`, read 2026-11-18), so a
 Netflix title leans on `netflix subscription` instead.
+Every gym phrase sits under the floor (`cancel gym membership`, `cancelling
+gym membership`, `why i cancelled my gym membership`, `how to cancel a gym
+membership`, all `<750`, read 2026-11-18), so a gym post leans on `cancel
+subscriptions` and `save money`. `pov: you saved $150 a month` (~30,000, 12)
+is searched and easy but names a figure Trimio did not show, so only a post
+that really shows $150 a month may use it.
 `how do i check all my subscriptions on my card` (~5,300, 25) is searched but
 off limits: Trimio never reads a card, so a title built on it would claim
 something the app does not do.
@@ -66,6 +74,7 @@ something the app does not do.
 | Story reel Part 3 | Part 3: how to cancel a YouTube Premium free trial before it charges you. | how to cancel youtube premium free trial, free trial, subscription trap | YouTube uploaded private 2026-11-17 (`7Z1BJQQsmno`, title "How to cancel YouTube Premium free trial before it charges you", public 2026-11-17); Instagram live 2026-11-18 (`Df4Rw0vDpRa`) |
 | Story reel Part 4 | Part 4: how to get all of your subscriptions under control, one pasted email at a time. | how to get all of your subscriptions under control, subscription tracker | Made 2026-11-17; YouTube uploaded private 2026-11-18 (`hrSGbxiGt9Q`, title "How to get all of your subscriptions under control: just paste the email"), owner makes it public; Instagram after |
 | Story reel Part 5 | Part 5: his Netflix subscription went up, and he still won't cancel it. | netflix subscription, streaming price increase, subscription tracker | Made 2026-11-18; YouTube uploaded private 2026-11-18 (`82s07QweNdw`, title "Netflix subscription price increase? He still won't cancel it"), owner makes it public; Instagram after |
+| Story reel Part 6 | Part 6: you cancel subscriptions to save money, so what has the gym paid for so far? | cancel subscriptions, save money, subscription tracker | Made 2026-11-18, proposed title "Cancel subscriptions to save money? The gym paid for the coffee"; not uploaded, not posted |
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.
