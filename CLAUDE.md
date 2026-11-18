@@ -2771,6 +2771,34 @@ last one left off without needing a recap typed out.
   inside its closing hold; Parts 1 and 2 were not rechecked, and at worst
   their closing hold is 0.2 s shorter. `-shortest` is gone from
   `upscale_video.py`; measured, the same mux then keeps 288 of 288.
+- PART 5 OF THE STORY REEL, "Netflix went up", 2026-11-18, at the owner's
+  word ("do the videos as we spoke and also, a bit comedy or funny as well.
+  keep the people engage!"). The funny one, same kitchen, straight on from
+  Part 4: "Netflix went up!" / "Two euros." (over the real price card) / "It
+  feels personal." / "So cancel it." / a frozen beat / "I'll just update the
+  price." (the real tap on "Update to €15.99") / "Coward." The joke is on
+  him, never on the app: the card does what the feature does. 12.3 s plus
+  the end card, sharpened free (288 of 288 frames kept).
+  36 CREDITS: one Seedance 2.5 forward extension of Part 4's take, job
+  `a1bdc176-1677-4857-8b39-2484c00ea02f`, no start frame, no retake.
+  Whisper small.en heard every line (base.en misheard three short ones);
+  who-speaks.py settled the last two and a mouth sheet the first four. Built
+  by `tools/reels/story/make-demo-account-part5.js`, `record-price.js`
+  (`REEL_TZ=Europe/Berlin` so the card says "Good morning") and
+  `assemble-part5.py`; README items 29 to 31. The tracked 13.99 is the
+  character's own price; the card's 15.99 is the catalogue's checked Netflix
+  Standard DACH price (2026-09-05), under six months old until 2027-03-05.
+  NOT POSTED AND NOT SCHEDULED. On the review page
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW, version 17) with this
+  caption, passing caption.py and check_copy.py:
+  Part 5: his Netflix subscription went up, and he still won't cancel it.
+  Streaming price increase? Trimio checks the prices you track against its list of checked prices and tells you when one costs more now. One tap updates it. No bank login.
+  Parts 1 to 4 are on our profile. Free on Google Play, link in bio.
+  #netflix #streaming #subscriptiontracker #subscriptions #savemoney
+  YouTube title proposed: "Netflix subscription price increase? He still
+  won't cancel it" (keyword "streaming price increase", about 3,500 a month,
+  competition 37). Order: Part 4 to YouTube first; YouTube before Instagram
+  for each part, and only on the owner's word naming the platform.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,
