@@ -42,11 +42,16 @@ a fresh `vidiq_keyword_research` call, never from a guess.
 | how to cancel youtube premium subscription | ~4,300 | 51 | a YouTube Premium cancel guide post |
 | free trial | ~8,900 | 47 | the trial reminder; a word for the text, too broad for a title |
 | subscription trap | ~24,900 | 47 | a trial that turns into a charge; growing (+94% on vidIQ's reading, 2026-11-17) |
+| streaming price increase | ~3,500 | 37 | a streaming price going up, the price card (read 2026-11-18) |
 
 ## Searched but crowded or off topic
 
 `subscriptions` (~35,000, competition 70), `cancel subscription` (~5,500,
 52), `streaming services` (~11,000, 59), `netflix` (~1.5 million, 74).
+`price increase` (~4,000, 58) and `price hike` (~3,900, 74) are crowded.
+The Netflix specific phrases sit under the floor (`netflix price increase`,
+`netflix raises prices`, `netflix price`, all `<750`, read 2026-11-18), so a
+Netflix title leans on `netflix subscription` instead.
 `how do i check all my subscriptions on my card` (~5,300, 25) is searched but
 off limits: Trimio never reads a card, so a title built on it would claim
 something the app does not do.
@@ -60,6 +65,7 @@ something the app does not do.
 | Story reel Part 2 | Gym membership a waste of money? He finally cancelled it | why gym memberships are a waste of money, cancel subscriptions | YouTube live 2026-11-16; Instagram live 2026-11-17 (`Df17khHDlNf`) |
 | Story reel Part 3 | Part 3: how to cancel a YouTube Premium free trial before it charges you. | how to cancel youtube premium free trial, free trial, subscription trap | YouTube uploaded private 2026-11-17 (`7Z1BJQQsmno`, title "How to cancel YouTube Premium free trial before it charges you"); Instagram scheduled once it is public |
 | Story reel Part 4 | Part 4: how to get all of your subscriptions under control, one pasted email at a time. | how to get all of your subscriptions under control, subscription tracker | Made 2026-11-17, not posted; YouTube title proposed: "How to get all of your subscriptions under control: just paste the email" |
+| Story reel Part 5 | Part 5: his Netflix subscription went up, and he still won't cancel it. | netflix subscription, streaming price increase, subscription tracker | Made 2026-11-18, not posted; YouTube title proposed: "Netflix subscription price increase? He still won't cancel it" |
 
 Change "proposed" to "live" only once the title is read back off
 `vidiq_get_videos_by_ids` or the caption off the post.

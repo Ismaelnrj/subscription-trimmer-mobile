@@ -348,3 +348,43 @@ python3 tools/brand-video.py build/part4-captioned.mp4 --out build/part4-en.mp4 
     real email, and the take ends on the filled form, so the demo account
     is unchanged. The caption over the form sits at 0.30 of the height so
     the detected line, the name, the price and the cycle stay clear.
+
+### Part 5, "Netflix went up" (2026-11-18)
+
+The funny one, at the owner's word ("a bit comedy or funny as well. keep the
+people engage!"). Straight on from Part 4's last line: "Netflix went up!" /
+"Two euros." (over the real price card) / "It feels personal." (hand on
+chest) / "So cancel it." / a frozen beat of mock horror / "I'll just update
+the price." (the real tap, the total moves €50.96 to €52.96) / "Coward." ONE
+take, 36 credits, the same recipe as item 27 extending Part 4's take
+(`75c2b3bd-...`): job `a1bdc176-1677-4857-8b39-2484c00ea02f`.
+
+```
+node tools/reels/story/make-demo-account-part5.js /tmp/tokens-part5   # a FRESH account: the tap changes the row
+REEL_TZ=Europe/Berlin node tools/reels/story/record-price.js /tmp/rec /tmp/tokens-part5
+python3 tools/reels/story/assemble-part5.py take.mp4 /tmp/rec/price-* /tmp/rec/card.png build/
+python3 tools/brand-video.py build/part5-captioned.mp4 --out build/part5-en.mp4 --lang en --no-bug
+```
+
+29. **Comedy that stays the same couple: direct the timing, cap the faces.**
+    The prompt asked for "a light sitcom moment with good comic timing, but
+    grounded and natural like a real couple teasing each other", kept every
+    rule from item 27 (heads in frame, no grimaces, blank phones), and wrote
+    the jokes as stage directions with times: a hand on his chest, a frozen
+    beat of mock horror, her deadpan without looking up. One frame of a wide
+    mouth gasp came back (1.5 s); it reads as the joke, not as overacting,
+    but it is the line to watch, since the owner cut Part 1's jaw drop.
+30. **Whisper base.en is too small for one-word lines; small.en settles it.**
+    base.en heard "So careful it", "How should I take the price?" and
+    "powered" for "So cancel it.", "I'll just update the price." and
+    "Coward." small.en (k2-fsa/sherpa-onnx `asr-models`, 636 MB, unpacked at
+    `/tmp/asr/small`), run per line with 0.15 s padding, heard all six as
+    written. Speaker embeddings were clear on the last two lines and a tie
+    on the first four, so the mouths were read on a 5 fps face sheet: his
+    move on lines 1 and 3, hers on 2 and 4.
+31. **The price card is the real feature, honestly staged.** The demo row is
+    Netflix Standard at the character's own older 13.99; the card compares
+    it with the checked DACH 15.99 (verified 2026-09-05) and says so with the
+    date. The greeting must match the morning kitchen, so `REEL_TZ` picks a
+    zone where it is morning when recording. The tap changes the row, so
+    every run needs a fresh account.
