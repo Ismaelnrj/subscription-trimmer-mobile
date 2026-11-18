@@ -6528,6 +6528,51 @@ last one left off without needing a recap typed out.
      could land there by mistake.
   3. The standing items from the morning: Railway's Dockerfile and `/health`
      healthcheck, PostHog "Discard client IP data", backups restore test.
+  THE WHOLE INSTAGRAM ACCOUNT WAS CHECKED, 2026-11-18, every live post from
+  10 Oct on, at the owner's request ("Tell me which ones break the rules and
+  can you remove them directly? I give you permission."). NOTHING HERE CAN
+  DELETE OR ARCHIVE A POST (searched again; vidIQ only reads and publishes),
+  so the list went to the owner to archive in the Instagram app. ONE LINE,
+  applied to all of them: a phone or screen presented as Trimio's that is not
+  the real app breaks the rule, and so does a claim the app does not back; a
+  plain infographic with no phone and a true claim does not. Pictures read
+  through vidiq_get_images; the two people reels with no other verdict watched
+  through vidiq_watch_shortform_content (20 credits).
+  BREAK THE RULES, archive: 10 Oct `DeTqbnejKI-` (iPhone, invented screen,
+  dollar prices, a Spotify-like mark); 13 Oct `DecFPtMiPUX` (iPhone, the
+  invented "Your upcoming" screen, Netflix €17.99, a language toggle the app
+  does not have); 15 Oct `Degv88qjpBE` (phone, an invented guide list with
+  "Step 3 of 6"); 25 Oct `De6O4D7jWIa` (iPhone, plus "Forward a renewal
+  email"); 27 Oct `DfAPh0Xj2Lx` (an iPhone held to camera showing a garbled
+  invented app, "Samflly", "Creed clanage", Netflix $22.95, beside a
+  MacBook); 2 Nov `DfPNa4IlwU8` ("The only thing you connect is your
+  inbox"); 12 Nov `Dfo9IPcDmPx` (iPhone, invented screen); 15 Nov
+  `DfxHOOXiD_Z` (cost per use from usage counts Trimio does not have);
+  16 Nov `Dfy_Uqwjr2-` (iPhone, invented screen, Netflix €17.99); and 17 Nov
+  `Df1rAs7CgEM`, the second copy of the yearly billing reel (keep
+  `Df1kKoCFZmk`, 81 views against 45).
+  THE OWNER'S CALL, a person speaking as a customer: 13 Oct `Deb0LEtgvBV`
+  ("Now every subscription pings me a week before"), 20 Oct `DetTd7Nj70M`
+  ("So I asked the honest question"), 3 Nov `DfSC9QnjuRM` ("I checked my bank
+  statement last month and found four subscriptions ... So now I use
+  Trimio"), and 13 Nov `Dfrvqeqk74w` ("We asked people ... Almost nobody
+  knew"). Their app claims are true; if the person is generated or an actor
+  and not a real user (or the poll did not happen), each is a made up
+  testimonial and goes too.
+  A CORRECTION: the evening audit above called 16 Nov `DfzQUohiJ7X` invented
+  UI. Under the one line it is an infographic like the ones kept (no phone, a
+  true claim, "Trimio puts every renewal in one list"), so it stays.
+  FINE, everything else, including every reel this session posted.
+  WHO POSTS THE OTHERS IS STILL NOT KNOWN; they did not go through vidIQ.
+  Until whoever it is works from `trimio-social`'s rules, this list grows.
+  THE `eas update` WAS HANDED OVER THE SAME DAY, the owner's "Send the eas
+  update if needed": a sandbox still gets 403 from api.expo.dev and has no
+  eas CLI or token, so it runs on the owner's machine. Owed and checked first:
+  13 client files in 6 commits since `040c4b3c` (f87ba920, 3cda75f6,
+  d615083b, cd3301be, a880dd47, f883c7ff), `needs_native_build.py 040c4b3c`
+  OTA IS ENOUGH, typecheck clean on the pinned compiler, Checks run 901 green
+  on master `73f27b16`. NOT YET PUBLISHED until the owner says so; then read
+  the Build Info panel for an Update ID other than `01a1db0a-...`.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
