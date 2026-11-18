@@ -2823,7 +2823,7 @@ last one left off without needing a recap typed out.
   "€29.90 avoided, 1 charge so far") / "€29.90 so far." / "So… the coffee." /
   "The coffee." / "To the gym." x2, a toast. The joke is on him, never on the
   app: the screen only counts a charge once its date has passed. 11.4 s plus
-  the end card (14.0 s).
+  the end card (14.0 s), sharpened free (265 of 265 frames kept).
   33.5 CREDITS, no retake: start frame `268123d1-57ab-4963-a673-2568752886d8`
   (0.5) and one `omni_reference` take `9b6e7df8-e400-47c5-83d9-705d990f53aa`
   (33), item 21's recipe with the same five reference ids. Whisper small.en
@@ -2834,7 +2834,7 @@ last one left off without needing a recap typed out.
   `make-demo-account-part6.js`, `record-cancelled.js` and `assemble-part6.py`;
   README items 32 to 34.
   NOT POSTED AND NOT UPLOADED. On the review page
-  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) with this caption,
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW, version 19) with this caption,
   passing caption.py (READY) and check_copy.py:
   Part 6: you cancel subscriptions to save money, so what has the gym paid for so far?
   Trimio is a subscription tracker: mark one as cancelled and it counts every charge you have avoided since, once its billing date has passed. One month after the gym: €29.90. The coffee is on the gym.
