@@ -6645,23 +6645,23 @@ last one left off without needing a recap typed out.
      now fails CI on a tracked keystore, key, env or service account file or
      a live credential shape; planted, it caught the April keystore, a fake
      AWS key and a Postgres URL with a password.
-     "PROBABLY DEAD" WAS PROBABLY WRONG, found the same day. The build 41 log
-     prints `CM_KEY_ALIAS` as asterisks, and an unset alias would print
-     `trimio` in clear, so it was SET by hand and marked secure. `05f25d26`
-     (2026-05-06, "Debug keystore alias mismatch") shows why: the keystore
-     put in Codemagic did not hold `trimio`, and the only other keystore in
-     this history holds `subtrimmer` alone. The owner also believes it is
-     `subtrimmer`. THE FINGERPRINT THAT SETTLES IT: the leaked file is 2,736
-     bytes, and the same step logs `Keystore size: N bytes`. Any other number
-     rules it out; 2,736 is strong (four comparable keystores measured 2,712
-     to 2,752). The upload certificate in Play Console (Firma de aplicaciones,
-     download, open on Windows) would read Valid from 2 April 2026 if so.
-     HOW BAD IT IS: low. The password resisted 35 obvious guesses (offline,
-     the file only; never printed). An upload key alone ships nothing to
-     phones: Play re-signs with Google's key, so using it needs the Play
-     Console account too, which has 2FA. The upload key reset fixes it for
-     good; ORDER MATTERS: change Codemagic only AFTER Google confirms the new
-     key, or uploads are refused. Never "Actualizar clave" on that page.
+     IT IS DEAD, settled 2026-11-18 on the owner's word: `CM_KEY_ALIAS` is
+     `trimio` (their report; Codemagic masks it, so how they read it was not
+     stated). The leaked file holds `subtrimmer` alone, so the Codemagic
+     keystore is a different file. A guess first said the opposite, from the
+     masked alias plus `05f25d26` (2026-05-06, "Debug keystore alias
+     mismatch"): a mismatch then says nothing about the alias now. IF EVER
+     DOUBTED, the free proof is the `Keystore size: N bytes` line in the
+     "Set up Android signing" step: the leaked file is 2,736 bytes, any other
+     number rules it out. Its password also resisted 35 obvious guesses.
+     WHERE THE LIVE KEY PROBABLY CAME FROM, not confirmed: the 2026-05-06
+     fallback generated a `trimio` keystore (CN=Trimio, OU=Mobile) and printed
+     it base64 into that build's log. If so, the file sits in the owner's
+     private Codemagic build logs, which give nothing to someone inside that
+     account they could not already do with the stored secrets. So the fix
+     is 2FA on Codemagic, not a key reset. Play Console's upload certificate
+     (Firma de aplicaciones, download, open on Windows) would read Valid from
+     6 or 7 May 2026 if so. Never "Actualizar clave" on that page.
   5. COMPONENTS: as on 2026-11-17. Backend production 0; root critical 0,
      high 6, all build tooling except decode-uri-component (a crafted link
      can freeze the app, nothing more). Outdated: Expo SDK 53 and React
