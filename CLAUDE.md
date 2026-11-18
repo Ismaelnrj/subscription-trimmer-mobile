@@ -2731,6 +2731,16 @@ last one left off without needing a recap typed out.
   `vidiq_get_videos_by_ids` (22 views that evening), so the scheduled
   Instagram post's YouTube check passes when it fires. "Uso de IA" is not
   exposed by the API and was not confirmed.
+  PART 3 IS ON INSTAGRAM, posted 2026-11-18 about 10:25Z at the owner's word
+  ("upload the instagram video that we said yesterday that needs to be today
+  posted"), ahead of the scheduled 14:00Z post, which was DISABLED first
+  (`trig_01BjGYp1RZ22eLJYRzwfHDSW`, enabled false, kept, not deleted) so it
+  cannot post a second copy. https://www.instagram.com/reel/Df4Rw0vDpRa/
+  (media `18399232714166215`), PUBLISHED per `vidiq_instagram_publish_reel`:
+  regular Reel, `isAiGenerated: true`, the caption above verbatim. Checked
+  first: the YouTube Short public since 2026-11-17T18:11:15Z (46 views at
+  posting), no "Part 3:" reel on the account, and upload `884c6f39-...` at
+  22.63 s, 1080x1920, 9,126,563 bytes.
 - PART 4 OF THE STORY REEL, "he adds his own", 2026-11-17, at the owner's word
   ("the next one should be done then"). Straight on from Part 3's last line:
   "Fine. How do I add mine?" / "Paste the confirmation email." / the real
