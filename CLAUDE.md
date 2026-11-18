@@ -6645,25 +6645,24 @@ last one left off without needing a recap typed out.
      now fails CI on a tracked keystore, key, env or service account file or
      a live credential shape; planted, it caught the April keystore, a fake
      AWS key and a Postgres URL with a password.
-     UNSETTLED, 2026-11-18. The build 41 log prints `CM_KEY_ALIAS` as
-     asterisks. Unset, `${CM_KEY_ALIAS:-trimio}` prints `trimio` in clear, so
-     the variable IS set and secure, and neither the log nor Codemagic's
-     screen shows its value. The `trimio` in codemagic.yaml is only the
-     fallback for an unset variable; the same morning it was mistaken for a
-     confirmation and briefly recorded here as "dead". FOR `subtrimmer`:
-     `05f25d26` (2026-05-06, "Debug keystore alias mismatch") shows the
-     keystore then put in Codemagic did not hold `trimio`. THE FREE CHECK
-     THAT SETTLES IT: the same step logs `Keystore size: N bytes`, unmasked.
-     The leaked file is 2,736 bytes; any other number rules it out, and 2,736
-     is strong but not proof (four comparable keystores measured 2,712 to
-     2,752). Its password resisted 35 obvious guesses (offline, never
-     printed). IF LIVE, the risk is low: an upload key alone ships nothing to
-     phones, since Play re-signs with Google's key and an upload needs the
-     Play Console account, which has 2FA. The fix is an upload key reset;
-     change Codemagic only AFTER Google confirms the new key, or uploads are
-     refused. Never "Actualizar clave" on that page. IF NOT, the live key may
-     be the one the 2026-05-06 fallback generated and printed into that
-     build's private log, which makes 2FA on Codemagic the fix that matters.
+     SETTLED THE SAME MORNING: IT IS DEAD. The build 41 log's "Set up
+     Android signing" step, pasted verbatim by the owner, reads `Keystore
+     size: 2191 bytes`, alias masked and verified. The leaked file is 2,736
+     bytes, so Codemagic does not hold it. 2,191 bytes is exactly the size
+     of `@ismaelnrj__subtrimmer.jks` (and an identical `_OLD_1` copy) on the
+     owner's machine: the name Expo gives a downloaded keystore for this
+     project (slug `subtrimmer`). So THE UPLOAD KEY IS EXPO'S KEYSTORE, and
+     it lives in three places: Expo's credentials store, Codemagic's
+     `CM_KEYSTORE`, and the owner's `$HOME\trimio-keys` (moved out of the
+     clone folder on 2026-11-18). That makes the Expo account doubly
+     critical, since it holds the upload key AND can push an `eas update` to
+     every phone: 2FA on Expo is the first item of category 1 below. The
+     alias was set by hand because Expo's keystore does not use `trimio`,
+     which is what `05f25d26` ran into. A third key,
+     `Downloads\subtrimmer-release-key.jks` (2,752 bytes), signs nothing.
+     Masked values in that log CANNOT be read: on the way here
+     `${CM_KEY_ALIAS:-trimio}` in codemagic.yaml was briefly taken for the
+     value, and it is only the fallback for an unset variable.
   5. COMPONENTS: as on 2026-11-17. Backend production 0; root critical 0,
      high 6, all build tooling except decode-uri-component (a crafted link
      can freeze the app, nothing more). Outdated: Expo SDK 53 and React
