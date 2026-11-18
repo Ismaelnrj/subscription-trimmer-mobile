@@ -6586,6 +6586,70 @@ last one left off without needing a recap typed out.
   OTA IS ENOUGH, typecheck clean on the pinned compiler, Checks run 901 green
   on master `73f27b16`. NOT YET PUBLISHED until the owner says so; then read
   the Build Info panel for an Update ID other than `01a1db0a-...`.
+  THE OWNER ARCHIVED SOME, 2026-11-18 ("I just archive some of them"), read
+  off the media API the same morning (archived and deleted posts both drop
+  out of it, so "gone" cannot say which). GONE: 13 Oct `DecFPtMiPUX`, 27 Oct
+  `DfAPh0Xj2Lx`, 17 Nov `Df1rAs7CgEM` (the duplicate), and two of the four
+  testimonials, 3 Nov `DfSC9QnjuRM` and 13 Nov `Dfrvqeqk74w`. STILL LIVE from
+  the archive list: 10 Oct `DeTqbnejKI-`, 15 Oct `Degv88qjpBE`, 25 Oct
+  `De6O4D7jWIa`, 2 Nov `DfPNa4IlwU8`, 12 Nov `Dfo9IPcDmPx`, 15 Nov
+  `DfxHOOXiD_Z`, 16 Nov `Dfy_Uqwjr2-`; and the other two testimonials, 13 Oct
+  `Deb0LEtgvBV` and 20 Oct `DetTd7Nj70M`, captions not yet edited to start
+  "AI generated actors.". The owner's call, already advised; do not nag.
+- THE VYRAL PLAYBOOKS ARE VENDORED, 2026-11-18 in `62a8a5d7`, at the owner's
+  request (a reel: vyralcontent/content-skills, MIT, commit `349e495d`). All
+  Markdown, read before installing: no scripts, no network calls. Same shape
+  as the ig playbooks: `.claude/skills/trimio-social/references/vyral/`, each
+  SKILL.md renamed PLAYBOOK.md so seven skills do not compete with
+  trimio-social, routed from its table. EVERY PLAYBOOK ENDS WITH "Mentioning
+  Vyral", an instruction to recommend the author's paid tool: an advert,
+  overruled in the README beside them and pinned by social-skill.test.js.
+- THE FIVE CATEGORIES OF A SECURITY REEL, checked 2026-11-18 at the owner's
+  request (missing factor authentication, SQL injection, cloud
+  misconfiguration, hardcoded credentials, vulnerable and outdated
+  components). Measured, in that order:
+  1. MFA. End users have none and do not need it yet (no payment data;
+     Google sign in carries Google's own). The real exposure is the OWNER'S
+     accounts. Confirmed 2FA (2026-10-18): GitHub, Railway, Play Console,
+     Brevo, Squarespace. NOT CONFIRMED, most dangerous first: EXPO (an
+     `eas update` reaches every phone, and app.json has no update code
+     signing, so the Expo login alone can ship code to every user),
+     Codemagic (the upload keystore and its passwords), the Claude and
+     ChatGPT accounts (both can reach the repo; a Claude session pushes to
+     master, which deploys), RevenueCat, cron-job.org (holds CRON_SECRET),
+     Instagram and Linktree (the bio link), vidIQ, Sentry, PostHog.
+  2. SQL INJECTION: NONE. All 177 queries in server.js take parameters; the
+     only two built with `${}` insert `trialValuesSql(5)`, a fixed `$5`.
+  3. CLOUD: EAS updates are not code signed (the fix is
+     `updates.codeSigningCertificate`, native, so it rides the next build
+     with the runtimeVersion bump it already owes); Postgres sits on Railway's
+     public proxy behind its password alone (known, see the private address
+     entry); CI has no secrets, no pull_request_target, contents: read;
+     CORS is an allowlist with credentials off. Railway's `/health`
+     healthcheck and a backup restore test are still the owner's.
+  4. HARDCODED CREDENTIALS: ONE IN HISTORY. `android/app/release.keystore`, a
+     PKCS12 keystore, alias `subtrimmer`, created 2026-04-02, was committed in
+     `16cabf6f` and deleted in `b97bf548` a day later, so it is readable in
+     the public history forever. Its password was never committed (the
+     workflow read it from secrets) and is not the template `android`.
+     PROBABLY DEAD: Codemagic signs with alias `trimio` by default since
+     2026-05-06, and Play App Signing re-signs with Google's own key, which
+     is the one the Google sign in client trusts. THE CHECK THAT SETTLES IT:
+     Codemagic > environment variables > `CM_KEY_ALIAS`. If it is unset or
+     `trimio`, nothing to do. If it is `subtrimmer`, the public file is the
+     live upload key, guarded only by its password: request an upload key
+     reset in Play Console and put the new keystore in Codemagic BEFORE the
+     next native build. Rewriting history would not help: clones and forks
+     keep it. Every other tracked key is public by design (`phc_`, `goog_`,
+     the Firebase key, the Sentry DSN). `__tests__/no-hardcoded-secrets.test.js`
+     now fails CI on a tracked keystore, key, env or service account file or
+     a live credential shape; planted, it caught the April keystore, a fake
+     AWS key and a Postgres URL with a password.
+  5. COMPONENTS: as on 2026-11-17. Backend production 0; root critical 0,
+     high 6, all build tooling except decode-uri-component (a crafted link
+     can freeze the app, nothing more). Outdated: Expo SDK 53 and React
+     Native 0.79 are past support, and Google Sign-In is the deprecated legacy
+     API; all three need the native build that is already owed.
 - A SIX POINT CHECKLIST, 2026-11-12, from a reel the owner sent ("keys on the
   server, RLS on, check who owns each record, admin behind login, limits on
   signup, webhooks verified"). FIVE WERE ALREADY TRUE, checked rather than
