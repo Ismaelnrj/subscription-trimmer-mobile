@@ -6563,8 +6563,21 @@ last one left off without needing a recap typed out.
   UI. Under the one line it is an infographic like the ones kept (no phone, a
   true claim, "Trimio puts every renewal in one list"), so it stays.
   FINE, everything else, including every reel this session posted.
-  WHO POSTS THE OTHERS IS STILL NOT KNOWN; they did not go through vidIQ.
-  Until whoever it is works from `trimio-social`'s rules, this list grows.
+  THE OTHERS COME FROM ZEELY AND HOLO (tryholo.ai), the owner's word on
+  2026-11-18: two AI ad tools that generate avatar UGC from a script and a
+  brand URL. That explains the pattern: neither has the real app, so each
+  invents a phone and a screen, and Holo's own reviews say "the product shown
+  is often wrong". THE OWNER ASKED WHY NOT LEAVE THEM UP, the statements being
+  true. The answer given: most CAPTIONS are true, but the picture is a claim
+  too (an iPhone says iPhone, an invented screen says "this is the app"),
+  three say false things outright (`DfPNa4IlwU8` connect your inbox,
+  `De6O4D7jWIa` forward an email, `DfxHOOXiD_Z` cost per use), and the four
+  avatar "I use Trimio" reels are fake customer endorsements, which UCPD
+  Annex I no. 23c (UWG Anhang Nr. 23c) bans outright. Recommended: archive
+  those seven first, the invented screen ones next, and feed both tools the
+  real `store-assets/screenshots/{en,de}` with "Android only" and no first
+  person customer scripts (the 2026-09-19 Zeely render made from a real
+  screenshot was accurate). DECISION IS THE OWNER'S, not yet given.
   THE `eas update` WAS HANDED OVER THE SAME DAY, the owner's "Send the eas
   update if needed": a sandbox still gets 403 from api.expo.dev and has no
   eas CLI or token, so it runs on the owner's machine. Owed and checked first:
