@@ -6653,8 +6653,9 @@ last one left off without needing a recap typed out.
      owner's machine: the name Expo gives a downloaded keystore for this
      project (slug `subtrimmer`). So THE UPLOAD KEY IS EXPO'S KEYSTORE, and
      it lives in three places: Expo's credentials store, Codemagic's
-     `CM_KEYSTORE`, and the owner's `$HOME\trimio-keys` (moved out of the
-     clone folder on 2026-11-18). That makes the Expo account doubly
+     `CM_KEYSTORE`, and the owner's machine (a move from the clone folder to
+     `$HOME\trimio-keys` was handed over 2026-11-18, not yet confirmed done;
+     both copies are git-ignored either way). That makes the Expo account doubly
      critical, since it holds the upload key AND can push an `eas update` to
      every phone: 2FA on Expo is the first item of category 1 below. The
      alias was set by hand because Expo's keystore does not use `trimio`,
