@@ -550,7 +550,8 @@ Keep this short and current. As of 2026-11-23.
   (`sM0eh-rPY9k`); Part 8 and the announcement are approved vidIQ drafts that
   vidIQ's 3 a day limit refused, to send after 2026-11-24T08:00Z (ids in the
   history). "The friend" (first of the one new friend at a time ensemble) is
-  on the review page waiting for a yes,
+  approved and drafted the same way; all three go up private after the reset,
+  and the owner makes them public. Review page:
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
   (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform

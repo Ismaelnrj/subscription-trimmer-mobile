@@ -6819,3 +6819,11 @@ last one left off without needing a recap typed out.
   bearded man's voice (0.79), fixed by revoicing his spans only (opening line
   0.59 after). Caption on "subscription audit"; YouTube title "Subscription
   audit: the friend who has no subscriptions".
+- "THE FRIEND" IS DRAFTED FOR YOUTUBE, 2026-11-23, at the owner's "Yes please, do
+  it already as private, I will post it myself tomorrow": upload
+  `28b9ecf0-4a26-4171-bc4d-866ec7708d01` (7,069,179 bytes, sha256
+  `0570265872a90c87`, downloaded back and matching), draft
+  `735f52ef-6d98-440f-a07e-154800e37791` rev `aabae4d0`, private, @gettrimio,
+  Howto & Style. A retry of Part 8 the same evening was refused again by the
+  3 a day limit, so all three (Part 8, the announcement, the friend) wait for
+  2026-11-24T08:00Z. The owner makes them public themselves.
