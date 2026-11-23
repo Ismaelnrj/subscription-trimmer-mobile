@@ -546,10 +546,12 @@ Keep this short and current. As of 2026-11-23.
   on Instagram 2026-11-23, `DgFFE3xHMxO`; Part 5 on Instagram 2026-11-23
   13:12Z, `DgFdY-NAWhh`, AI label on). Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
   for the owner to make it public. Part 7, Part 8 (her ex's Netflix) and "The
-  announcement" (standalone), all 2026-11-23, are vidIQ YouTube drafts waiting
-  for the owner's yes (ids in the history), videos on the review page,
-  https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. PARKED: a sitcom style
-  ensemble, one new friend at a time. The German Amazon Prime reel is on
+  announcement" (standalone), all 2026-11-23: Part 7 is on YouTube PRIVATE
+  (`sM0eh-rPY9k`); Part 8 and the announcement are approved vidIQ drafts that
+  vidIQ's 3 a day limit refused, to send after 2026-11-24T08:00Z (ids in the
+  history). "The friend" (first of the one new friend at a time ensemble) is
+  on the review page waiting for a yes,
+  https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
   (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform
   (`trimio-social`).

@@ -13,7 +13,7 @@ the bearded man's voice (README item 43). The app is the last beat: one held
 still of the real dashboard for his four rows, "€825.96 a year for 4 active
 subscriptions", with the callback caption.
 
-  picture  take 0-end, held on the couple's look | the dashboard, held, pushed in on the year line
+  picture  take 0-end, held on the couple's look | the dashboard, held, pushed in 8% on the year line
   sound    the take, then its own room tone under the still
 """
 import json, pathlib, subprocess, sys
@@ -33,7 +33,7 @@ W, H, FPS = 1080, 1920, 30
 HEAD_S = 0.35          # his line starts at 0.57 in the take; cut so it starts at 0.22
 # Everything below is in seconds of the TRIMMED take, which are also output seconds.
 TAKE_F = 348           # the whole take after the trim: his line, the quiz, "That's a book.", their look
-STILL_F = 72           # the dashboard, 2.4 s, pushed in on the year line
+STILL_F = 72           # the dashboard, 2.4 s, pushed in 8% on the year line
 END_F, FREEZE_F = TAKE_F, 0
 A_END_F = TAKE_F
 END = (TAKE_F + STILL_F) / FPS
@@ -42,8 +42,8 @@ END = (TAKE_F + STILL_F) / FPS
 # Whisper small.en, who-speaks.py and a mouth sheet. "Yes." is one word, so its floor is
 # 0.6 s rather than 0.9. The first plate drops "any" and "I'm" to stay under 17.5 cps.
 LINES = [
-    ('F', 0.00, 2.50, "I don't have subscriptions. Good with money.", 0.62),
-    ('M', 2.50, 3.68, 'Netflix?', 0.62),
+    ('F', 0.00, 2.54, "I don't have subscriptions. Good with money.", 0.62),
+    ('M', 2.55, 3.68, 'Netflix?', 0.62),
     ('F', 3.70, 4.32, 'Yes.', 0.62),
     ('M', 4.34, 5.33, 'Spotify?', 0.62),
     ('F', 5.35, 6.27, 'Yes.', 0.62),
@@ -51,7 +51,7 @@ LINES = [
     ('F', 7.57, 8.53, 'Yes.', 0.62),
     ('M', 8.54, 9.45, 'Audible?', 0.62),
     ('F', 9.46, 10.90, "That's a book.", 0.62),
-    ('F', TAKE_F / FPS + 0.15, END, '\u201cNo subscriptions.\u201d', 0.333),
+    ('F', TAKE_F / FPS + 0.15, END, '\u201cNo subscriptions.\u201d', 0.345),
 ]
 MAX_CPS, MIN_DUR = 17.5, 0.6
 
@@ -123,12 +123,13 @@ def main():
         run([FF, '-y', '-v', 'error', '-i', str(take_full), '-vf', vf, *enc, str(OUT / f'{name}.mov')])
 
     piece('e1', 0, TAKE_F)
-    # The dashboard fitted to the width, pushed 8% about the year line (0.28 of the still),
+    # The dashboard fitted to the width, pushed 8% about the year line (0.28 of the still, 0.37 across: the most
+    # that keeps both the left aligned total and the right aligned prices in frame),
     # which stays put while the rows below grow; the callback plate sits between the year
     # line and "Upcoming".
     still = Image.open(STILL).convert('RGB')
     fit = W / still.width
-    anchored_push(still, STILL_F, OUT / 'held', fit, (0.30 * still.width, 0.28 * still.height), 0.08)
+    anchored_push(still, STILL_F, OUT / 'held', fit, (0.37 * still.width, 0.28 * still.height), 0.08)
     run([FF, '-y', '-v', 'error', '-framerate', str(FPS), '-i', str(OUT / 'held' / '%04d.png'),
          '-vf', 'format=yuv420p', *enc, str(OUT / 'held.mov')])
     parts = ['e1', 'held']

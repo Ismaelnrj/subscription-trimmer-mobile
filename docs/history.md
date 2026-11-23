@@ -6800,3 +6800,22 @@ last one left off without needing a recap typed out.
   "Cancel subscriptions you don't use: some hard news from us".
   Descriptions are the captions with "link in bio" made "link on the channel
   page"; check_copy clean. Part 7 should not go public before Part 6 does.
+- PART 7 IS ON YOUTUBE, PRIVATE, 2026-11-23, at the owner's "Yes please" to the
+  three drafts: https://www.youtube.com/watch?v=sM0eh-rPY9k (draft
+  `06099140-...`, status completed). PART 8 AND "THE ANNOUNCEMENT" WERE REFUSED
+  BY vidIQ, NOTHING PUBLISHED: the free plan allows 3 YouTube uploads a day
+  (Part 6, the German reel and Part 7 used them); the count resets at
+  2026-11-24T08:00Z. Both drafts stay ready (`4257a387-...` rev `1c1a5ac0`,
+  `71d885a6-...` rev `bea43ebc`). Not scheduled: that needs the owner's yes.
+- "THE FRIEND" REEL IS MADE, 2026-11-23, at the owner's word ("create the one
+  with the new character!"), the first of the parked ensemble, and on the review
+  page (version 23) waiting for a yes. The friend who has no subscriptions,
+  quizzed by the couple (Netflix, Spotify, the gym: yes; Audible: "That's a
+  book."), then his real dashboard, "€825.96 a year for 4 active
+  subscriptions", with the callback "No subscriptions.". 14.0 s plus the end
+  card, sharpened free (287 frames), sha256 `0570265872a90c87`. 36.5 credits
+  plus one voice change; balance read 129.09 before. Recipe and the voice
+  finding in `tools/reels/README.md`, item 43: the model gave the new man the
+  bearded man's voice (0.79), fixed by revoicing his spans only (opening line
+  0.59 after). Caption on "subscription audit"; YouTube title "Subscription
+  audit: the friend who has no subscriptions".
