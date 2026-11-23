@@ -6696,3 +6696,17 @@ last one left off without needing a recap typed out.
   on "netflix subscription"; YouTube title "Still paying for your ex's Netflix
   subscription?". Flagged to the owner: her loud "He said he'd cancel it!".
   Order: Parts 6 and 7 first, YouTube before Instagram.
+- THE GERMAN AMAZON PRIME REEL IS ON YOUTUBE, PRIVATE, 2026-11-23, at the
+  owner's word ("I want the German one out on YouTube and on Instagram in 35
+  min"): vidIQ upload `874de386-33fd-4676-a0cf-e71593137b23` (the review page's
+  `v/pilot-de-music.mp4`, downloaded back: 3,700,652 bytes, sha256
+  `f34a6f0d...`), draft `2dd37c28-a4b2-4f43-b00d-f70837590f34` to @gettrimio,
+  https://www.youtube.com/watch?v=0o1UXbSXcg4, title "Amazon Prime kündigen in
+  4 Schritten", Howto & Style. Every German "Amazon Prime kündigen" phrase is
+  under vidIQ's floor (<750, competition 7 to 16, read the same day), so the
+  title takes the exact topic. The owner sets "Uso de IA" and makes it public.
+  INSTAGRAM IS SCHEDULED with the owner's explicit timing: `send_later`
+  `trig_01Mmpqc5cXXyUmtsxZm6tkmp`, once at 2026-11-23T13:32Z, posting the same
+  file with `isAiGenerated: true` and the German caption (first sentence now on
+  its own line, "Schritt-für-Schritt-Anleitungen" hyphenated as German writes
+  it). No push notification. It disables itself after firing.
