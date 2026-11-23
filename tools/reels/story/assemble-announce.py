@@ -123,11 +123,16 @@ def main():
 
     piece('e1', 0, CUT1_F)
     piece('e2', A_END_F, END_F)
-    # The dashboard, pushed 8% about the monthly and yearly total (0.25 of its height); then
-    # the card, pushed 6% about "\u20ac131.88" (0.20), both fitted to the width.
-    for name, path, frames, anchor, amount in (('held', STILL, STILL_F, (0.30, 0.25), 0.08),
-                                                ('card', CARD, CARD_F, (0.30, 0.20), 0.06)):
+    # The dashboard, raised 12% so its three rows sit clear of the caption plate (the gap it
+    # leaves at the bottom falls in the strip the platform covers), pushed 8% about the
+    # monthly and yearly total; then the card, pushed 6% about "\u20ac131.88". Both fitted to the width.
+    for name, path, frames, anchor, amount, lift in (('held', STILL, STILL_F, (0.30, 0.13), 0.08, 0.12),
+                                                      ('card', CARD, CARD_F, (0.30, 0.20), 0.06, 0.0)):
         img = Image.open(path).convert('RGB')
+        if lift:
+            raised = Image.new('RGB', img.size, (0xF3, 0xF5, 0xF6))
+            raised.paste(img, (0, -round(lift * img.height)))
+            img = raised
         anchored_push(img, frames, OUT / name, W / img.width, (anchor[0] * img.width, anchor[1] * img.height), amount)
         run([FF, '-y', '-v', 'error', '-framerate', str(FPS), '-i', str(OUT / name / '%04d.png'),
              '-vf', 'format=yuv420p', *enc, str(OUT / f'{name}.mov')])
