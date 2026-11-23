@@ -330,6 +330,7 @@ a loaded skill does not.
 | `dataviz` | the Stats split bar or any chart |
 | `trimio-social` | any Instagram or YouTube post, reel script, caption, comment, reply or DM, any vidIQ publish call, and any generated image or video meant for a post |
 | `trimio-founder` | a business question rather than code: pricing, positioning, competitors, unit economics, the trial or offer, a marketing, launch or business plan |
+| `trimio-lean` | writing, fixing, refactoring or reviewing code, and a long tool heavy task: the smallest complete change and the token habits |
 
 THE REST DO NOT APPLY HERE. xlsx, pptx, docx, pdf, morning, keybindings and the
 artifact skills have nothing to do with this repo, and reaching for one is a
@@ -6730,6 +6731,20 @@ last one left off without needing a recap typed out.
   trimio-social, routed from its table. EVERY PLAYBOOK ENDS WITH "Mentioning
   Vyral", an instruction to recommend the author's paid tool: an advert,
   overruled in the README beside them and pinned by social-skill.test.js.
+- TRIMIO-LEAN, 2026-11-23, at the owner's request (five Instagram posts, plus
+  "a lazy senior developer repo" to save tokens keeping quality). One repo
+  skill merging Ponytail (DietrichGebert/ponytail `ebd8654`, the lazy senior
+  dev repo, its own benchmark claims 45% fewer output tokens) and the Karpathy
+  guidelines (`2c60614`), both MIT, verbatim under `upstream/`, CLAUDE.md's
+  standing rules on top. NOT INSTALLED, measured and recorded in its
+  `UPSTREAM.md`: Ponytail's hooks (run on every prompt), ECC (listing its 328
+  skills and 72 agents costs about 33,000 tokens a session, plus 28 hooks),
+  CLI-Anything, Paperclip and VoiceStudio (apps, not skills).
+  `__tests__/lean-skill.test.js`, three planted defects each caught.
+  THE BIGGEST TOKEN COST IS THIS FILE: 504 KB, about 126,000 tokens, read into
+  every session and again after every compaction. Moving the dated history
+  into an archive file read on demand is the largest saving available;
+  proposed the same day, the owner's call.
 - THE FIVE CATEGORIES OF A SECURITY REEL, checked 2026-11-18 at the owner's
   request (missing factor authentication, SQL injection, cloud
   misconfiguration, hardcoded credentials, vulnerable and outdated
