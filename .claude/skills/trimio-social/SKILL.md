@@ -18,8 +18,12 @@ apply to posts exactly as they apply to the app.
 1. **The owner said yes to this exact draft, naming the platform.** A yes that
    names no platform is a yes for none: ask which one. (2026-11-16: "you can
    post it" was read as Instagram and was meant for YouTube.)
-2. **For a series, YouTube first, then Instagram**, unless the owner says
-   otherwise for that post.
+2. **Every post: YouTube first, then Instagram, and Instagram only once the
+   YouTube video is PUBLIC.** The owner's rule, restated 2026-11-23 ("Always
+   first YouTube and then Instagram !") after the German Amazon Prime reel went
+   public on Instagram while its YouTube upload was still private. A private
+   upload does not count as first. Applies to standalone reels too, not only a
+   series. Check the YouTube status before every Instagram post.
 3. **YouTube goes only to @gettrimio, `UCfVu2GhQf1cSnq9RsRzkFiA`.** vidIQ also
    lists the owner's personal channel; never post there. Upload private; the
    owner sets "Uso de IA" and makes it public.

@@ -6775,3 +6775,28 @@ last one left off without needing a recap typed out.
   `ended_reason: run_once_fired`, so no scheduled task is live. YouTube
   (`0o1UXbSXcg4`) is still private until the owner sets "Uso de IA" and makes it
   public.
+- YOUTUBE FIRST MEANS PUBLIC ON YOUTUBE FIRST, the owner, 2026-11-23: "Always
+  first YouTube and then Instagram !" Said after the German Amazon Prime reel
+  went public on Instagram (13:33Z) while its YouTube upload (`0o1UXbSXcg4`)
+  was still private, so Instagram was in fact first. That post had been timed at
+  the owner's word for both platforms at once, and the order was not checked.
+  A PRIVATE UPLOAD DOES NOT COUNT AS FIRST: before any Instagram post, read the
+  YouTube video's status, and post only if it is public. This holds for every
+  post, standalone ones included, not only a series. Written into
+  `trimio-social`, step 2 of the gate.
+- PART 7, PART 8 AND "THE ANNOUNCEMENT" ARE DRAFTED FOR YOUTUBE, NOT POSTED,
+  2026-11-23, after the owner's "Always first YouTube and then Instagram !".
+  That names the order, not a go for these three, so each is a ready vidIQ draft
+  (private, @gettrimio, Howto & Style) waiting for a yes. Files are the review
+  page's, uploaded and downloaded back, hashes matching:
+  Part 7 upload `08e0bbd0-b460-419a-b1a4-15fd2e986b26` (4,557,766 bytes,
+  `1da345bb...`), draft `06099140-fb0a-4b72-be00-f0a2f67aeba5` rev `d012649b`,
+  "Forgotten subscriptions: he's still paying for Tinder".
+  Part 8 upload `d83eccb0-eae8-46af-a38a-40d7fb3847d0` (4,552,616, `cb767a3b...`),
+  draft `4257a387-ec2f-4347-bbe4-cffd8e3db9c8` rev `1c1a5ac0`, "Still paying for
+  your ex's Netflix subscription?".
+  The announcement upload `8f1a226e-5696-4f83-bb15-8ba2b26f15b4` (6,149,612,
+  `9426d5ec...`), draft `71d885a6-930d-49fa-b82c-a5c01c622824` rev `bea43ebc`,
+  "Cancel subscriptions you don't use: some hard news from us".
+  Descriptions are the captions with "link in bio" made "link on the channel
+  page"; check_copy clean. Part 7 should not go public before Part 6 does.

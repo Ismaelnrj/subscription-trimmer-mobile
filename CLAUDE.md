@@ -546,7 +546,8 @@ Keep this short and current. As of 2026-11-23.
   on Instagram 2026-11-23, `DgFFE3xHMxO`; Part 5 on Instagram 2026-11-23
   13:12Z, `DgFdY-NAWhh`, AI label on). Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
   for the owner to make it public. Part 7, Part 8 (her ex's Netflix) and "The
-  announcement" (standalone), all 2026-11-23, are only on the review page,
+  announcement" (standalone), all 2026-11-23, are vidIQ YouTube drafts waiting
+  for the owner's yes (ids in the history), videos on the review page,
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. PARKED: a sitcom style
   ensemble, one new friend at a time. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
@@ -708,6 +709,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
 
 - Content is about the customer's problem, mostly; the app is the last beat,
   never the subject. [grep: THE CUSTOMER'S PROBLEM IS THE SUBJECT]
+- Every post goes to YouTube first; Instagram only once that video is public.
+  [grep: A PRIVATE UPLOAD DOES NOT COUNT AS FIRST]
 - Generated video never shows the app, a screen or a wordmark; real
   screenshots in, the model never invents the screen. [grep: GENERATED VIDEO MUST NEVER TOUCH THE UI]
 - No avatar posing as a customer. [grep: UCPD]
