@@ -469,3 +469,39 @@ python3 tools/brand-video.py build/part7-captioned.mp4 --out build/part7-en.mp4 
     the same sounds split differently, so the caption keeps the script. Two
     lines tied on the voice score again (her hook 0.58/0.57, "Trimio didn't."
     0.66/0.64) and were settled on a mouth sheet: hers move, his are shut.
+
+### "The announcement" (2026-11-23)
+
+A standalone reel built to be shared, from a vidIQ outlier search (couple money
+skits that broke out this autumn): the couple back on Part 1's sofa, both facing
+the camera like a serious announcement, and the news is trivial. "Some hard
+news." / "We have something to tell you." / "After three years together…" /
+"…we found out we pay for three streaming services." / the real dashboard /
+"We watch one." / "So we've decided to take a break." / "From Disney+." / the
+real cancel card, €131.88 a year you keep. 36.5 credits: start frame
+`cad68708-7312-4a39-bffe-6eb31c5cf71a` (0.5) and ONE `omni_reference` take,
+12 s draft, `7060d867-5b90-466d-b4fa-aa8fbfea288e` (36), item 21's recipe with
+Part 6's reference ids, no retake.
+
+```
+node tools/reels/story/make-demo-account-announce.js /tmp/tokens-ann   # then the SQL line in its header
+REEL_TZ=Asia/Bangkok node tools/reels/story/shoot-still.js http://127.0.0.1:8091/ "Upcoming" dash.png /tmp/tokens-ann
+# card.png: REEL_ROW='Disney+' record-cancel.js finds the flow; the held still is a 3x screenshot of its end
+python3 tools/reels/story/assemble-announce.py take-esr.mp4 dash.png card.png build/
+python3 tools/brand-video.py build/announce-captioned.mp4 --out build/announce-en.mp4 --lang en --no-bug
+```
+
+38. **The preview needs a server that falls back to the app page.** A plain
+    `python3 -m http.server` answers 404 for `/subscriptions`, and the
+    recorder then waits 20 s for a label that never draws. Serve `dist-web`
+    with a fallback to `index.html`; and the Alert patch must be in the
+    bundle (grep it for `__alerts`), or nothing can press "I cancelled it".
+39. **Direct address is the format, so the prompt allows it.** Every earlier
+    take said "nobody ever looks at the camera"; this one asks for both to
+    speak into it, slow and solemn, and the start frame already has them
+    facing it. One take, no drift. "After three years together" tied on
+    voice (0.60 and 0.60) and was hers on the mouth sheet.
+40. **A held screen is raised clear of the caption, not the caption moved.**
+    The caption band (25 to 75%) leaves no room below the dashboard's rows,
+    so the still is lifted 12%; the gap it leaves at the bottom sits in the
+    strip the platform covers anyway.

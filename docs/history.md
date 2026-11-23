@@ -6668,3 +6668,21 @@ last one left off without needing a recap typed out.
   Instagram skip rate (45.6%) and watch (50.2%). Continuations that need the
   earlier parts did worst (Part 4 100, Part 5 55 on YouTube). Every post so far
   has 0 shares, which is the number a viral reel has to move.
+- "THE ANNOUNCEMENT" REEL IS MADE, 2026-11-23, at the owner's word ("yes, make
+  it"), and on the review page (version 21) waiting for their yes: 17.0 s with
+  the end card, sharpened free (289 of 289 frames), 36.5 credits (balance about
+  160 after). Recipe and traps in `tools/reels/README.md`, items 38 to 40. App
+  screens are the real dashboard (three streaming rows at the catalogue's
+  checked DACH prices: €35.97 a month, €431.64 a year) and the real cancel card
+  (Disney+, €131.88 a year you keep). Proposed caption leads "Some hard news:
+  we pay for three streaming services and watch one." with ONE ask, "Tag the
+  person you split your subscriptions with" (caption.py counts no "tag" ask;
+  it is one), keyword "cancel subscriptions"; YouTube title "Cancel
+  subscriptions you don't use: some hard news from us". Not part of the series,
+  so the owner names the platform first. Success bar after 7 days: skip under
+  45%, watched at least 50%, 3+ shares, 500+ views.
+  THE OWNER CALLED PART 7 (TINDER) ONE OF THEIR FAVOURITES (2026-11-23).
+  PARKED, the owner's idea: an ensemble in the style of a sitcom (not its name,
+  characters or set), new friends around the couple, each owning one
+  subscription habit. Grow it one friend at a time; read the announcement's 7
+  days first.
