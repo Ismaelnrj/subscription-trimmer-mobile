@@ -6710,3 +6710,35 @@ last one left off without needing a recap typed out.
   file with `isAiGenerated: true` and the German caption (first sentence now on
   its own line, "Schritt-für-Schritt-Anleitungen" hyphenated as German writes
   it). No push notification. It disables itself after firing.
+- A SECURITY AUDIT, 2026-11-23, at the owner's request ("use the security
+  audit skill in order to make a deep security audit"), with Cloudflare's
+  security-audit skill re-cloned at the same commit as 2026-11-12 (`c1c8a8c1`,
+  read first, scratchpad only, not installed). NO CODE HAD CHANGED since the
+  2026-11-17 audits (every later commit is docs or reel tools), so the run was
+  scoped to what can change without code, plus the classes no earlier pass had
+  recorded, and done by this session alone (the skill's independent verifier
+  agents were not started; no sub-agents without the owner asking).
+  CHECKED AND CLEAN: backend production dependencies 0 advisories; root
+  critical 0, high 3 (image-size twice, build tooling only; decode-uri-component,
+  in the bundle, worst case a crafted link freezes the app until reopened, needs
+  the SDK upgrade); both input regexes anchored and linear (the email one sees
+  at most 254 characters); no object built from request keys; the one server
+  fetch with a variable in its URL is RevenueCat's, server-generated id,
+  encoded; no header from request input. One candidate REJECTED: `totals[key]`
+  in subscriptions.cancelled, where `__proto__` would pollute every object, but
+  a row's currency only ever comes from SUPPORTED_CURRENCIES or 'USD'.
+  FIXED, one commit with `__tests__/account-deletion-processors.test.js` (6
+  assertions, all 6 failing against the code before):
+  1. A PAYING SUBSCRIBER WAS NEVER TOLD that deleting the account does not
+     cancel the Google Play subscription, so they would keep being charged with
+     no account. The delete dialog now says so for a paid plan (red, with a link
+     to Play's subscription page) and /delete-account says so in both languages.
+  2. RevenueCat kept the customer after account deletion, against the privacy
+     policy's promise. `deleteRevenueCatSubscriber` deletes it after the row,
+     never awaited, 404 read as nothing to erase, failures logged and reported.
+  Measured by booting the changed server on PostgreSQL 16: both pages carry the
+  sentence, a real deletion answers 200 and its token is refused after. The
+  dialog rendered for a paying account in both languages.
+  NOT SECURITY BY THE SKILL'S BAR, still open: one refresh token per user (self
+  impact, but a refused session drops offline entries); the privacy policy text
+  pass. Both stay recommended.

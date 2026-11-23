@@ -370,6 +370,8 @@ const DELETE_PAGE = {
      if you signed in that way.<br /><br />
      This permanently removes your account, every subscription you tracked, your settings and your
      notification history. It cannot be undone.<br /><br />
+     If you pay for Premium, deleting your account does not cancel it: cancel it first in the
+     Google Play Store, under Subscriptions, or Google keeps charging you.<br /><br />
      If you no longer have the app installed, email
      <a href="mailto:${SUPPORT_EMAIL}" style="color:#1F7A62">${SUPPORT_EMAIL}</a> from the address on
      the account and it will be deleted for you.`,
@@ -381,6 +383,8 @@ const DELETE_PAGE = {
      einer Bestätigung mit Google, falls du dich so angemeldet hast.<br /><br />
      Damit werden dein Konto, alle erfassten Abos, deine Einstellungen und dein
      Benachrichtigungsverlauf dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.<br /><br />
+     Wenn du für Premium zahlst, wird es durch das Löschen nicht gekündigt: Kündige es zuerst im
+     Google Play Store unter Abos, sonst bucht Google weiter ab.<br /><br />
      Wenn du die App nicht mehr installiert hast, schreib von der Adresse des Kontos an
      <a href="mailto:${SUPPORT_EMAIL}" style="color:#1F7A62">${SUPPORT_EMAIL}</a>, dann löschen wir
      es für dich.`,
@@ -3152,6 +3156,31 @@ async function deletePostHogPerson(userId) {
   }
 }
 
+/* RevenueCat holds the account's random app user id and its Google Play purchase
+   history. The privacy policy promises personal information is deleted when the
+   account is, so the customer is deleted there too, by the same rule as PostHog:
+   after the row is gone, never awaited into the response, every failure swallowed
+   and logged. Deleting it does NOT cancel a Google Play subscription (Google bills,
+   not RevenueCat); the app and /delete-account say so before the user confirms.
+   A later Restore Purchases re-imports a live Play purchase, so nothing paid is
+   lost. */
+async function deleteRevenueCatSubscriber(openId) {
+  if (!REVENUECAT_SECRET_API_KEY || !openId) return;
+  try {
+    const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(openId)}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${REVENUECAT_SECRET_API_KEY}` },
+      signal: AbortSignal.timeout(OUTBOUND_TIMEOUT_MS),
+    });
+    // 404: RevenueCat never saw this id (never opened the purchase screen). Nothing to erase.
+    if (!res.ok && res.status !== 404) throw new Error(`delete ${res.status}`);
+    console.log('RevenueCat customer erased for a deleted account');
+  } catch (e) {
+    console.error('RevenueCat erasure failed for a deleted account, the customer may remain:', e.message);
+    reportServerError(new Error(`RevenueCat erasure failed: ${e.message}`), 'deleteRevenueCatSubscriber');
+  }
+}
+
 app.delete('/api/auth/account', authMiddleware, async (req, res) => {
   try {
     const { password, idToken } = req.body;
@@ -3200,6 +3229,7 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
        DELETE has run there is nowhere left to look this address up, so anything
        the confirmation needs has to be taken while the row still exists. */
     const deletedEmail = user.email;
+    const deletedOpenId = user.open_id;
     const wantsGerman = /^\s*de\b/i.test(req.headers['accept-language'] || '');
 
     await pool.query('UPDATE users SET referred_by = NULL WHERE referred_by = $1', [req.userId]);
@@ -3207,6 +3237,7 @@ app.delete('/api/auth/account', authMiddleware, async (req, res) => {
     // After the row is gone, and deliberately not awaited into the response:
     // a slow or down PostHog must not make a successful deletion look failed.
     deletePostHogPerson(req.userId);
+    deleteRevenueCatSubscriber(deletedOpenId);
     /* Same rule, same reason. sendEmail retries three times with a backoff, so
        awaiting this could hold the response for seconds and then fail it over a
        courtesy message, on a request that has already succeeded irreversibly. */

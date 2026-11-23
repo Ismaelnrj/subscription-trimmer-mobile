@@ -1,6 +1,6 @@
 import {
   View, Text, ScrollView, TextInput, TouchableOpacity,
-  StyleSheet, Alert, ActivityIndicator, Modal, FlatList,
+  StyleSheet, Alert, ActivityIndicator, Modal, FlatList, Linking,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
@@ -15,6 +15,7 @@ import apiClient from "../lib/api";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { sanitiseAmountInput, amountForDisplay } from "../lib/utils";
 import { signInWithGoogle } from "../lib/google-auth";
+import { hasPaidPlan } from "../lib/premium-status";
 import * as SecureStore from "expo-secure-store";
 
 export default function AccountSettingsScreen() {
@@ -376,6 +377,23 @@ export default function AccountSettingsScreen() {
           <View style={styles.pickerSheet}>
             <Text style={styles.pickerTitle}>{t("accountSettings.deleteModalTitle")}</Text>
             <Text style={styles.deleteDesc}>{t("accountSettings.deleteModalDesc")}</Text>
+            {/* Deleting the account does not touch the Google Play subscription, so a
+                paying subscriber would go on being charged with no account left. Said
+                here, at the last step, with the way to cancel one tap away. */}
+            {hasPaidPlan(user) && (
+              <>
+                <Text style={[styles.deleteDesc, { color: c.danger }]}>{t("accountSettings.deletePlayWarning")}</Text>
+                <TouchableOpacity
+                  style={{ minHeight: 48, justifyContent: "center", marginBottom: space.m }}
+                  onPress={() => Linking.openURL("https://play.google.com/store/account/subscriptions?package=com.trimio.app")}
+                  accessibilityRole="link"
+                >
+                  <Text style={[styles.deleteDesc, { color: c.text, textDecorationLine: "underline", marginBottom: 0 }]}>
+                    {t("accountSettings.deletePlayManage")}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
             {user?.hasPassword === false ? (
               <Text style={[styles.deleteDesc, { marginBottom: space.m }]}>
                 {t("accountSettings.deleteGoogleConfirmNote")}

@@ -455,6 +455,8 @@
     "deleteModalDesc": "Passwort eingeben, um Konto und alle Daten dauerhaft zu löschen. Dies kann nicht rückgängig gemacht werden.",
     "deletePasswordPlaceholder": "Aktuelles Passwort",
     "deleteGoogleConfirmNote": "Dieses Konto verwendet Google-Anmeldung. Tippe unten, um dich mit Google zu bestätigen und dein Konto dauerhaft zu löschen.",
+    "deletePlayWarning": "Wenn du dein Konto löschst, wird Premium bei Google Play nicht gekündigt. Kündige es zuerst dort, sonst bucht Google weiter ab.",
+    "deletePlayManage": "Deine Abos bei Google Play öffnen",
     "deleteConfirmWithGoogle": "Mit Google bestätigen & löschen",
     "deleteCancel": "Abbrechen",
     "deletePermanently": "Dauerhaft löschen",

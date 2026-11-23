@@ -532,10 +532,10 @@ Keep this short and current. As of 2026-11-23.
   01a1db0a-2ba0-730d-98c4-b7a7bf07f500`, baseline `040c4b3c`, read off the
   Build Info panel of a build 41 phone. The next confirmation must show a
   different id and a later time.
-- ONE `eas update` IS OWED: 13 client files in 6 commits, `f87ba920` to
-  `f883c7ff` (2026-11-14 to 11-17); `needs_native_build.py 040c4b3c` said OTA
-  IS ENOUGH. Handed to the owner 2026-11-18, no publish reported since. Owner's
-  yes, their machine.
+- ONE `eas update` IS OWED: the client files since `040c4b3c` (2026-11-14 to
+  11-17, plus the account deletion warning of 2026-11-23);
+  `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Handed to the owner
+  2026-11-18, no publish reported since. Owner's yes, their machine.
 - A NATIVE BUILD IS OWED, ask first: Expo SDK upgrade (React Native 0.79 is
   past support), with the runtimeVersion bump, Credential Manager for Google
   sign in, EAS update code signing, the launch screen off cream. Next
@@ -561,8 +561,8 @@ Keep this short and current. As of 2026-11-23.
   disabled, the 22 Nov reminder fired and ended.
 - RECOMMENDED, NOT DONE (2026-11-17 audit): one refresh token per session, not
   per user; a privacy policy text pass (win-back basis, Expo and frankfurter
-  unlisted, export promised to every tier, Sentry region, date); deleting the
-  RevenueCat subscriber on account deletion.
+  unlisted, export promised to every tier, Sentry region, date). The RevenueCat
+  erasure was done 2026-11-23.
 - OWNER'S DASHBOARD ITEMS, open: which Dockerfile Railway builds and its
   `/health` healthcheck; a backup restore test; PostHog "Discard client IP
   data"; 2FA on Expo first, then Codemagic, Claude, ChatGPT, RevenueCat and

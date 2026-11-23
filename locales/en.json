@@ -455,6 +455,8 @@
     "deleteModalDesc": "Enter your password to permanently delete your account and all subscription data. This cannot be undone.",
     "deletePasswordPlaceholder": "Current password",
     "deleteGoogleConfirmNote": "This account uses Google Sign-In. Tap below to confirm your identity with Google and permanently delete your account.",
+    "deletePlayWarning": "Deleting your account does not cancel Premium in Google Play. Cancel it there first, or Google keeps charging you.",
+    "deletePlayManage": "Open your Google Play subscriptions",
     "deleteConfirmWithGoogle": "Confirm with Google & delete",
     "deleteCancel": "Cancel",
     "deletePermanently": "Delete permanently",
