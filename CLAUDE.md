@@ -549,13 +549,14 @@ Keep this short and current. As of 2026-11-23.
   announcement" (standalone), all 2026-11-23, are only on the review page,
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. PARKED: a sitcom style
   ensemble, one new friend at a time. The German Amazon Prime reel is on
-  YouTube PRIVATE (`0o1UXbSXcg4`) and goes to Instagram 2026-11-23T13:32Z. Each step needs the owner's yes naming the platform
+  YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
+  (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform
   (`trimio-social`).
 - INSTAGRAM CLEANUP is the owner's call, advised 2026-11-18: seven posts with
   invented UI and two avatar testimonials (`Deb0LEtgvBV`, `DetTd7Nj70M`) were
   still live. Do not nag.
-- SCHEDULED TASKS: one, at the owner's word: `trig_01Mmpqc5cXXyUmtsxZm6tkmp`
-  posts the German Amazon Prime reel to Instagram once at 2026-11-23T13:32Z. The Part 2 and Part 3 posts
+- SCHEDULED TASKS: none live. `trig_01Mmpqc5cXXyUmtsxZm6tkmp` (the German
+  Instagram post) fired once and ended, `run_once_fired`. The Part 2 and Part 3 posts
   (`trig_01GQy8Cut5TJYTWJ4LMZYscZ`, `trig_01BjGYp1RZ22eLJYRzwfHDSW`) are
   disabled, the 22 Nov reminder fired and ended.
 - RECOMMENDED, NOT DONE (2026-11-17 audit): one refresh token per session, not

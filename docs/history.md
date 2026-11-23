@@ -6764,3 +6764,14 @@ last one left off without needing a recap typed out.
   one line; a caption that is mostly feature claims does not pass.
   Written into `trimio-social` (the first rule under what a post may say, and
   step 1 of a reel) so it is checked per post rather than remembered.
+- THE GERMAN AMAZON PRIME REEL IS ON INSTAGRAM, 2026-11-23 13:33Z, fired by
+  `trig_01Mmpqc5cXXyUmtsxZm6tkmp` as the owner timed it:
+  https://www.instagram.com/reel/DgFfz_fAGKo/, media id `17876198364601819`,
+  container `18134427337814741`, account `29062187126774065`, regular Reel,
+  `isAiGenerated: true`, the caption in `scratchpad/de/cap.txt` verbatim. Before
+  publishing: no German "Amazon Prime kündigen" reel was live (only the English
+  `DfushsQjuGn`), and the hosted file downloaded back at 3,700,652 bytes, sha256
+  `f34a6f0d...`, the approved one. The trigger then read `enabled: false`,
+  `ended_reason: run_once_fired`, so no scheduled task is live. YouTube
+  (`0o1UXbSXcg4`) is still private until the owner sets "Uso de IA" and makes it
+  public.
