@@ -714,6 +714,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
   never the subject. [grep: THE CUSTOMER'S PROBLEM IS THE SUBJECT]
 - Every post goes to YouTube first; Instagram only once that video is public.
   [grep: A PRIVATE UPLOAD DOES NOT COUNT AS FIRST]
+- No TikTok: do not recommend or plan for it unless the owner raises it.
+  [grep: NO TIKTOK, the owner]
 - Generated video never shows the app, a screen or a wordmark; real
   screenshots in, the model never invents the screen. [grep: GENERATED VIDEO MUST NEVER TOUCH THE UI]
 - No avatar posing as a customer. [grep: UCPD]

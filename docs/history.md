@@ -6827,3 +6827,8 @@ last one left off without needing a recap typed out.
   Howto & Style. A retry of Part 8 the same evening was refused again by the
   3 a day limit, so all three (Part 8, the announcement, the friend) wait for
   2026-11-24T08:00Z. The owner makes them public themselves.
+- NO TIKTOK, the owner, 2026-11-23: "Forget about Tik tok, I need to do it
+  outside tik tok." Said when TikTok was recommended as the first channel beyond
+  YouTube and Instagram, for reusing the reels. Do not recommend it, plan posts
+  for it or build for it unless the owner raises it again. The TikTok links in
+  `marketing-links.md` stay as written but are unused.
