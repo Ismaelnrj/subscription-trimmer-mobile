@@ -6746,3 +6746,21 @@ last one left off without needing a recap typed out.
   Instagram now"): https://www.instagram.com/reel/DgFdY-NAWhh/, media id
   `18241852591319961`, account `29062187126774065`, `isAiGenerated: true`, via
   `vidiq_instagram_publish_reel`. Parts 1 to 5 are now on both platforms.
+- THE CUSTOMER'S PROBLEM IS THE SUBJECT, NOT THE APP, the owner's standing rule
+  for every post, 2026-11-23: "The content, should be about the costumer
+  problems mostly and not the app features. Remember." So a reel's premise is a
+  moment people recognise (a forgotten trial, an ex's Netflix, a price that
+  crept up, a cancel flow built to keep you) and the app is the last beat, a few
+  seconds of the real screen. The account's own numbers already pointed this
+  way: Part 2 (the gym, a story) has the best Instagram skip rate (45.6%)
+  against a 57 to 87% baseline for the earlier feature led posts, and the
+  outlier search found breakouts where "the product never the subject". Small
+  samples, so this is the owner's call backed by a trend, not a proof.
+  WHAT IS QUEUED, read against it the same day: Parts 6 to 8 and "The
+  announcement" are all problem first with the app at the end, so they pass.
+  The German Amazon Prime reel and its caption lead with Amazon's offers on
+  the way out (the problem), then one line on the guides; it was already
+  approved and timed for 13:32Z, and is left as approved. "Mostly" leaves room for that
+  one line; a caption that is mostly feature claims does not pass.
+  Written into `trimio-social` (the first rule under what a post may say, and
+  step 1 of a reel) so it is checked per post rather than remembered.

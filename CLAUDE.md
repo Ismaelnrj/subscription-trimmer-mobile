@@ -705,6 +705,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
 
 ### Posts and marketing
 
+- Content is about the customer's problem, mostly; the app is the last beat,
+  never the subject. [grep: THE CUSTOMER'S PROBLEM IS THE SUBJECT]
 - Generated video never shows the app, a screen or a wordmark; real
   screenshots in, the model never invents the screen. [grep: GENERATED VIDEO MUST NEVER TOUCH THE UI]
 - No avatar posing as a customer. [grep: UCPD]

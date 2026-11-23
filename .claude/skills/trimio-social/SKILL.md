@@ -35,6 +35,13 @@ apply to posts exactly as they apply to the app.
 
 ## What a post may show and say
 
+- **The subject is the customer's problem, not the app.** The owner's rule,
+  2026-11-23: "The content should be about the customer problems mostly and
+  not the app features." The forgotten trial, the ex's Netflix, the price that
+  crept up, the cancel flow built to keep you. The app arrives as the last
+  beat, a few seconds of the real screen, never the premise. A reel or caption
+  that could run as a feature list fails this, however true it is.
+
 - **The app on screen is the real app, recorded.** A generated image or video
   never shows a phone screen, any UI or any wordmark. Generated posts showed an
   invented "DANGO" brand, a fake price reminder and screens Trimio does not
@@ -90,7 +97,8 @@ Origin and local changes: `scripts/UPSTREAM.md`.
 
 ## A reel, in order
 
-1. One idea and one true thing: a real price, a real guide, a real screen.
+1. One customer problem, told as a moment people recognise, and one true
+   thing that resolves it: a real price, a real guide, a real screen.
 2. Three hooks from `hooks.json`, weak ones dropped with `hookscore.py`, the
    pick made by judgement.
 3. Script timed with `beats.py`. On screen text written separately, six words
