@@ -428,3 +428,44 @@ python3 tools/brand-video.py build/part6-captioned.mp4 --out build/part6-en.mp4 
     `/cancelled` directly gives a screen with no back arrow (no history), so
     it would not match the recording that just navigated there.
     `record-cancelled.js` takes its 3x still at the end of the recording.
+
+### Part 7, "still paying for Tinder?" (2026-11-23)
+
+At the owner's word ("the best hook ever and be catchy as well. Also using less
+tokens keeping the quality!"). Same terrace, straight on from Part 6's toast:
+"You're still paying for Tinder?" / he freezes / "That's from before we met!" /
+the real dashboard, Tinder "Due tomorrow" at the top of Upcoming / "It renews
+tomorrow." / "I forgot it existed." / "Trimio didn't." The joke stays inside
+what the app does: he added the row himself (Part 4 is him learning to), the
+€14.99 is his own price, and the reminder is the day before. 27 credits, the
+cheapest part yet: ONE Seedance 2.5 forward extension of Part 6's take, 9 s,
+`47149e28-3c8b-4f50-8bf4-4307541680ef`, no start frame, no references, no
+retake.
+
+```
+node tools/reels/story/make-demo-account-part7.js /tmp/tokens-part7     # then the SQL line in its header
+node tools/reels/story/shoot-still.js http://127.0.0.1:8091/ "Upcoming" /tmp/rec/dash.png /tmp/tokens-part7 "Upcoming"
+python3 tools/reels/story/assemble-part7.py take.mp4 /tmp/rec/dash.png build/
+python3 tools/brand-video.py build/part7-captioned.mp4 --out build/part7-en.mp4 --lang en --no-bug
+```
+
+35. **The hook is the first thing heard, so trim the head.** A forward
+    extension spends its first second settling (here she turns to him and
+    her line starts at 0.95 s). `HEAD_S` cuts 0.8 s off picture and sound
+    together before anything else, so the question starts at 0.15 s and
+    every later time in the assembler is output time. Measure where the
+    first word starts with the loudness trace before setting it: a cut
+    inside the first syllable reads as a glitch.
+36. **The cheapest part is an extension plus a still.** A forward extension
+    needs no start frame and no reference uploads, because the take it
+    continues already carries the faces, the voices and the place: 3
+    credits a second and nothing else. A held still of the real app
+    (`shoot-still.js`, any route, any wait text) costs no recording and
+    carries the one fact the joke needs. Part 2 cost 132 credits with a
+    redo and Part 3 81.5 with a wasted retake; Parts 4 to 7 cost 36, 36,
+    33.5 and 27.
+37. **A misheard line is read against the script, not rewritten.** Whisper
+    small.en heard "It renews tomorrow" as "It's news tomorrow", which is
+    the same sounds split differently, so the caption keeps the script. Two
+    lines tied on the voice score again (her hook 0.58/0.57, "Trimio didn't."
+    0.66/0.64) and were settled on a mouth sheet: hers move, his are shut.

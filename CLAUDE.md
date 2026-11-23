@@ -2859,6 +2859,34 @@ last one left off without needing a recap typed out.
   49; every gym phrase is under vidIQ's floor). "Parts 1 to 5 are on our
   profile" is true only once Parts 4 and 5 are on Instagram, so Part 6 goes
   after them. YouTube first, on the owner's word naming the platform.
+- PART 7 OF THE STORY REEL, "still paying for Tinder?", 2026-11-23, at the
+  owner's word ("the best hook ever and be catchy as well. Also using less
+  tokens keeping the quality!"). Same terrace, straight on from Part 6's
+  toast: "You're still paying for Tinder?" (from 0.15 s; the take's first
+  0.8 s is cut) / he freezes / "That's from before we met!" / the real
+  dashboard, Tinder "Due tomorrow" first under Upcoming / "It renews
+  tomorrow." / "I forgot it existed." / "Trimio didn't." The claim stays
+  inside the app: he added the row himself, €14.99 is his own price, and a
+  reminder comes before the renewal. 8.6 s plus the end card, sharpened free.
+  27 CREDITS, the cheapest part: ONE Seedance 2.5 forward extension of Part
+  6's take, job `47149e28-3c8b-4f50-8bf4-4307541680ef`, no start frame, no
+  references, no retake. The hook scored 77.8 STRONG on hookscore.py (used
+  to drop weak ones, never to choose). Whisper small.en heard every line
+  ("It renews tomorrow" as "It's news tomorrow", the same sounds); her two
+  lines tied on who-speaks.py and were settled on a mouth sheet. Built by
+  `make-demo-account-part7.js`, `shoot-still.js` and `assemble-part7.py`;
+  README items 35 to 37.
+  NOT POSTED AND NOT UPLOADED. On the review page
+  (https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW) with this caption,
+  passing caption.py (READY) and check_copy.py:
+  Part 7: he's still paying for Tinder. Forgotten subscriptions renew whether you remember them or not.
+  Trimio is a subscription tracker: add a subscription once and it reminds you before it renews, even after you've forgotten it exists. No bank login.
+  Parts 1 to 6 are on our profile. Free on Google Play, link in bio.
+  #forgottensubscriptions #subscriptiontracker #cancelsubscriptions #savemoney #moneytips
+  YouTube title proposed: "Forgotten subscriptions: he's still paying for
+  Tinder" ("forgotten subscriptions" about 5,000 a month, competition 44;
+  every Tinder phrase is under vidIQ's floor). Goes after Part 6, YouTube
+  first, on the owner's word naming the platform.
 - A FREE UPSCALER REPLACES HIGGSFIELD'S PAID FINISHING, 2026-11-15, the
   owner's yes to the test. `tools/reels/upscale/` (README there) runs
   Real-ESRGAN's small video model on the session's CPU through ONNX Runtime,

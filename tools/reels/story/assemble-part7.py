@@ -29,17 +29,29 @@ TAKE, STILL, OUT = (pathlib.Path(x) for x in sys.argv[1:])
 OUT.mkdir(parents=True, exist_ok=True)
 W, H, FPS = 1080, 1920, 30
 
-CUT1_F = 0              # FILLED FROM THE MEASURED TAKE: take to here, then the dashboard
-STILL_F = 0             # the dashboard, held, under "It renews tomorrow."
-END_F, FREEZE_F = 0, 12 # take from CUT1_F + STILL_F to here, then held
+HEAD_S = 0.80          # the take's first 0.8 s is her turning to him: cut it, so the hook
+                       # ("You're still paying for Tinder?", 0.95-1.90 in the take) starts at 0.15
+# Everything below is in seconds of the TRIMMED take, which are also output seconds.
+CUT1_F = 111           # take to 3.70: the hook, his freeze, "That's from before we met!" (2.65-3.65)
+STILL_F = 40           # the dashboard, 3.70-5.03, under "It renews tomorrow." (3.75-4.95)
+END_F, FREEZE_F = 246, 12   # take 5.03-8.20: "I forgot it existed." (5.50-6.50), "Trimio didn't."
+                            # (6.85-7.55), her sip, then held
 
 if not (CUT1_F and STILL_F and END_F):
     sys.exit('assemble-part7.py: fill CUT1_F, STILL_F, END_F and LINES from the measured take first')
 A_END_F = CUT1_F + STILL_F
 END = (END_F + FREEZE_F) / FPS
 
-# who: M left, F right. Times are take seconds, which are also output seconds.
-LINES = []
+# who: M left, F right. Measured with Whisper small.en and who-speaks.py; the hook and
+# "Trimio didn't." were ties on the voice score and were read on a mouth sheet (hers move).
+# "From before we met!" drops his "That's" so it reads in the 1.15 s before her line.
+LINES = [
+    ('F', 0.10, 2.55, "You're still paying for Tinder?", 0.66),
+    ('M', 2.60, 3.70, 'From before we met!', 0.66),
+    ('F', 3.75, 5.00, 'It renews tomorrow.', 0.70),
+    ('M', 5.45, 6.65, 'I forgot it existed.', 0.66),
+    ('F', 6.85, 8.05, "Trimio didn't.", 0.66),
+]
 MAX_CPS, MIN_DUR = 17.5, 0.9
 
 
@@ -96,8 +108,12 @@ def anchored_push(src, frames, outdir, fit, anchor, amount):
 def main():
     up = f'scale={W}:{H}:flags=lanczos,unsharp=5:5:0.5:5:5:0,fps={FPS},setsar=1,format=yuv420p'
     enc = ['-c:v', 'libx264', '-crf', '17']
+    # The head trim, picture and sound together, so every later time is output time.
+    trimmed = OUT / 'take_trimmed.mov'
+    run([FF, '-y', '-v', 'error', '-i', str(TAKE), '-ss', f'{HEAD_S:.3f}', '-c:v', 'libx264', '-crf', '12',
+         '-c:a', 'pcm_s16le', str(trimmed)])
     take_full = OUT / 'take_full.mov'
-    run([FF, '-y', '-v', 'error', '-i', str(TAKE), '-an', '-vf', up + f',trim=end_frame={END_F}', *enc, str(take_full)])
+    run([FF, '-y', '-v', 'error', '-i', str(trimmed), '-an', '-vf', up + f',trim=end_frame={END_F}', *enc, str(take_full)])
 
     def piece(name, a, b, freeze=0):
         vf = f'trim=start_frame={a}:end_frame={b},setpts=PTS-STARTPTS'
@@ -121,7 +137,7 @@ def main():
          '-map', '[v]', *enc, str(OUT / 'pic.mov')])
     fa = (f'[0:a]atrim=0:{END_F / FPS:.4f},asetpts=PTS-STARTPTS,aresample=48000,apad,'
           f'atrim=0:{END:.4f},afade=t=out:st={END - 0.45:.4f}:d=0.45[out]')
-    run([FF, '-y', '-v', 'error', '-i', str(TAKE), '-filter_complex', fa, '-map', '[out]', '-c:a', 'pcm_s16le', str(OUT / 'snd.wav')])
+    run([FF, '-y', '-v', 'error', '-i', str(trimmed), '-filter_complex', fa, '-map', '[out]', '-c:a', 'pcm_s16le', str(OUT / 'snd.wav')])
     run([FF, '-y', '-v', 'error', '-i', str(OUT / 'pic.mov'), '-i', str(OUT / 'snd.wav'), '-map', '0:v', '-map', '1:a',
          '-c:v', 'copy', '-c:a', 'pcm_s16le', str(OUT / 'joined.mov')])
 
