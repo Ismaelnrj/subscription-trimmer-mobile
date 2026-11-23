@@ -6742,3 +6742,7 @@ last one left off without needing a recap typed out.
   NOT SECURITY BY THE SKILL'S BAR, still open: one refresh token per user (self
   impact, but a refused session drops offline entries); the privacy policy text
   pass. Both stay recommended.
+- PART 5 ON INSTAGRAM, 2026-11-23 13:12Z, at the owner's word ("post Part 5 on
+  Instagram now"): https://www.instagram.com/reel/DgFdY-NAWhh/, media id
+  `18241852591319961`, account `29062187126774065`, `isAiGenerated: true`, via
+  `vidiq_instagram_publish_reel`. Parts 1 to 5 are now on both platforms.

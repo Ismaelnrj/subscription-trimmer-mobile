@@ -542,10 +542,9 @@ Keep this short and current. As of 2026-11-23.
   versionCode is 42. Play has 1.0.4 / versionCode 41.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.
-- STORY REELS: Parts 1 to 4 are public on YouTube and on Instagram (Part 4
-  on Instagram 2026-11-23, `DgFFE3xHMxO`). Part 5 (`82s07QweNdw`) is public on
-  YouTube since 20 Nov and was approved for Instagram on 2026-11-23, NOT yet
-  posted. Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
+- STORY REELS: Parts 1 to 5 are public on YouTube and on Instagram (Part 4
+  on Instagram 2026-11-23, `DgFFE3xHMxO`; Part 5 on Instagram 2026-11-23
+  13:12Z, `DgFdY-NAWhh`, AI label on). Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
   for the owner to make it public. Part 7, Part 8 (her ex's Netflix) and "The
   announcement" (standalone), all 2026-11-23, are only on the review page,
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. PARKED: a sitcom style
