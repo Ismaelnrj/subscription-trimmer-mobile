@@ -545,7 +545,8 @@ Keep this short and current. As of 2026-11-23.
 - STORY REELS: Parts 1 to 4 are public on YouTube and on Instagram (Part 4
   on Instagram 2026-11-23, `DgFFE3xHMxO`). Part 5 (`82s07QweNdw`) is public on
   YouTube since 20 Nov and was approved for Instagram on 2026-11-23, NOT yet
-  posted. Parts 6 and 7 are only on the review page,
+  posted. Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
+  for the owner to make it public. Part 7 is only on the review page,
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime
   reel was never posted. Each step needs the owner's yes naming the platform
   (`trimio-social`).

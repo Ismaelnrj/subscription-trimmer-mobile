@@ -6646,3 +6646,25 @@ last one left off without needing a recap typed out.
   same morning (4,890,210 bytes, sha256 `fa6179a0...`, the review page file).
   THE GERMAN AMAZON PRIME REEL WAS NEVER POSTED (owner, 2026-11-23). It is on
   the review page as `v/pilot-de-music.mp4` and `v/pilot-de.mp4`.
+
+- PART 6 IS ON YOUTUBE, PRIVATE, 2026-11-23, at the owner's word ("Part 6 to
+  YouTube"): vidIQ upload `84d6947f-5b0f-47bf-812d-e62044b13b4f` (the review
+  page's `v/part6-en-esr.mp4`, downloaded back: 6,292,768 bytes, sha256
+  `f474cc3d...`), draft `97116cce-fa90-48e6-8bf0-2a76ec7a0b51` (revision
+  `77d0d0c2`) to @gettrimio, status completed,
+  https://www.youtube.com/watch?v=VUmb_Vr2GbM, title "Cancel subscriptions to
+  save money? The gym paid for the coffee", Howto & Style, description ending
+  "link on the channel page". The OWNER sets "Uso de IA" to Sí and makes it
+  public. Instagram follows about a day after it is public, on the owner's word.
+- A VIRAL REEL WAS ASKED FOR, 2026-11-23 ("see if we can create a viral
+  reel"). Grounding, so nobody repeats it: one vidIQ outlier search (5 credits,
+  couple money skits since 2026-09-23). The pattern across both platforms is a
+  couple comedy skit with money as the joke, static camera, voice only, made
+  in an hour, the product never the subject: "Some really tragic news" (a
+  bait and switch announcement, 5.1M views on a 5.1K follower account, 363x
+  its median, `DeU9XEkz05a`) and "How couples discuss purchases" (a double
+  standard, 5.7M on Instagram and 3.6M on TikTok). Trimio's own best is the
+  same shape: Part 2 (the gym), 750 YouTube views and the account's best
+  Instagram skip rate (45.6%) and watch (50.2%). Continuations that need the
+  earlier parts did worst (Part 4 100, Part 5 55 on YouTube). Every post so far
+  has 0 shares, which is the number a viral reel has to move.
