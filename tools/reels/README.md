@@ -15,7 +15,7 @@ text card and lost 57 to 87% of viewers before the point arrived.
 ## The rule these exist under
 
 Every pixel of app UI is the REAL app, rendered by react-native-web against the
-real backend on a local PostgreSQL (the recipe is in CLAUDE.md, "A SANDBOX CAN
+real backend on a local PostgreSQL (the recipe is in docs/history.md, "A SANDBOX CAN
 NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP"). Generated video never
 touches the UI: every model smears the text, and the screen is the product.
 Android only: no iPhone frame, no App Store badge, and the crops stay clear of
@@ -50,7 +50,7 @@ re-check every caption against the code: each one is a claim.
 
 Captions for the post itself are drafted per reel in the session that made
 them; run them through `check_copy.py` like any other copy. EVERY POST NEEDS
-THE OWNER'S YES, per post (CLAUDE.md, the vidIQ entry). Instagram's own music
+THE OWNER'S YES, per post (trimio-social, and docs/history.md, the vidIQ entry). Instagram's own music
 library is only reachable from the app, so a reel published through vidIQ goes
 out silent; adding a track in the Instagram app when posting is the owner's
 call.

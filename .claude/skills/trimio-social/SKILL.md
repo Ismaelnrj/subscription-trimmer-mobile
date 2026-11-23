@@ -30,7 +30,8 @@ apply to posts exactly as they apply to the app.
 5. **Never publish vidIQ draft `c06ef544-6043-4487-b7dd-84941ebe7eae` whole**:
    it posts a reel that is already live a second time.
 6. **Nothing scheduled without asking first**, per CLAUDE.md.
-7. **After posting, write the link, the ids and the flags into CLAUDE.md.**
+7. **After posting, write the link, the ids and the flags at the end of
+   `docs/history.md`, and update "Current state" in CLAUDE.md.**
 
 ## What a post may show and say
 

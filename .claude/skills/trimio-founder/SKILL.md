@@ -22,7 +22,7 @@ one the job needs, after this file. Provenance: `UPSTREAM.md`.
 | Look and copy | trimio-design owns colour, type and every rule for words | founder-brand's look brief does not apply |
 | Product facts | Android only, English and German, manual entry plus paste, no bank link, over 30 cancel guides | What the code does; trimio-social lists the claims a post may make |
 | Paid track | Boost a proven organic clip first, then a small always on test, about €200 a month | Evidence that a clip is proven |
-| Competitors | Researched 2026-09-21 (CLAUDE.md, "THE COMPETITION WAS RESEARCHED") | Refresh that table; do not start from zero |
+| Competitors | Researched 2026-09-21 (`docs/history.md`, "THE COMPETITION WAS RESEARCHED") | Refresh that table; do not start from zero |
 
 ## Real numbers beat simulated ones
 

@@ -40,8 +40,9 @@ rules on top.
   unattended.
 - **VoiceStudio** (debpalash, AGPL-3.0): a local voice cloning and dubbing app.
   An app, not a skill; its models download from Hugging Face, which this
-  sandbox cannot reach. Parked as a possible way to make German versions of
-  the story reels on the owner's own machine.
+  sandbox cannot reach. Dropped: dubbing the story reels into German would
+  put German audio over mouths generated speaking English. A German Seedance
+  take is the cheaper test; this is the fallback if that ever fails.
 
 ## Updating
 

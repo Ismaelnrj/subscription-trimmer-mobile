@@ -48,7 +48,7 @@ Both were written for a generic repo. Here, in a conflict:
 ## Token habits for this repo
 
 - Read only the part you need: `grep -n`, `sed -n 'a,bp'`, `head`. Never `cat`
-  a large file. CLAUDE.md is about 500 KB: grep it for the entry you need.
+  a large file. The dated history is `docs/history.md`, about 470 KB: grep it.
 - Trim output at the source (`| tail -5`, `-q`, `--format`); prefer exit codes
   and counts to listings.
 - Small edits through the shell or an exact Edit. No Read just to confirm an
@@ -59,7 +59,8 @@ Both were written for a generic repo. Here, in a conflict:
   then `git show HEAD:<file>` for only what is needed.
 - Before a paid generation (Higgsfield, vidIQ), take the cheapest path that
   keeps the quality: `tools/reels/README.md` items 21 to 37.
-- A new CLAUDE.md entry is a few lines. That file is read into every session.
+- A new dated entry goes at the end of `docs/history.md`, a few lines. CLAUDE.md
+  gains at most one "Do not undo" line; it is read into every session.
 
 ## The reply
 

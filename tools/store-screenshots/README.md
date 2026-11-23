@@ -3,7 +3,7 @@
 `store-assets/screenshots/{en,de}/` holds the six frames per language uploaded
 to Play Console, 1080x1920, 24 bit PNG. Made 2026-11-12 from the REAL app,
 rendered by react-native-web against the real backend on a local PostgreSQL,
-never drawn or generated. The recipe for that preview is in CLAUDE.md ("A
+never drawn or generated. The recipe for that preview is in docs/history.md ("A
 SANDBOX CAN NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP").
 
 1. `demo-accounts.js <lang> <token file>`: one account per language through
