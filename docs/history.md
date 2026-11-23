@@ -6627,3 +6627,22 @@ last one left off without needing a recap typed out.
   that radical-honesty line, and the 2026-09 design handoff dropped it.
   Nothing on the page states a user count now. Restoring it is the
   owner's call: do not re-add it unasked, and do not assume it is there.
+
+- PART 4 IS ON INSTAGRAM, 2026-11-23 about 09:45Z, at the owner's word ("in
+  Instagram still missing two videos ... You can upload both today on
+  instagram. Not together but during the day!"), naming the platform; it was
+  public on YouTube since 2026-11-19. https://www.instagram.com/reel/DgFFE3xHMxO/
+  (media `17899682727418100`), PUBLISHED per `vidiq_instagram_publish_reel`:
+  regular Reel, `isAiGenerated: true`, the recorded Part 4 caption verbatim
+  (caption.py READY on "subscription tracker", check_copy clean). File: the
+  review page's `v/part4-en-esr.mp4`, re-uploaded as vidIQ upload
+  `c18c78a4-5632-4dad-a949-401532b79672` and downloaded back to check it,
+  5,142,452 bytes, sha256 `4c4624a6...`. Double post check first: no "Part 4:"
+  reel was live; a 21 Nov reel ("Which yearly charge do you forget?") came
+  from outside this session.
+  PART 5 IS NOT POSTED YET. A one-time `send_later` for 16:00Z was REFUSED by
+  the session's permission check, which matches the standing rule: ask before
+  anything scheduled. Its upload `4ed88fad-...` was refreshed and checked the
+  same morning (4,890,210 bytes, sha256 `fa6179a0...`, the review page file).
+  THE GERMAN AMAZON PRIME REEL WAS NEVER POSTED (owner, 2026-11-23). It is on
+  the review page as `v/pilot-de-music.mp4` and `v/pilot-de.mp4`.

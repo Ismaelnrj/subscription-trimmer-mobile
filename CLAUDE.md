@@ -542,11 +542,13 @@ Keep this short and current. As of 2026-11-23.
   versionCode is 42. Play has 1.0.4 / versionCode 41.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.
-- STORY REELS: Parts 1 to 3 are public on YouTube and on Instagram. Parts 4
-  (`hrSGbxiGt9Q`) and 5 (`82s07QweNdw`) are public on YouTube since 19 and
-  20 Nov, NOT on Instagram. Parts 6 and 7 are only on the review page,
-  https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. Each step needs the
-  owner's yes naming the platform (`trimio-social`).
+- STORY REELS: Parts 1 to 4 are public on YouTube and on Instagram (Part 4
+  on Instagram 2026-11-23, `DgFFE3xHMxO`). Part 5 (`82s07QweNdw`) is public on
+  YouTube since 20 Nov and was approved for Instagram on 2026-11-23, NOT yet
+  posted. Parts 6 and 7 are only on the review page,
+  https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime
+  reel was never posted. Each step needs the owner's yes naming the platform
+  (`trimio-social`).
 - INSTAGRAM CLEANUP is the owner's call, advised 2026-11-18: seven posts with
   invented UI and two avatar testimonials (`Deb0LEtgvBV`, `DetTd7Nj70M`) were
   still live. Do not nag.
