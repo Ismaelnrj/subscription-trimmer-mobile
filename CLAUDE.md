@@ -2512,6 +2512,20 @@ last one left off without needing a recap typed out.
   2026-11-22T09:00Z (10:00 Berlin). It reads the Short's first week through
   vidIQ, sends the owner a push notification with the headline numbers,
   and records them here. It disables itself after firing.
+  IT FIRED 2026-11-22T09:00Z and was read 2026-11-23 (the session was idle
+  in between). THE SHORT'S FIRST WEEK, `vidiq_get_videos_by_ids`: 110 views,
+  1 like, 0 comments after 8 days. Its Instagram twin (`DfushsQjuGn`, owner
+  insights): 100 views, 88 reached, 4 likes, 0 shares, 0 saves, average watch
+  4.6 s of 14 (33%), skip rate 58.4%. Viewed versus swiped away on YouTube is
+  not in vidIQ; it lives in Studio > Contenido > the Short > Analíticas.
+  READ AGAINST THE 60% LINE (a rough rule, set 2026-11-15): Instagram sits just
+  under it, so the opening second is borderline, not failed. Against the story
+  reels the same day it is the weaker format: Part 2 750 views, Part 3 313,
+  Part 1 20 (YouTube), and Part 1's Instagram skip rate was 45.7%. So the
+  story format (people, a line of dialogue as the hook, the real app cut in)
+  is the one to keep; a guide on its own is not. Push notification sent.
+  THE SAME READ SHOWED PARTS 4 AND 5 PUBLIC: Part 4 since
+  2026-11-19T12:48:16Z (100 views), Part 5 since 2026-11-20T10:45:04Z (55).
 - THE STORY REEL, "We only pay for Netflix", 2026-11-15, approved by the
   owner ("Is ready to be posted!"). A couple on a sofa: he says they only
   pay for Netflix, she lists four more, the real app adds them up (Disney+
