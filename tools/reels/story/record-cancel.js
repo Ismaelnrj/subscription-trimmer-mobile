@@ -14,9 +14,10 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const [outdir, tokfile, lang = 'en'] = process.argv.slice(2);
 const [token, refresh] = fs.readFileSync(tokfile, 'utf8').trim().split(' ');
+const row = process.env.REEL_ROW || 'Gym'; // any row: REEL_ROW='Disney+' for the announcement reel
 const L = {
-  en: { actions: 'Actions for Gym', del: 'Delete Gym', locale: 'en-US' },
-  de: { actions: 'Aktionen für Gym', del: 'Gym löschen', locale: 'de-DE' },
+  en: { actions: `Actions for ${row}`, del: `Delete ${row}`, locale: 'en-US' },
+  de: { actions: `Aktionen für ${row}`, del: `${row} löschen`, locale: 'de-DE' },
 }[lang];
 (async () => {
   const b = await chromium.launch();
