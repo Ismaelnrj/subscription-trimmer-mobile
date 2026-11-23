@@ -531,3 +531,38 @@ python3 tools/brand-video.py build/part8-captioned.mp4 --out build/part8-en.mp4 
     dashboard says good morning, afternoon or evening by local time, so
     `REEL_TZ` is set to a zone where it is the scene's time of day now
     (Istanbul for an afternoon terrace at 12:00Z, Bangkok for an evening sofa).
+
+### "The friend", one new friend at a time (2026-11-23)
+
+The first reel of the ensemble the owner asked for ("create the one with the new
+character!"). The customer's problem is the subject: people think they have
+fewer subscriptions than they pay for. On the couple's sofa, a new friend in a
+mustard armchair: "I don't have any subscriptions. I'm good with money." /
+"Netflix?" "Yes." / "Spotify?" "Yes." / "The gym?" "Yes." / "Audible?" "That's
+a book." / the couple look at each other / his real dashboard, "€825.96 a year
+for 4 active subscriptions". Start frame `cb5e4539-b567-41dc-884e-a9e0e3bfce81`
+(0.5, the series' face stills as references), ONE `omni_reference` take, 12 s
+draft, `4a74f737-a3b7-42c9-aed8-fb89b89d24b0` (36), item 21's recipe, plus a
+voice change on the take (`a2581123-a753-4f99-a927-e97340db0d3e`, preset
+"Benji") used on the friend's lines only.
+
+```
+node tools/reels/story/make-demo-account-friend.js /tmp/tokens-friend   # then the SQL line in its header
+REEL_TZ=Asia/Bangkok node tools/reels/story/shoot-still.js http://127.0.0.1:8091/ "Upcoming" dash.png /tmp/tokens-friend
+# take-fx.mp4: the take with the friend's five spans replaced from the voice change (item 43)
+python3 tools/reels/story/assemble-friend.py take-esr.mp4 dash.png build/
+python3 tools/brand-video.py build/friend-captioned.mp4 --out build/friend-en.mp4 --lang en --no-bug
+```
+
+43. **A new character with no voice reference borrows one.** The prompt asked
+    for the friend's "own voice, lighter, younger", but with two
+    `audio_references` in the call the model gave him the bearded man's: his
+    lines scored 0.79 against the bearded man's lines in the same take, the
+    range of one speaker across two takes (his own lines sit at 0.74 to 0.88).
+    Every line was still said by the right mouth. The fix that keeps the take:
+    `voice_change` on the whole take, then splice only the friend's spans back
+    (15 ms fades, gain matched per span, alignment measured at 0 lag). His
+    opening line then scored 0.59 against the bearded man. A pitch lift
+    (rubberband 1.06 and 1.10, formants kept) made no difference to the score
+    and was dropped. Next time, give a new character a voice reference of his
+    own in the first call.
