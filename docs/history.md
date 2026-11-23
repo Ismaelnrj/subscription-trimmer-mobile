@@ -6686,3 +6686,13 @@ last one left off without needing a recap typed out.
   characters or set), new friends around the couple, each owning one
   subscription habit. Grow it one friend at a time; read the announcement's 7
   days first.
+- PART 8 IS MADE, 2026-11-23, at the owner's word ("The tinder one, still my
+  favourite. You can continue"): Part 7's formula with the roles reversed, "her
+  ex's Netflix", on the review page (version 22) waiting for their yes. 13.0 s
+  with the end card, sharpened free (240 of 240 frames), 30 credits (balance
+  about 130). One forward extension of Part 7's take. The app: her real
+  dashboard (Netflix Standard at the checked DACH price, due in 3 days) and the
+  real Netflix guide, its note cut out because it names Apple. Caption READY
+  on "netflix subscription"; YouTube title "Still paying for your ex's Netflix
+  subscription?". Flagged to the owner: her loud "He said he'd cancel it!".
+  Order: Parts 6 and 7 first, YouTube before Instagram.

@@ -505,3 +505,29 @@ python3 tools/brand-video.py build/announce-captioned.mp4 --out build/announce-e
     The caption band (25 to 75%) leaves no room below the dashboard's rows,
     so the still is lifted 12%; the gap it leaves at the bottom sits in the
     strip the platform covers anyway.
+
+### Part 8, "her ex's Netflix" (2026-11-23)
+
+Part 7 is the owner's favourite, so Part 8 is its formula with the roles
+reversed, straight on from Part 7's last shot: "You're still paying for your
+ex's Netflix?" / she freezes / "He said he'd cancel it!" / "Two years ago?" /
+her real dashboard, Netflix due in 3 days / "How do I cancel it?" / "Four
+steps." / the real Netflix guide. 30 credits: ONE forward extension of Part 7's
+take, 10 s, `b97e6864-6c20-45c5-b32f-726c654e0215`, no retake.
+
+```
+node tools/reels/story/make-demo-account-part8.js /tmp/tokens-part8   # then the SQL line in its header
+REEL_TZ=Europe/Istanbul node tools/reels/story/shoot-still.js http://127.0.0.1:8091/ "Upcoming" dash.png /tmp/tokens-part8
+REEL_TZ=Europe/Istanbul node tools/reels/story/shoot-still.js "http://127.0.0.1:8091/cancel-guide?name=Netflix%20Standard" "Open cancellation page" guide.png /tmp/tokens-part8
+python3 tools/reels/story/assemble-part8.py take-esr.mp4 dash.png guide.png build/
+python3 tools/brand-video.py build/part8-captioned.mp4 --out build/part8-en.mp4 --lang en --no-bug
+```
+
+41. **A loud line can score as the other voice.** "He said he'd cancel it!"
+    scored his (0.70 against 0.57) because she shouts it; the mouth sheet
+    showed hers moving and his closed. A raised voice moves the embedding,
+    so a lopsided score on a shouted line is read on the mouths too.
+42. **The greeting follows the clock: pick the zone for the scene.** The
+    dashboard says good morning, afternoon or evening by local time, so
+    `REEL_TZ` is set to a zone where it is the scene's time of day now
+    (Istanbul for an afternoon terrace at 12:00Z, Bangkok for an evening sofa).

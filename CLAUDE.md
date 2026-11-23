@@ -546,8 +546,8 @@ Keep this short and current. As of 2026-11-23.
   on Instagram 2026-11-23, `DgFFE3xHMxO`). Part 5 (`82s07QweNdw`) is public on
   YouTube since 20 Nov and was approved for Instagram on 2026-11-23, NOT yet
   posted. Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
-  for the owner to make it public. Part 7 and "The announcement" (a standalone
-  reel, 2026-11-23) are only on the review page,
+  for the owner to make it public. Part 7, Part 8 (her ex's Netflix) and "The
+  announcement" (standalone), all 2026-11-23, are only on the review page,
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. PARKED: a sitcom style
   ensemble, one new friend at a time. The German Amazon Prime
   reel was never posted. Each step needs the owner's yes naming the platform
