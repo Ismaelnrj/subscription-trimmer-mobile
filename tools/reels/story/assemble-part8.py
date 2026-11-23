@@ -127,10 +127,14 @@ def main():
                                                       ('card', CARD, CARD_F, (0.50, 0.36), 0.05, 0.0)):
         img = Image.open(path).convert('RGB')
         if name == 'card':
-            # only the steps card (0.39 to 0.91 of the screen): the note above it names Apple
-            steps = img.crop((0, round(0.385 * img.height), img.width, round(0.91 * img.height)))
+            # the screen's own heading and its steps card, with the note between them cut out
+            # (it names Apple): heading 0.11-0.18 of the screen, steps 0.385-0.91
+            h = img.height
+            heading = img.crop((0, round(0.11 * h), img.width, round(0.18 * h)))
+            steps = img.crop((0, round(0.385 * h), img.width, round(0.91 * h)))
             img = Image.new('RGB', img.size, (0xF3, 0xF5, 0xF6))
-            img.paste(steps, (0, round(0.10 * img.height)))
+            img.paste(heading, (0, round(0.08 * h)))
+            img.paste(steps, (0, round(0.08 * h) + heading.height + round(0.01 * h)))
         if lift:
             raised = Image.new('RGB', img.size, (0xF3, 0xF5, 0xF6))
             raised.paste(img, (0, -round(lift * img.height)))
