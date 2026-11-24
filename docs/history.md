@@ -6832,3 +6832,11 @@ last one left off without needing a recap typed out.
   YouTube and Instagram, for reusing the reels. Do not recommend it, plan posts
   for it or build for it unless the owner raises it again. The TikTok links in
   `marketing-links.md` stay as written but are unused.
+- PART 8, "THE ANNOUNCEMENT" AND "THE FRIEND" ARE ON YOUTUBE, PRIVATE,
+  2026-11-24 ~15:47Z, after the vidIQ limit reset, on the owner's approval of
+  2026-11-23 ("Yes please, do it already as private") and their go the next day
+  ("You can post the video!!"). @gettrimio, Howto & Style, status completed:
+  Part 8 https://www.youtube.com/watch?v=KVCpOx62eBE, the announcement
+  https://www.youtube.com/watch?v=lgSW8rKscgk, the friend
+  https://www.youtube.com/watch?v=abof1xwBNXA. The owner sets "Uso de IA" and
+  makes each public; Instagram only after that.
