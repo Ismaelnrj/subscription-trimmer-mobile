@@ -546,9 +546,10 @@ Keep this short and current. As of 2026-11-23.
   on Instagram 2026-11-23, `DgFdY-NAWhh`; Part 6 on Instagram 2026-11-24,
   `DgIdGcRGTUt`, AI label on). Part 7, Part 8 (her ex's Netflix) and "The
   announcement" (standalone), all 2026-11-23, and "The friend" (first of the
-  one new friend at a time ensemble) are on YouTube PRIVATE: Part 7
-  `sM0eh-rPY9k`, Part 8 `KVCpOx62eBE`, the announcement `lgSW8rKscgk`, the
-  friend `abof1xwBNXA` (2026-11-24). The owner makes them public. Review page:
+  one new friend at a time ensemble) are on YouTube: Part 8 `KVCpOx62eBE`
+  PUBLIC since 2026-11-24 19:25Z (Instagram waits for Part 7 first); Part 7
+  `sM0eh-rPY9k`, the announcement `lgSW8rKscgk`, the friend `abof1xwBNXA`
+  private, two of them scheduled by the owner. Review page:
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
   (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform

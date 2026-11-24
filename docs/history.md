@@ -6849,3 +6849,16 @@ last one left off without needing a recap typed out.
   2026-11-23T16:36Z); Part 7, Part 8, the announcement, the friend and the
   German reel were not returned, so still private, and none went to Instagram.
   File checked: 6,292,768 bytes, sha256 `f474cc3d...`. No Part 6 reel was live.
+- PART 8 IS PUBLIC ON YOUTUBE, 2026-11-24T19:25:55Z (read through vidIQ), made
+  public by the owner, who also scheduled two others ("programmed the others
+  two", which two not said). Part 7 was NOT public at the same read. PART 8 IS
+  HELD BACK FROM INSTAGRAM ON PURPOSE: its caption says "Parts 1 to 7 are on our
+  profile" and Part 7 is not on Instagram, so it waits for Part 7 to be public on
+  YouTube and posted to Instagram first.
+- NO AUDIENCE AGE CAN BE SET ON AN ORGANIC VIDEO, asked 2026-11-24 ("the age
+  for what is made for should be 23 -48"). YouTube offers only "made for kids"
+  (must be No on every Trimio video) and an 18+ age restriction (leave off, it
+  cuts reach); Instagram reels have no age setting. An age range exists only on
+  paid promotion (Instagram boost, YouTube promote / Google Ads), and Play's
+  target audience is buckets ("18 and over"). vidIQ's update tool cannot read or
+  change the audience fields, so the owner checks "made for kids" in Studio.
