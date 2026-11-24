@@ -6913,3 +6913,11 @@ last one left off without needing a recap typed out.
   "Too many requests. Please try again later.", German in ERROR_TEXT_DE.
   `__tests__/email-ceiling.test.js`, 5 tests, all 5 failing on the old code. A
   real signup and resend on the local server each still sent their email.
+- BREVO IS ON THE FREE PLAN, the owner, 2026-11-24 ("For now is free the brevo
+  plan"): about 300 emails a day for everything Trimio sends (codes, resets,
+  reminders, win-back, referral and deletion emails). So the 150 a day ceiling
+  on verification emails also keeps half the quota for people who already have
+  an account. WHEN TO REVISIT: if Sentry reports "Verification email ceiling
+  reached" on a day of real signups (a reel that took off, not an attack), the
+  free plan is the limit, not the ceiling: upgrade Brevo, then raise
+  VERIFICATION_EMAILS_PER_DAY below the new daily allowance.
