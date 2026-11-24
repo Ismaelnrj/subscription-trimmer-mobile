@@ -6862,3 +6862,12 @@ last one left off without needing a recap typed out.
   paid promotion (Instagram boost, YouTube promote / Google Ads), and Play's
   target audience is buckets ("18 and over"). vidIQ's update tool cannot read or
   change the audience fields, so the owner checks "made for kids" in Studio.
+- PART 8 ON INSTAGRAM, 2026-11-24 ~19:50Z, at the owner's "You can post the
+  video on Instagram !", after Part 8 went public on YouTube (19:25Z) and while
+  Part 7, the announcement, the friend and the German reel still read as not
+  public. https://www.instagram.com/reel/DgIvCkKmX11/, media id
+  `17917172805489126`, container `18134677813814741`, `isAiGenerated: true`.
+  ONE LINE OF THE CAPTION WAS CORRECTED: "Parts 1 to 7 are on our profile"
+  became "Parts 1 to 6", since Part 7 is not on Instagram yet; the rest is the
+  review page's caption. So Part 8 is on Instagram before Part 7, the owner's
+  call. File checked: 4,552,616 bytes, sha256 `cb767a3b...`.
