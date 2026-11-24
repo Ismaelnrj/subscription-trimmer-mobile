@@ -1467,14 +1467,23 @@ async function verifyGoogleIdToken(idToken) {
 // Short-lived JWT access token + opaque, rotating refresh token (stored hashed,
 // like verification/reset codes) — lets the client stay signed in past 1h without
 // re-entering credentials, while a stolen access token only has a 1h window.
-async function issueTokens(userId) {
+/* ONE REFRESH TOKEN PER SESSION, not one per user (2026-11-24). The token used
+   to live in users.refresh_token_hash, a single slot, so any login anywhere
+   (the website's form, a second phone) overwrote it: the phone was refused on
+   its next refresh, within the hour, and signed out, and a sign out discards
+   whatever was waiting offline. Now every login gets its own row, a refresh
+   rotates only its own row, and the rows that end every session (a new
+   password, a reset, a Google takeover) delete them all. `db` is the pool or a
+   checked out client, so the refresh rotation can run in one transaction. */
+async function issueTokens(userId, db = pool) {
+  const MAX_SESSIONS_PER_USER = 10;
   /* A token minted for an UNVERIFIED password account carries `unv`, so
      authMiddleware can check that the password which minted it still exists.
      Google sign in drops an unverified password when it claims the address
      (see /api/auth/google), and without this the stranger's access token kept
      reading the owner's data for the rest of its hour. Only these tokens cost
      a database read; every verified session stays a pure signature check. */
-  const who = await pool.query('SELECT is_verified, password_hash IS NOT NULL AS has_password FROM users WHERE id = $1', [userId]);
+  const who = await db.query('SELECT is_verified, password_hash IS NOT NULL AS has_password FROM users WHERE id = $1', [userId]);
   const claims = { userId };
   if (who.rows[0] && !who.rows[0].is_verified && who.rows[0].has_password) claims.unv = true;
   // HS256 named on both sides rather than left to the library default, so the
@@ -1482,9 +1491,16 @@ async function issueTokens(userId) {
   const accessToken = jwt.sign(claims, JWT_SECRET, { algorithm: 'HS256', expiresIn: ACCESS_TOKEN_EXPIRY });
   const refreshToken = crypto.randomBytes(40).toString('hex');
   const expires = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
-  await pool.query(
-    'UPDATE users SET refresh_token_hash = $1, refresh_token_expires = $2 WHERE id = $3',
-    [hashToken(refreshToken), expires, userId]
+  await db.query(
+    'INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
+    [userId, hashToken(refreshToken), expires]
+  );
+  // Keep the table small: this user's expired sessions go, and only the newest
+  // MAX_SESSIONS_PER_USER stay, so repeated logins cannot grow it without end.
+  await db.query(
+    `DELETE FROM refresh_tokens WHERE user_id = $1 AND (expires_at < NOW() OR id NOT IN (
+       SELECT id FROM refresh_tokens WHERE user_id = $1 ORDER BY id DESC LIMIT $2))`,
+    [userId, MAX_SESSIONS_PER_USER]
   );
   return { accessToken, refreshToken };
 }
@@ -1634,6 +1650,20 @@ async function initDB() {
   `);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_hash TEXT`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires TIMESTAMPTZ`);
+  /* One row per session (see issueTokens). The two users columns above stay:
+     a token issued before this table existed still lives there, and
+     /api/auth/refresh accepts it once and moves it here, so the deploy signs
+     nobody out. */
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS refresh_tokens_user_id_idx ON refresh_tokens (user_id)`);
   await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
   // Google sign-in accounts have no password, so password_hash can no longer be NOT NULL.
   await pool.query(`ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL`);
@@ -2714,6 +2744,7 @@ app.post('/api/auth/google', async (req, res) => {
             'UPDATE users SET google_id = $1, is_verified = TRUE, password_hash = NULL, refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $2',
             [googleId, user.id]
           );
+          await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [user.id]);
           user.password_hash = null;
         } else {
           await pool.query('UPDATE users SET google_id = $1, is_verified = TRUE WHERE id = $2', [googleId, user.id]);
@@ -2761,14 +2792,43 @@ app.post('/api/auth/refresh', async (req, res) => {
     // A string, or hashToken throws: an unauthenticated 500 and a Sentry event.
     if (typeof refreshToken !== 'string' || !refreshToken) return res.status(400).json({ error: 'Refresh token required' });
 
-    const result = await pool.query('SELECT * FROM users WHERE refresh_token_hash = $1', [hashToken(refreshToken)]);
-    const user = result.rows[0];
-    if (!user || !user.refresh_token_expires || new Date(user.refresh_token_expires) < new Date()) {
-      return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    const hash = hashToken(refreshToken);
+    /* The presented token is consumed and its replacement written in ONE
+       transaction: if writing the new one fails, the old one is still there
+       and the app, which reads a 5xx as "try again later", is not signed out
+       by a token the server already threw away. */
+    const client = await pool.connect();
+    let issued = null;
+    try {
+      await client.query('BEGIN');
+      const used = await client.query(
+        'DELETE FROM refresh_tokens WHERE token_hash = $1 RETURNING user_id, expires_at',
+        [hash]
+      );
+      let row = used.rows[0];
+      if (!row) {
+        // A token from before refresh_tokens existed: accepted once, then moved.
+        const legacy = await client.query(
+          `UPDATE users u SET refresh_token_hash = NULL, refresh_token_expires = NULL
+             FROM (SELECT id, refresh_token_expires FROM users WHERE refresh_token_hash = $1) old
+            WHERE u.id = old.id
+        RETURNING u.id AS user_id, old.refresh_token_expires AS expires_at`,
+          [hash]
+        );
+        row = legacy.rows[0];
+      }
+      if (row && row.expires_at && new Date(row.expires_at) >= new Date()) {
+        issued = await issueTokens(row.user_id, client);
+      }
+      await client.query('COMMIT');
+    } catch (e) {
+      await client.query('ROLLBACK').catch(() => {});
+      throw e;
+    } finally {
+      client.release();
     }
-
-    const { accessToken, refreshToken: newRefreshToken } = await issueTokens(user.id);
-    res.json({ token: accessToken, refreshToken: newRefreshToken });
+    if (!issued) return res.status(401).json({ error: 'Invalid or expired refresh token' });
+    res.json({ token: issued.accessToken, refreshToken: issued.refreshToken });
   } catch (err) {
     handleError(err, res);
   }
@@ -2776,6 +2836,15 @@ app.post('/api/auth/refresh', async (req, res) => {
 
 app.post('/api/auth/logout', authMiddleware, async (req, res) => {
   try {
+    /* This device's session only, when the app says which one it is. An app
+       from before per session tokens sends no body, and gets what logout always
+       meant for it: every session of the account ends. */
+    const { refreshToken } = req.body || {};
+    if (typeof refreshToken === 'string' && refreshToken) {
+      await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1 AND token_hash = $2', [req.userId, hashToken(refreshToken)]);
+    } else {
+      await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [req.userId]);
+    }
     await pool.query('UPDATE users SET refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $1', [req.userId]);
     res.json({ success: true });
   } catch (err) {
@@ -2840,9 +2909,11 @@ app.patch('/api/auth/profile', authMiddleware, async (req, res) => {
       await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hash, req.userId]);
       /* A NEW PASSWORD ENDS EVERY OTHER SESSION. Changing it is what somebody
          does when they think the account is in someone else's hands, and the
-         old refresh token used to survive it for its full 90 days. issueTokens
-         overwrites the one stored refresh token, so whoever held the old one is
-         refused on their next refresh, and this device gets the new pair. */
+         old refresh token used to survive it for its full 90 days. Every
+         session of the account is deleted, so whoever held one is refused on
+         their next refresh, and this device gets a new pair. */
+      await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [req.userId]);
+      await pool.query('UPDATE users SET refresh_token_hash = NULL, refresh_token_expires = NULL WHERE id = $1', [req.userId]);
       session = await issueTokens(req.userId);
       loginFailures.delete(failureKey);
     }
@@ -3079,6 +3150,8 @@ app.post('/api/auth/reset-password', async (req, res) => {
       [hash, user.id, user.reset_token]
     );
     if (done.rows.length === 0) return res.status(400).json({ error: 'Invalid or expired code' });
+    // A reset ends every session, as it did when there was only one.
+    await pool.query('DELETE FROM refresh_tokens WHERE user_id = $1', [user.id]);
     loginFailures.delete(email);
     res.json({ success: true });
   } catch (err) {

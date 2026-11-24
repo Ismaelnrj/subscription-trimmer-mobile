@@ -85,7 +85,7 @@ describe('initDB builds an empty database', () => {
   test('the scan sees every table initDB creates', () => {
     expect(tables.map((t) => t.table).sort()).toEqual([
       'notification_preferences', 'notifications', 'price_history',
-      'subscriptions', 'user_settings', 'users',
+      'refresh_tokens', 'subscriptions', 'user_settings', 'users',
     ]);
   });
 

@@ -121,8 +121,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
        the catch and left the person still signed in with a logged error. */
     try {
       const apiClient = (await import("./api")).default;
+      // Names this device's session, so the server ends only this one and the
+      // account stays signed in on the person's other devices.
+      const refreshToken = await SecureStore.getItemAsync("refresh_token").catch(() => null);
       await Promise.race([
-        apiClient.post("/auth/logout").catch(() => {}),
+        apiClient.post("/auth/logout", refreshToken ? { refreshToken } : {}).catch(() => {}),
         new Promise((resolve) => setTimeout(resolve, 3000)),
       ]);
     } catch (error) {

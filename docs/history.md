@@ -6871,3 +6871,28 @@ last one left off without needing a recap typed out.
   became "Parts 1 to 6", since Part 7 is not on Instagram yet; the rest is the
   review page's caption. So Part 8 is on Instagram before Part 7, the owner's
   call. File checked: 4,552,616 bytes, sha256 `cb767a3b...`.
+- ONE REFRESH TOKEN PER SESSION, 2026-11-24, from the owner's "make a deep audit
+  on the app". The last open item of the 2026-11-17 audit that can lose data: the
+  refresh token lived in users.refresh_token_hash, one slot per account, so any
+  login anywhere (the website's form, a second phone) overwrote the phone's token,
+  the phone was refused on its next refresh within the hour and signed out, and
+  that sign out discarded entries waiting offline.
+  NOW: table `refresh_tokens`, one row per login, FK to users ON DELETE CASCADE,
+  index on user_id. A refresh consumes its own row and writes the replacement in
+  ONE transaction (a failed write keeps the old token, so a 5xx never signs the
+  app out). At most 10 sessions per user, expired rows pruned on each login.
+  Logout with `{ refreshToken }` ends that session only; an installed app that
+  sends no body still ends every session, as before. A new password, a reset and
+  the Google takeover of an unverified account delete every row. The two users
+  columns stay: a token from before the deploy refreshes once and moves into the
+  table, so the deploy signs nobody out. ROLLBACK HAZARD: reverting the backend
+  would refuse every token issued after the deploy, one sign out per person.
+  MEASURED on PostgreSQL 16, old server then new on one database: legacy token
+  works once then 401; two logins both refresh; rotation refuses the used token;
+  logging out B leaves A; two refreshes racing on one token give 200 and 401;
+  a password change ends the other device and keeps its own; no body logout ends
+  all; the 12th login keeps the newest 10; account deletion leaves 0 rows; a
+  second boot of initDB runs. `__tests__/refresh-sessions.test.js`, 10 tests, 9
+  failing against the code before (the expired legacy case holds either way).
+  Suite 1,592 passing, typecheck and lint clean. App half (logout names its own
+  session, `lib/auth-store.ts`) rides the owed eas update; OTA IS ENOUGH.
