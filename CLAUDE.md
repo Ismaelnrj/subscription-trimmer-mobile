@@ -542,10 +542,9 @@ Keep this short and current. As of 2026-11-23.
   versionCode is 42. Play has 1.0.4 / versionCode 41.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.
-- STORY REELS: Parts 1 to 5 are public on YouTube and on Instagram (Part 4
-  on Instagram 2026-11-23, `DgFFE3xHMxO`; Part 5 on Instagram 2026-11-23
-  13:12Z, `DgFdY-NAWhh`, AI label on). Part 6 is on YouTube PRIVATE (`VUmb_Vr2GbM`, 2026-11-23), waiting
-  for the owner to make it public. Part 7, Part 8 (her ex's Netflix) and "The
+- STORY REELS: Parts 1 to 6 are public on YouTube and on Instagram (Part 5
+  on Instagram 2026-11-23, `DgFdY-NAWhh`; Part 6 on Instagram 2026-11-24,
+  `DgIdGcRGTUt`, AI label on). Part 7, Part 8 (her ex's Netflix) and "The
   announcement" (standalone), all 2026-11-23, and "The friend" (first of the
   one new friend at a time ensemble) are on YouTube PRIVATE: Part 7
   `sM0eh-rPY9k`, Part 8 `KVCpOx62eBE`, the announcement `lgSW8rKscgk`, the

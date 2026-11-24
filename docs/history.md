@@ -6840,3 +6840,12 @@ last one left off without needing a recap typed out.
   https://www.youtube.com/watch?v=lgSW8rKscgk, the friend
   https://www.youtube.com/watch?v=abof1xwBNXA. The owner sets "Uso de IA" and
   makes each public; Instagram only after that.
+- PART 6 ON INSTAGRAM, 2026-11-24 ~16:00Z, on the owner's "Instagram done as
+  well?": https://www.instagram.com/reel/DgIdGcRGTUt/, media id
+  `17931779382426989`, container `18134655028814741`, account
+  `29062187126774065`, `isAiGenerated: true`, the review page's caption
+  verbatim. YouTube first held: read through vidIQ before posting, Part 6
+  (`VUmb_Vr2GbM`) was the only one of the six recent uploads public (since
+  2026-11-23T16:36Z); Part 7, Part 8, the announcement, the friend and the
+  German reel were not returned, so still private, and none went to Instagram.
+  File checked: 6,292,768 bytes, sha256 `f474cc3d...`. No Part 6 reel was live.
