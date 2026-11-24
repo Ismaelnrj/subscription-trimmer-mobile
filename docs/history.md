@@ -6896,3 +6896,20 @@ last one left off without needing a recap typed out.
   failing against the code before (the expired legacy case holds either way).
   Suite 1,592 passing, typecheck and lint clean. App half (logout names its own
   session, `lib/auth-store.ts`) rides the owed eas update; OTA IS ENOUGH.
+- THE "10 WAYS YOUR VIBE CODED APP GETS YOU A HUGE BILL" CHECKLIST, read against
+  Trimio 2026-11-24 from a reel the owner sent. Already covered: no AI, no SMS,
+  no uploads (1, 2, 5, 6, 9 have nothing to abuse); login codes are capped per
+  address (takeCodeEmail, 5 an hour) and per IP (emailLimiter 5 an hour,
+  codeLimiter on guesses); new accounts 20 a day per IP (signupLimiter); request
+  bodies at Express's 100 KB default; names capped at 80 to 120 characters; 500
+  rows per account; reminder emails only to verified Premium (paid or bonus) accounts, one digest
+  each; the largest file served about 0.1 MB with cache headers; the reverse
+  trial costs revenue, not a bill.
+  THE ONE GAP, FIXED: no ceiling on verification emails for the whole service,
+  so enough IP addresses could make Brevo send thousands of bouncing codes,
+  spending the quota and risking a suspension that would stop every Trimio
+  email. `takeVerificationEmailBudget`: 150 in 24 hours across signup and
+  resend (not resets), reported once to Sentry when reached; resend answers 429
+  "Too many requests. Please try again later.", German in ERROR_TEXT_DE.
+  `__tests__/email-ceiling.test.js`, 5 tests, all 5 failing on the old code. A
+  real signup and resend on the local server each still sent their email.

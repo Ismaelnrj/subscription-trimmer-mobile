@@ -657,6 +657,7 @@ const ERROR_TEXT_DE = {
   'Too many requests. Please try again in 15 minutes.': 'Zu viele Anfragen. Bitte versuche es in 15 Minuten erneut.',
   'Too many requests. Please try again in an hour.': 'Zu viele Anfragen. Bitte versuche es in einer Stunde erneut.',
   'Too many requests. Please try again shortly.': 'Zu viele Anfragen. Bitte versuche es gleich noch einmal.',
+  'Too many requests. Please try again later.': 'Zu viele Anfragen. Bitte versuche es später erneut.',
   'Email and password required': 'Bitte gib E-Mail-Adresse und Passwort ein.',
   'Email required': 'Bitte gib deine E-Mail-Adresse ein.',
   'Please enter a valid email address': 'Bitte gib eine gültige E-Mail-Adresse ein.',
@@ -2565,6 +2566,37 @@ const CODE_EMAIL_WINDOW_MS = 60 * 60 * 1000;
 const CODE_EMAIL_MAP_LIMIT = 10000;
 const codeEmailsSent = new Map();
 
+/* A CEILING ON VERIFICATION EMAILS FOR THE WHOLE SERVICE, added 2026-11-24.
+   takeCodeEmail caps each address and the limiters cap each IP, but nothing
+   capped the total: somebody with enough IP addresses could sign up thousands
+   of made up addresses, and every one sends a code email that bounces. That
+   spends the Brevo quota and, worse, a high bounce rate can get the Brevo
+   account suspended, which stops every Trimio email, reminders included. Only
+   emails to UNVERIFIED addresses count (signup and resend); a reset goes to an
+   account that exists and is already capped per address. Real signups run at a
+   handful a day, so 150 in 24 hours is far above normal and far below what
+   hurts. Reaching it is reported once per window. In memory like the others: a
+   restart resets it, which only ever allows a few more. */
+const VERIFICATION_EMAILS_PER_DAY = 150;
+const VERIFICATION_EMAIL_WINDOW_MS = 24 * 60 * 60 * 1000;
+let verificationEmailWindow = { first: 0, count: 0, reported: false };
+function takeVerificationEmailBudget(now = Date.now()) {
+  if (now - verificationEmailWindow.first >= VERIFICATION_EMAIL_WINDOW_MS) {
+    verificationEmailWindow = { first: now, count: 0, reported: false };
+  }
+  const w = verificationEmailWindow;
+  if (w.count >= VERIFICATION_EMAILS_PER_DAY) {
+    if (!w.reported) {
+      w.reported = true;
+      console.error(`Verification email ceiling reached: ${VERIFICATION_EMAILS_PER_DAY} in 24 hours, holding the rest`);
+      reportServerError(new Error('Verification email ceiling reached'), 'takeVerificationEmailBudget');
+    }
+    return false;
+  }
+  w.count += 1;
+  return true;
+}
+
 function takeCodeEmail(email, now = Date.now()) {
   const entry = codeEmailsSent.get(email);
   if (entry && now - entry.first < CODE_EMAIL_WINDOW_MS) {
@@ -2621,7 +2653,7 @@ app.post('/api/auth/register', async (req, res) => {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query('UPDATE users SET verification_token = $1, verification_expires = $2, verification_attempts = 0 WHERE id = $3', [hashToken(code), expires, user.id]);
     recordLanguage(user.id, req);
-    if (takeCodeEmail(email)) {
+    if (takeCodeEmail(email) && takeVerificationEmailBudget()) {
       await sendVerificationEmail(email, code, languageOf(req)).catch(e => console.error('Email send failed:', e));
     }
 
@@ -3167,6 +3199,9 @@ app.post('/api/auth/resend-verification', authMiddleware, async (req, res) => {
     if (user.is_verified) return res.json({ success: true, alreadyVerified: true });
     if (!takeCodeEmail(user.email)) {
       return res.status(429).json({ error: 'Too many requests. Please try again in an hour.' });
+    }
+    if (!takeVerificationEmailBudget()) {
+      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
     }
     const code = generateCode();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
