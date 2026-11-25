@@ -548,9 +548,9 @@ Keep this short and current. As of 2026-11-23.
   announcement" (standalone), all 2026-11-23, and "The friend" (first of the
   one new friend at a time ensemble) are on YouTube: Part 8 `KVCpOx62eBE`
   PUBLIC since 2026-11-24 19:25Z and on Instagram (`DgIvCkKmX11`, before Part 7
-  at the owner's word); Part 7
-  `sM0eh-rPY9k`, the announcement `lgSW8rKscgk`, the friend `abof1xwBNXA`
-  private, two of them scheduled by the owner. Review page:
+  at the owner's word); the friend `abof1xwBNXA` public 2026-11-25 10:00Z and
+  on Instagram (`DgLPHB9hVoT`); the announcement `lgSW8rKscgk` public 14:00Z,
+  not yet on Instagram; Part 7 `sM0eh-rPY9k` private. Review page:
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
   (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform

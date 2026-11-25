@@ -6921,3 +6921,12 @@ last one left off without needing a recap typed out.
   reached" on a day of real signups (a reel that took off, not an attack), the
   free plan is the limit, not the ceiling: upgrade Brevo, then raise
   VERIFICATION_EMAILS_PER_DAY below the new daily allowance.
+- "THE FRIEND" ON INSTAGRAM, 2026-11-25, at the owner's "You can upload the next
+  video !" (no platform named, but every reel is already on YouTube, so
+  Instagram was the only step left). https://www.instagram.com/reel/DgLPHB9hVoT/,
+  media id `17875204146647369`, container `18134906473814741`,
+  `isAiGenerated: true`, the review page caption verbatim; file checked
+  (7,069,179 bytes, `0570265872a90c87`). Read through vidIQ first: on YouTube
+  the friend went public 2026-11-25T10:00Z and the announcement 14:00Z (the
+  owner's two scheduled), Part 7 still private. The announcement is held for a
+  later post the same day, not back to back.
