@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { useRouter } from "expo-router";
@@ -10,6 +10,7 @@ import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../co
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AuthHeader } from "../components/AuthHeader";
 import { track } from "../lib/analytics";
 
 export default function RegisterScreen() {
@@ -21,6 +22,7 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [focus, setFocus] = useState<"name" | "email" | "password" | null>(null);
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
@@ -83,56 +85,71 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Trimio</Text>
-        <Text style={styles.subtitle}>{t("register.subtitle")}</Text>
-      </View>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <AuthHeader title={t("register.subtitle")} subtitle={t("register.lead")} />
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          placeholder={t("register.namePlaceholder")}
-          placeholderTextColor={c.placeholder}
-          value={name}
-          onChangeText={setName}
-        />
-        <TextInput
-          style={[styles.input, emailError ? styles.inputError : null]}
-          autoComplete="email"
-          placeholder={t("register.emailPlaceholder")}
-          placeholderTextColor={c.placeholder}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={(t) => { setEmail(t); setEmailError(""); }}
-        />
-        {emailError ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{emailError}</Text>
-            <TouchableOpacity onPress={() => router.push("/login")}>
-              <Text style={styles.errorLink}>{t("register.signInLink")}</Text>
+        <View>
+          <Text style={styles.label}>{t("register.namePlaceholder")}</Text>
+          <TextInput
+            style={[styles.input, focus === "name" && styles.inputFocused]}
+            autoComplete="name"
+            accessibilityLabel={t("register.namePlaceholder")}
+            returnKeyType="next"
+            value={name}
+            onChangeText={setName}
+            onFocus={() => setFocus("name")}
+            onBlur={() => setFocus(null)}
+          />
+        </View>
+
+        <View>
+          <Text style={styles.label}>{t("register.emailPlaceholder")}</Text>
+          <TextInput
+            style={[styles.input, focus === "email" && styles.inputFocused, emailError ? styles.inputError : null]}
+            autoComplete="email"
+            accessibilityLabel={t("register.emailPlaceholder")}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+            value={email}
+            onChangeText={(t) => { setEmail(t); setEmailError(""); }}
+            onFocus={() => setFocus("email")}
+            onBlur={() => setFocus(null)}
+          />
+          {emailError ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{emailError}</Text>
+              <TouchableOpacity onPress={() => router.push("/login")}>
+                <Text style={styles.errorLink}>{t("register.signInLink")}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </View>
+
+        <View>
+          <Text style={styles.label}>{t("register.passwordPlaceholder")}</Text>
+          <View style={[styles.passwordWrapper, focus === "password" && styles.inputFocused]}>
+            <TextInput
+              style={styles.passwordInput}
+              autoComplete="new-password"
+              accessibilityLabel={t("register.passwordPlaceholder")}
+              secureTextEntry={!showPassword}
+              returnKeyType="go"
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={handleRegister}
+              onFocus={() => setFocus("password")}
+              onBlur={() => setFocus(null)}
+            />
+            <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
-        ) : null}
-
-        <View style={styles.passwordWrapper}>
-          <TextInput
-            style={styles.passwordInput}
-            autoComplete="new-password"
-            placeholder={t("register.passwordPlaceholder")}
-            placeholderTextColor={c.placeholder}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
-          </TouchableOpacity>
+          <PasswordStrengthMeter password={password} />
         </View>
-        <PasswordStrengthMeter password={password} />
 
-        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading} accessibilityRole="button">
           {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
         </TouchableOpacity>
 
@@ -153,53 +170,55 @@ export default function RegisterScreen() {
             />
           </>
         ) : null}
-
-        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
-          <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
-        </TouchableOpacity>
       </View>
-    </View>
+
+      <View style={styles.spacer} />
+      <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
+        <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 /* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, justifyContent: "center", paddingHorizontal: space.xl },
-    header: { alignItems: "center", marginBottom: space.xxl },
-    title: { ...typeScale.display, color: c.text, textAlign: "center" },
-    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginTop: space.s },
-    form: { gap: space.m },
+    screen: { flex: 1, backgroundColor: c.bg },
+    scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.xxl + space.l, paddingBottom: space.l },
+    form: { gap: space.l },
+    label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
     input: {
-      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 52, paddingHorizontal: space.l, color: c.text,
+      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
+      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
+    inputFocused: { borderColor: c.text },
     passwordWrapper: {
-      flexDirection: "row", alignItems: "center", minHeight: 52,
-      backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
+      flexDirection: "row", alignItems: "center", minHeight: 56,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
     },
-    passwordInput: { ...typeScale.body, flex: 1, minHeight: 52, paddingHorizontal: space.l, color: c.text },
+    passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
-      alignItems: "center", justifyContent: "center", marginTop: space.s,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
-    divider: { flexDirection: "row", alignItems: "center", marginTop: space.s },
+    divider: { flexDirection: "row", alignItems: "center" },
     dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.border },
     dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
-      minHeight: 52, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
+      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
     },
     googleButtonText: { ...typeScale.bodyStrong, color: c.text },
     inputError: { borderColor: c.danger },
     errorBox: {
-      backgroundColor: c.dangerLight, borderRadius: radius.m, padding: space.m,
+      backgroundColor: c.dangerLight, borderRadius: radius.m, padding: space.m, marginTop: space.s,
       flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     },
     errorText: { ...typeScale.caption, color: c.danger, flex: 1 },
     errorLink: { ...typeScale.label, color: c.text, marginLeft: space.s },
+    spacer: { flexGrow: 1, minHeight: space.xxl },
     link: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     linkText: { ...typeScale.body, color: c.textSecondary },
     linkBold: { fontFamily: "Montserrat-SemiBold", color: c.text },

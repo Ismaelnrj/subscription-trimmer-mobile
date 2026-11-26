@@ -185,6 +185,8 @@ export const radius = { s: 8, m: 12, l: 16, pill: 999 } as const;
 export const type = {
   /** The one money figure a screen is about. */
   display: { fontFamily: "Montserrat-SemiBold", fontSize: 40, lineHeight: 48, letterSpacing: -1 },
+  /** The headline of a screen with no money figure: the sign in flow. */
+  hero: { fontFamily: "Montserrat-SemiBold", fontSize: 30, lineHeight: 36, letterSpacing: -0.6 },
   title: { fontFamily: "Montserrat-SemiBold", fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
   heading: { fontFamily: "Montserrat-SemiBold", fontSize: 16, lineHeight: 22 },
   body: { fontFamily: "Montserrat-Regular", fontSize: 15, lineHeight: 21 },

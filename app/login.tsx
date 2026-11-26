@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { useRouter } from "expo-router";
@@ -9,6 +9,7 @@ import apiClient from "../lib/api";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
+import { AuthHeader } from "../components/AuthHeader";
 import { track } from "../lib/analytics";
 
 export default function LoginScreen() {
@@ -18,6 +19,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focus, setFocus] = useState<"email" | "password" | null>(null);
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
@@ -61,40 +63,51 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Trimio</Text>
-        <Text style={styles.subtitle}>{t("login.subtitle")}</Text>
-      </View>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <AuthHeader title={t("login.headline")} subtitle={t("login.subtitle")} />
 
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
-          autoComplete="email"
-          placeholder={t("login.emailPlaceholder")}
-          placeholderTextColor={c.placeholder}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <View style={styles.passwordWrapper}>
+        <View>
+          <Text style={styles.label}>{t("login.emailPlaceholder")}</Text>
           <TextInput
-            style={styles.passwordInput}
-            autoComplete="current-password"
-            placeholder={t("login.passwordPlaceholder")}
-            placeholderTextColor={c.placeholder}
-            secureTextEntry={!showPassword}
-            value={password}
-            onChangeText={setPassword}
+            style={[styles.input, focus === "email" && styles.inputFocused]}
+            autoComplete="email"
+            accessibilityLabel={t("login.emailPlaceholder")}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            returnKeyType="next"
+            value={email}
+            onChangeText={setEmail}
+            onFocus={() => setFocus("email")}
+            onBlur={() => setFocus(null)}
           />
-          <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-            <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
+        </View>
+
+        <View>
+          <Text style={styles.label}>{t("login.passwordPlaceholder")}</Text>
+          <View style={[styles.passwordWrapper, focus === "password" && styles.inputFocused]}>
+            <TextInput
+              style={styles.passwordInput}
+              autoComplete="current-password"
+              accessibilityLabel={t("login.passwordPlaceholder")}
+              secureTextEntry={!showPassword}
+              returnKeyType="go"
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={handleLogin}
+              onFocus={() => setFocus("password")}
+              onBlur={() => setFocus(null)}
+            />
+            <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.forgotLink} accessibilityRole="link" hitSlop={{ top: 4, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/forgot-password")}>
+            <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading} accessibilityRole="button">
           {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("login.signIn")}</Text>}
         </TouchableOpacity>
 
@@ -115,52 +128,55 @@ export default function LoginScreen() {
             />
           </>
         ) : null}
-
-        <TouchableOpacity style={styles.forgotLink} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/forgot-password")}>
-          <Text style={styles.forgotText}>{t("login.forgotPassword")}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
-          <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
-        </TouchableOpacity>
       </View>
-    </View>
+
+      <View style={styles.spacer} />
+      <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
+        <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
+      </TouchableOpacity>
+    </ScrollView>
   );
 }
 
 /* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, justifyContent: "center", paddingHorizontal: space.xl },
-    header: { alignItems: "center", marginBottom: space.xxl },
-    title: { ...typeScale.display, color: c.text, textAlign: "center" },
-    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginTop: space.s },
-    form: { gap: space.m },
+    screen: { flex: 1, backgroundColor: c.bg },
+    // Top anchored, the switch to sign up pinned to the foot; scrolls when the
+    // keyboard is up so the button is never hidden behind it.
+    scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.xxl + space.l, paddingBottom: space.l },
+    form: { gap: space.l },
+    // A label above every field: a placeholder is not a label, and it vanishes
+    // the moment somebody types.
+    label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
     input: {
-      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 52, paddingHorizontal: space.l, color: c.text,
+      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
+      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
+    // The field being typed in says so: an ink edge.
+    inputFocused: { borderColor: c.text },
     passwordWrapper: {
-      flexDirection: "row", alignItems: "center", minHeight: 52,
-      backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
+      flexDirection: "row", alignItems: "center", minHeight: 56,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
     },
-    passwordInput: { ...typeScale.body, flex: 1, minHeight: 52, paddingHorizontal: space.l, color: c.text },
+    passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
+    forgotLink: { alignSelf: "flex-end", minHeight: 48, justifyContent: "center" },
+    forgotText: { ...typeScale.label, color: c.text },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
-      alignItems: "center", justifyContent: "center", marginTop: space.s,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
-    divider: { flexDirection: "row", alignItems: "center", marginTop: space.s },
+    divider: { flexDirection: "row", alignItems: "center" },
     dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.border },
     dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
-      minHeight: 52, backgroundColor: c.card, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m,
+      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
     },
     googleButtonText: { ...typeScale.bodyStrong, color: c.text },
-    forgotLink: { alignItems: "center", justifyContent: "center", minHeight: 48 },
-    forgotText: { ...typeScale.label, color: c.text },
+    spacer: { flexGrow: 1, minHeight: space.xxl },
     link: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     linkText: { ...typeScale.body, color: c.textSecondary },
     linkBold: { fontFamily: "Montserrat-SemiBold", color: c.text },

@@ -324,6 +324,7 @@
     "getStarted": "Get started"
   },
   "login": {
+    "headline": "Welcome back",
     "subtitle": "Sign in to manage your subscriptions",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",
@@ -339,6 +340,7 @@
   },
   "register": {
     "subtitle": "Create your account",
+    "lead": "See every renewal before it charges you.",
     "namePlaceholder": "Name (optional)",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",
@@ -626,10 +628,11 @@
     "step2SubtitlePre": "We sent a 6-digit code to ",
     "step2SubtitlePost": ". Enter it below along with your new password.",
     "codePlaceholder": "000000",
+    "codeLabel": "Code from the email",
     "newPasswordPlaceholder": "New password",
     "resetPassword": "Reset password",
     "resendCode": "Didn't receive it? Send again",
-    "backToSignIn": "Back to Sign In",
+    "backToSignIn": "Back to sign in",
     "errEmail": "Please enter your email address.",
     "errGeneric": "Something went wrong. Please try again.",
     "errCode": "Please enter the 6-digit code.",

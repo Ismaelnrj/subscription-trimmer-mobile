@@ -29,7 +29,8 @@ describe.each(FILES)("%s", (file) => {
   });
 
   it("gives the primary button at least 52dp", () => {
-    expect(styles).toMatch(/button: \{[^}]*minHeight: 52/);
+    // At least 52, as the name says; the sign in flow uses 56 since 2026-11-26.
+    expect(styles).toMatch(/button: \{[^}]*minHeight: (5[2-9]|[6-9]\d)\b/);
   });
 });
 

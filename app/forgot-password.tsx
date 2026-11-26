@@ -1,10 +1,11 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
+import { AuthHeader } from "../components/AuthHeader";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export default function ForgotPasswordScreen() {
@@ -15,6 +16,7 @@ export default function ForgotPasswordScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focus, setFocus] = useState<"email" | "password" | null>(null);
   const c = useTheme();
   const styles = makeStyles(c);
   const { t } = useTranslation();
@@ -56,122 +58,134 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
       <TouchableOpacity style={styles.back} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} accessibilityRole="button" accessibilityLabel={t("common.a11yBack")} onPress={() => step === 2 ? setStep(1) : router.back()}>
         <MaterialCommunityIcons name="arrow-left" size={24} color={c.text} />
       </TouchableOpacity>
 
-      <View style={styles.icon}>
-        <MaterialCommunityIcons
-          name={step === 1 ? "lock-question" : "lock-reset"}
-          size={48} color={c.textSecondary}
-        />
-      </View>
-
       {step === 1 ? (
         <>
-          <Text style={styles.title}>{t("forgotPassword.step1Title")}</Text>
-          <Text style={styles.subtitle}>{t("forgotPassword.step1Subtitle")}</Text>
-          <TextInput
-            style={styles.input}
-            autoComplete="email"
-            placeholder={t("forgotPassword.emailPlaceholder")}
-            placeholderTextColor={c.placeholder}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSendCode} disabled={loading}>
-            {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.sendCode")}</Text>}
-          </TouchableOpacity>
+          <AuthHeader title={t("forgotPassword.step1Title")} subtitle={t("forgotPassword.step1Subtitle")} />
+          <View style={styles.form}>
+            <View>
+              <Text style={styles.label}>{t("forgotPassword.emailPlaceholder")}</Text>
+              <TextInput
+                style={[styles.input, focus === "email" && styles.inputFocused]}
+                autoComplete="email"
+                accessibilityLabel={t("forgotPassword.emailPlaceholder")}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="send"
+                value={email}
+                onChangeText={setEmail}
+                onSubmitEditing={handleSendCode}
+                onFocus={() => setFocus("email")}
+                onBlur={() => setFocus(null)}
+              />
+            </View>
+            <TouchableOpacity style={styles.button} onPress={handleSendCode} disabled={loading} accessibilityRole="button">
+              {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.sendCode")}</Text>}
+            </TouchableOpacity>
+          </View>
         </>
       ) : (
         <>
-          <Text style={styles.title}>{t("forgotPassword.step2Title")}</Text>
-          <Text style={styles.subtitle}>
-            {t("forgotPassword.step2SubtitlePre")}
-            <Text style={styles.emailHighlight}>{email}</Text>
-            {t("forgotPassword.step2SubtitlePost")}
-          </Text>
-
-          <TextInput
-            style={styles.codeInput}
-            autoComplete="one-time-code"
-            value={code}
-            onChangeText={(v) => setCode(v.replace(/[^0-9]/g, "").slice(0, 6))}
-            placeholder={t("forgotPassword.codePlaceholder")}
-            placeholderTextColor={c.textMuted}
-            keyboardType="number-pad"
-            maxLength={6}
-            textAlign="center"
+          <AuthHeader
+            title={t("forgotPassword.step2Title")}
+            subtitle={<>{t("forgotPassword.step2SubtitlePre")}<Text style={styles.emailHighlight}>{email}</Text>{t("forgotPassword.step2SubtitlePost")}</>}
           />
+          <View style={styles.form}>
+            <View>
+              <Text style={styles.label}>{t("forgotPassword.codeLabel")}</Text>
+              <TextInput
+                style={styles.codeInput}
+                autoComplete="one-time-code"
+                accessibilityLabel={t("forgotPassword.codeLabel")}
+                value={code}
+                onChangeText={(v) => setCode(v.replace(/[^0-9]/g, "").slice(0, 6))}
+                placeholder={t("forgotPassword.codePlaceholder")}
+                placeholderTextColor={c.textMuted}
+                keyboardType="number-pad"
+                maxLength={6}
+                textAlign="center"
+              />
+            </View>
 
-          <View style={styles.passwordWrapper}>
-            <TextInput
-              style={styles.passwordInput}
-              autoComplete="new-password"
-              placeholder={t("forgotPassword.newPasswordPlaceholder")}
-              placeholderTextColor={c.placeholder}
-              secureTextEntry={!showPassword}
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-            <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.placeholder} />
+            <View>
+              <Text style={styles.label}>{t("forgotPassword.newPasswordPlaceholder")}</Text>
+              <View style={[styles.passwordWrapper, focus === "password" && styles.inputFocused]}>
+                <TextInput
+                  style={styles.passwordInput}
+                  autoComplete="new-password"
+                  accessibilityLabel={t("forgotPassword.newPasswordPlaceholder")}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="go"
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  onSubmitEditing={handleReset}
+                  onFocus={() => setFocus("password")}
+                  onBlur={() => setFocus(null)}
+                />
+                <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                  <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              <PasswordStrengthMeter password={newPassword} />
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading} accessibilityRole="button">
+              {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.resend} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={handleSendCode} disabled={loading}>
+              <Text style={styles.resendText}>{t("forgotPassword.resendCode")}</Text>
             </TouchableOpacity>
           </View>
-          <PasswordStrengthMeter password={newPassword} />
-
-          <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-            {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("forgotPassword.resetPassword")}</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.resend} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={handleSendCode} disabled={loading}>
-            <Text style={styles.resendText}>{t("forgotPassword.resendCode")}</Text>
-          </TouchableOpacity>
         </>
       )}
 
+      <View style={styles.spacer} />
       <TouchableOpacity style={styles.backToLogin} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/login")}>
         <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 /* Every number below comes from the scale in lib/theme.ts. */
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
-    container: { flex: 1, backgroundColor: c.bg, paddingHorizontal: space.xl, paddingTop: 60 },
-    back: { marginBottom: space.l, minHeight: 48, justifyContent: "center", alignSelf: "flex-start" },
-    icon: { alignItems: "center", marginBottom: space.xl },
-    title: { ...typeScale.title, color: c.text, marginBottom: space.s, textAlign: "center" },
-    subtitle: { ...typeScale.body, color: c.textSecondary, textAlign: "center", marginBottom: space.xl },
+    screen: { flex: 1, backgroundColor: c.bg },
+    scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.l, paddingBottom: space.l },
+    back: { marginBottom: space.l, minHeight: 48, minWidth: 48, justifyContent: "center", alignSelf: "flex-start" },
+    form: { gap: space.l },
+    label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
     emailHighlight: { fontFamily: "Montserrat-SemiBold", color: c.text },
     input: {
-      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 52, paddingHorizontal: space.l, color: c.text, marginBottom: space.m,
+      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
+      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
+    inputFocused: { borderColor: c.text },
     codeInput: {
       /* The one place outside the scale: six digits read at arm's length. */
       backgroundColor: c.inputBg, borderWidth: 1.5, borderColor: c.text, borderRadius: radius.m,
       minHeight: 64, fontFamily: "Montserrat-SemiBold", fontSize: 32, letterSpacing: 10,
-      color: c.text, textAlign: "center", marginBottom: space.m,
+      color: c.text, textAlign: "center",
     },
     passwordWrapper: {
-      flexDirection: "row", alignItems: "center", minHeight: 52,
-      backgroundColor: c.inputBg, borderWidth: StyleSheet.hairlineWidth, borderColor: c.border, borderRadius: radius.m, marginBottom: space.m,
+      flexDirection: "row", alignItems: "center", minHeight: 56,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
     },
-    passwordInput: { ...typeScale.body, flex: 1, minHeight: 52, paddingHorizontal: space.l, color: c.text },
+    passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 52,
-      alignItems: "center", justifyContent: "center", marginBottom: space.m,
+      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
-    resend: { alignItems: "center", justifyContent: "center", minHeight: 48, marginBottom: space.s },
+    resend: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     resendText: { ...typeScale.label, color: c.text },
+    spacer: { flexGrow: 1, minHeight: space.xxl },
     backToLogin: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     backToLoginText: { ...typeScale.label, color: c.textSecondary },
   });
