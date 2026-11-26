@@ -7038,3 +7038,14 @@ last one left off without needing a recap typed out.
   build 42, Runtime version 1.0.1 and "Age signals: not required here" (or
   "unavailable" with an older Play Store), and the launch should be grey and
   animated. Not yet read.
+- THE OWED EAS UPDATE IS PUBLISHED, 2026-11-26 (owner's report, "The rad
+  update is published", not yet read off a phone; build 42 still waits on
+  Google's review). It should carry master at `2e5b89d6` or `1d99fc95` (same app
+  code, the second adds only records); the owner's `git rev-parse` output was
+  not reported. It is the first update to reach builds 40 and 41 with code for
+  a module they lack, so a build 41 phone running it is the live test of
+  requireOptionalNativeModule. EXPECTED on a build 41 phone after a force close
+  and reopen: App version 1.0.4, Native build 41, Runtime version 1.0.1,
+  Embedded launch false, an Update ID that is NOT 01a1db0a-2ba0-730d-98c4-
+  b7a7bf07f500, Update published 2026-11-26, "Age signals: not in this build",
+  and the launch motion on the cream ground.

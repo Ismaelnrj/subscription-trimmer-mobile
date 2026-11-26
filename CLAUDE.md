@@ -532,10 +532,10 @@ Keep this short and current. As of 2026-11-23.
   01a1db0a-2ba0-730d-98c4-b7a7bf07f500`, baseline `040c4b3c`, read off the
   Build Info panel of a build 41 phone. The next confirmation must show a
   different id and a later time.
-- ONE `eas update` IS OWED: the client files since `040c4b3c` (2026-11-14 to
-  11-17, the account deletion warning of 11-23, the per session logout of 11-24);
-  `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Handed to the owner
-  2026-11-18, no publish reported since. Owner's yes, their machine.
+- AN `eas update` WAS PUBLISHED 2026-11-26 (owner's report, from master at
+  `2e5b89d6` or later): everything since `040c4b3c`, including the launch
+  motion. NOT YET CONFIRMED on a phone; see THE OWED EAS UPDATE IS PUBLISHED in
+  the history for what a build 41 phone's Build Info should read.
 - BUILD 42 IS UPLOADED TO PLAY (owner's report 2026-11-26, awaiting Google's
   acceptance; versionCode 42 SPENT, next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
