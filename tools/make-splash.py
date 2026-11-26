@@ -3,8 +3,11 @@
 Android 12+ will only let the OS splash be an icon on a solid colour, so
 this illustration is not the OS splash: it is drawn by AnimatedSplash
 once the app mounts, which is why it can hold rings, a wordmark and a
-wave at all. The OS splash is configured to the same warm white ground
-with the navy mark, so the two frames read as one screen.
+wave at all. The app draws it from the layers this script also writes,
+on the ground of the OS splash the phone's build carries (app.json
+splash.backgroundColor: the light grey from build 42, warm white before).
+GROUND below only colours the flat reference picture, which the app no
+longer loads.
 """
 import sys, math, json, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))

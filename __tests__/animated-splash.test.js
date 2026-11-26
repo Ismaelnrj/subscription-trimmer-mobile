@@ -57,6 +57,19 @@ describe("AnimatedSplash and the generated layers", () => {
     for (const [, start, dur] of steps) expect(Number(start) + Number(dur)).toBeLessThanOrEqual(motion);
   });
 
+  test("the ground matches the OS splash of the build this commit produces, and builds 40 and 41 keep cream", () => {
+    // Builds before 42 take the same updates (runtimeVersion 1.0.1) and their
+    // OS splash is cream; the hand over flashes if this screen disagrees.
+    const m = component.match(/const SPLASH_BACKGROUND_COLOR = \(nativeBuild\(\)\.versionCode \?\? 0\) >= (\d+) \? "(#[0-9A-F]{6})" : "(#[0-9A-F]{6})";/);
+    expect(m).not.toBeNull();
+    const [, from, newer, older] = m;
+    const app = JSON.parse(read("app.json")).expo;
+    const drawn = app.android.versionCode >= Number(from) ? newer : older;
+    expect(drawn).toBe(app.splash.backgroundColor);
+    expect(older).toBe("#F7F6F1");
+    expect(Number(from)).toBeGreaterThan(41);
+  });
+
   test("the centred layers are square on the ring centre, so they turn about the mark", () => {
     const [cx, cy] = layout.centre;
     for (const n of ["ring_outer", "ring_mid", "ring_inner", "arcs", "mark"]) {

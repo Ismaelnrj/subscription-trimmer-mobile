@@ -10,13 +10,17 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import layout from "../assets/splash-layers/layout.json";
+import { nativeBuild } from "../lib/app-build";
 
 const MIN_DISPLAY_MS = 1100;
 const FADE_OUT_MS = 320;
-// Warm White, the brand ground. Matches splash.backgroundColor in app.json
-// so the OS splash and this screen are the same colour and the handover
-// between them is invisible.
-const SPLASH_BACKGROUND_COLOR = "#F7F6F1";
+// The OS splash colour (app.json splash.backgroundColor) is baked into each
+// build, and this screen must match it or the hand over flashes. Build 42
+// moved it from Warm White to the app's light ground (lib/theme.ts `bg`).
+// Builds 40 and 41 take this same update, since runtimeVersion stayed
+// 1.0.1, and still draw cream, so the ground follows the build the phone
+// actually runs. nativeBuild() reads the installed package, not app.json.
+const SPLASH_BACKGROUND_COLOR = (nativeBuild().versionCode ?? 0) >= 42 ? "#F3F5F6" : "#F7F6F1";
 
 // Android draws the OS splash logo (assets/splash-icon.png) 200 dp wide:
 // app.json uses the top level `splash` key, for which @expo/prebuild-config
