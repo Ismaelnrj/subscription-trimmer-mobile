@@ -7025,3 +7025,16 @@ last one left off without needing a recap typed out.
   `/android/` and `/ios/` (`0b92fd6c`). The habit: after adding files under a
   new folder, read `git ls-files` for it; a local test run proves the disk, not
   the commit.
+- BUILD 42 UPLOADED TO PLAY, 2026-11-26 (owner's report: "I just upload the 42
+  to google play", awaiting Google's acceptance). So Codemagic built it, which
+  means `compileReleaseKotlin` passed with the Age Signals module in it, the one
+  thing a sandbox could not check. versionCode 42 is SPENT; the next is 43.
+  Release notes for 1.0.5, English and German, are in
+  `store-assets/release-notes/1.0.5.txt` in Play's language tag format: 427 and
+  475 characters of the 500 limit, `check_copy.py` clean. Every line is a change
+  since 1.0.4 that phones already have or that 42 brings; the price rise line
+  says "compares your prices with our checked price list", since nothing
+  watches a provider. NEXT, on the phone: Build Info should read 1.0.5, Native
+  build 42, Runtime version 1.0.1 and "Age signals: not required here" (or
+  "unavailable" with an older Play Store), and the launch should be grey and
+  animated. Not yet read.

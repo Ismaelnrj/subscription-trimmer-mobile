@@ -536,11 +536,12 @@ Keep this short and current. As of 2026-11-23.
   11-17, the account deletion warning of 11-23, the per session logout of 11-24);
   `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Handed to the owner
   2026-11-18, no publish reported since. Owner's yes, their machine.
-- BUILD 42 IS READY TO BUILD from master (2026-11-26): 1.0.5 / versionCode 42,
-  runtimeVersion KEPT at 1.0.1, the launch screen on the light ground, the
-  launch motion, Play Age Signals 0.0.6 in `modules/trimio-age-signals` with no
-  prompt anywhere yet (see BUILD 42 IS READY TO BUILD in the history). The
-  owner runs Codemagic; versionCode 42 is not yet spent. The age policy (when
+- BUILD 42 IS UPLOADED TO PLAY (owner's report 2026-11-26, awaiting Google's
+  acceptance; versionCode 42 SPENT, next is 43): 1.0.5, runtimeVersion KEPT at
+  1.0.1, the launch screen on the light ground, the launch motion, Play Age
+  Signals 0.0.6 in `modules/trimio-age-signals` with no prompt anywhere yet (see
+  BUILD 42 UPLOADED TO PLAY in the history). Its Build Info is not yet read
+  off a phone. Release notes: `store-assets/release-notes/`. The age policy (when
   Play's prompt shows, what an under 16 sees) is the owner's call, over the air
   before 2027-01-01. The build after it, ask first: Expo SDK upgrade (React
   Native 0.79 is past support) with the runtimeVersion bump, Credential

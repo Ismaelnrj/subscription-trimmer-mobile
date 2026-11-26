@@ -1,0 +1,18 @@
+<en-US>
+• A new look: calmer screens, clearer numbers, better dark mode
+• A launch screen that comes to life
+• Signing in on another device no longer signs you out here
+• Add subscriptions even without a connection
+• Reminders get their own channel, and Trimio tells you if Android blocks them
+• Spot price rises: the dashboard compares your prices with our checked price list
+• New accounts get 14 days of Premium free, no card needed
+</en-US>
+<de-DE>
+• Neuer Look: ruhigere Ansichten, klarere Zahlen, besseres dunkles Design
+• Ein Startbildschirm, der lebendig wird
+• Eine Anmeldung auf einem anderen Gerät meldet dich hier nicht mehr ab
+• Abos auch ohne Verbindung hinzufügen
+• Erinnerungen haben einen eigenen Kanal, und Trimio sagt dir, wenn Android sie blockiert
+• Preiserhöhungen erkennen: Die Übersicht vergleicht deine Preise mit unserer geprüften Preisliste
+• Neue Konten bekommen 14 Tage Premium kostenlos, ohne Karte
+</de-DE>
