@@ -20,7 +20,7 @@ const FADE_OUT_MS = 320;
 // Builds 40 and 41 take this same update, since runtimeVersion stayed
 // 1.0.1, and still draw cream, so the ground follows the build the phone
 // actually runs. nativeBuild() reads the installed package, not app.json.
-const SPLASH_BACKGROUND_COLOR = (nativeBuild().versionCode ?? 0) >= 42 ? "#F3F5F6" : "#F7F6F1";
+export const SPLASH_BACKGROUND_COLOR = (nativeBuild().versionCode ?? 0) >= 42 ? "#F3F5F6" : "#F7F6F1";
 
 // Android draws the OS splash logo (assets/splash-icon.png) 200 dp wide:
 // app.json uses the top level `splash` key, for which @expo/prebuild-config

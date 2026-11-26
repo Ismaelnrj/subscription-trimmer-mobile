@@ -19,10 +19,11 @@ import { canonicalCategory } from "../lib/category-label";
 import { startOfflineCache } from "../lib/offline-cache";
 import { startPendingSync } from "../lib/pending-subscriptions";
 import apiClient from "../lib/api";
-import { useTheme } from "../lib/theme";
+import { useTheme, useIsDark } from "../lib/theme";
+import { StatusBar } from "expo-status-bar";
 import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
-import { AnimatedSplash } from "../components/AnimatedSplash";
+import { AnimatedSplash, SPLASH_BACKGROUND_COLOR } from "../components/AnimatedSplash";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
 import i18n from "../lib/i18n";
 
@@ -120,6 +121,7 @@ export default function RootLayout() {
   // rather than waiting for a remount.
   const { t } = useTranslation();
   const c = useTheme();
+  const isDark = useIsDark();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
   const [showAnimatedSplash, setShowAnimatedSplash] = useState(true);
   const [fontsLoaded] = useFonts({
@@ -223,8 +225,25 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, isLoading, onboardingDone, segments]);
 
+  /* The status bar takes the colour of whatever sits under it. Nothing set it
+     before 2026-11-26, so Android drew the colour baked into the native build:
+     a cream strip over the grey sign in screen on the owner's phone, and over
+     every dark screen in dark mode. Headerless screens show the page ground;
+     every other screen opens on a header in the card colour; the launch screen
+     brings its own ground. React Native sets this from JavaScript, so it
+     reaches every build with an update. */
+  const headerless = ["onboarding", "login", "register", "forgot-password"].includes(segments[0] as string);
+  const statusBar = (
+    <StatusBar
+      style={showAnimatedSplash || !isDark ? "dark" : "light"}
+      backgroundColor={showAnimatedSplash ? SPLASH_BACKGROUND_COLOR : headerless ? c.bg : c.card}
+      translucent={false}
+    />
+  );
+
   return (
     <SafeAreaProvider>
+    {statusBar}
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

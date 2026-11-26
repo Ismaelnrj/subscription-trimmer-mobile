@@ -130,3 +130,15 @@ describe("a pull to refresh arrow that sets its colour also sets its circle", ()
     expect(bad).toEqual([]);
   });
 });
+
+describe("the status bar follows the screen under it", () => {
+  // Nothing set it until 2026-11-26, so Android drew the colour baked into the
+  // build: a cream strip over the grey sign in screen, and over dark mode.
+  const layout = fs.readFileSync(path.join(__dirname, "..", "app", "_layout.tsx"), "utf8");
+  test("the root layout sets it from the theme, not a literal", () => {
+    const tag = layout.slice(layout.indexOf("<StatusBar"), layout.indexOf("/>", layout.indexOf("<StatusBar")));
+    expect(tag).toMatch(/backgroundColor=\{[^}]*c\.bg[^}]*c\.card[^}]*\}/);
+    expect(tag).toMatch(/style=\{[^}]*isDark[^}]*\}/);
+    expect(tag).not.toMatch(/#[0-9A-Fa-f]{6}/);
+  });
+});
