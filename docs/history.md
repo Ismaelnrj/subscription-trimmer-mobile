@@ -6945,3 +6945,34 @@ last one left off without needing a recap typed out.
   apply the terms: under 13 no account, 13 to 15 the parental consent path,
   never used for analytics (Play's own rule). CHECK FIRST: the library's Kotlin
   metadata against the 2.0.21 pin in fix-gradle.sh. Not legal advice.
+- BUILD 42 PREPARATION AND THE LAUNCH MOTION, 2026-11-26, at the owner's word
+  ("go ahead and prepare build 42, but before that, see if anything else needs
+  to be fixed", and "the splash image, could you make it with motion?").
+  NATIVE ITEMS CHECKED: only the launch screen colour waits on a native build
+  beside Age Signals. targetSdk 36 is set by fix-gradle.sh Fix 1 and Play took
+  build 41; `useLegacyPackaging` stays unless the corrupted install crash comes
+  back; Play Integrity stays off. The SDK upgrade, Credential Manager and EAS
+  code signing stay together for the build after.
+  AGE SIGNALS 0.0.4 ASKS THE USER FIRST: per the source and README of the npm
+  wrapper `react-native-age-signals` 0.5.1 (read from npm; Google's own pages
+  and Maven were not reachable), `checkAgeSignals` reports no age at all until
+  `requestAgeSignalsAccess` has shown Play's consent prompt and the user shared.
+  So "ask at launch" means a Google prompt in front of every new user. That
+  wrapper needs Nitro modules (C++), so it is not the way in; a local module is.
+  DL.GOOGLE.COM: added to the Default environment's hosts with the owner's
+  approval, but this session's safety check refused the fetch as unauthorised,
+  and WebFetch could not resolve it. The library's dependencies (its
+  kotlin-stdlib against the 2.0.21 pin) and its exact Java API are UNREAD.
+  RUNTIMEVERSION, REVISED ADVICE: keep 1.0.1 for build 42. A call into a module
+  the build may lack is guarded (a missing module is skipped, never called), and
+  the launch colour can be chosen by native build number, so nothing in 42 can
+  crash an older build; a bump would cut build 40 and 41 phones off every later
+  update. The SDK upgrade bumps it, because there the JS itself changes.
+  THE LAUNCH MOTION: `tools/make-splash.py` now cuts the picture into 12 layers
+  (`assets/splash-layers/`, 116 KB, flat output byte identical) and
+  a reworked `AnimatedSplash` grows Android's small launch mark (100 dp, mark
+  31% of it) into the picture in 0.88 s, inside the unchanged 1.1 s hold. That
+  component waits on branch `claude/calendar-dot-4riizs` for the owner's yes on
+  the look, then rides an eas update (JS and assets only). Prototype page:
+  https://claude.ai/artifact/7yZzURzgdRRLHTDhS9JZkh. Seen in the web build; not
+  yet seen on a phone, where the start may sit a status bar's half height off.

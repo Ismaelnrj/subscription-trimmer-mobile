@@ -536,11 +536,12 @@ Keep this short and current. As of 2026-11-23.
   11-17, the account deletion warning of 11-23, the per session logout of 11-24);
   `needs_native_build.py 040c4b3c` says OTA IS ENOUGH. Handed to the owner
   2026-11-18, no publish reported since. Owner's yes, their machine.
-- A NATIVE BUILD IS OWED, ask first: Expo SDK upgrade (React Native 0.79 is
-  past support), with the runtimeVersion bump, Credential Manager for Google
-  sign in, EAS update code signing, the launch screen off cream, and Play Age
-  Signals before 2027-01-01 (California AB 1043, see the history). Next
-  versionCode is 42. Play has 1.0.4 / versionCode 41.
+- BUILD 42 IS BEING PREPARED (owner's yes 2026-11-26): the launch screen off
+  cream, Play Age Signals dormant (its 0.0.4 asks the user first; library
+  unread, see BUILD 42 PREPARATION in the history), 1.0.5 / versionCode 42,
+  runtimeVersion KEPT at 1.0.1. The build after it, ask first: Expo SDK upgrade
+  (React Native 0.79 is past support) with the runtimeVersion bump, Credential
+  Manager, EAS update code signing. Play has 1.0.4 / versionCode 41.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.
 - STORY REELS: Parts 1 to 6 are public on YouTube and on Instagram (Part 5
