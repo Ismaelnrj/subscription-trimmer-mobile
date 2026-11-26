@@ -528,22 +528,21 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 Keep this short and current. As of 2026-11-23.
 
-- PHONES run the update published `2026-11-14T17:10:39.264Z`, `Update ID:
-  01a1db0a-2ba0-730d-98c4-b7a7bf07f500`, baseline `040c4b3c`, read off the
-  Build Info panel of a build 41 phone. The next confirmation must show a
-  different id and a later time.
-- AN `eas update` WAS PUBLISHED 2026-11-26 (owner's report, from master at
-  `2e5b89d6` or later): everything since `040c4b3c`, including the launch
-  motion. It reached the owner's phone (a launch screenshot), Build Info not yet
-  read. ANOTHER `eas update` IS OWED: the tagline crop fix, the status bar and
-  the premium sign in flow (see THE SIGN IN FLOW, PREMIUM in the history).
-  The owner said 2026-11-26 they were publishing it; unconfirmed on a phone.
+- PHONES run the update published `2026-11-26T16:06:44.843Z`, `Update ID:
+  01a2189b-f96b-7d01-a8b0-53a15b0ab3a1`, read off the owner's build 42 phone
+  (1.0.5, runtime 1.0.1, "Age signals: not required here"). Its baseline is
+  `2bd1f919` or `90d59bf3`, unknown (see BUILD 42 AND THE 2026-11-26 UPDATE).
+  The next confirmation must show a different id and a later time.
+- TWO `eas update`s WERE PUBLISHED 2026-11-26: the launch motion and
+  everything since `040c4b3c`, then the tagline fix (and the status bar and the
+  premium sign in flow if pulled after `90d59bf3`). If a tab screen's status bar
+  is still cream, one more publish from master is owed for those two.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
   Signals 0.0.6 in `modules/trimio-age-signals` with no prompt anywhere yet (see
-  BUILD 42 IS LIVE ON PLAY in the history). Its Build Info is not yet read
-  off a phone. Release notes: `store-assets/release-notes/`. The age policy (when
+  BUILD 42 IS LIVE ON PLAY in the history). Build Info read off a phone
+  2026-11-26, the age module answering. Release notes: `store-assets/release-notes/`. The age policy (when
   Play's prompt shows, what an under 16 sees) is the owner's call, over the air
   before 2027-01-01. The build after it, ask first: Expo SDK upgrade (React
   Native 0.79 is past support) with the runtimeVersion bump, Credential

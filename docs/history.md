@@ -7091,3 +7091,17 @@ last one left off without needing a recap typed out.
   Native build 42, Runtime version 1.0.1, "Age signals: not required here" (or
   "unavailable" with an older Play Store), a new Update ID, and a grey,
   animated launch with the full tagline.
+- BUILD 42 AND THE 2026-11-26 UPDATE, READ OFF A PHONE, the owner's Build Info
+  screenshot the same day: `App version: 1.0.5`, `Native build: 42`, `Channel:
+  production`, `Runtime version: 1.0.1`, `Embedded launch (no OTA applied):
+  false`, `Update ID: 01a2189b-f96b-7d01-a8b0-53a15b0ab3a1`, `Update published:
+  2026-11-26T16:06:44.843Z`, `Age signals: not required here`, `Notifications
+  allowed: yes`, `Reminder channel: on (importance 6)`, `Reminders queued: 10`,
+  `You are on the latest version.` THE AGE SIGNALS MODULE WORKS ON A PHONE: the
+  Kotlin compiled, the optional loader found it, and Play answered the quiet
+  check (no MANDATORY_SHARING, and no error, so that Play Store is new enough).
+  WHICH COMMIT IT CARRIES IS NOT KNOWN: master reached `90d59bf3` (status bar,
+  premium sign in) a few minutes before 16:06Z, and before that held
+  `2bd1f919` (the tagline fix, not the redesign); the owner's `git rev-parse`
+  was not reported. The tell: the status bar over a tab screen is white
+  (the card) with the redesign, cream without it.
