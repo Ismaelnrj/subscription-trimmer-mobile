@@ -324,12 +324,10 @@
     "getStarted": "Loslegen"
   },
   "auth": {
-    "eyebrow": "Abo Tracker",
     "headline": "Wissen, bevor abgebucht wird.",
-    "lead": "Behalte jedes Abo im Blick und bekomm eine Erinnerung vor jeder Verlängerung.",
-    "featureReminders": "Erinnerungen",
-    "featureGuides": "Hilfe beim Kündigen",
-    "featureNoBank": "Ohne Bankzugang"
+    "stageLead": "Jede Verlängerung, bevor sie fällig wird.",
+    "continueEmail": "Mit E-Mail fortfahren",
+    "welcomeBack": "Willkommen zurück"
   },
   "login": {
     "emailPlaceholder": "E-Mail",
@@ -339,7 +337,6 @@
     "forgotPassword": "Passwort vergessen?",
     "noAccount": "Neu bei Trimio?",
     "signUp": "Konto erstellen",
-    "or": "oder mit E-Mail anmelden",
     "errEmptyFields": "Bitte E-Mail und Passwort eingeben.",
     "errLoginFailed": "Etwas ist schiefgelaufen.",
     "errGoogleFailed": "Etwas ist schiefgelaufen."
@@ -353,7 +350,6 @@
     "continueGoogle": "Mit Google fortfahren",
     "alreadyHaveAccount": "Bereits ein Konto?",
     "signIn": "Anmelden",
-    "or": "oder mit E-Mail registrieren",
     "emailAlreadyRegistered": "Diese E-Mail ist bereits registriert. Versuche, dich stattdessen anzumelden.",
     "signInLink": "Anmelden",
     "errEmptyFields": "Bitte E-Mail und Passwort eingeben.",

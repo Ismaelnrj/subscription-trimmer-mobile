@@ -157,6 +157,18 @@ export const DARK = {
   switchThumb: "#F2F1EC",
 } as const;
 
+/** The navy stage atop sign in and sign up, the same in both themes: it is
+ *  the brand, not the theme. `top` and `bottom` are the ends of the art in
+ *  assets/brand/stage.png (tools/make-app-marks.py draws the same two), and
+ *  the status bar takes `top` on those screens. Measured: `ink` is 12.9:1 on
+ *  `top` and 8.7:1 on `bottom`, `lead` 9.3:1 and 6.3:1. */
+export const STAGE = {
+  top: "#142B3A",
+  bottom: "#1B4A4C",
+  ink: "#F2F1EC",
+  lead: "#C5D0D6",
+} as const;
+
 /* THE SWITCH TOKENS, 2026-11-12. Android draws a React Native Switch with
    SwitchCompat: the knob is wider than the track and spills onto the card.
    When "on" moved from green to ink the off track stayed textSecondary, only
@@ -187,8 +199,6 @@ export const type = {
   display: { fontFamily: "Montserrat-SemiBold", fontSize: 40, lineHeight: 48, letterSpacing: -1 },
   /** The headline of a screen with no money figure: the sign in flow. */
   hero: { fontFamily: "Montserrat-Bold", fontSize: 34, lineHeight: 40, letterSpacing: -0.8 },
-  /** The name beside the mark in the sign in flow's lockup. */
-  brand: { fontFamily: "Montserrat-Bold", fontSize: 26, lineHeight: 32, letterSpacing: -0.6 },
   title: { fontFamily: "Montserrat-SemiBold", fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
   heading: { fontFamily: "Montserrat-SemiBold", fontSize: 16, lineHeight: 22 },
   body: { fontFamily: "Montserrat-Regular", fontSize: 15, lineHeight: 21 },

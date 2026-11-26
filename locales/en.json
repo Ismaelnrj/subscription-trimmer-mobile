@@ -324,12 +324,10 @@
     "getStarted": "Get started"
   },
   "auth": {
-    "eyebrow": "Subscription tracker",
     "headline": "Know before you pay.",
-    "lead": "Track every subscription and get a reminder before each one renews.",
-    "featureReminders": "Reminders",
-    "featureGuides": "Cancel guides",
-    "featureNoBank": "No bank login"
+    "stageLead": "Every renewal, before it happens.",
+    "continueEmail": "Continue with email",
+    "welcomeBack": "Welcome back"
   },
   "login": {
     "emailPlaceholder": "Email",
@@ -339,7 +337,6 @@
     "forgotPassword": "Forgot your password?",
     "noAccount": "New to Trimio?",
     "signUp": "Create account",
-    "or": "or sign in with email",
     "errEmptyFields": "Please enter your email and password.",
     "errLoginFailed": "Something went wrong.",
     "errGoogleFailed": "Something went wrong."
@@ -353,7 +350,6 @@
     "continueGoogle": "Continue with Google",
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in",
-    "or": "or sign up with email",
     "emailAlreadyRegistered": "This email is already registered. Try signing in instead.",
     "signInLink": "Sign in",
     "errEmptyFields": "Please enter your email and password.",

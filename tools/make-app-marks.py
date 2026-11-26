@@ -2,7 +2,7 @@
 
 assets/brand/mark-on-light.png   Ink Navy chevron, mint triangle (light theme)
 assets/brand/mark-on-dark.png    light ink chevron, mint triangle (dark theme)
-assets/brand/corner-on-*.png     the sign in flow's top right art (light, dark)
+assets/brand/stage.png           the navy stage atop sign in and sign up
 assets/brand/waves-on-*.png      the sign in flow's foot (light, dark)
 
 Drawn by make-icons.draw_mark, the same code as the icon and the launch
@@ -35,12 +35,10 @@ for name, chevron in (("mark-on-light", NAVY), ("mark-on-dark", LIGHT_INK)):
 
 
 # THE SIGN IN FLOW'S ART, redrawn 2026-11-26 after the owner read the pale
-# version on a phone as "really bad and generic". Two pieces, deep teal and
-# mint, the brand's own colours, after the owner's mock:
-#   corner-on-*  a deep disc off the top right corner, ringed like the launch
-#                screen (one ring per renewal), with a mint lens over its edge;
-#   waves-on-*   a mint wave rising from the left under a deep wave rising to
-#                the right, at the foot.
+# version on a phone as "really bad and generic", in the brand's own deep teal
+# and mint: the stage (below) atop sign in and sign up, and the waves at the
+# foot of forgot password, a mint wave rising from the left under a deep wave
+# rising to the right.
 # Mint as brand art, like the launch screen and the mark, never as a UI signal:
 # that rule (__tests__/mint-only-for-good-news.test.js) governs the screens.
 NAVY_DEEP = (20, 43, 58)       # Ink Navy
@@ -49,11 +47,9 @@ MINT_PALE = (166, 231, 211)
 MINT_DEEP = (47, 142, 113)     # #2F8E71
 
 ART = {
-    "light": {"disc": (NAVY_DEEP, TEAL_DEEP), "ring": 22, "lens": (MINT_PALE, MINT, MINT_DEEP),
-              "back": (MINT_PALE, MINT), "front": (TEAL_DEEP, NAVY_DEEP)},
+    "light": {"back": (MINT_PALE, MINT), "front": (TEAL_DEEP, NAVY_DEEP)},
     # Against the dark ground #0E1A22: the same shapes, held low.
-    "dark": {"disc": ((22, 46, 58), (26, 70, 68)), "ring": 16, "lens": ((88, 170, 142), (52, 140, 112), (32, 100, 82)),
-             "back": ((36, 96, 84), (44, 124, 102)), "front": ((24, 54, 62), (19, 38, 48))},
+    "dark": {"back": ((36, 96, 84), (44, 124, 102)), "front": ((24, 54, 62), (19, 38, 48))},
 }
 
 
@@ -84,31 +80,44 @@ def paint(canvas, mask, stops, angle):
     canvas.alpha_composite(Image.composite(gradient(canvas.size, stops, angle), Image.new("RGBA", canvas.size), mask))
 
 
-# Corner: 220 x 176 dp at 3x, shown at 56% of the screen's width. A band
-# beside the lockup and the label, ending above the headline, so no text
-# ever sits on it at any width (the first draft ran under the lead).
-CW, CH = 660, 528
-for theme, a in ART.items():
-    big = Image.new("RGBA", (CW * S, CH * S), (0, 0, 0, 0))
-    cx, cy, r = CW * S * 1.05, -CH * S * 0.45, CW * S * 0.95
-    disc = Image.new("L", big.size, 0)
-    ImageDraw.Draw(disc).ellipse((cx - r, cy - r, cx + r, cy + r), fill=255)
-    paint(big, disc, a["disc"][::-1], 225)
-    rings = Image.new("RGBA", big.size, (0, 0, 0, 0))
-    d = ImageDraw.Draw(rings)
-    k = 0.34
-    while k < 0.99:
-        rr = r * k
-        d.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=(255, 255, 255, a["ring"]), width=round(1.4 * S))
-        k += 0.052
-    big.alpha_composite(Image.composite(rings, Image.new("RGBA", big.size), disc))
-    lx, ly, lr = CW * S * 1.0, CH * S * 0.70, CW * S * 0.22
-    lens = Image.new("L", big.size, 0)
-    ImageDraw.Draw(lens).ellipse((lx - lr, ly - lr, lx + lr, ly + lr), fill=255)
-    paint(big, lens, a["lens"], 60)
-    img = big.convert("RGBa").reduce(S).convert("RGBA")
-    img.save(out / f"corner-on-{theme}.png", optimize=True)
-    print("wrote", out / f"corner-on-{theme}.png", img.size)
+# THE STAGE, 2026-11-26, the owner's pick of ten ("Brand panel"): the top of
+# sign in and sign up, the same in both themes. Ink Navy at the top edge,
+# where it meets a status bar of the same colour, deepening to teal; rings
+# off the top right corner, one per renewal, as on the launch screen. The
+# mint lens is its own file, below. No text is drawn here: the screen sets
+# its own.
+# 428 x 560 dp at 3x. The screen anchors it at the top, at the screen's
+# width or wider, so a shorter stage crops the bottom, never the rings.
+STAGE_TOP = (20, 43, 58)       # lib/theme.ts STAGE.top, #142B3A
+STAGE_BOTTOM = (27, 74, 76)    # lib/theme.ts STAGE.bottom, #1B4A4C
+SW, SH = 1284, 1680
+W, H = SW * S, SH * S
+fall = Image.linear_gradient("L").resize((W, H))
+big = Image.composite(Image.new("RGBA", (W, H), STAGE_BOTTOM + (255,)), Image.new("RGBA", (W, H), STAGE_TOP + (255,)), fall)
+rings = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+d = ImageDraw.Draw(rings)
+cx, cy = W * 1.10, -H * 0.08
+rr = 42 * S
+while rr < 2400 * S:
+    d.ellipse((cx - rr, cy - rr, cx + rr, cy + rr), outline=(255, 255, 255, 18), width=round(1.4 * S))
+    rr += 42 * S
+big.alpha_composite(rings)
+img = big.convert("RGB").reduce(S)
+img.save(out / "stage.png", optimize=True)
+print("wrote", out / "stage.png", img.size)
+
+# The mint lens, apart from the stage so the screen can keep it clear of the
+# headline: drawn into the stage, it sat at a fixed height in the picture, and
+# on a short phone the German headline climbed into it. 171 dp at 3x.
+LS = 513
+big = Image.new("RGBA", (LS * S, LS * S), (0, 0, 0, 0))
+tint = gradient((64, 64), (MINT_PALE, MINT, MINT_DEEP), 60).resize(big.size, Image.BILINEAR)
+mask = Image.new("L", big.size, 0)
+ImageDraw.Draw(mask).ellipse((0, 0, big.width - 1, big.height - 1), fill=255)
+big.paste(tint, (0, 0), mask)
+img = big.convert("RGBa").reduce(S).convert("RGBA")
+img.save(out / "stage-lens.png", optimize=True)
+print("wrote", out / "stage-lens.png", img.size)
 
 # Waves: a band 1284 x 240, stretched to the screen's width (about 73 dp
 # tall on a 393 dp phone, so the whole band shows on the owner's).

@@ -7175,3 +7175,23 @@ last one left off without needing a recap typed out.
   file's own height (240 dp), so the waves now get an explicit height; and a
   text input would not shrink below its natural width, so the fields carry
   `minWidth: 0`. JavaScript, locales and assets only: OTA.
+- THE SIGN IN FLOW, FOURTH PASS: THE BRAND PANEL, 2026-11-26. The owner read
+  the third pass on a phone as too full ("Can we do it better to not
+  oversaturate the people before they even enter?") and asked for ten
+  directions; ten were drawn as HTML mockups with the real fonts and art, and
+  the owner left the pick to Claude ("Choose the one that you know is the best
+  option"): number 3, Brand panel. Sign in and sign up now open on a navy
+  stage (`AuthStage` in components/AuthHeader.tsx, the art from
+  `tools/make-app-marks.py`: `stage.png`, rings, and `stage-lens.png`, the mint
+  lens, kept apart so it can stand a measured distance above the headline; drawn
+  into the stage it sat at a fixed height and the German headline ran into it at
+  360 x 640) with two buttons under it and one link. "Continue with email" folds
+  the stage and shows the form in place, with a back arrow and Android's back
+  button to unfold it. ONE SCREEN WITH TWO STATES, NOT A NEW ROUTE, on purpose:
+  five suites pin behaviour in app/login.tsx and app/register.tsx (current vs new
+  password, the "already" check, the length message), and the root layout's
+  auth group would have bounced a new route back to login. The status bar takes
+  `STAGE.top` on those two screens (lib/theme.ts `STAGE`, which
+  `auth-art.test.js` ties to the generator's colours). Gone: the corner art, the
+  label, the feature row, the "or" divider. JavaScript, locales and assets
+  only: OTA.

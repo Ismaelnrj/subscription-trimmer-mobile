@@ -19,7 +19,7 @@ import { canonicalCategory } from "../lib/category-label";
 import { startOfflineCache } from "../lib/offline-cache";
 import { startPendingSync } from "../lib/pending-subscriptions";
 import apiClient from "../lib/api";
-import { useTheme, useIsDark } from "../lib/theme";
+import { useTheme, useIsDark, STAGE } from "../lib/theme";
 import { StatusBar } from "expo-status-bar";
 import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
@@ -233,10 +233,13 @@ export default function RootLayout() {
      brings its own ground. React Native sets this from JavaScript, so it
      reaches every build with an update. */
   const headerless = ["onboarding", "login", "register", "forgot-password"].includes(segments[0] as string);
+  // Sign in and sign up open on the navy stage (components/AuthHeader.tsx),
+  // in both themes, so the bar takes the stage's top edge and light icons.
+  const onStage = ["login", "register"].includes(segments[0] as string);
   const statusBar = (
     <StatusBar
-      style={showAnimatedSplash || !isDark ? "dark" : "light"}
-      backgroundColor={showAnimatedSplash ? SPLASH_BACKGROUND_COLOR : headerless ? c.bg : c.card}
+      style={showAnimatedSplash || (!isDark && !onStage) ? "dark" : "light"}
+      backgroundColor={showAnimatedSplash ? SPLASH_BACKGROUND_COLOR : onStage ? STAGE.top : headerless ? c.bg : c.card}
       translucent={false}
     />
   );
