@@ -534,8 +534,9 @@ Keep this short and current. As of 2026-11-23.
   different id and a later time.
 - AN `eas update` WAS PUBLISHED 2026-11-26 (owner's report, from master at
   `2e5b89d6` or later): everything since `040c4b3c`, including the launch
-  motion. NOT YET CONFIRMED on a phone; see THE OWED EAS UPDATE IS PUBLISHED in
-  the history for what a build 41 phone's Build Info should read.
+  motion. It reached the owner's phone (a launch screenshot), Build Info not yet
+  read. ANOTHER `eas update` IS OWED for the tagline crop fix (see WHOLE PIXEL
+  ROUNDING CROPPED THE TAGLINE in the history). Owner's yes, their machine.
 - BUILD 42 IS UPLOADED TO PLAY (owner's report 2026-11-26, awaiting Google's
   acceptance; versionCode 42 SPENT, next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age

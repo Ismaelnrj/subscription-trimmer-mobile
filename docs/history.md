@@ -7049,3 +7049,14 @@ last one left off without needing a recap typed out.
   Embedded launch false, an Update ID that is NOT 01a1db0a-2ba0-730d-98c4-
   b7a7bf07f500, Update published 2026-11-26, "Age signals: not in this build",
   and the launch motion on the cream ground.
+- WEB PREVIEW TRAP, A FOURTH: WHOLE PIXEL ROUNDING CROPPED THE TAGLINE,
+  2026-11-26, off the owner's phone screenshot of the update published that day
+  (so the update DID land on their phone): the launch tagline read "<NOW BEFORE
+  YOU PAY", no K stem, no full stop. The layer was cut tight to its ink and
+  drawn with RN's default resizeMode `cover`; Android rounds a ~25 px strip's
+  height to a whole pixel, cover then enlarges it and crops both ends.
+  Chromium lays out in fractions, so the web build looked right. Reproduced in
+  Chromium by forcing the rounded height. FIXED: `resizeMode="stretch"` on
+  every layer and an 8 px transparent margin on every crop (`PAD` in
+  make-splash.py), each pinned by a test. Needs an eas update; build 42 under
+  review embeds the cropped copy and picks the fix up as an update.
