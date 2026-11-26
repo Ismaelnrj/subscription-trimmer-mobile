@@ -7203,3 +7203,10 @@ last one left off without needing a recap typed out.
   the stage with no seam, the lens clear of the headline, two buttons and the
   link. Baseline `a3ae08c6` (the panel exists only from there, and master held
   nothing later). The email step was not in the screenshots.
+- THE PASSWORD EYE WAS BACKWARDS FOR ANDROID, 2026-11-26, the owner on the
+  email step: "the eye works in reverse". The icon showed the action (open eye
+  while hidden); Android's own fields show the state (crossed while hidden,
+  open while visible), and that is what people read. Flipped on sign in, sign
+  up and forgot password; the accessibility labels keep naming the action.
+  `__tests__/password-eye.test.js` pins it (negative tested on the old order).
+  The email step itself read fine on the phone.

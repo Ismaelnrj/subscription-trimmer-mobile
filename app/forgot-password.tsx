@@ -127,7 +127,7 @@ export default function ForgotPasswordScreen() {
                   onBlur={() => setFocus(null)}
                 />
                 <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                  <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.textSecondary} />
+                  <MaterialCommunityIcons name={showPassword ? "eye" : "eye-off"} size={20} color={c.textSecondary} />
                 </TouchableOpacity>
               </View>
               <PasswordStrengthMeter password={newPassword} />
