@@ -7081,3 +7081,13 @@ last one left off without needing a recap typed out.
   the status bar, so Android drew the build's own colour, in dark mode too. The
   root layout now sets it from the theme and the route (`2a35ef7b`), all builds.
   Both ride the next eas update, with the tagline fix.
+- BUILD 42 IS LIVE ON PLAY, 2026-11-26 (owner's report: "the google play went
+  through correctly and was accepted. is already live!", not a Play Console
+  screenshot). Play now has 1.0.5 / versionCode 42; the next is 43. The same
+  message: the owner was publishing the owed eas update (master at `90d59bf3`:
+  the tagline crop fix, the status bar, the premium sign in flow); not yet
+  confirmed on a phone. Videos wait for the Higgsfield credits, the owner's word.
+  STILL UNREAD: Build Info on a build 42 phone. Expected: App version 1.0.5,
+  Native build 42, Runtime version 1.0.1, "Age signals: not required here" (or
+  "unavailable" with an older Play Store), a new Update ID, and a grey,
+  animated launch with the full tagline.

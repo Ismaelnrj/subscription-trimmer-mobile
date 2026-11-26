@@ -537,17 +537,17 @@ Keep this short and current. As of 2026-11-23.
   motion. It reached the owner's phone (a launch screenshot), Build Info not yet
   read. ANOTHER `eas update` IS OWED: the tagline crop fix, the status bar and
   the premium sign in flow (see THE SIGN IN FLOW, PREMIUM in the history).
-  Owner's yes, their machine.
-- BUILD 42 IS UPLOADED TO PLAY (owner's report 2026-11-26, awaiting Google's
-  acceptance; versionCode 42 SPENT, next is 43): 1.0.5, runtimeVersion KEPT at
+  The owner said 2026-11-26 they were publishing it; unconfirmed on a phone.
+- BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
+  next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
   Signals 0.0.6 in `modules/trimio-age-signals` with no prompt anywhere yet (see
-  BUILD 42 UPLOADED TO PLAY in the history). Its Build Info is not yet read
+  BUILD 42 IS LIVE ON PLAY in the history). Its Build Info is not yet read
   off a phone. Release notes: `store-assets/release-notes/`. The age policy (when
   Play's prompt shows, what an under 16 sees) is the owner's call, over the air
   before 2027-01-01. The build after it, ask first: Expo SDK upgrade (React
   Native 0.79 is past support) with the runtimeVersion bump, Credential
-  Manager, EAS update code signing. Play has 1.0.4 / versionCode 41.
+  Manager, EAS update code signing. Play has 1.0.5 / versionCode 42.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.
 - STORY REELS: Parts 1 to 6 are public on YouTube and on Instagram (Part 5
