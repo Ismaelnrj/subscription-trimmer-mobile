@@ -70,6 +70,16 @@ describe("AnimatedSplash and the generated layers", () => {
     expect(Number(from)).toBeGreaterThan(41);
   });
 
+  test("a layer is stretched to its box and cut with a margin, so a phone's pixel rounding cannot crop ink", () => {
+    // 2026-11-26, the owner's phone: "<NOW BEFORE YOU PAY", no K stem and no
+    // full stop. The tagline strip was cut tight to its ink and drawn with
+    // the default resizeMode, cover, so one rounded pixel of height enlarged
+    // it and cut both ends off. Either half of this fix alone would hold.
+    const image = component.slice(component.indexOf("<Animated.Image"), component.indexOf("/>", component.indexOf("<Animated.Image")));
+    expect(image).toMatch(/resizeMode="stretch"/);
+    expect(layout.pad).toBeGreaterThanOrEqual(4);
+  });
+
   test("the centred layers are square on the ring centre, so they turn about the mark", () => {
     const [cx, cy] = layout.centre;
     for (const n of ["ring_outer", "ring_mid", "ring_inner", "arcs", "mark"]) {

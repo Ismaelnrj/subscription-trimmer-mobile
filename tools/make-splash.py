@@ -165,9 +165,14 @@ print("wrote assets/splash.png", (W, H))
 # on a transparent layer the ringing clips into a halo round thin lines.
 layers = pathlib.Path("assets/splash-layers")
 CENTRED = {"ring_outer", "ring_mid", "ring_inner", "arcs", "mark"}
+# A transparent margin round every crop. A phone lays each layer out in whole
+# pixels, and a crop cut tight to the ink lost ink to that rounding: on the
+# owner's phone, 2026-11-26, the tagline showed "<NOW BEFORE YOU PAY" with no
+# K stem and no full stop. Clamped at the canvas edge, where the waves sit.
+PAD = 8
 layers.mkdir(exist_ok=True)
 layout = {"canvas": [W, H], "centre": [round(CX / S, 1), round(CY / S, 1)],
-          "markHeight": round(H * 0.161, 1), "layers": {}}
+          "markHeight": round(H * 0.161, 1), "pad": PAD, "layers": {}}
 for name, part in PARTS:
     c = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0))
     on(c)
@@ -181,6 +186,7 @@ for name, part in PARTS:
         hw = math.ceil(max(cx - box[0], box[2] - cx))
         hh = math.ceil(max(cy - box[1], box[3] - cy))
         box = (round(cx) - hw, round(cy) - hh, round(cx) + hw, round(cy) + hh)
+    box = (max(0, box[0] - PAD), max(0, box[1] - PAD), min(W, box[2] + PAD), min(H, box[3] + PAD))
     small.crop(box).save(layers / f"{name}.png", optimize=True)
     layout["layers"][name] = list(box)
 (layers / "layout.json").write_text(json.dumps(layout, indent=1) + "\n")

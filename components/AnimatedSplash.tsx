@@ -137,6 +137,12 @@ function Layer({ name, t, geo }: { name: LayerName; t: SharedValue<number>; geo:
   return (
     <Animated.Image
       source={SOURCES[name]}
+      // Stretch, never the default cover. The box already has the image's own
+      // shape, but a phone rounds it to whole pixels, and on a thin strip like
+      // the tagline (about 25 px tall) one pixel of height made cover enlarge
+      // the picture and cut its ends off: "<NOW BEFORE YOU PAY", no K stem, no
+      // full stop, on the owner's phone. Stretch shows the whole picture.
+      resizeMode="stretch"
       style={[
         {
           position: "absolute",
