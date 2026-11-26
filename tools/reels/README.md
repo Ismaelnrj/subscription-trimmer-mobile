@@ -566,3 +566,81 @@ python3 tools/brand-video.py build/friend-captioned.mp4 --out build/friend-en.mp
     (rubberband 1.06 and 1.10, formants kept) made no difference to the score
     and was dropped. Next time, give a new character a voice reference of his
     own in the first call.
+
+### The January series, scripted 2026-11-26 (generation waits for credits)
+
+The owner's yes ("Yes, make the January posts") to a fresh start series: the
+customer's problem in the week people look at their money. Three reels, the
+couple, English. SCRIPTED ONLY: the Higgsfield balance was 0.59 credits on
+2026-11-26 (the Plus plan granted 1,000 on 2026-11-14, so the next grant is
+expected around 2026-12-14). Each is one `omni_reference` take of about 10 to
+12 s at 480p draft (about 36 credits) plus a held still of the real app
+(items 21, 36); about 110 credits for all three. Timed with `beats.py`.
+
+1. **"The Christmas trial"**, sofa, Christmas tree lights behind, evening.
+    HER: "That free trial for the Christmas movies."
+    HIM: "Free. Seven days."
+    HER: "When did you start it?"
+    HIM: "Christmas Eve."
+    HER: "Seven days ago."
+   End on his stillness (item 14). App: the dashboard's "Trials ending soon"
+   row, "… trial ends in 2 days". Plate: "Know before day eight."
+   Title: "Subscription trap: the free trial you started at Christmas"
+   (subscription trap ~24,900 / 47, free trial ~6,300 / 45, read 2026-11-26).
+   Post: YouTube Wed 30 Dec, Instagram Thu 31 Dec (the day such a trial renews).
+2. **"The yearly ones"**, kitchen table, morning, his phone's screen out of shot.
+    HIM: "Amazon just took eighty nine euros."
+    HER: "Prime. It's yearly."
+    HIM: "Since when is it yearly?"
+    HER: "Since you signed up. Every January."
+    HIM: "What else is yearly?"
+    HER: "Do you want the list?"
+   App: the calendar in January with the yearly row and its reminder.
+   CHECK FIRST: Prime's yearly DE price (89,90 €) against two sources on the
+   day; the catalogue only carries the monthly 8.99 € (verified 2026-09-05).
+   Title: "Forgotten subscriptions: the yearly one you forgot about"
+   (forgotten subscriptions ~5,000 / 44). Post: YouTube Thu 7 Jan, Instagram 8 Jan.
+3. **"The January check"**, direct address (item 39), both to camera.
+    HER: "New year. We wrote down every subscription we pay for."
+    HIM: "Took ten minutes."
+    HER: "Eleven of them."
+    HIM: "Nine hundred and forty euros a year."
+    HER: "We kept six."
+   App: the dashboard's "€… a year for 11 active subscriptions", the demo
+   account built to about €940 so the line and the screen agree.
+   Title: "Subscription audit: how to save money in January"
+   (subscription audit ~4,500 / 29, how to save money ~250,000 / 39).
+   Post: YouTube Mon 4 Jan (the fresh start Monday), Instagram Tue 5 Jan.
+
+Captions, each READY on `caption.py` and clean on `check_copy.py`:
+
+```
+Subscription trap: a 7 day free trial started on Christmas Eve renews on New Year's Eve.
+
+He thought it was free. It was, for seven days. Trimio reminds you before a trial ends, so the first charge is never a surprise.
+
+Link in bio.
+
+#subscriptiontrap #freetrial #savemoney #subscriptions #personalfinance
+```
+```
+Forgotten subscriptions: the yearly ones charge once, so they are the easiest to forget.
+
+Amazon Prime, cloud storage, antivirus. Trimio reminds you before any renewal, monthly or yearly.
+
+Link in bio.
+
+#forgottensubscriptions #savemoney #subscriptions #personalfinance #budgeting
+```
+```
+Subscription audit: how to save money in January in ten minutes.
+
+Write down every subscription you pay for and add up the year. They found eleven, worth about €940 a year, and kept six. Trimio does the adding for you.
+
+Link in bio.
+
+#subscriptionaudit #howtosavemoney #savemoney #budgeting #newyear
+```
+
+Searched and dropped: "free trial charged", "annual subscription renewal" and
+"new year budget" all under vidIQ's <750 floor.

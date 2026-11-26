@@ -7060,3 +7060,13 @@ last one left off without needing a recap typed out.
   every layer and an 8 px transparent margin on every crop (`PAD` in
   make-splash.py), each pinned by a test. Needs an eas update; build 42 under
   review embeds the cropped copy and picks the fix up as an update.
+- THE JANUARY SERIES IS SCRIPTED, NOT GENERATED, 2026-11-26, at the owner's
+  word ("Yes, make the January posts"), after advice that the fresh start
+  effect was the one honest principle worth using now, as posts, not in the app.
+  Three couple reels: "The Christmas trial" (YouTube 30 Dec), "The January
+  check" (4 Jan), "The yearly ones" (7 Jan); scripts, titles, captions and
+  dates in `tools/reels/README.md`. HIGGSFIELD HAD 0.59 CREDITS: the Plus grant
+  of 1,000 landed 2026-11-14, and the last spend before the balance ran out was
+  an "AI Influencer Restyle" of 89.5 on 2026-11-25 that this session did not
+  make. About 110 credits make all three after the next grant (expected around
+  2026-12-14). The Prime yearly price needs two sources on the day.

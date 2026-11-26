@@ -42,6 +42,7 @@ a fresh `vidiq_keyword_research` call, never from a guess.
 | how to cancel youtube premium subscription | ~4,300 | 51 | a YouTube Premium cancel guide post |
 | free trial | ~8,900 | 47 | the trial reminder; a word for the text, too broad for a title |
 | subscription trap | ~24,900 | 47 | a trial that turns into a charge; growing (+94% on vidIQ's reading, 2026-11-17) |
+| how to save money | ~250,000 | 39 | the January check reel, in a title with a narrower phrase (read 2026-11-26); `free trial` read ~6,300 / 45 the same day |
 | streaming price increase | ~3,500 | 37 | a streaming price going up, the price card (read 2026-11-18) |
 | save money | ~113,000 | 40 | what cancelling keeps you; a word for the text and tags, too broad for a title (read 2026-11-18) |
 | saving money | ~109,000 | 34 | the same; tags (read 2026-11-18) |

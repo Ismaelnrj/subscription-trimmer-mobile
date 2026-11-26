@@ -561,7 +561,8 @@ Keep this short and current. As of 2026-11-23.
   https://claude.ai/artifact/R5vegjSzPLfYxZRsy4u6QW. The German Amazon Prime reel is on
   YouTube PRIVATE (`0o1UXbSXcg4`) and on Instagram since 2026-11-23 13:33Z
   (`DgFfz_fAGKo`, AI label on). Each step needs the owner's yes naming the platform
-  (`trimio-social`).
+  (`trimio-social`). THE JANUARY SERIES (three reels) is scripted in
+  `tools/reels/README.md`; generation waits for Higgsfield credits (~14 Dec).
 - INSTAGRAM CLEANUP is the owner's call, advised 2026-11-18: seven posts with
   invented UI and two avatar testimonials (`Deb0LEtgvBV`, `DetTd7Nj70M`) were
   still live. Do not nag.
