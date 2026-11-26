@@ -15,8 +15,10 @@ skills-lock.json
 # A committed copy made EAS tooling detect this project as bare workflow for
 # Android while iOS (no committed ios/) stayed managed, a split-brain state
 # that broke runtime version resolution for OTA updates.
-android/
-ios/
+# Anchored to the root: an unanchored android/ also hid the Kotlin of the
+# local module in modules/trimio-age-signals/android, which must ship.
+/android/
+/ios/
 
 # Google Play service account key used by `eas submit` — never commit this
 google-play-service-account.json

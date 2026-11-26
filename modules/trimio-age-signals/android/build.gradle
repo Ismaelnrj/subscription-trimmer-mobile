@@ -1,0 +1,25 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'com.trimio'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.trimioagesignals"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Pure Java: no Kotlin metadata in its classes and no Kotlin in its
+  // dependency tree (play-services-basement 18.9.0, play-services-tasks
+  // 18.2.0, play core-common 2.0.4, read off Google's POMs 2026-11-26), so
+  // the Kotlin 2.0.21 pin in fix-gradle.sh is not at risk from it. minSdk 24,
+  // the same as the app. 0.0.6 is the first version read with
+  // getApplicableAgeFeatures, which the app depends on.
+  implementation 'com.google.android.play:age-signals:0.0.6'
+}
