@@ -6970,8 +6970,8 @@ last one left off without needing a recap typed out.
   update. The SDK upgrade bumps it, because there the JS itself changes.
   THE LAUNCH MOTION: `tools/make-splash.py` now cuts the picture into 12 layers
   (`assets/splash-layers/`, 116 KB, flat output byte identical) and
-  a reworked `AnimatedSplash` grows Android's small launch mark (100 dp, mark
-  31% of it) into the picture in 0.88 s, inside the unchanged 1.1 s hold. That
+  a reworked `AnimatedSplash` grows Android's small launch mark (logo 200 dp,
+  the top level `splash` default in @expo/prebuild-config; mark 31% of it) into the picture in 0.88 s, inside the unchanged 1.1 s hold. That
   component waits on branch `claude/calendar-dot-4riizs` for the owner's yes on
   the look, then rides an eas update (JS and assets only). Prototype page:
   https://claude.ai/artifact/7yZzURzgdRRLHTDhS9JZkh. Seen in the web build; not
