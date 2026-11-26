@@ -75,7 +75,6 @@ export default function LoginScreen() {
               disabled={loading}
               buttonStyle={styles.googleButton}
               textStyle={styles.googleButtonText}
-              iconColor={c.text}
             />
             <View style={styles.divider}>
               <View style={styles.dividerLine} />

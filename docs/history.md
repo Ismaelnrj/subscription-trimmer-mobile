@@ -7136,3 +7136,20 @@ last one left off without needing a recap typed out.
   INSTALLED: Trimio already does that by hand into `docs/history.md` with one
   line in CLAUDE.md, and appending every correction to CLAUDE.md itself is how
   it reached 505 KB.
+- THE COLOUR GOOGLE G, 2026-11-26, at the owner's request, sent with a picture
+  of Google's 2025 gradient icons ("Can you have it from there?"). NOT FROM THAT
+  PICTURE: a compressed JPEG of a third party's collage, about 100 px per icon,
+  and the gradient G is Google's app icon, not the sign in mark. Google's rules
+  for a sign in button are its own G, unmodified. Its branding page
+  (developers.google.com) is refused by the sandbox proxy, but Google's Maven
+  is not: `googleg_standard_color_18.png` from play-services-base 18.11.1 (the
+  latest release; AAR sha1 29b1e088 matched Google's published .sha1) is the
+  image Android's own SignInButton draws, still the flat four colour G. Copied
+  byte for byte into `assets/google/` at mdpi, hdpi, xhdpi and xxhdpi (1x to
+  3x); the button shows it at 18dp, untinted, on both themes, replacing the
+  monochrome icon font glyph, and `iconColor` is gone from its props.
+  `__tests__/google-g.test.js` pins each file's pixels to its suffix and fails
+  on a tint (negative tested). Measured, not fixed: Google's yellow is 1.71:1 on
+  the white card, which is Google's own mark on Google's own white button.
+  The web preview loads the 1x file whatever the density; a phone takes 3x.
+  OTA: assets and JavaScript only.
