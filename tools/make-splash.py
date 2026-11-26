@@ -161,6 +161,7 @@ print("wrote assets/splash.png", (W, H))
 # image used. A premultiplied box average, not Lanczos: Lanczos rings, and
 # on a transparent layer the ringing clips into a halo round thin lines.
 layers = pathlib.Path("assets/splash-layers")
+CENTRED = {"ring_outer", "ring_mid", "ring_inner", "arcs", "mark"}
 layers.mkdir(exist_ok=True)
 layout = {"canvas": [W, H], "centre": [round(CX / S, 1), round(CY / S, 1)],
           "markHeight": round(H * 0.161, 1), "layers": {}}
@@ -170,6 +171,13 @@ for name, part in PARTS:
     part(c)
     small = c.convert("RGBa").reduce(S).convert("RGBA")
     box = small.getchannel("A").getbbox()
+    if name in CENTRED:
+        # Square on the ring centre, so a layer scaled or turned about its
+        # own middle turns about the mark, which is what the app does.
+        cx, cy = CX / S, CY / S
+        hw = math.ceil(max(cx - box[0], box[2] - cx))
+        hh = math.ceil(max(cy - box[1], box[3] - cy))
+        box = (round(cx) - hw, round(cy) - hh, round(cx) + hw, round(cy) + hh)
     small.crop(box).save(layers / f"{name}.png", optimize=True)
     layout["layers"][name] = list(box)
 (layers / "layout.json").write_text(json.dumps(layout, indent=1) + "\n")
