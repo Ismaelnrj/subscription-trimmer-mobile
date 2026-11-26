@@ -6,6 +6,9 @@ import { useTheme, useIsDark, space, type as typeScale } from "../lib/theme";
 // by hand. The light one is Ink Navy, which disappears on the dark ground.
 const MARK_ON_LIGHT = require("../assets/brand/mark-on-light.png");
 const MARK_ON_DARK = require("../assets/brand/mark-on-dark.png");
+// The launch screen's two waves as a band, from the same generator.
+const WAVES_ON_LIGHT = require("../assets/brand/waves-on-light.png");
+const WAVES_ON_DARK = require("../assets/brand/waves-on-dark.png");
 
 type Props = { title: string; subtitle?: ReactNode };
 
@@ -28,6 +31,25 @@ export function AuthHeader({ title, subtitle }: Props) {
   );
 }
 
+/* The foot of the sign in flow: the launch screen's waves, full bleed, with
+   the switch between signing in and signing up set over their crest, so the
+   flow reads as the launch screen continued. Pass the link as children. */
+export function AuthFooter({ children }: { children: ReactNode }) {
+  const isDark = useIsDark();
+  return (
+    <View style={styles.footer}>
+      <Image
+        source={isDark ? WAVES_ON_DARK : WAVES_ON_LIGHT}
+        style={styles.waves}
+        resizeMode="stretch"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      />
+      <View style={styles.footerLink}>{children}</View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   header: { marginBottom: space.xxl },
   lockup: { flexDirection: "row", alignItems: "center", gap: space.s, marginBottom: space.xxl + space.l },
@@ -36,4 +58,8 @@ const styles = StyleSheet.create({
   wordmark: { ...typeScale.title },
   title: { ...typeScale.hero },
   subtitle: { ...typeScale.body, marginTop: space.s },
+  // The screens pad 24 at the sides and 16 at the foot; the band ignores both.
+  footer: { marginHorizontal: -space.xl, marginBottom: -space.l },
+  waves: { width: "100%", aspectRatio: 1284 / 300 },
+  footerLink: { position: "absolute", top: 0, left: space.xl, right: space.xl },
 });

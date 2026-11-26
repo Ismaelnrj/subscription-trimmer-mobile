@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../components/PasswordStrength";
-import { AuthHeader } from "../components/AuthHeader";
+import { AuthHeader, AuthFooter } from "../components/AuthHeader";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export default function ForgotPasswordScreen() {
@@ -145,9 +145,11 @@ export default function ForgotPasswordScreen() {
       )}
 
       <View style={styles.spacer} />
-      <TouchableOpacity style={styles.backToLogin} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/login")}>
-        <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
-      </TouchableOpacity>
+      <AuthFooter>
+        <TouchableOpacity style={styles.backToLogin} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/login")}>
+          <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
+        </TouchableOpacity>
+      </AuthFooter>
     </ScrollView>
   );
 }
@@ -163,23 +165,23 @@ function makeStyles(c: AppColors) {
     emailHighlight: { fontFamily: "Montserrat-SemiBold", color: c.text },
     input: {
       ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
+      borderRadius: radius.l, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
     inputFocused: { borderColor: c.text },
     codeInput: {
       /* The one place outside the scale: six digits read at arm's length. */
-      backgroundColor: c.inputBg, borderWidth: 1.5, borderColor: c.text, borderRadius: radius.m,
+      backgroundColor: c.inputBg, borderWidth: 1.5, borderColor: c.text, borderRadius: radius.l,
       minHeight: 64, fontFamily: "Montserrat-SemiBold", fontSize: 32, letterSpacing: 10,
       color: c.text, textAlign: "center",
     },
     passwordWrapper: {
       flexDirection: "row", alignItems: "center", minHeight: 56,
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
     passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      backgroundColor: c.text, borderRadius: radius.l, minHeight: 56,
       alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },

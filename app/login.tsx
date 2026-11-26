@@ -9,7 +9,7 @@ import apiClient from "../lib/api";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
-import { AuthHeader } from "../components/AuthHeader";
+import { AuthHeader, AuthFooter } from "../components/AuthHeader";
 import { track } from "../lib/analytics";
 
 export default function LoginScreen() {
@@ -67,6 +67,24 @@ export default function LoginScreen() {
       <AuthHeader title={t("login.headline")} subtitle={t("login.subtitle")} />
 
       <View style={styles.form}>
+        {isGoogleAuthConfigured() ? (
+          <>
+            <GoogleSignInButton
+              label={t("login.continueGoogle")}
+              onIdToken={handleGoogleIdToken}
+              disabled={loading}
+              buttonStyle={styles.googleButton}
+              textStyle={styles.googleButtonText}
+              iconColor={c.text}
+            />
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t("login.or")}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          </>
+        ) : null}
+
         <View>
           <Text style={styles.label}>{t("login.emailPlaceholder")}</Text>
           <TextInput
@@ -111,29 +129,14 @@ export default function LoginScreen() {
           {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("login.signIn")}</Text>}
         </TouchableOpacity>
 
-        {isGoogleAuthConfigured() ? (
-          <>
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t("login.or")}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            <GoogleSignInButton
-              label={t("login.continueGoogle")}
-              onIdToken={handleGoogleIdToken}
-              disabled={loading}
-              buttonStyle={styles.googleButton}
-              textStyle={styles.googleButtonText}
-              iconColor={c.text}
-            />
-          </>
-        ) : null}
       </View>
 
       <View style={styles.spacer} />
-      <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
-        <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
-      </TouchableOpacity>
+      <AuthFooter>
+        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
+          <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
+        </TouchableOpacity>
+      </AuthFooter>
     </ScrollView>
   );
 }
@@ -151,20 +154,20 @@ function makeStyles(c: AppColors) {
     label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
     input: {
       ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
+      borderRadius: radius.l, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
     // The field being typed in says so: an ink edge.
     inputFocused: { borderColor: c.text },
     passwordWrapper: {
       flexDirection: "row", alignItems: "center", minHeight: 56,
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
     passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     forgotLink: { alignSelf: "flex-end", minHeight: 48, justifyContent: "center" },
     forgotText: { ...typeScale.label, color: c.text },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      backgroundColor: c.text, borderRadius: radius.l, minHeight: 56,
       alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
@@ -173,7 +176,7 @@ function makeStyles(c: AppColors) {
     dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
-      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
     googleButtonText: { ...typeScale.bodyStrong, color: c.text },
     spacer: { flexGrow: 1, minHeight: space.xxl },

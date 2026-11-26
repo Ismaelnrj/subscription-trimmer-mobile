@@ -10,7 +10,7 @@ import { PasswordStrengthMeter, isPasswordValid, isPasswordTooLong } from "../co
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 import { isGoogleAuthConfigured } from "../lib/google-auth";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
-import { AuthHeader } from "../components/AuthHeader";
+import { AuthHeader, AuthFooter } from "../components/AuthHeader";
 import { track } from "../lib/analytics";
 
 export default function RegisterScreen() {
@@ -86,9 +86,27 @@ export default function RegisterScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-      <AuthHeader title={t("register.subtitle")} subtitle={t("register.lead")} />
+      <AuthHeader title={t("register.headline")} subtitle={t("register.lead")} />
 
       <View style={styles.form}>
+        {isGoogleAuthConfigured() ? (
+          <>
+            <GoogleSignInButton
+              label={t("register.continueGoogle")}
+              onIdToken={handleGoogleIdToken}
+              disabled={loading}
+              buttonStyle={styles.googleButton}
+              textStyle={styles.googleButtonText}
+              iconColor={c.text}
+            />
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>{t("register.or")}</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          </>
+        ) : null}
+
         <View>
           <Text style={styles.label}>{t("register.namePlaceholder")}</Text>
           <TextInput
@@ -153,29 +171,14 @@ export default function RegisterScreen() {
           {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
         </TouchableOpacity>
 
-        {isGoogleAuthConfigured() ? (
-          <>
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t("register.or")}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            <GoogleSignInButton
-              label={t("register.continueGoogle")}
-              onIdToken={handleGoogleIdToken}
-              disabled={loading}
-              buttonStyle={styles.googleButton}
-              textStyle={styles.googleButtonText}
-              iconColor={c.text}
-            />
-          </>
-        ) : null}
       </View>
 
       <View style={styles.spacer} />
-      <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
-        <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
-      </TouchableOpacity>
+      <AuthFooter>
+        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
+          <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
+        </TouchableOpacity>
+      </AuthFooter>
     </ScrollView>
   );
 }
@@ -189,17 +192,17 @@ function makeStyles(c: AppColors) {
     label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
     input: {
       ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
-      borderRadius: radius.m, minHeight: 56, paddingHorizontal: space.l, color: c.text,
+      borderRadius: radius.l, minHeight: 56, paddingHorizontal: space.l, color: c.text,
     },
     inputFocused: { borderColor: c.text },
     passwordWrapper: {
       flexDirection: "row", alignItems: "center", minHeight: 56,
-      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
     passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
-      backgroundColor: c.text, borderRadius: radius.m, minHeight: 56,
+      backgroundColor: c.text, borderRadius: radius.l, minHeight: 56,
       alignItems: "center", justifyContent: "center",
     },
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
@@ -208,7 +211,7 @@ function makeStyles(c: AppColors) {
     dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
       flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
-      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.m,
+      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
     googleButtonText: { ...typeScale.bodyStrong, color: c.text },
     inputError: { borderColor: c.danger },
