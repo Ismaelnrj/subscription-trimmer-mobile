@@ -538,7 +538,8 @@ Keep this short and current. As of 2026-11-23.
   2026-11-18, no publish reported since. Owner's yes, their machine.
 - A NATIVE BUILD IS OWED, ask first: Expo SDK upgrade (React Native 0.79 is
   past support), with the runtimeVersion bump, Credential Manager for Google
-  sign in, EAS update code signing, the launch screen off cream. Next
+  sign in, EAS update code signing, the launch screen off cream, and Play Age
+  Signals before 2027-01-01 (California AB 1043, see the history). Next
   versionCode is 42. Play has 1.0.4 / versionCode 41.
 - PRICES: Premium 3.99 a month, 24.99 a year, lifetime in Play Console. Every
   new account gets 14 days of Premium free. Free tier 5 active rows.

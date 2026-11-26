@@ -6930,3 +6930,18 @@ last one left off without needing a recap typed out.
   the friend went public 2026-11-25T10:00Z and the announcement 14:00Z (the
   owner's two scheduled), Part 7 still private. The announcement is held for a
   later post the same day, not back to back.
+- PLAY AGE SIGNALS, read 2026-11-26 from a Google Play email the owner forwarded
+  (California AB 1043, Alabama HB 161, Brazil ECA Digital). TRIMIO DOES NOT USE
+  THE API (no `age-signals` anywhere). Google does not require it; the laws
+  might. California's Digital Age Assurance Act is operative 2027-01-01 and,
+  read from secondary sources, asks a developer with California users to
+  request the signal when the app is downloaded and launched; one bill text
+  excerpt says before 2027-07-01, so the date wants checking against the
+  chaptered text. Brazil's ECA Digital has been in force since 2026-03-17 for
+  services likely to be accessed by minors. Trimio's own terms already set 16 as
+  the minimum age (section 3, younger only with parental consent; section 14).
+  RECOMMENDED, not done: add `com.google.android.play:age-signals` in the native
+  build already owed (versionCode 42, runtimeVersion bump), ask at launch, and
+  apply the terms: under 13 no account, 13 to 15 the parental consent path,
+  never used for analytics (Play's own rule). CHECK FIRST: the library's Kotlin
+  metadata against the 2.0.21 pin in fix-gradle.sh. Not legal advice.
