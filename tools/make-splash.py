@@ -6,7 +6,7 @@ once the app mounts, which is why it can hold rings, a wordmark and a
 wave at all. The OS splash is configured to the same warm white ground
 with the navy mark, so the two frames read as one screen.
 """
-import sys, math, pathlib
+import sys, math, json, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 from PIL import Image, ImageDraw, ImageFont
 from importlib import import_module
@@ -94,44 +94,86 @@ def tracked_text(draw, xy, text, font, fill, tracking, anchor_centre=True, spans
 
 
 # --- the scene ---------------------------------------------------------
-wave(0.855, WAVE_1, H * S * 0.020, 0.0)
-wave(0.900, WAVE_2, H * S * 0.016, 2.2)
+# One function per element, so the flat launch screen and the separate
+# layers AnimatedSplash moves come from the same drawing code. Order is
+# paint order.
 
-for f, wdt in ((1.00, 2), (0.82, 2), (0.63, 2)):
-    ring(R_OUT * f, wdt * S, RING)
-ring(R_OUT * 0.91, 3 * S, (198, 231, 219), 200, 320)
-ring(R_OUT * 0.72, 3 * S, (198, 231, 219), 20, 120)
+def on(canvas):
+    global d
+    d = ImageDraw.Draw(canvas)
 
-icons.draw_mark(img, CX, CY, H * S * 0.161, NAVY, MINT)
-d = ImageDraw.Draw(img)
 
-chip(CX - R_OUT * 0.80, CY - R_OUT * 0.60, R_OUT * 0.135, "bell")
-chip(CX + R_OUT * 0.78, CY + R_OUT * 0.62, R_OUT * 0.135, "calendar")
-for ang, rr in ((18, R_OUT * 1.00), (168, R_OUT * 0.82)):
-    a = math.radians(ang)
-    px, py = CX + rr * math.cos(a), CY + rr * math.sin(a)
-    r = R_OUT * 0.026
-    d.ellipse([px - r, py - r, px + r, py + r], fill=MINT)
+def draw_dots(c):
+    for ang, rr in ((18, R_OUT * 1.00), (168, R_OUT * 0.82)):
+        a = math.radians(ang)
+        px, py = CX + rr * math.cos(a), CY + rr * math.sin(a)
+        r = R_OUT * 0.026
+        d.ellipse([px - r, py - r, px + r, py + r], fill=MINT)
 
-word_font = ImageFont.truetype(fontpath.montserrat("Medium"), int(H * S * 0.062))
-wy = H * S * 0.585
-tw = d.textlength("Trimio", font=word_font)
-d.text((W * S / 2 - tw / 2, wy), "Trimio", font=word_font, fill=NAVY)
-off = dot_offsets(word_font, "Trimio")
-if off:
-    dx, dy, rr = off
-    for idx in (2, 4):                                   # the two i's
-        px = W * S / 2 - tw / 2 + d.textlength("Trimio"[:idx], font=word_font) + dx
-        d.ellipse([px - rr, wy + dy - rr, px + rr, wy + dy + rr], fill=MINT)
 
-tag_font = ImageFont.truetype(fontpath.montserrat("SemiBold"), int(H * S * 0.0148))
-tag = "KNOW BEFORE YOU PAY."
-tracked_text(d, (W * S / 2, H * S * 0.665), tag, tag_font, NAVY,
-             tracking=H * S * 0.0042,
-             spans=[(tag.index("BEFORE"), tag.index("BEFORE") + 6, MINT_DEEP)])
+def draw_word(c):
+    word_font = ImageFont.truetype(fontpath.montserrat("Medium"), int(H * S * 0.062))
+    wy = H * S * 0.585
+    tw = d.textlength("Trimio", font=word_font)
+    d.text((W * S / 2 - tw / 2, wy), "Trimio", font=word_font, fill=NAVY)
+    off = dot_offsets(word_font, "Trimio")
+    if off:
+        dx, dy, rr = off
+        for idx in (2, 4):                                   # the two i's
+            px = W * S / 2 - tw / 2 + d.textlength("Trimio"[:idx], font=word_font) + dx
+            d.ellipse([px - rr, wy + dy - rr, px + rr, wy + dy + rr], fill=MINT)
+
+
+def draw_tag(c):
+    tag_font = ImageFont.truetype(fontpath.montserrat("SemiBold"), int(H * S * 0.0148))
+    tag = "KNOW BEFORE YOU PAY."
+    tracked_text(d, (W * S / 2, H * S * 0.665), tag, tag_font, NAVY,
+                 tracking=H * S * 0.0042,
+                 spans=[(tag.index("BEFORE"), tag.index("BEFORE") + 6, MINT_DEEP)])
+
+
+PARTS = [
+    ("wave_back",  lambda c: wave(0.855, WAVE_1, H * S * 0.020, 0.0)),
+    ("wave_front", lambda c: wave(0.900, WAVE_2, H * S * 0.016, 2.2)),
+    ("ring_outer", lambda c: ring(R_OUT * 1.00, 2 * S, RING)),
+    ("ring_mid",   lambda c: ring(R_OUT * 0.82, 2 * S, RING)),
+    ("ring_inner", lambda c: ring(R_OUT * 0.63, 2 * S, RING)),
+    ("arcs",       lambda c: (ring(R_OUT * 0.91, 3 * S, (198, 231, 219), 200, 320),
+                              ring(R_OUT * 0.72, 3 * S, (198, 231, 219), 20, 120))),
+    ("mark",       lambda c: icons.draw_mark(c, CX, CY, H * S * 0.161, NAVY, MINT)),
+    ("bell",       lambda c: chip(CX - R_OUT * 0.80, CY - R_OUT * 0.60, R_OUT * 0.135, "bell")),
+    ("calendar",   lambda c: chip(CX + R_OUT * 0.78, CY + R_OUT * 0.62, R_OUT * 0.135, "calendar")),
+    ("dots",       draw_dots),
+    ("word",       draw_word),
+    ("tag",        draw_tag),
+]
+
+for _, part in PARTS:
+    on(img)
+    part(img)
 
 img.convert("RGB").resize((W, H), Image.LANCZOS).save("assets/splash.png")
 print("wrote assets/splash.png", (W, H))
+
+# The same parts on transparent canvases, cropped, for AnimatedSplash to
+# move one by one. layout.json holds each crop box in the 1284 x 2778
+# canvas, so the app can place them with the same cover scaling the flat
+# image used. A premultiplied box average, not Lanczos: Lanczos rings, and
+# on a transparent layer the ringing clips into a halo round thin lines.
+layers = pathlib.Path("assets/splash-layers")
+layers.mkdir(exist_ok=True)
+layout = {"canvas": [W, H], "centre": [round(CX / S, 1), round(CY / S, 1)],
+          "markHeight": round(H * 0.161, 1), "layers": {}}
+for name, part in PARTS:
+    c = Image.new("RGBA", (W * S, H * S), (0, 0, 0, 0))
+    on(c)
+    part(c)
+    small = c.convert("RGBa").reduce(S).convert("RGBA")
+    box = small.getchannel("A").getbbox()
+    small.crop(box).save(layers / f"{name}.png", optimize=True)
+    layout["layers"][name] = list(box)
+(layers / "layout.json").write_text(json.dumps(layout, indent=1) + "\n")
+print("wrote", len(PARTS), "layers to", layers)
 
 # The OS splash can only be an icon on a colour, so give it the navy mark
 # on the same warm white ground: no colour flash into the screen above.
