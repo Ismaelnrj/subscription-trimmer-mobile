@@ -7195,3 +7195,11 @@ last one left off without needing a recap typed out.
   `auth-art.test.js` ties to the generator's colours). Gone: the corner art, the
   label, the feature row, the "or" divider. JavaScript, locales and assets
   only: OTA.
+- THE BRAND PANEL IS ON A PHONE, 2026-11-26, read off the owner's screenshots:
+  Build Info `Update ID: 01a21907-7a5c-7331-975c-005e73f06f46`, `Update
+  published: 2026-11-26T18:04:10.204Z`, `Embedded launch: false`, build 42,
+  runtime 1.0.1; a new id and a later time than `01a2189b` (16:06:44Z). The
+  sign in screen on the phone matches the preview: navy status bar running into
+  the stage with no seam, the lens clear of the headline, two buttons and the
+  link. Baseline `a3ae08c6` (the panel exists only from there, and master held
+  nothing later). The email step was not in the screenshots.

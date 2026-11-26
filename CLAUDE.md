@@ -526,17 +526,14 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 ## Current state
 
-Keep this short and current. As of 2026-11-23.
+Keep this short and current. As of 2026-11-26.
 
-- PHONES run the update published `2026-11-26T16:06:44.843Z`, `Update ID:
-  01a2189b-f96b-7d01-a8b0-53a15b0ab3a1`, read off the owner's build 42 phone
-  (1.0.5, runtime 1.0.1, "Age signals: not required here"). Its baseline is
-  `2bd1f919` or `90d59bf3`, unknown (see BUILD 42 AND THE 2026-11-26 UPDATE).
-  The next confirmation must show a different id and a later time.
-- TWO `eas update`s WERE PUBLISHED 2026-11-26: the launch motion and
-  everything since `040c4b3c`, then the tagline fix (and the status bar and the
-  premium sign in flow if pulled after `90d59bf3`). If a tab screen's status bar
-  is still cream, one more publish from master is owed for those two.
+- PHONES run the update published `2026-11-26T18:04:10.204Z`, `Update ID:
+  01a21907-7a5c-7331-975c-005e73f06f46`, read off the owner's build 42 phone
+  screenshot 2026-11-26 (1.0.5, runtime 1.0.1, "Age signals: not required
+  here"). It shows the Brand panel sign in, which exists only from `a3ae08c6`,
+  and nothing later was on master: that is its baseline. Nothing is owed to
+  phones. The next confirmation must show a different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
