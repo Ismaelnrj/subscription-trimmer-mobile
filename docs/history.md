@@ -7016,3 +7016,12 @@ last one left off without needing a recap typed out.
   mistakes. NOT CHECKABLE HERE: compiling the Kotlin (no Android SDK or Kotlin
   compiler in the sandbox). Codemagic is the first compile; a failure at
   `compileReleaseKotlin` naming trimio-age-signals is this module.
+- GIT NEVER SAW THE MODULE'S KOTLIN, 2026-11-26, caught by CI on `6b7286af`:
+  `.gitignore` carried a bare `android/`, meant for the root project prebuild
+  regenerates, and it also hid `modules/trimio-age-signals/android`. The commit
+  held only the module's config; `age-signals.test.js` failed in CI with ENOENT
+  while passing here, because the files were on disk. Codemagic would have
+  linked a module with no code. THE IGNORES ARE ANCHORED TO THE ROOT now,
+  `/android/` and `/ios/` (`0b92fd6c`). The habit: after adding files under a
+  new folder, read `git ls-files` for it; a local test run proves the disk, not
+  the commit.

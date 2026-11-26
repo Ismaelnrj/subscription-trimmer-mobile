@@ -695,6 +695,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
   chosen by `nativeBuild()`. [grep: THE GROUND FOLLOWS THE BUILD]
 - While runtimeVersion is shared with older builds, a native module is loaded
   with `requireOptionalNativeModule`. [grep: A MODULE OLDER BUILDS LACK IS LOADED OPTIONALLY]
+- `.gitignore`'s android/ and ios/ stay anchored to the root, or a local module's
+  native code is silently left out. [grep: THE IGNORES ARE ANCHORED TO THE ROOT]
 - A completeness claim ("every screen", "nothing else") is checked by a scan. [grep: a completeness claim is the single most dangerous kind of entry]
 
 ### Accounts, dashboards and the repository
