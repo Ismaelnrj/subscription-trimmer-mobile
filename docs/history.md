@@ -7210,3 +7210,21 @@ last one left off without needing a recap typed out.
   up and forgot password; the accessibility labels keep naming the action.
   `__tests__/password-eye.test.js` pins it (negative tested on the old order).
   The email step itself read fine on the phone.
+- THE PLAY SCREENSHOTS, SECOND SET, 2026-11-26, at the owner's request ("Can
+  you create and send me a better screenshots for Google play?"). Re-shot from
+  the real app on current master (local PostgreSQL, the real backend, the web
+  preview), composed in the Brand panel look: the navy stage and rings behind
+  each frame, the mint lens behind the phone, 92 px Montserrat Bold captions, an
+  880 px phone, the light ground kept for the last frame so the set has rhythm.
+  THE FIRST FRAME CARRIES THE REAL REMINDER, in the app's own words
+  (`renewTitle`, `renewBody`, `toLocaleDateString`): "Netflix Standard renews in
+  3 days, $19.99 will be charged on 11/29/2026." For that to be true of the
+  picture, the demo data now renews Netflix in exactly three days (the default
+  lead), so the dashboard under the notification says the same. Captions mostly
+  kept (each claim was checked in the first set); changed: the first frame's
+  line ("A reminder before every renewal and before every free trial ends") and
+  the paste frame ("Paste the email, skip the typing" / "Mail einfügen, nicht
+  abtippen"). Copy checker clean; captions 5.85:1 or better. UPLOAD AFTER THE
+  2026-12-08 READ of the listing text pasted 2026-11-10: screenshots changed
+  inside that 28 day window would make it unreadable, at a traffic where it is
+  only a direction anyway.

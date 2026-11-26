@@ -1,10 +1,12 @@
 // Store screenshot demo accounts: real API, catalogue prices that carry a verified date.
+// Netflix renews in exactly 3 days, the default reminder lead, so the first frame's
+// reminder ("renews in 3 days", sent today) agrees with the dashboard beside it.
 const base = 'http://127.0.0.1:3000/api';
 const [lang, out] = process.argv.slice(2);
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 const SETS = {
   de: { cur: 'EUR', name: 'Lena', rows: [
-    ['Netflix Standard', 15.99, 'streaming', 2],
+    ['Netflix Standard', 15.99, 'streaming', 3],
     ['Spotify Premium', 12.99, 'entertainment', 6],
     ['Amazon Prime', 8.99, 'streaming', 11],
     ['YouTube Premium', 14.99, 'entertainment', 17],
@@ -12,7 +14,7 @@ const SETS = {
     ['Fitnessstudio', 29.90, 'fitness', 23],
   ] },
   en: { cur: 'USD', name: 'Sam', rows: [
-    ['Netflix Standard', 19.99, 'streaming', 2],
+    ['Netflix Standard', 19.99, 'streaming', 3],
     ['Spotify Premium', 12.99, 'entertainment', 6],
     ['Amazon Prime', 14.99, 'streaming', 11],
     ['Microsoft 365 Personal', 6.99, 'software', 17],
