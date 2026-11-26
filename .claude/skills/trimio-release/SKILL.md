@@ -195,6 +195,42 @@ setting it, so changes to it are policy-relevant.
 2. Bump `versionCode`, and `runtimeVersion` if anything native moved
 3. `preflight.py`, on a machine where the typecheck can actually run
 4. Codemagic build
-5. Upload to Play, note the versionCode is now spent
+5. Upload to Play with release notes (below), note the versionCode is now spent
 6. `eas update --channel production` afterwards only if JS changed since
 7. Confirm on a real device through the Build Info panel
+
+## Release notes for a Play upload
+
+Play takes one block per language in its tag format, each block at most 500
+characters, pasted as is into the release:
+
+```
+<en-US>
+• …
+</en-US>
+<de-DE>
+• …
+</de-DE>
+```
+
+1. Only what a user of THIS version can see changed since the last versionCode
+   (`git log <last build commit>..HEAD -- app lib components locales app.json`).
+2. Every line true of the build, by `trimio-social`'s claims list: nothing is
+   connected, nothing watches a provider's price ("compares your prices with
+   our checked price list"), Android only, the free Premium as "New accounts
+   get 14 days of Premium free" (the number 14 lives in five places).
+3. `check_copy.py` on the file (no dash as clause punctuation, "…", German
+   money and du), and count each block against the 500 limit.
+4. Save it as `store-assets/release-notes/<version>.txt`; the next release
+   starts from it. 1.0.5 is the first one kept; 1.0.4's were lost.
+
+## The ask-first list is a hook
+
+`.claude/hooks/ask-first.js`, wired in `.claude/settings.json`, answers "ask"
+before an `eas update`, `eas build` or `eas submit`, a force push, a remote
+branch delete, or any scheduling tool, so Claude Code puts the action in
+front of the owner instead of relying on a session to remember the rule. It
+ignores text that only mentions a command (commit messages, heredocs, quoted
+strings). When the ask-first list in CLAUDE.md changes, change the hook and
+`__tests__/ask-first-hook.test.js` in the same commit.
+

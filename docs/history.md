@@ -7115,3 +7115,24 @@ last one left off without needing a recap typed out.
   of three feature icons, "Your data stays private", and the colour Google G
   (Google's asset is not reachable from a sandbox; the owner can download it
   from Google's sign in branding page if wanted).
+- TWO PLUGINS FROM A VIDEO, 2026-11-26, at the owner's request ("Use those skill
+  there in order to improve trimio"): "Claude Code Setup" and "Task Observer".
+  CLAUDE CODE SETUP is Anthropic's (`anthropics/claude-plugins-official`,
+  `plugins/claude-code-setup`, read at `0fbfda5`): one read only skill,
+  `claude-automation-recommender`, that analyses a codebase and recommends
+  hooks, skills, connectors and helper agents. NOT INSTALLED: it was read and
+  its method applied by hand. Its findings for Trimio: six project skills, CI
+  and tests already; NO HOOKS, no helper agents, no connected data. Done from
+  it: THE ASK-FIRST LIST IS A HOOK NOW, `.claude/hooks/ask-first.js` answering
+  "ask" before eas update / build / submit, a force push, a remote branch
+  delete and every scheduling tool, text that only mentions a command ignored
+  (24 cases, negative tested); `.gitignore` had to let `.claude/settings.json`
+  and `.claude/hooks/` through, or the hook would have been silently left out,
+  the same trap as the age module. Release notes went into `trimio-release`.
+  Recommended to the owner, theirs to connect: the official Sentry and PostHog
+  connectors, so crash reports and the funnel are read directly instead of
+  relayed by screenshot. TASK OBSERVER (a community plugin, no public
+  source listed) writes corrections into CLAUDE.md automatically. NOT
+  INSTALLED: Trimio already does that by hand into `docs/history.md` with one
+  line in CLAUDE.md, and appending every correction to CLAUDE.md itself is how
+  it reached 505 KB.

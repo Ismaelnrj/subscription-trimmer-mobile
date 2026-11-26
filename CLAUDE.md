@@ -618,6 +618,7 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
 - Reminders are scheduled from useQuery `onSuccess`, which react-query v5
   removes: move it before upgrading. [grep: was REMOVED from useQuery in v5]
 - Fix 9 in `fix-gradle.sh` (native Sentry) stays. [grep: only ever visible because of Fix 9]
+- The ask-first list is also a hook; change both together. [grep: THE ASK-FIRST LIST IS A HOOK NOW]
 
 ### The money path
 

@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|ScheduleWakeup|CronCreate|mcp__Claude_Code_Remote__create_trigger|mcp__Claude_Code_Remote__send_later|mcp__Claude_Code_Remote__fire_trigger",
+        "hooks": [
+          { "type": "command", "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/ask-first.js\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

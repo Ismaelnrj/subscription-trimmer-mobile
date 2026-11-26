@@ -6,6 +6,10 @@
 # "everything under .claude except skills" rather than a bare negation.
 .claude/*
 !.claude/skills/
+# The project's hooks and their wiring ship with the repo, so every session,
+# cloud or local, gets the ask-first check (.claude/hooks/ask-first.js).
+!.claude/settings.json
+!.claude/hooks/
 .agents/
 node_modules/
 dist/
