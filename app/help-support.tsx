@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as Updates from "expo-updates";
 import { nativeBuild } from "../lib/app-build";
+import { ageSharingRequirement, type AgeSharing } from "../lib/age-signals";
 import { readReminderDiagnostics, sendTestReminder, registerForPushNotificationsAsync, type ReminderDiagnostics } from "../lib/notifications";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
@@ -94,6 +95,14 @@ export default function HelpSupportScreen() {
      app comes back to the front, because the fix for "notifications are off"
      happens in Android's settings, outside this screen. */
   const [reminders, setReminders] = useState<ReminderDiagnostics | null>(null);
+  // Proves build 42's age module answers on this phone, without a prompt:
+  // the quiet applicability check only. See lib/age-signals.ts.
+  const [ageSharing, setAgeSharing] = useState<AgeSharing | null>(null);
+  useEffect(() => {
+    let live = true;
+    ageSharingRequirement().then((v) => { if (live) setAgeSharing(v); });
+    return () => { live = false; };
+  }, []);
   const [testSent, setTestSent] = useState(false);
   const refreshReminders = useCallback(() => {
     readReminderDiagnostics().then(setReminders).catch(() => {});
@@ -216,6 +225,7 @@ export default function HelpSupportScreen() {
               <Text style={styles.debugText}>Embedded launch (no OTA applied): {String(Updates.isEmbeddedLaunch)}</Text>
               <Text style={styles.debugText}>Update ID: {Updates.updateId ?? "none"}</Text>
               <Text style={styles.debugText}>Update published: {Updates.createdAt?.toISOString() ?? "n/a"}</Text>
+              <Text style={styles.debugText}>Age signals: {ageSharing ?? "…"}</Text>
               <Text style={styles.debugText}>Notifications allowed: {permissionLine}</Text>
               <Text style={styles.debugText}>Reminder channel: {channelLine}</Text>
               <Text style={styles.debugText}>Reminders queued: {reminders ? reminders.queued : "…"}</Text>
