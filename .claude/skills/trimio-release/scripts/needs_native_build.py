@@ -21,8 +21,10 @@ why this is a script and not a rule anyone is expected to recall:
   assets/play-store-icon.png   changes nothing in the app. It is the 512 square
                                listing icon, uploaded in Play Console, and it is
                                not referenced by app.json at all.
-  assets/splash.png            is required from JavaScript by AnimatedSplash,
-                               so it rides an OTA like any other bundled asset.
+  assets/splash-layers/        are required from JavaScript by AnimatedSplash,
+                               so they ride an OTA like any other bundled asset.
+                               (assets/splash.png, the flat picture they are cut
+                               from, is no longer loaded by the app at all.)
   assets/splash-icon.png       IS named in app.json as the OS splash, so it is
                                baked into the build and needs one.
 
@@ -60,6 +62,10 @@ import urllib.request
 NATIVE_PATHS = (
     "android/", "ios/", "plugins/", "fix-gradle.sh", "codemagic.yaml",
     "google-services.json", "eas.json", "react-native.config.js",
+    # Local Expo modules: expo-modules-autolinking links every folder here into
+    # the build at prebuild, with no package.json entry to judge. Build 42's
+    # Age Signals module lives here; its JavaScript side is in lib/.
+    "modules/",
 )
 # Judged by content, see the module docstring.
 DEPENDENCY_FILES = ("package.json", "pnpm-lock.yaml")
