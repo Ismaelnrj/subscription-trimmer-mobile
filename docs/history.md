@@ -6976,3 +6976,43 @@ last one left off without needing a recap typed out.
   the look, then rides an eas update (JS and assets only). Prototype page:
   https://claude.ai/artifact/7yZzURzgdRRLHTDhS9JZkh. Seen in the web build; not
   yet seen on a phone, where the start may sit a status bar's half height off.
+- BUILD 42 IS READY TO BUILD, 2026-11-26, the owner's word ("You may download
+  the Age Signals library from dl.google.com. everything should be inside of a
+  new build, correct? (the 42)"). Version 1.0.5, versionCode 42, runtimeVersion
+  1.0.1, launch screen on the light ground, the launch motion, Play Age Signals.
+  THE LIBRARY, READ FROM GOOGLE'S MAVEN: latest is 0.0.6 (2026-11-19), AAR sha1
+  checked against Google's own .sha1. Pure Java: no Kotlin metadata in any
+  class, and no Kotlin in its tree (play-services-basement 18.9.0,
+  play-services-tasks 18.2.0, play core-common 2.0.4). minSdk 24, the app's.
+  Its manifest adds one unexported AgeSharingConsentWrapperActivity. 0.0.6 adds
+  getApplicableAgeFeatures, whose one feature is MANDATORY_SHARING (1); by its
+  name, Play saying age sharing is required for this person. Read from the
+  bytecode: ONLY requestAgeSignalsAccess carries an Activity, and the only path
+  to the consent screen runs through it, so the feature check and the age read
+  show nothing. The feature check carries a higher constant (85410000 against
+  85222500), most likely a minimum Play Store version, so an older Play Store
+  answers it with an error the app reads as "unavailable".
+  `modules/trimio-age-signals`, a local Expo module (Kotlin, linked by
+  expo-modules-autolinking from ./modules, confirmed with its resolver):
+  applicableFeatures, requestAccess, check. `lib/age-signals.ts` loads it with
+  requireOptionalNativeModule. A MODULE OLDER BUILDS LACK IS LOADED OPTIONALLY:
+  runtimeVersion stayed 1.0.1, so every later update reaches builds 40 and 41,
+  which do not have it; requireNativeModule would throw there at import.
+  NOTHING ASKS ANYONE ANYTHING YET. The only caller is a Build Info line, "Age
+  signals: not required here / required here / unavailable / not in this
+  build", the quiet check, so a build 42 phone proves the module answers. The
+  policy (when Play's prompt appears, what an under 16 sees) waits for the
+  owner and ships over the air before 2027-01-01; with the feature check, the
+  prompt can be limited to people for whom Play says sharing is mandatory.
+  THE GROUND FOLLOWS THE BUILD: app.json's OS splash is #F3F5F6 from build 42,
+  and AnimatedSplash draws #F3F5F6 when nativeBuild() reads 42 or more and
+  #F7F6F1 below, since 40 and 41 take the same updates and still draw cream.
+  Deep mint on the new ground 4.78:1, navy 13.37:1.
+  A GAP IT WOULD HAVE OPENED, fixed first in `fb6a34de`: needs_native_build.py
+  had no `modules/` in its native paths, so a later Kotlin change there would
+  have read "OTA is enough". A test case fails on the old script.
+  CHECKED HERE: autolinking resolves the module; typecheck clean; 142 suites,
+  1608 tests; the new age-signals and splash tests each fail on six planted
+  mistakes. NOT CHECKABLE HERE: compiling the Kotlin (no Android SDK or Kotlin
+  compiler in the sandbox). Codemagic is the first compile; a failure at
+  `compileReleaseKotlin` naming trimio-age-signals is this module.
