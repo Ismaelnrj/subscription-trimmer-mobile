@@ -86,7 +86,7 @@ export default function RegisterScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-      <AuthHeader title={t("register.headline")} subtitle={t("register.lead")} />
+      <AuthHeader brand title={t("auth.headline")} subtitle={t("auth.lead")} />
 
       <View style={styles.form}>
         {isGoogleAuthConfigured() ? (
@@ -106,10 +106,12 @@ export default function RegisterScreen() {
           </>
         ) : null}
 
-        <View>
-          <Text style={styles.label}>{t("register.namePlaceholder")}</Text>
+        <View style={[styles.field, focus === "name" && styles.fieldFocused]}>
+          <MaterialCommunityIcons name="account-outline" size={20} color={focus === "name" ? c.text : c.textSecondary} style={styles.fieldIcon} />
           <TextInput
-            style={[styles.input, focus === "name" && styles.inputFocused]}
+            style={styles.fieldInput}
+            placeholder={t("register.namePlaceholder")}
+            placeholderTextColor={c.placeholder}
             autoComplete="name"
             accessibilityLabel={t("register.namePlaceholder")}
             returnKeyType="next"
@@ -121,19 +123,23 @@ export default function RegisterScreen() {
         </View>
 
         <View>
-          <Text style={styles.label}>{t("register.emailPlaceholder")}</Text>
-          <TextInput
-            style={[styles.input, focus === "email" && styles.inputFocused, emailError ? styles.inputError : null]}
-            autoComplete="email"
-            accessibilityLabel={t("register.emailPlaceholder")}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            returnKeyType="next"
-            value={email}
-            onChangeText={(t) => { setEmail(t); setEmailError(""); }}
-            onFocus={() => setFocus("email")}
-            onBlur={() => setFocus(null)}
-          />
+          <View style={[styles.field, focus === "email" && styles.fieldFocused, emailError ? styles.fieldError : null]}>
+            <MaterialCommunityIcons name="email-outline" size={20} color={focus === "email" ? c.text : c.textSecondary} style={styles.fieldIcon} />
+            <TextInput
+              style={styles.fieldInput}
+              placeholder={t("register.emailPlaceholder")}
+              placeholderTextColor={c.placeholder}
+              autoComplete="email"
+              accessibilityLabel={t("register.emailPlaceholder")}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              returnKeyType="next"
+              value={email}
+              onChangeText={(t) => { setEmail(t); setEmailError(""); }}
+              onFocus={() => setFocus("email")}
+              onBlur={() => setFocus(null)}
+            />
+          </View>
           {emailError ? (
             <View style={styles.errorBox}>
               <Text style={styles.errorText}>{emailError}</Text>
@@ -145,10 +151,12 @@ export default function RegisterScreen() {
         </View>
 
         <View>
-          <Text style={styles.label}>{t("register.passwordPlaceholder")}</Text>
-          <View style={[styles.passwordWrapper, focus === "password" && styles.inputFocused]}>
+          <View style={[styles.field, focus === "password" && styles.fieldFocused]}>
+            <MaterialCommunityIcons name="lock-outline" size={20} color={focus === "password" ? c.text : c.textSecondary} style={styles.fieldIcon} />
             <TextInput
-              style={styles.passwordInput}
+              style={styles.fieldInput}
+              placeholder={t("register.passwordPlaceholder")}
+              placeholderTextColor={c.placeholder}
               autoComplete="new-password"
               accessibilityLabel={t("register.passwordPlaceholder")}
               secureTextEntry={!showPassword}
@@ -160,19 +168,23 @@ export default function RegisterScreen() {
               onBlur={() => setFocus(null)}
             />
             <TouchableOpacity style={styles.eyeButton} accessibilityRole="button" accessibilityLabel={t(showPassword ? "common.a11yHidePassword" : "common.a11yShowPassword")} onPress={() => setShowPassword(!showPassword)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-              <MaterialCommunityIcons name={showPassword ? "eye-off" : "eye"} size={20} color={c.textSecondary} />
+              <MaterialCommunityIcons name={showPassword ? "eye-off-outline" : "eye-outline"} size={20} color={c.textSecondary} />
             </TouchableOpacity>
           </View>
           <PasswordStrengthMeter password={password} />
         </View>
 
         <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading} accessibilityRole="button">
-          {loading ? <ActivityIndicator color={c.bg} /> : <Text style={styles.buttonText}>{t("register.createAccount")}</Text>}
+          {loading ? <ActivityIndicator color={c.bg} /> : (
+            <>
+              <Text style={styles.buttonText}>{t("register.createAccount")}</Text>
+              <MaterialCommunityIcons name="arrow-right" size={22} color={c.bg} style={styles.buttonArrow} />
+            </>
+          )}
         </TouchableOpacity>
 
       </View>
 
-      <View style={styles.spacer} />
       <AuthFooter>
         <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
           <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
@@ -186,42 +198,42 @@ export default function RegisterScreen() {
 function makeStyles(c: AppColors) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
-    scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.xxl + space.l, paddingBottom: space.l },
-    form: { gap: space.l },
-    label: { ...typeScale.label, color: c.textSecondary, marginBottom: space.s },
-    input: {
-      ...typeScale.body, backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border,
-      borderRadius: radius.l, minHeight: 56, paddingHorizontal: space.l, color: c.text,
-    },
-    inputFocused: { borderColor: c.text },
-    passwordWrapper: {
+    scroll: { flexGrow: 1, paddingHorizontal: space.xl, paddingTop: space.l, paddingBottom: space.l },
+    form: { gap: space.m },
+    // An icon that stays while somebody types, the placeholder until they do,
+    // and the accessibility label throughout: the same field as sign in.
+    field: {
       flexDirection: "row", alignItems: "center", minHeight: 56,
       backgroundColor: c.inputBg, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
     },
-    passwordInput: { ...typeScale.body, flex: 1, minHeight: 56, paddingHorizontal: space.l, color: c.text },
+    fieldFocused: { borderColor: c.text },
+    fieldIcon: { marginLeft: space.l },
+    // minWidth 0 lets the field give way to the eye button on a narrow phone.
+    fieldInput: { ...typeScale.body, flex: 1, minWidth: 0, minHeight: 56, paddingHorizontal: space.m, color: c.text },
     eyeButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     button: {
       backgroundColor: c.text, borderRadius: radius.l, minHeight: 56,
       alignItems: "center", justifyContent: "center",
     },
-    buttonText: { ...typeScale.bodyStrong, color: c.bg },
+    buttonText: { ...typeScale.heading, color: c.bg },
+    buttonArrow: { position: "absolute", right: space.l + space.xs },
     divider: { flexDirection: "row", alignItems: "center" },
     dividerLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: c.border },
     dividerText: { ...typeScale.caption, color: c.textSecondary, marginHorizontal: space.m },
     googleButton: {
-      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.s,
-      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.border, borderRadius: radius.l,
+      flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.m,
+      minHeight: 56, backgroundColor: c.card, borderWidth: 1, borderColor: c.cardBorder, borderRadius: radius.l,
+      shadowColor: "#000000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 3,
     },
-    googleButtonText: { ...typeScale.bodyStrong, color: c.text },
-    inputError: { borderColor: c.danger },
+    googleButtonText: { ...typeScale.heading, color: c.text },
+    fieldError: { borderColor: c.danger },
     errorBox: {
       backgroundColor: c.dangerLight, borderRadius: radius.m, padding: space.m, marginTop: space.s,
       flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     },
     errorText: { ...typeScale.caption, color: c.danger, flex: 1 },
     errorLink: { ...typeScale.label, color: c.text, marginLeft: space.s },
-    spacer: { flexGrow: 1, minHeight: space.xxl },
-    link: { alignItems: "center", justifyContent: "center", minHeight: 48 },
+    link: { alignItems: "center", justifyContent: "center", minHeight: 44 },
     linkText: { ...typeScale.body, color: c.textSecondary },
     linkBold: { fontFamily: "Montserrat-SemiBold", color: c.text },
   });

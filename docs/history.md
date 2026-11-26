@@ -7153,3 +7153,25 @@ last one left off without needing a recap typed out.
   the white card, which is Google's own mark on Google's own white button.
   The web preview loads the 1x file whatever the density; a phone takes 3x.
   OTA: assets and JavaScript only.
+- THE SIGN IN FLOW, THIRD PASS, 2026-11-26. The owner, reading the second pass
+  on a phone: "Must be premium feeling! This look really bad and generic!" The
+  cause was the second pass itself: it kept the mock's structure and left out
+  its colour (the deep teal corner shapes, the deep waves) as "AI tells", so
+  what reached the phone was grey, white boxes and navy, with pale waves that
+  fell below the fold. TASTE IS THE OWNER'S: from a mock, keep everything a
+  measured rule does not forbid. Now taken from the mock: deep corner art
+  (a ringed navy to teal disc with a mint lens, from `tools/make-app-marks.py`,
+  ending above the headline so no text ever sits on it), deep waves fully
+  visible at 393 x 780 (the owner's phone, measured), a larger lockup (new
+  `type.brand`), the "Subscription tracker" / "Abo Tracker" label with an ink
+  rule, the tagline on sign in too, icon fields, a raised Google button, an
+  arrow on the main button, "New to Trimio? Create account", and a feature row.
+  STILL LEFT OUT, each for a rule rather than taste: green text and green icons
+  (mint only for good news, approved 2026-11-12, test enforced; mint lives in
+  the art, as on the launch screen), and "Your data stays private" (not true
+  of a list kept on a server; the row says "No bank login", which is, and
+  `__tests__/auth-art.test.js` keeps a privacy promise out of it). Two web
+  preview traps met: an Image with width 100% and aspectRatio drew at the
+  file's own height (240 dp), so the waves now get an explicit height; and a
+  text input would not shrink below its natural width, so the fields carry
+  `minWidth: 0`. JavaScript, locales and assets only: OTA.

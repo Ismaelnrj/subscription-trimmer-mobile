@@ -187,6 +187,8 @@ export const type = {
   display: { fontFamily: "Montserrat-SemiBold", fontSize: 40, lineHeight: 48, letterSpacing: -1 },
   /** The headline of a screen with no money figure: the sign in flow. */
   hero: { fontFamily: "Montserrat-Bold", fontSize: 34, lineHeight: 40, letterSpacing: -0.8 },
+  /** The name beside the mark in the sign in flow's lockup. */
+  brand: { fontFamily: "Montserrat-Bold", fontSize: 26, lineHeight: 32, letterSpacing: -0.6 },
   title: { fontFamily: "Montserrat-SemiBold", fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
   heading: { fontFamily: "Montserrat-SemiBold", fontSize: 16, lineHeight: 22 },
   body: { fontFamily: "Montserrat-Regular", fontSize: 15, lineHeight: 21 },

@@ -144,7 +144,6 @@ export default function ForgotPasswordScreen() {
         </>
       )}
 
-      <View style={styles.spacer} />
       <AuthFooter>
         <TouchableOpacity style={styles.backToLogin} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.replace("/login")}>
           <Text style={styles.backToLoginText}>{t("forgotPassword.backToSignIn")}</Text>
@@ -187,7 +186,6 @@ function makeStyles(c: AppColors) {
     buttonText: { ...typeScale.bodyStrong, color: c.bg },
     resend: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     resendText: { ...typeScale.label, color: c.text },
-    spacer: { flexGrow: 1, minHeight: space.xxl },
     backToLogin: { alignItems: "center", justifyContent: "center", minHeight: 48 },
     backToLoginText: { ...typeScale.label, color: c.textSecondary },
   });

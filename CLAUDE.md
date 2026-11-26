@@ -702,6 +702,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
 - `.gitignore`'s android/ and ios/ stay anchored to the root, or a local module's
   native code is silently left out. [grep: THE IGNORES ARE ANCHORED TO THE ROOT]
 - A completeness claim ("every screen", "nothing else") is checked by a scan. [grep: a completeness claim is the single most dangerous kind of entry]
+- From an owner's mock, keep every part no measured rule forbids; taste is
+  theirs. [grep: TASTE IS THE OWNER'S]
 
 ### Accounts, dashboards and the repository
 

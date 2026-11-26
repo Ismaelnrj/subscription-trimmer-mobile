@@ -323,25 +323,29 @@
     "next": "Next",
     "getStarted": "Get started"
   },
+  "auth": {
+    "eyebrow": "Subscription tracker",
+    "headline": "Know before you pay.",
+    "lead": "Track every subscription and get a reminder before each one renews.",
+    "featureReminders": "Reminders",
+    "featureGuides": "Cancel guides",
+    "featureNoBank": "No bank login"
+  },
   "login": {
-    "headline": "Welcome back",
-    "subtitle": "Sign in to manage your subscriptions",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",
     "signIn": "Sign in",
     "continueGoogle": "Continue with Google",
     "forgotPassword": "Forgot your password?",
-    "noAccount": "Don't have an account?",
-    "signUp": "Sign up",
+    "noAccount": "New to Trimio?",
+    "signUp": "Create account",
     "or": "or sign in with email",
     "errEmptyFields": "Please enter your email and password.",
     "errLoginFailed": "Something went wrong.",
     "errGoogleFailed": "Something went wrong."
   },
   "register": {
-    "headline": "Know before you pay.",
     "subtitle": "Create your account",
-    "lead": "Track every subscription and get a reminder before each one renews.",
     "namePlaceholder": "Name (optional)",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",
