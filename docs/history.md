@@ -7105,3 +7105,13 @@ last one left off without needing a recap typed out.
   `2bd1f919` (the tagline fix, not the redesign); the owner's `git rev-parse`
   was not reported. The tell: the status bar over a tab screen is white
   (the card) with the redesign, cream without it.
+- THE SIGN IN FLOW, SECOND PASS, 2026-11-26, from a generated mock the owner sent
+  ("Something like this, maybe, something more premium!"). Taken: the tagline as
+  the sign up headline (onboarding sends new people to sign up, so that is where
+  it is read), a bolder `type.hero` (Bold 34/40), Google first with "or sign in
+  with email", radius 16, and the launch screen's waves at the foot. LEFT OUT ON
+  PURPOSE: the eyebrow in spaced capitals and the button arrow (gated tells),
+  green text (mint is for good news only), icons inside labelled fields, a row
+  of three feature icons, "Your data stays private", and the colour Google G
+  (Google's asset is not reachable from a sandbox; the owner can download it
+  from Google's sign in branding page if wanted).
