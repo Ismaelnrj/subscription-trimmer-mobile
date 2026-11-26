@@ -7070,3 +7070,14 @@ last one left off without needing a recap typed out.
   an "AI Influencer Restyle" of 89.5 on 2026-11-25 that this session did not
   make. About 110 credits make all three after the next grant (expected around
   2026-12-14). The Prime yearly price needs two sources on the day.
+- THE SIGN IN FLOW, PREMIUM, 2026-11-26, at the owner's request with a screenshot
+  of the login screen ("nice, but could be better, improve it. This should look
+  premium as well!"). Login, register and forgot password share `AuthHeader`: the
+  mark beside the name as a lockup, a `type.hero` headline, a quiet line; labels
+  above fields, an ink edge on focus, 56dp fields and buttons, the forgot link
+  under the password, the sign up switch pinned to the foot, keyboard safe. The
+  in-app marks come from `tools/make-app-marks.py` (light and dark), never drawn.
+  The same screenshot showed a CREAM STATUS BAR over the grey screen: nothing set
+  the status bar, so Android drew the build's own colour, in dark mode too. The
+  root layout now sets it from the theme and the route (`2a35ef7b`), all builds.
+  Both ride the next eas update, with the tagline fix.
