@@ -7228,3 +7228,16 @@ last one left off without needing a recap typed out.
   2026-12-08 READ of the listing text pasted 2026-11-10: screenshots changed
   inside that 28 day window would make it unreadable, at a traffic where it is
   only a direction anyway.
+- THE WHOLE PHONE IN THE PLAY SCREENSHOTS, 2026-11-27. The owner, viewing the
+  second set on a phone: "doesn't look full size, they are cut", then "should
+  be the whole phone without leaving anything out". Two causes. The overview
+  sent first joined all twelve frames into one wide image, which a phone viewer
+  shrinks and crops, so the frames were then sent one by one. And each frame ran
+  the phone off the bottom edge on purpose, to show the screen larger; that read
+  as cut. Now the phone stands whole in every frame (620 x 1380 px, gesture bar
+  included) with the app's complete screen inside, tab bar included, and the
+  reminder notification sits inside the phone over the status bar and the app
+  bar only, as Android shows it, leaving the greeting and the total visible.
+  `compose.js` refuses a raw screen that is not 1170 x 2532 (it would crop or
+  stretch) and steps a headline down from 92 px until it fits above the phone.
+  The cost, said to the owner: the app's own text is smaller in the store.

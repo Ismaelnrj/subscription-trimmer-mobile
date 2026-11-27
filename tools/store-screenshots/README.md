@@ -7,7 +7,9 @@ generated. The recipe for that preview is in docs/history.md ("A SANDBOX CAN
 NOW INSTALL, TYPECHECK, RUN JEST AND SEE THE APP"). First set 2026-11-12; the
 second set, 2026-11-26, is in the look the app now opens with (the navy stage,
 its rings and the mint lens), with larger type, a larger phone and the real
-reminder notification on the first frame.
+reminder notification on the first frame. The WHOLE phone and the app's whole
+screen, tab bar included, at the owner's word on 2026-11-27: a phone running
+off the bottom of the frame read as cut off.
 
 1. `demo-accounts.js <lang> <token file>`: one account per language through
    the real API, catalogue prices that carry a `verified` date only (EUR for
@@ -24,8 +26,8 @@ reminder notification on the first frame.
    shows the "notifications are off" warning, which a phone with them on does
    not.
 3. `compose.js <lang> <work dir>`: captions, the notification and its wording
-   from `captions.json`, a plain Android frame (punch hole camera, never an
-   iPhone notch), Montserrat from `assets/fonts`, the stage and lens from
+   from `captions.json`, a plain Android phone shown whole (punch hole camera,
+   gesture bar, never an iPhone notch), sized to the room under the caption, Montserrat from `assets/fonts`, the stage and lens from
    `assets/brand`. The status bar takes the top colour of each raw screen. The
    notification's text is the app's own (`notifications.reminders.renewTitle`
    and `renewBody`), its date the shot day plus three, in the app's format.
