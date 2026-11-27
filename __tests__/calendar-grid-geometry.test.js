@@ -92,3 +92,40 @@ describe("every day cell is the same height", () => {
     expect(before.empty).toBeLessThan(48);           // and why it mattered
   });
 });
+
+/* EVERY DATE UNDER ITS OWN WEEKDAY, 2026-11-27. The owner's phone showed six
+   days a row: the cells were 100 / 7 percent wide in one wrapping row, Android
+   rounded seven of them a pixel past the row's width, and the seventh wrapped.
+   Saturday stood empty and 27 November, a Friday, sat under Tuesday. The web
+   preview does not round that way, so nothing caught it. Rows are now built
+   explicitly, seven flex cells each, which cannot wrap on any screen. */
+describe("the month is laid out in rows of seven", () => {
+  it("builds each week as its own row, so no day can wrap into the next", () => {
+    expect(CODE).toMatch(/weeks\.map\(\(week\) => \(\s*<View key=\{week\[0\]\.toISOString\(\)\} style=\{styles\.week\}>/);
+    expect(CODE).toMatch(/week\.map\(\(day\) =>/);
+    expect(CODE).not.toMatch(/days\.map\(\(day\)/);
+  });
+
+  it("gives every day an equal share of its row, never a percentage width", () => {
+    expect(block("cell")).toMatch(/flex: 1/);
+    expect(block("cell")).not.toMatch(/width:/);
+    expect(block("grid")).not.toMatch(/flexWrap/);
+    expect(block("week")).toMatch(/flexDirection: "row"/);
+  });
+
+  it("every month splits into whole weeks, Sunday or Monday first", () => {
+    const { startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } = require("date-fns");
+    for (const weekStartsOn of [0, 1]) {
+      for (let m = 0; m < 24; m++) {
+        const month = new Date(2026, m, 1);
+        const days = eachDayOfInterval({
+          start: startOfWeek(startOfMonth(month), { weekStartsOn }),
+          end: endOfWeek(endOfMonth(month), { weekStartsOn }),
+        });
+        expect([month.toDateString(), weekStartsOn, days.length % 7]).toEqual([month.toDateString(), weekStartsOn, 0]);
+        // The first cell of every row is the week's first day.
+        for (let i = 0; i < days.length; i += 7) expect(days[i].getDay()).toBe(weekStartsOn);
+      }
+    }
+  });
+});

@@ -87,6 +87,8 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
   const gridStart = startOfWeek(startOfMonth(month), weekOpts);
   const gridEnd = endOfWeek(endOfMonth(month), weekOpts);
   const days = eachDayOfInterval({ start: gridStart, end: gridEnd });
+  // Whole weeks, start to end, so always a multiple of seven.
+  const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7));
 
   return (
     <View style={styles.container}>
@@ -116,90 +118,100 @@ export function MonthCalendarGrid({ month, markedDates, renewalCounts, dayTotals
         ))}
       </View>
 
+      {/* ROWS OF SEVEN, built explicitly, each day an equal share of its row.
+          The days used to sit in one wrapping row at 100 / 7 percent each, and
+          on the owner's phone (2026-11-27) Android's rounding made seven of
+          them a pixel wider than the row: the seventh wrapped, every row held
+          six, and every date stood under the wrong weekday. A row of seven
+          flex cells cannot wrap, on any screen. */}
       <View style={styles.grid}>
-        {days.map((day) => {
-          const inMonth = isSameMonth(day, month);
-          const selected = selectedDate != null && isSameDay(day, selectedDate);
-          const dotColors = markedDates.get(dayKey(day)) ?? [];
-          // Falls back to the colour count only when no real count is supplied,
-          // so the label degrades to the old behaviour instead of saying zero.
-          const renewals = renewalCounts?.get(dayKey(day)) ?? dotColors.length;
-          const total = dayTotals?.get(dayKey(day)) ?? 0;
-          const today = isToday(day);
-          // Three dots is what fits. Silently dropping the fourth made a heavy
-          // day look identical to a light one, so the surplus is counted.
-          const extraDots = Math.max(0, dotColors.length - 3);
+        {weeks.map((week) => (
+          <View key={week[0].toISOString()} style={styles.week}>
+            {week.map((day) => {
+              const inMonth = isSameMonth(day, month);
+              const selected = selectedDate != null && isSameDay(day, selectedDate);
+              const dotColors = markedDates.get(dayKey(day)) ?? [];
+              // Falls back to the colour count only when no real count is supplied,
+              // so the label degrades to the old behaviour instead of saying zero.
+              const renewals = renewalCounts?.get(dayKey(day)) ?? dotColors.length;
+              const total = dayTotals?.get(dayKey(day)) ?? 0;
+              const today = isToday(day);
+              // Three dots is what fits. Silently dropping the fourth made a heavy
+              // day look identical to a light one, so the surplus is counted.
+              const extraDots = Math.max(0, dotColors.length - 3);
 
-          const circle = (
-            <View style={[styles.dayCircle, selected && styles.dayCircleSelected, today && !selected && styles.dayCircleToday]}>
-              <Text style={[
-                styles.dayText,
-                !inMonth && styles.dayTextMuted,
-                selected && styles.dayTextSelected,
-              ]}>
-                {format(day, "d")}
-              </Text>
-            </View>
-          );
-
-          return (
-            <TouchableOpacity
-              key={day.toISOString()}
-              style={styles.cell}
-              onPress={() => onSelectDate(day)}
-              disabled={!inMonth}
-              accessibilityRole="button"
-              accessibilityState={{ selected, disabled: !inMonth }}
-              accessibilityLabel={
-                renewals > 0
-                  /* The amount belongs in the label too. A sighted reader gets
-                     it from the number under the dots; without it here, the one
-                     person relying on the label is told a day is busy and not
-                     what it costs, which is the half that matters. */
-                  ? t(total > 0 && formatDayTotal
-                        ? "calendar.a11yDayRenewalsTotal"
-                        : "calendar.a11yDayRenewals", {
-                      date: fmtD(day, "EEEE, d MMMM yyyy"),
-                      count: renewals,
-                      total: formatDayTotal ? formatDayTotal(total) : "",
-                    })
-                  : selected
-                    ? t("calendar.a11yDaySelected", { date: fmtD(day, "EEEE, d MMMM yyyy") })
-                    : t("calendar.a11yDay", { date: fmtD(day, "EEEE, d MMMM yyyy") })
-              }
-            >
-              {today && !selected && !reduceMotion ? <TodayPulse>{circle}</TodayPulse> : circle}
-              {/* The dots and the amount live in a slot that is ALWAYS there,
-                  even on a day with neither. Rendering them conditionally made
-                  a cell 23px taller when it had renewals, so week rows changed
-                  height according to their contents and the grid visibly
-                  wobbled from one row to the next.
-
-                  Reserving it also fixes something less visible and worse: an
-                  empty cell was 4 + 32 + 4 = 40dp tall, under Android's 48dp
-                  minimum touch target, while a busy one cleared it at 63dp. So
-                  the days that were hardest to hit were the empty ones, which
-                  are exactly the days somebody taps to ask "is anything due
-                  here?". Every cell is now 63dp. */}
-              <View style={styles.dayMeta}>
-                <View style={styles.dotRow}>
-                  {dotColors.slice(0, 3).map((color, i) => (
-                    <View key={i} style={[styles.dot, { backgroundColor: color }]} />
-                  ))}
-                  {extraDots > 0 && <Text style={styles.dotOverflow}>+{extraDots}</Text>}
-                </View>
-                {total > 0 && formatDayTotal ? (
-                  <Text
-                    style={styles.dayTotal}
-                    numberOfLines={1}
-                  >
-                    {formatDayTotal(total)}
+              const circle = (
+                <View style={[styles.dayCircle, selected && styles.dayCircleSelected, today && !selected && styles.dayCircleToday]}>
+                  <Text style={[
+                    styles.dayText,
+                    !inMonth && styles.dayTextMuted,
+                    selected && styles.dayTextSelected,
+                  ]}>
+                    {format(day, "d")}
                   </Text>
-                ) : null}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                </View>
+              );
+
+              return (
+                <TouchableOpacity
+                  key={day.toISOString()}
+                  style={styles.cell}
+                  onPress={() => onSelectDate(day)}
+                  disabled={!inMonth}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected, disabled: !inMonth }}
+                  accessibilityLabel={
+                    renewals > 0
+                      /* The amount belongs in the label too. A sighted reader gets
+                         it from the number under the dots; without it here, the one
+                         person relying on the label is told a day is busy and not
+                         what it costs, which is the half that matters. */
+                      ? t(total > 0 && formatDayTotal
+                            ? "calendar.a11yDayRenewalsTotal"
+                            : "calendar.a11yDayRenewals", {
+                          date: fmtD(day, "EEEE, d MMMM yyyy"),
+                          count: renewals,
+                          total: formatDayTotal ? formatDayTotal(total) : "",
+                        })
+                      : selected
+                        ? t("calendar.a11yDaySelected", { date: fmtD(day, "EEEE, d MMMM yyyy") })
+                        : t("calendar.a11yDay", { date: fmtD(day, "EEEE, d MMMM yyyy") })
+                  }
+                >
+                  {today && !selected && !reduceMotion ? <TodayPulse>{circle}</TodayPulse> : circle}
+                  {/* The dots and the amount live in a slot that is ALWAYS there,
+                      even on a day with neither. Rendering them conditionally made
+                      a cell 23px taller when it had renewals, so week rows changed
+                      height according to their contents and the grid visibly
+                      wobbled from one row to the next.
+
+                      Reserving it also fixes something less visible and worse: an
+                      empty cell was 4 + 32 + 4 = 40dp tall, under Android's 48dp
+                      minimum touch target, while a busy one cleared it at 63dp. So
+                      the days that were hardest to hit were the empty ones, which
+                      are exactly the days somebody taps to ask "is anything due
+                      here?". Every cell is now 63dp. */}
+                  <View style={styles.dayMeta}>
+                    <View style={styles.dotRow}>
+                      {dotColors.slice(0, 3).map((color, i) => (
+                        <View key={i} style={[styles.dot, { backgroundColor: color }]} />
+                      ))}
+                      {extraDots > 0 && <Text style={styles.dotOverflow}>+{extraDots}</Text>}
+                    </View>
+                    {total > 0 && formatDayTotal ? (
+                      <Text
+                        style={styles.dayTotal}
+                        numberOfLines={1}
+                      >
+                        {formatDayTotal(total)}
+                      </Text>
+                    ) : null}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
       </View>
 
       {/* WHAT THE DOTS MEAN, which nothing said until now. The grid draws up to
@@ -254,8 +266,9 @@ function makeStyles(c: AppColors) {
     monthLabel: { ...typeScale.heading, color: c.text },
     weekdayRow: { flexDirection: "row" },
     weekdayLabel: { flex: 1, textAlign: "center", fontSize: 12, fontFamily: "Montserrat-Medium", color: c.textSecondary, marginBottom: space.xs },
-    grid: { flexDirection: "row", flexWrap: "wrap" },
-    cell: { width: `${100 / 7}%`, alignItems: "center", paddingVertical: 4 },
+    grid: { flexDirection: "column" },
+    week: { flexDirection: "row" },
+    cell: { flex: 1, alignItems: "center", paddingVertical: 4 },
     dayCircle: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
     /* Chosen is ink, the app wide rule: white on dark primary is 4.02:1. */
     dayCircleSelected: { backgroundColor: c.text },
