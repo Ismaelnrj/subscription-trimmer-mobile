@@ -532,9 +532,10 @@ Keep this short and current. As of 2026-11-26.
   01a21907-7a5c-7331-975c-005e73f06f46`, read off the owner's build 42 phone
   screenshot 2026-11-26 (1.0.5, runtime 1.0.1, "Age signals: not required
   here"). It shows the Brand panel sign in, which exists only from `a3ae08c6`,
-  and nothing later was on master: that is its baseline. OWED TO PHONES: the
-  password eye fix, `146c3615` (OTA). The next confirmation must show a
-  different id and a later time.
+  and nothing later was on master: that is its baseline. OWED TO PHONES (OTA):
+  the password eye fix and the update popup's snooze. Then the owner may set
+  `MIN_ANDROID_VERSION_CODE=42` in Railway to switch the popup on. The next
+  confirmation must show a different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age

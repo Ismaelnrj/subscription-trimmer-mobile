@@ -644,9 +644,9 @@
     "errInvalidCode": "Invalid or expired code."
   },
   "updateAvailable": {
-    "title": "Update Available",
-    "message": "A new version of Trimio is ready with improvements and fixes. Please update to keep using the app smoothly.",
-    "updateNow": "Update Now",
+    "title": "Update Trimio",
+    "message": "A new version is on Google Play with the latest improvements and fixes.",
+    "updateNow": "Update",
     "later": "Later"
   },
   "helpSupport": {

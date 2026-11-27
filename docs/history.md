@@ -7241,3 +7241,22 @@ last one left off without needing a recap typed out.
   `compose.js` refuses a raw screen that is not 1170 x 2532 (it would crop or
   stretch) and steps a headline down from 92 px until it fits above the phone.
   The cost, said to the owner: the app's own text is smaller in the store.
+- THE UPDATE POPUP WAS ALREADY BUILT AND SWITCHED OFF, found 2026-11-27 when the
+  owner asked for one ("There should be an announcement to the clients in order
+  to know that there is an update"). `components/UpdateAvailableModal.tsx` has
+  asked the server (`appVersion.check`) on every launch since before build 40,
+  and opens Google Play; the server answers `MIN_ANDROID_VERSION_CODE` from
+  Railway, which was never set, so 0 and never shown. Made fit to switch on:
+  "Later" only closed it, so an older phone would have been asked at EVERY
+  launch; now "Later" and Android's back button hold three days per build
+  number (`lib/update-prompt.ts`, `__tests__/update-prompt.test.js`, negative
+  tested), an unknown build is never asked, and the copy reads "Update Trimio:
+  A new version is on Google Play with the latest improvements and fixes."
+  instead of a warning that the app might stop running smoothly. SWITCHING IT ON
+  is the owner's: Railway variable `MIN_ANDROID_VERSION_CODE=42`, after this
+  reaches phones by `eas update`. Recommended now, for one concrete reason: the
+  age signals module is only in build 42, and the age rules start 2027-01-01.
+  NOT BUILT, said to the owner: an "update ready, reopen the app" notice for
+  over the air updates (they apply on the next cold start by themselves, and a
+  "Restart now" button needs `Updates.reloadAsync`, banned since the SIGBUS),
+  and a "what's new" card (possible, needs the owner's words for each one).

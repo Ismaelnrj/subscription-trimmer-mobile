@@ -4,6 +4,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import apiClient from "../lib/api";
 import { nativeBuild } from "../lib/app-build";
+import { readSnooze, shouldPromptUpdate, snoozeUpdatePrompt } from "../lib/update-prompt";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 export function UpdateAvailableModal() {
@@ -11,18 +12,23 @@ export function UpdateAvailableModal() {
   const c = useTheme();
   const styles = makeStyles(c);
   const [visible, setVisible] = useState(false);
+  const [minimum, setMinimum] = useState(0);
   const [updateUrl, setUpdateUrl] = useState("https://play.google.com/store/apps/details?id=com.trimio.app");
 
   useEffect(() => {
     let cancelled = false;
     apiClient
       .get("/trpc/appVersion.check")
-      .then(({ data }) => {
+      .then(async ({ data }) => {
+        if (cancelled) return;
+        const min = Number(data?.minVersionCode);
+        const snooze = await readSnooze();
         if (cancelled) return;
         // The INSTALLED build, not the update's app.json: see lib/app-build.ts.
-        const currentVersionCode = nativeBuild().versionCode ?? 0;
-        if (data?.minVersionCode > currentVersionCode) {
+        // "Later" holds for a few days per build number: lib/update-prompt.ts.
+        if (shouldPromptUpdate(nativeBuild().versionCode, min, snooze, Date.now())) {
           if (data.updateUrl) setUpdateUrl(data.updateUrl);
+          setMinimum(min);
           setVisible(true);
         }
       })
@@ -35,8 +41,13 @@ export function UpdateAvailableModal() {
     };
   }, []);
 
+  const later = () => {
+    setVisible(false);
+    snoozeUpdatePrompt(minimum);
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={later}>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <MaterialCommunityIcons name="cellphone-arrow-down" size={40} color={c.text} />
@@ -45,7 +56,7 @@ export function UpdateAvailableModal() {
           <TouchableOpacity style={styles.updateButton} onPress={() => Linking.openURL(updateUrl)}>
             <Text style={styles.updateButtonText}>{t("updateAvailable.updateNow")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.laterButton} onPress={() => setVisible(false)}>
+          <TouchableOpacity style={styles.laterButton} onPress={later}>
             <Text style={styles.laterButtonText}>{t("updateAvailable.later")}</Text>
           </TouchableOpacity>
         </View>

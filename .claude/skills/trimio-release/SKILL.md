@@ -198,6 +198,13 @@ setting it, so changes to it are policy-relevant.
 5. Upload to Play with release notes (below), note the versionCode is now spent
 6. `eas update --channel production` afterwards only if JS changed since
 7. Confirm on a real device through the Build Info panel
+8. Once Play shows the build as live, ask phones still on older builds to update:
+   the owner sets `MIN_ANDROID_VERSION_CODE` in Railway to the new versionCode.
+   `components/UpdateAvailableModal.tsx` then asks every older installed build
+   ("Update Trimio", opens Google Play); "Later" holds three days per build
+   (`lib/update-prompt.ts`). Never before Play says live: a phone told to update
+   to a version Play has not given it yet finds nothing. Changing the variable
+   restarts the backend, so say so when handing it over.
 
 ## Release notes for a Play upload
 
