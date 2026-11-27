@@ -7280,3 +7280,19 @@ last one left off without needing a recap typed out.
   has none. `__tests__/whats-new.test.js` (negative tested on the old popup).
   TO ANNOUNCE THE NEXT THING: new id and date in `lib/whats-new.ts`, its lines in
   both locale files. JavaScript and locales only: OTA.
+- THE CALENDAR PUT EVERY DATE UNDER THE WRONG WEEKDAY, 2026-11-27, the owner's
+  phone screenshot ("doesn't look correct, and Saturday doesn't show anything").
+  `MonthCalendarGrid` laid the month out as ONE wrapping row of cells
+  `${100 / 7}%` wide. Android rounds each cell to whole pixels, seven of them
+  came out a pixel wider than the row, the seventh wrapped, and every row held
+  six days: the Saturday column stood empty and 27 November, a Friday, sat under
+  Tuesday. The web preview does not round that way, which is why every
+  screenshot from it looked right, the Play screenshots included. Now each week
+  is its own row of seven `flex: 1` cells, which cannot wrap on any screen.
+  `calendar-grid-geometry.test.js` pins the rows and checks 24 months split into
+  whole weeks for both week starts (negative tested on the old grid). OTA.
+- WHAT'S NEW SHOWED WITH NO INSTALL DATE, 2026-11-27, my own fix of my own code,
+  caught by the web preview: `getInstallationTimeAsync` came back empty there,
+  and `new Date(null)` is 1970, so the card counted an unknown install as an old
+  one. A phone does report the date, but unknown now stays unknown (null, the
+  epoch or a failure); four cases in `whats-new.test.js`, negative tested.

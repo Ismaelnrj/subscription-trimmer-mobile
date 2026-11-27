@@ -88,3 +88,26 @@ describe("the popup", () => {
     expect(src).toMatch(/onRequestClose=\{gotIt\}/);
   });
 });
+
+/* Caught 2026-11-27 in the web preview, where the install time comes back
+   empty: new Date(null) is 1970, so the card showed to a "phone" whose install
+   date nobody knew. Unknown has to stay unknown. */
+describe("installedAt", () => {
+  const load = (impl) => {
+    jest.resetModules();
+    jest.doMock("expo-application", () => ({ getInstallationTimeAsync: impl }));
+    return require("../lib/whats-new").installedAt;
+  };
+  afterEach(() => jest.dontMock("expo-application"));
+
+  test("reads Android's install date", async () => {
+    expect(await load(async () => new Date(Date.UTC(2026, 8, 1)))()).toBe(Date.UTC(2026, 8, 1));
+  });
+
+  test("nothing, the epoch or a failure is unknown, never 'long ago'", async () => {
+    expect(await load(async () => null)()).toBeNull();
+    expect(await load(async () => undefined)()).toBeNull();
+    expect(await load(async () => new Date(0))()).toBeNull();
+    expect(await load(async () => { throw new Error("unavailable"); })()).toBeNull();
+  });
+});

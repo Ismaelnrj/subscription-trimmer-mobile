@@ -86,8 +86,11 @@ export async function installedAt(): Promise<number | null> {
   try {
     const Application = require("expo-application");
     const d = await Application.getInstallationTimeAsync();
+    // Nothing back is unknown, never 1970: new Date(null) is the epoch, which
+    // would make every phone look like it had Trimio before any announcement.
+    if (d == null) return null;
     const t = new Date(d).getTime();
-    return Number.isFinite(t) ? t : null;
+    return Number.isFinite(t) && t > 0 ? t : null;
   } catch {
     return null;
   }
