@@ -285,7 +285,7 @@ export default function RootLayout() {
             onFinish={() => setShowAnimatedSplash(false)}
           />
         ) : null}
-        <UpdateAvailableModal />
+        <UpdateAvailableModal ready={!showAnimatedSplash} />
       </QueryClientProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>

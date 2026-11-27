@@ -7260,3 +7260,23 @@ last one left off without needing a recap typed out.
   over the air updates (they apply on the next cold start by themselves, and a
   "Restart now" button needs `Updates.reloadAsync`, banned since the SIGBUS),
   and a "what's new" card (possible, needs the owner's words for each one).
+- WHAT'S NEW, 2026-11-27, at the owner's word ("Yes, make the what's new popup
+  too"). `lib/whats-new.ts` holds one announcement (id, date, lines whose words
+  live in both locale files under `whatsNew`); `UpdateAvailableModal` shows it
+  once, as a card with an icon per line and "Got it". THE RULES THAT KEEP IT
+  FROM BEING A NAG: only signed in, on the main screens, after the launch screen
+  has gone; never in a launch where the Play prompt asked; never twice (the
+  seen id is stored, and a phone that cannot store it is not shown it at all);
+  never to a phone INSTALLED on or after the announcement date, read from
+  Android itself (`expo-application` `getInstallationTimeAsync`, in build 40),
+  since the server does not send a sign up date; not after 45 days. Both
+  notices now also wait for the launch screen (`ready`), where the Play prompt
+  used to open over it. THE FIRST ANNOUNCEMENT, every line checked against the
+  app's own strings: a fresh look from the launch screen to sign in; mark a
+  subscription as cancelled and see what you keep each year; no connection, the
+  list still opens and new subscriptions are added once back online. Seen in the
+  web preview in English, German and dark mode, and gone after "Got it" and a
+  reload; the preview copy had to pretend an old install date, since a browser
+  has none. `__tests__/whats-new.test.js` (negative tested on the old popup).
+  TO ANNOUNCE THE NEXT THING: new id and date in `lib/whats-new.ts`, its lines in
+  both locale files. JavaScript and locales only: OTA.

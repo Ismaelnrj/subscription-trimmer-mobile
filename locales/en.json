@@ -649,6 +649,13 @@
     "updateNow": "Update",
     "later": "Later"
   },
+  "whatsNew": {
+    "title": "What's new in Trimio",
+    "look": "A fresh look, from the launch screen to sign in",
+    "keep": "Mark a subscription as cancelled and see what you keep each year",
+    "offline": "No connection? Your list still opens, and new subscriptions are added once you are back online",
+    "gotIt": "Got it"
+  },
   "helpSupport": {
     "faq": "Frequently asked questions",
     "contactUs": "Contact us",

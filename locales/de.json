@@ -649,6 +649,13 @@
     "updateNow": "Aktualisieren",
     "later": "Später"
   },
+  "whatsNew": {
+    "title": "Neu in Trimio",
+    "look": "Ein frischer Look, vom Startbildschirm bis zur Anmeldung",
+    "keep": "Markiere ein Abo als gekündigt und sieh, was du jedes Jahr behältst",
+    "offline": "Keine Verbindung? Deine Liste öffnet sich trotzdem, und neue Abos werden hinzugefügt, sobald du wieder online bist",
+    "gotIt": "Verstanden"
+  },
   "helpSupport": {
     "faq": "Häufig gestellte Fragen",
     "contactUs": "Kontakt",

@@ -1,18 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Linking } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useSegments } from "expo-router";
+import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { nativeBuild } from "../lib/app-build";
 import { readSnooze, shouldPromptUpdate, snoozeUpdatePrompt } from "../lib/update-prompt";
+import { ANNOUNCEMENT, installedAt, markSeen, readSeen, shouldShowWhatsNew } from "../lib/whats-new";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
-export function UpdateAvailableModal() {
+/* Two notices, at most one per launch, never over the launch screen (`ready`):
+   "a new version is on Google Play" (lib/update-prompt.ts), and otherwise,
+   for somebody signed in and on the main screens, "what's new"
+   (lib/whats-new.ts). The Play prompt wins: it asks for something. */
+export function UpdateAvailableModal({ ready }: { ready: boolean }) {
   const { t } = useTranslation();
   const c = useTheme();
   const styles = makeStyles(c);
   const [visible, setVisible] = useState(false);
   const [minimum, setMinimum] = useState(0);
+  const [checked, setChecked] = useState(false);
+  const [news, setNews] = useState(false);
+  const storeAsked = useRef(false);
+  const newsDecided = useRef(false);
+  const { isAuthenticated } = useAuthStore();
+  const onMainScreens = useSegments()[0] === "(tabs)";
   const [updateUrl, setUpdateUrl] = useState("https://play.google.com/store/apps/details?id=com.trimio.app");
 
   useEffect(() => {
@@ -29,17 +42,43 @@ export function UpdateAvailableModal() {
         if (shouldPromptUpdate(nativeBuild().versionCode, min, snooze, Date.now())) {
           if (data.updateUrl) setUpdateUrl(data.updateUrl);
           setMinimum(min);
+          storeAsked.current = true;
           setVisible(true);
         }
       })
       .catch(() => {
         // Silently ignore — an outdated version check failing should never
         // block the app from being used.
+      })
+      .finally(() => {
+        if (!cancelled) setChecked(true);
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  // What's new: decided once per launch, after the version check has
+  // settled, and only if the Play prompt did not ask this launch.
+  useEffect(() => {
+    if (!ready || !checked || storeAsked.current || newsDecided.current) return;
+    if (!isAuthenticated || !onMainScreens || !ANNOUNCEMENT) return;
+    newsDecided.current = true;
+    let cancelled = false;
+    (async () => {
+      const [seen, installed] = await Promise.all([readSeen(), installedAt()]);
+      if (cancelled || seen === "unknown") return;
+      if (shouldShowWhatsNew(ANNOUNCEMENT, seen, installed, Date.now())) setNews(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, checked, isAuthenticated, onMainScreens]);
+
+  const gotIt = () => {
+    setNews(false);
+    if (ANNOUNCEMENT) markSeen(ANNOUNCEMENT.id);
+  };
 
   const later = () => {
     setVisible(false);
@@ -47,7 +86,8 @@ export function UpdateAvailableModal() {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={later}>
+    <>
+    <Modal visible={visible && ready} transparent animationType="fade" onRequestClose={later}>
       <View style={styles.overlay}>
         <View style={styles.card}>
           <MaterialCommunityIcons name="cellphone-arrow-down" size={40} color={c.text} />
@@ -62,6 +102,25 @@ export function UpdateAvailableModal() {
         </View>
       </View>
     </Modal>
+    <Modal visible={news && ready} transparent animationType="fade" onRequestClose={gotIt}>
+      <View style={styles.overlay}>
+        <View style={[styles.card, styles.newsCard]} accessibilityViewIsModal>
+          <Text style={styles.title} accessibilityRole="header">{t("whatsNew.title")}</Text>
+          <View style={styles.items}>
+            {ANNOUNCEMENT?.items.map((item) => (
+              <View key={item.key} style={styles.item}>
+                <MaterialCommunityIcons name={item.icon as any} size={24} color={c.text} />
+                <Text style={styles.itemText}>{t(item.key)}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.updateButton} onPress={gotIt} accessibilityRole="button">
+            <Text style={styles.updateButtonText}>{t("whatsNew.gotIt")}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -82,5 +141,9 @@ function makeStyles(c: AppColors) {
     updateButtonText: { ...typeScale.bodyStrong, color: c.bg },
     laterButton: { marginTop: space.s, minHeight: 48, justifyContent: "center", paddingHorizontal: space.l },
     laterButtonText: { ...typeScale.bodyStrong, color: c.textSecondary },
+    newsCard: { alignItems: "stretch" },
+    items: { gap: space.l, marginTop: space.s, marginBottom: space.xl },
+    item: { flexDirection: "row", alignItems: "flex-start", gap: space.m },
+    itemText: { ...typeScale.body, color: c.text, flex: 1 },
   });
 }
