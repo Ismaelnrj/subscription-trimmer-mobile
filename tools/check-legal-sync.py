@@ -64,7 +64,11 @@ for name, a, b in checks:
     else:
         print(f"OK   {name}: {len(a)} sections identical in both copies")
 
-missing = [t for t, body in privacy_server if body[:60] not in privacy_app]
+# The WHOLE body, not its first 60 characters: a sentence added to one copy
+# further in (the 2026-11-28 privacy additions sit at the ends of sections)
+# would pass a prefix check. The app's strings are double quoted, so a quote
+# inside a body appears escaped there.
+missing = [t for t, body in privacy_server if body.replace('"', '\\"') not in privacy_app and body not in privacy_app]
 if missing:
     print(f"FAIL Privacy Policy: {len(missing)} served sections not found in the app screen")
     for t in missing[:5]:
