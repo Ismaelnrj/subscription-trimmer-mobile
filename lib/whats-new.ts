@@ -28,6 +28,13 @@ export type Announcement = { id: string; date: string; items: { icon: string; ke
 
 export const ANNOUNCEMENTS: Announcement[] = [
   {
+    // The privacy policy's additions (section 17 promises to say so in the
+    // app). Dated when written; the publish follows within the day.
+    id: "2026-11-28-privacy",
+    date: "2026-11-28T10:56:00Z",
+    items: [{ icon: "shield-lock-outline", key: "whatsNew.privacy" }],
+  },
+  {
     // Phase 2 of the new look, published 2026-11-28 08:17Z without a card;
     // the owner asked that every update be announced.
     id: "2026-11-28-screens",

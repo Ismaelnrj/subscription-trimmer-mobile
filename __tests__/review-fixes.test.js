@@ -251,7 +251,11 @@ describe("a total is summed in one named currency", () => {
     /* Rates belong to the client, which already fetches and validates them.
        A backend rate dependency would make every summary depend on a third
        party being reachable. */
-    expect(SERVER).not.toContain("frankfurter");
+    /* No request to a rate service. The privacy policy NAMES Frankfurter (the
+       app calls it from the phone, 2026-11-28), so the bare word is allowed;
+       an address it could be fetched from is not. */
+    expect(SERVER).not.toMatch(/https?:\/\/[\w.]*frankfurter/);
+    expect(SERVER).not.toMatch(/(fetch|axios|https?\.get)\([^)]*frankfurter/);
     /* The existing fields must survive for builds already installed. */
     expect(SERVER).toMatch(/monthlyTotal,\s*\n\s*yearlyTotal: monthlyTotal \* 12,/);
   });
