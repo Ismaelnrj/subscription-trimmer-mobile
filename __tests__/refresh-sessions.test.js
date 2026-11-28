@@ -161,4 +161,10 @@ describe("every path that must end all sessions still does", () => {
     const store = fs.readFileSync(path.join(__dirname, "..", "lib", "auth-store.ts"), "utf8");
     expect(store).toMatch(/apiClient\.post\("\/auth\/logout", refreshToken \? \{ refreshToken \} : \{\}\)/);
   });
+  it("and ends the session a refresh rotated in during the logout itself", () => {
+    const store = fs.readFileSync(path.join(__dirname, "..", "lib", "auth-store.ts"), "utf8");
+    const logout = store.slice(store.indexOf("logout: async"), store.indexOf('deleteItemAsync("refresh_token")'));
+    expect(logout).toMatch(/const sent = await SecureStore\.getItemAsync\("refresh_token"\)[\s\S]*await tell\(sent\);/);
+    expect(logout).toMatch(/const rotated = await SecureStore\.getItemAsync\("refresh_token"\)[\s\S]*if \(sent && rotated && rotated !== sent\) await tell\(rotated\);/);
+  });
 });

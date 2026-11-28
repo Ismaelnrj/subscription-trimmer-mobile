@@ -123,11 +123,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const apiClient = (await import("./api")).default;
       // Names this device's session, so the server ends only this one and the
       // account stays signed in on the person's other devices.
-      const refreshToken = await SecureStore.getItemAsync("refresh_token").catch(() => null);
-      await Promise.race([
-        apiClient.post("/auth/logout", refreshToken ? { refreshToken } : {}).catch(() => {}),
-        new Promise((resolve) => setTimeout(resolve, 3000)),
-      ]);
+      const tell = (refreshToken: string | null) =>
+        Promise.race([
+          apiClient.post("/auth/logout", refreshToken ? { refreshToken } : {}).catch(() => {}),
+          new Promise((resolve) => setTimeout(resolve, 3000)),
+        ]);
+      const sent = await SecureStore.getItemAsync("refresh_token").catch(() => null);
+      await tell(sent);
+      /* After an hour idle the access token has expired: the 401 handler then
+         rotates the session and retries with the token read above, which by
+         then names nothing, so the new session stayed live for 90 days (the
+         2026-11-28 audit). If the stored token moved, end that one too. */
+      const rotated = await SecureStore.getItemAsync("refresh_token").catch(() => null);
+      if (sent && rotated && rotated !== sent) await tell(rotated);
     } catch (error) {
       console.error("Server logout failed, signing out locally anyway:", error);
     }
