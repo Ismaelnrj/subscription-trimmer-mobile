@@ -7313,3 +7313,11 @@ last one left off without needing a recap typed out.
   (negative tested). Previewed EN/DE, light/dark, first run, budget, Month.
   Known and left: the budget bar turns amber at 70% while its text says "On
   track" until 80% (two thresholds in index.tsx), cosmetic.
+
+- THE NAVY STAGE REACHED PHONES, 2026-11-28. Build Info off the owner's build 42
+  phone: `Update ID: 01a22103-510d-7de8-8151-c88973ffed00`, published
+  `2026-11-28T07:16:35.213Z`, embedded launch false, runtime 1.0.1, "You are on
+  the latest version". Master had `c99c4cf9` from 06:59:14Z (the Checks run on
+  the master push), nothing after it, so that is the baseline, and with it the
+  calendar weekday fix (`d2e218d0`) is finally on phones. The 2026-11-27 what's
+  new card was never published on its own, so no phone sees its lines twice.

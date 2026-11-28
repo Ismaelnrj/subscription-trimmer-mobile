@@ -526,18 +526,17 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 ## Current state
 
-Keep this short and current. As of 2026-11-26.
+Keep this short and current. As of 2026-11-28.
 
-- PHONES run the update published `2026-11-26T18:04:10.204Z`, `Update ID:
-  01a21907-7a5c-7331-975c-005e73f06f46`, read off the owner's build 42 phone
-  screenshot 2026-11-26 (1.0.5, runtime 1.0.1, "Age signals: not required
-  here"). It shows the Brand panel sign in, which exists only from `a3ae08c6`,
-  and nothing later was on master: that is its baseline. OWED TO PHONES (OTA),
-  URGENT: the calendar weekday fix (`d2e218d0`, every date sat under the wrong
-  weekday on Android); also the password eye fix, the update popup's snooze,
-  the navy stage on the main tabs and its what's new card (`lib/whats-new.ts`). Then the owner may set
-  `MIN_ANDROID_VERSION_CODE=42` in Railway to switch the popup on. The next
-  confirmation must show a different id and a later time.
+- PHONES run the update published `2026-11-28T07:16:35.213Z`, `Update ID:
+  01a22103-510d-7de8-8151-c88973ffed00`, read off the owner's build 42 phone
+  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `c99c4cf9` from
+  06:59:14Z and nothing later, so that is its baseline: the calendar weekday
+  fix, the password eye, the popup snooze, the navy stage on the main tabs and
+  the what's new card (id 2026-11-28) are all on phones. Nothing is owed. The
+  owner may now set `MIN_ANDROID_VERSION_CODE=42` in Railway to switch the Play
+  update popup on. The next confirmation must show a different id and a later
+  time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
