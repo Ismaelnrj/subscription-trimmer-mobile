@@ -43,12 +43,16 @@ describe.each(["app/terms-of-service.tsx", "app/privacy-policy.tsx"])("%s", (f) 
 });
 
 describe("the title bars", () => {
-  it("set Montserrat on the stack, with an ink back arrow; the tabs have none", () => {
+  it("are the navy stage on the stack, and absent on the tabs", () => {
     const tabs = fs.readFileSync(path.join(ROOT, "app", "(tabs)", "_layout.tsx"), "utf8");
     const stack = fs.readFileSync(path.join(ROOT, "app", "_layout.tsx"), "utf8");
     // The tabs open on the navy stage, which carries their names (2026-11-28).
     expect(tabs).toMatch(/screenOptions=\{\{ headerShown: false \}\}/);
-    expect(stack).toMatch(/headerTitleStyle: \{ color: c\.text, fontFamily: "Montserrat-SemiBold"/);
-    expect(stack).toMatch(/headerTintColor: c\.text,/);
+    // The inner screens' title bar is the compact stage (2026-11-28), whose
+    // title is set in the type scale and whose arrow is the stage's light ink.
+    expect(stack).toMatch(/header: \(props\) => <StageHeader \{\.\.\.props\} \/>/);
+    const stage = fs.readFileSync(path.join(ROOT, "components", "ScreenStage.tsx"), "utf8");
+    expect(stage).toMatch(/title: \{ \.\.\.typeScale\.title, color: STAGE\.ink/);
+    expect(stage).toMatch(/name="arrow-left" size=\{24\} color=\{STAGE\.ink\}/);
   });
 });

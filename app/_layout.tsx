@@ -25,6 +25,7 @@ import { useLanguageStore } from "../lib/language-store";
 import { useTranslation } from "react-i18next";
 import { AnimatedSplash, SPLASH_BACKGROUND_COLOR } from "../components/AnimatedSplash";
 import { UpdateAvailableModal } from "../components/UpdateAvailableModal";
+import { StageHeader } from "../components/ScreenStage";
 import i18n from "../lib/i18n";
 
 // Sentry DSNs are write-only ingest endpoints, not secrets — anyone with it
@@ -228,19 +229,18 @@ export default function RootLayout() {
   /* The status bar takes the colour of whatever sits under it. Nothing set it
      before 2026-11-26, so Android drew the colour baked into the native build:
      a cream strip over the grey sign in screen on the owner's phone, and over
-     every dark screen in dark mode. Headerless screens show the page ground;
-     every other screen opens on a header in the card colour; the launch screen
-     brings its own ground. React Native sets this from JavaScript, so it
-     reaches every build with an update. */
-  const headerless = ["onboarding", "login", "register", "forgot-password"].includes(segments[0] as string);
-  // Sign in, sign up and the main tabs open on the navy stage
-  // (components/AuthHeader.tsx, components/ScreenStage.tsx), in both themes,
-  // so the bar takes the stage's top edge and light icons.
-  const onStage = ["login", "register", "(tabs)"].includes(segments[0] as string);
+     every dark screen in dark mode. Since 2026-11-28 every screen but two opens
+     on the navy stage, the same in both themes: sign in and sign up
+     (components/AuthHeader.tsx), the tabs and every inner screen's title bar
+     (components/ScreenStage.tsx). So the bar takes the stage's top edge and
+     light icons, except on onboarding and forgot password, which show the page
+     ground, and the launch screen, which brings its own. React Native sets this
+     from JavaScript, so it reaches every build with an update. */
+  const onStage = !["onboarding", "forgot-password"].includes(segments[0] as string);
   const statusBar = (
     <StatusBar
       style={showAnimatedSplash || (!isDark && !onStage) ? "dark" : "light"}
-      backgroundColor={showAnimatedSplash ? SPLASH_BACKGROUND_COLOR : onStage ? STAGE.top : headerless ? c.bg : c.card}
+      backgroundColor={showAnimatedSplash ? SPLASH_BACKGROUND_COLOR : onStage ? STAGE.top : c.bg}
       translucent={false}
     />
   );
@@ -253,9 +253,8 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <Stack screenOptions={{
           headerShown: false,
-          headerStyle: { backgroundColor: c.card },
-          headerTitleStyle: { color: c.text, fontFamily: "Montserrat-SemiBold", fontSize: 18 },
-          headerTintColor: c.text,
+          // Every inner screen's title bar is the navy stage, compact.
+          header: (props) => <StageHeader {...props} />,
           contentStyle: { backgroundColor: c.bg },
         }}>
           <Stack.Screen name="onboarding" />
@@ -277,7 +276,8 @@ export default function RootLayout() {
           <Stack.Screen name="alerts" options={{ headerShown: true, title: t("screenTitles.alerts") }} />
           <Stack.Screen name="notifications" options={{ headerShown: true, title: t("screenTitles.notifications") }} />
           <Stack.Screen name="cancel-guide" options={{ headerShown: true, title: t("screenTitles.cancelGuide") }} />
-          <Stack.Screen name="subscription-details" options={{ headerShown: true, title: t("screenTitles.subscriptionDetails") }} />
+          {/* Its own stage carries the name and the price: subscription-details.tsx. */}
+          <Stack.Screen name="subscription-details" options={{ title: t("screenTitles.subscriptionDetails") }} />
           <Stack.Screen name="+not-found" />
         </Stack>
         {showAnimatedSplash ? (

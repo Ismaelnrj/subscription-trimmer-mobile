@@ -137,7 +137,8 @@ describe("the status bar follows the screen under it", () => {
   const layout = fs.readFileSync(path.join(__dirname, "..", "app", "_layout.tsx"), "utf8");
   test("the root layout sets it from the theme, not a literal", () => {
     const tag = layout.slice(layout.indexOf("<StatusBar"), layout.indexOf("/>", layout.indexOf("<StatusBar")));
-    expect(tag).toMatch(/backgroundColor=\{[^}]*c\.bg[^}]*c\.card[^}]*\}/);
+    // The navy stage on every screen but two (2026-11-28), the ground on those.
+    expect(tag).toMatch(/backgroundColor=\{[^}]*STAGE\.top[^}]*c\.bg[^}]*\}/);
     expect(tag).toMatch(/style=\{[^}]*isDark[^}]*\}/);
     expect(tag).not.toMatch(/#[0-9A-Fa-f]{6}/);
   });

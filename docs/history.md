@@ -7321,3 +7321,16 @@ last one left off without needing a recap typed out.
   the master push), nothing after it, so that is the baseline, and with it the
   calendar weekday fix (`d2e218d0`) is finally on phones. The 2026-11-27 what's
   new card was never published on its own, so no phone sees its lines twice.
+
+- THE NAVY STAGE ON THE INNER SCREENS, 2026-11-28, phase 2 (owner: "Go with
+  phase 2"). One change reaches all fifteen: the stack's white title bar is now
+  `StageHeader` (components/ScreenStage.tsx), the stage compact with the back
+  arrow and the screen's name, set once as `header` in app/_layout.tsx, so a new
+  screen gets it for free. The arrow shows only when there is somewhere to go
+  back to, as the native bar did. Subscription details hides the bar and opens
+  on its own stage (name, cycle, price in the row's currency, the logo beside
+  it) in every state, so it never jumps from bar to stage. The status bar is
+  now STAGE.top everywhere except onboarding and forgot password.
+  `auth-art` fails if a stack screen loses its bar without bringing a stage
+  (negative tested by dropping upgrade's). Previewed all fifteen, EN light and
+  DE dark, reached by tapping through as on a phone.

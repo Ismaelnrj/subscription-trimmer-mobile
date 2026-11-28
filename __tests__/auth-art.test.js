@@ -57,8 +57,19 @@ describe("sign in art", () => {
 
   test("the status bar takes the stage's top on exactly the screens that show it", () => {
     const layout = read("app/_layout.tsx");
-    expect(layout).toMatch(/const onStage = \["login", "register", "\(tabs\)"\]/);
+    // Since 2026-11-28 every screen but onboarding and forgot password opens on
+    // the stage: the tabs and inner screens through ScreenStage, every inner
+    // screen's title bar through StageHeader.
+    expect(layout).toMatch(/const onStage = !\["onboarding", "forgot-password"\]\.includes/);
     expect(layout).toMatch(/onStage \? STAGE\.top/);
+    expect(layout).toMatch(/header: \(props\) => <StageHeader \{\.\.\.props\} \/>/);
+    // A screen that hides the bar must bring its own stage.
+    const own = [...layout.matchAll(/<Stack\.Screen name="([^"]+)"( options=\{\{([^}]*)\}\})? \/>/g)]
+      .filter(([, , , opts]) => !/headerShown: true/.test(opts || ""))
+      .map(([, name]) => name)
+      .filter((n) => !["onboarding", "forgot-password", "login", "register", "(tabs)", "+not-found"].includes(n));
+    expect(own).toEqual(["subscription-details"]);
+    for (const f of own) expect(read(`app/${f}.tsx`)).toMatch(/<ScreenStage\b/);
     for (const f of ["app/login.tsx", "app/register.tsx"]) expect(read(f)).toMatch(/<AuthStage/);
     // Every tab opens on the stage, since the bar is navy on all of them: a tab
     // without it would show a navy strip over the light ground.
