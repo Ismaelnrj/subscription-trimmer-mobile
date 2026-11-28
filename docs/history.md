@@ -7334,3 +7334,11 @@ last one left off without needing a recap typed out.
   `auth-art` fails if a stack screen loses its bar without bringing a stage
   (negative tested by dropping upgrade's). Previewed all fifteen, EN light and
   DE dark, reached by tapping through as on a phone.
+
+- PHASE 2 REACHED PHONES, 2026-11-28. Build Info off the owner's phone: `Update
+  ID: 01a2213b-52cb-7411-b939-490674154594`, published `2026-11-28T08:17:45.675Z`,
+  embedded launch false. Master had `0906ee0d` from 08:04:33Z, nothing after, so
+  that is the baseline. The owner noticed no what's new card this time: correct
+  by design, since the card is shown once per id and phase 2 reused 2026-11-28
+  (said in the report before the publish). An announcement shows again only
+  with a new id in `lib/whats-new.ts`.

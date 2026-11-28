@@ -528,15 +528,15 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 Keep this short and current. As of 2026-11-28.
 
-- PHONES run the update published `2026-11-28T07:16:35.213Z`, `Update ID:
-  01a22103-510d-7de8-8151-c88973ffed00`, read off the owner's build 42 phone
-  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `c99c4cf9` from
-  06:59:14Z and nothing later, so that is its baseline: the calendar weekday
-  fix, the password eye, the popup snooze, the navy stage on the main tabs and
-  the what's new card (id 2026-11-28) are all on phones. Nothing is owed. The
-  owner may now set `MIN_ANDROID_VERSION_CODE=42` in Railway to switch the Play
-  update popup on. The next confirmation must show a different id and a later
-  time.
+- PHONES run the update published `2026-11-28T08:17:45.675Z`, `Update ID:
+  01a2213b-52cb-7411-b939-490674154594`, read off the owner's build 42 phone
+  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0906ee0d` from
+  08:04:33Z and nothing later, so that is its baseline: the navy stage on the
+  main tabs (`c99c4cf9`, published 07:16Z) and on every inner screen. Nothing
+  is owed. No new what's new card came with it, on purpose: the 2026-11-28 card
+  is shown once per phone. The owner may set `MIN_ANDROID_VERSION_CODE=42` in
+  Railway to switch the Play update popup on. The next confirmation must show
+  a different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
