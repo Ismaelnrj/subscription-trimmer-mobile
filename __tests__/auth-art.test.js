@@ -60,7 +60,9 @@ describe("sign in art", () => {
     // Since 2026-11-28 every screen but onboarding and forgot password opens on
     // the stage: the tabs and inner screens through ScreenStage, every inner
     // screen's title bar through StageHeader.
-    expect(layout).toMatch(/const onStage = !\["onboarding", "forgot-password"\]\.includes/);
+    // An unknown route and the instant before the first redirect are on the
+    // ground too (the 2026-11-28 audit: a navy strip over +not-found).
+    expect(layout).toMatch(/const onStage = !!segments\[0\] && !\["onboarding", "forgot-password", "\+not-found"\]\.includes/);
     expect(layout).toMatch(/onStage \? STAGE\.top/);
     expect(layout).toMatch(/header: \(props\) => <StageHeader \{\.\.\.props\} \/>/);
     // A screen that hides the bar must bring its own stage.

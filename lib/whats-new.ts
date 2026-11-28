@@ -12,7 +12,9 @@
    as the "new version on Google Play" prompt.
 
    EVERY PUBLISH ADDS AN ENTRY AT THE TOP of ANNOUNCEMENTS: a new `id`, the
-   `date` it is published, its lines, and each line in BOTH locale files under
+   `date` it went out (the publish time off the Build Info panel, as an ISO
+   time: a bare day reads as midnight UTC, so a phone installed earlier that
+   day, which DID have the old version, would be skipped), its lines, and each line in BOTH locale files under
    `whatsNew`. __tests__/whats-new.test.js checks the keys exist in both and
    that the list runs newest first. Only what the app really does, in the
    app's own words. Remove entries only from the bottom (the oldest), once
@@ -29,12 +31,12 @@ export const ANNOUNCEMENTS: Announcement[] = [
     // Phase 2 of the new look, published 2026-11-28 08:17Z without a card;
     // the owner asked that every update be announced.
     id: "2026-11-28-screens",
-    date: "2026-11-28",
+    date: "2026-11-28T08:17:45Z",
     items: [{ icon: "palette-outline", key: "whatsNew.screens" }],
   },
   {
     id: "2026-11-28",
-    date: "2026-11-28",
+    date: "2026-11-28T07:16:35Z",
     items: [
       { icon: "star-four-points-outline", key: "whatsNew.look" },
       { icon: "piggy-bank-outline", key: "whatsNew.keep" },

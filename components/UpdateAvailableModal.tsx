@@ -67,7 +67,10 @@ export function UpdateAvailableModal({ ready }: { ready: boolean }) {
     let cancelled = false;
     (async () => {
       const [seen, installed] = await Promise.all([readSeen(), installedAt()]);
-      if (cancelled || seen === "unknown") return;
+      // Left the main screens before the answer came: decide again on return,
+      // rather than lose the card for the whole launch.
+      if (cancelled) { newsDecided.current = false; return; }
+      if (seen === "unknown") return;
       // Everything this phone has not seen yet, as one card.
       setNews(whatsNewFor(ANNOUNCEMENTS, seen, installed, Date.now()));
     })();

@@ -33,4 +33,10 @@ describe("the subscriptions screen says what it means", () => {
     expect(SUBS).not.toMatch(/\$\{formData\.billingCycle\}/);
     expect(SUBS).not.toMatch(/` · \$\{/);
   });
+
+  // The 2026-11-28 audit: the stage's total reads the summary, which a pull
+  // to refresh did not refetch, so it stayed stale under a fresh list.
+  it("a pull to refresh refreshes the stage's total with the list", () => {
+    expect(SUBS).toMatch(/const onRefresh = async \(\) => \{[\s\S]*?Promise\.all\(\[refetch\(\), refetchSummary\(\)\]\)/);
+  });
 });

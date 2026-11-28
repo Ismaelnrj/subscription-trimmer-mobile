@@ -53,6 +53,13 @@ describe("whatsNewFor", () => {
     expect(whatsNewFor(LIST, null, null, NOW)).toBeNull();
   });
 
+  test("an entry dated to the minute it went out still reaches a phone installed earlier that day", () => {
+    const at = { id: "t", date: "2026-11-28T08:17:45Z", items: [item("whatsNew.look")] };
+    const now = Date.parse("2026-11-29");
+    expect(keys(whatsNewFor([at], null, Date.parse("2026-11-28T05:00:00Z"), now))).toEqual(["whatsNew.look"]);
+    expect(whatsNewFor([at], null, Date.parse("2026-11-28T09:00:00Z"), now)).toBeNull();
+  });
+
   test("not once an announcement is old", () => {
     const late = Date.parse(B.date) + SHOW_FOR_DAYS * DAY;
     expect(whatsNewFor(LIST, null, BEFORE, late)).toBeNull();
@@ -109,6 +116,10 @@ describe("the popup", () => {
   test("what's new never follows the Play prompt in the same launch, and only signed in on the main screens", () => {
     expect(src).toMatch(/if \(!ready \|\| !checked \|\| storeAsked\.current \|\| newsDecided\.current\) return;/);
     expect(src).toMatch(/if \(!isAuthenticated \|\| !onMainScreens \|\| !ANNOUNCEMENTS\.length\) return;/);
+  });
+
+  test("leaving the main screens mid decision decides again on return, not never", () => {
+    expect(src).toMatch(/if \(cancelled\) \{ newsDecided\.current = false; return; \}/);
   });
 
   test("a phone that cannot remember is not shown it, and Got it remembers", () => {

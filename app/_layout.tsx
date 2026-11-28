@@ -236,7 +236,9 @@ export default function RootLayout() {
      light icons, except on onboarding and forgot password, which show the page
      ground, and the launch screen, which brings its own. React Native sets this
      from JavaScript, so it reaches every build with an update. */
-  const onStage = !["onboarding", "forgot-password"].includes(segments[0] as string);
+  // An unknown route (+not-found) and the instant before the first redirect
+  // show the ground too.
+  const onStage = !!segments[0] && !["onboarding", "forgot-password", "+not-found"].includes(segments[0] as string);
   const statusBar = (
     <StatusBar
       style={showAnimatedSplash || (!isDark && !onStage) ? "dark" : "light"}

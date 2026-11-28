@@ -276,7 +276,7 @@ export default function SubscriptionsScreen() {
   /* The stage's figure: the dashboard's own total, from the same cached
      summary and the same conversion (see app/(tabs)/index.tsx for why each
      currency is converted once and an estimate is marked). */
-  const { data: summary } = useQuery({
+  const { data: summary, refetch: refetchSummary } = useQuery({
     queryKey: ["analytics", "summary"],
     queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
   });
@@ -438,7 +438,8 @@ export default function SubscriptionsScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
+    // The stage's total comes from the summary, so a pull refreshes it too.
+    await Promise.all([refetch(), refetchSummary()]).catch(() => {});
     setRefreshing(false);
   };
 
