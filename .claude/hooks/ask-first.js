@@ -26,6 +26,24 @@ const SCHEDULING_TOOLS = new Set([
   "mcp__Claude_Code_Remote__fire_trigger",
 ]);
 
+/* Also scheduling, found by the 2026-11-28 audit: turning a stored task back on
+   or moving its time (update_trigger, which can revive the Monday 07:00 Routine
+   CLAUDE.md keeps switched off; switching one OFF needs no yes), and the /loop
+   skill, which re-runs a prompt on an interval. */
+function schedules(tool, input) {
+  if (SCHEDULING_TOOLS.has(tool)) return true;
+  const i = input || {};
+  if (tool === "mcp__Claude_Code_Remote__update_trigger") {
+    return i.enabled === true || i.cron_expression != null || i.run_once_at != null;
+  }
+  if (tool === "Skill") return /(^|:)loop$/.test(String(i.skill || ""));
+  return false;
+}
+
+// A shell that runs text it is given: `bash -c "..."`, `sh -lc '...'`,
+// `bash <<EOF`, `... | sh`. There the quotes and the heredoc ARE the command.
+const RUNS_TEXT = /\b(?:ba|z|da)?sh\b(?:\s+-\w+)*\s+(?:-\w*c\b|<<)|\b(?:ba|z|da)?sh\s+<<|\|\s*(?:ba|z|da)?sh\b/;
+
 // Drop what only talks about a command: heredoc bodies, then quoted strings.
 function runnable(cmd) {
   const lines = cmd.split("\n");
@@ -46,17 +64,23 @@ function runnable(cmd) {
     .replace(/"(?:\\.|[^"\\\n])*"/g, '""');
 }
 
+/* `eas` as its own word wherever it stands: after `VAR=1`, indentation, `npx`,
+   `pnpm exec`, `yarn`, `bunx` or a path (node_modules/.bin/eas) alike, since
+   anything that only MENTIONS it was stripped above. Short flags are read as a
+   cluster, so `-fu` is a force push. */
 const BASH_RULES = [
-  [/(^|[;&|(]\s*|\bnpx\s+|\bpnpm\s+(dlx\s+)?)eas\s+(update|build|submit)\b/m, "an eas update or a native build"],
-  [/\bgit\s+push\b[^\n;&|]*(\s--force(-with-lease)?\b|\s-f\b|\s\+[\w./:-]+)/, "a force push"],
-  [/\bgit\s+push\b[^\n;&|]*(\s--delete\b|\s-d\b|\s:[\w./-]+)/, "deleting a remote branch"],
+  [/(?<![\w.-])eas\s+(update|build|submit)\b/, "an eas update or a native build"],
+  [/\bgit\b[^\n;&|]*?\bpush\b[^\n;&|]*(\s--force(-with-lease)?\b|\s-(?!-)[a-zA-Z]*f[a-zA-Z]*\b|\s\+[\w./:-]+)/, "a force push"],
+  [/\bgit\b[^\n;&|]*?\bpush\b[^\n;&|]*(\s--delete\b|\s-(?!-)[a-zA-Z]*d[a-zA-Z]*\b|\s:[\w./-]+)/, "deleting a remote branch"],
 ];
 
 function verdict(input) {
   const tool = input && input.tool_name;
-  if (SCHEDULING_TOOLS.has(tool)) return "something scheduled";
+  if (schedules(tool, input && input.tool_input)) return "something scheduled";
   if (tool === "Bash") {
-    const cmd = runnable(String((input.tool_input && input.tool_input.command) || ""));
+    const raw = String((input.tool_input && input.tool_input.command) || "");
+    // Read the whole text when a shell will run it, else only what runs.
+    const cmd = RUNS_TEXT.test(raw) ? raw : runnable(raw);
     for (const [re, what] of BASH_RULES) if (re.test(cmd)) return what;
   }
   return null;

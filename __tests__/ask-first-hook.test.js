@@ -42,6 +42,14 @@ describe("the ask-first hook", () => {
     "git push origin +HEAD:master",
     "git push origin --delete claude/old",
     "git push origin :claude/old",
+    // Missed until the 2026-11-28 audit, every one measured silent before:
+    "EAS_NO_VCS=1 eas update --channel production",
+    "pnpm exec eas update",
+    "  eas update --channel production",
+    'bash -c "eas build -p android"',
+    "bash <<EOF\neas update\nEOF",
+    "git push -fu origin x",
+    "git -C repo push --force origin x",
   ])("asks before: %s", (cmd) => {
     expect(asks(bash(cmd))).toBe(true);
   });
@@ -62,8 +70,20 @@ describe("the ask-first hook", () => {
     "npx jest __tests__/ask-first-hook.test.js",
     "grep -n 'eas update' CLAUDE.md",
     "python3 .claude/skills/trimio-release/scripts/needs_native_build.py",
+    "git push -u origin claude/x",
+    "grep -n ideas update notes.txt",
   ])("stays silent on: %s", (cmd) => {
     expect(asks(bash(cmd))).toBe(false);
+  });
+
+  it("asks before turning a stored task back on or moving it, and before /loop; switching one off is free", () => {
+    const update = (tool_input) => ({ tool_name: "mcp__Claude_Code_Remote__update_trigger", tool_input });
+    expect(asks(update({ trigger_id: "trig_01GqW4M3kJfG4wmeF36zx7m5", enabled: true }))).toBe(true);
+    expect(asks(update({ trigger_id: "t", cron_expression: "0 7 * * 1" }))).toBe(true);
+    expect(asks(update({ trigger_id: "t", run_once_at: "2026-12-01T09:00:00Z" }))).toBe(true);
+    expect(asks(update({ trigger_id: "t", enabled: false }))).toBe(false);
+    expect(asks({ tool_name: "Skill", tool_input: { skill: "loop", args: "5m /x" } })).toBe(true);
+    expect(asks({ tool_name: "Skill", tool_input: { skill: "trimio-design" } })).toBe(false);
   });
 
   it("stays silent on other tools and never wedges on bad input", () => {
@@ -76,7 +96,7 @@ describe("the ask-first hook", () => {
     const settings = JSON.parse(fs.readFileSync(path.join(ROOT, ".claude/settings.json"), "utf8"));
     const entry = settings.hooks.PreToolUse.find((e) => e.hooks.some((h) => h.command.includes(".claude/hooks/ask-first.js")));
     expect(entry).toBeTruthy();
-    for (const t of ["Bash", "ScheduleWakeup", "CronCreate", "mcp__Claude_Code_Remote__create_trigger", "mcp__Claude_Code_Remote__send_later"]) {
+    for (const t of ["Bash", "ScheduleWakeup", "CronCreate", "mcp__Claude_Code_Remote__create_trigger", "mcp__Claude_Code_Remote__send_later", "mcp__Claude_Code_Remote__update_trigger", "Skill"]) {
       expect(new RegExp(`^(${entry.matcher})$`).test(t)).toBe(true);
     }
     const ignore = fs.readFileSync(path.join(ROOT, ".gitignore"), "utf8");
