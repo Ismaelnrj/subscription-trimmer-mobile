@@ -8,15 +8,16 @@ import { useTheme, useIsDark, space, STAGE, type as typeScale } from "../lib/the
 // Cut by tools/make-app-marks.py from the generator's own mark; never drawn
 // by hand. The light one is Ink Navy, which disappears on the dark ground.
 const MARK_ON_LIGHT = require("../assets/brand/mark-on-light.png");
-const MARK_ON_DARK = require("../assets/brand/mark-on-dark.png");
+export const MARK_ON_DARK = require("../assets/brand/mark-on-dark.png");
 // The flow's art, from the same generator: the navy stage atop sign in and
-// sign up, and the deep waves at the foot of forgot password. Brand art, like
-// the launch screen; no screen here sets a mint colour of its own.
-const STAGE_ART = require("../assets/brand/stage.png");
-const STAGE_LENS = require("../assets/brand/stage-lens.png");
+// sign up (and, from 2026-11-28, the main screens: components/ScreenStage.tsx),
+// and the deep waves at the foot of forgot password. Brand art, like the
+// launch screen; no screen here sets a mint colour of its own.
+export const STAGE_ART = require("../assets/brand/stage.png");
+export const STAGE_LENS = require("../assets/brand/stage-lens.png");
 const WAVES_ON_LIGHT = require("../assets/brand/waves-on-light.png");
 const WAVES_ON_DARK = require("../assets/brand/waves-on-dark.png");
-const STAGE_ASPECT = 1680 / 1284;
+export const STAGE_ASPECT = 1680 / 1284;
 const WAVES_ASPECT = 1284 / 240;
 // The stage leaves this much of the window below it for the two buttons and
 // the link, and folds to COMPACT while the email form is open.

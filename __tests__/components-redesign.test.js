@@ -43,10 +43,11 @@ describe.each(["app/terms-of-service.tsx", "app/privacy-policy.tsx"])("%s", (f) 
 });
 
 describe("the title bars", () => {
-  it("set Montserrat on both navigators, with an ink back arrow", () => {
+  it("set Montserrat on the stack, with an ink back arrow; the tabs have none", () => {
     const tabs = fs.readFileSync(path.join(ROOT, "app", "(tabs)", "_layout.tsx"), "utf8");
     const stack = fs.readFileSync(path.join(ROOT, "app", "_layout.tsx"), "utf8");
-    expect(tabs).toMatch(/headerTitleStyle: \{\s*fontFamily: "Montserrat-SemiBold"/);
+    // The tabs open on the navy stage, which carries their names (2026-11-28).
+    expect(tabs).toMatch(/screenOptions=\{\{ headerShown: false \}\}/);
     expect(stack).toMatch(/headerTitleStyle: \{ color: c\.text, fontFamily: "Montserrat-SemiBold"/);
     expect(stack).toMatch(/headerTintColor: c\.text,/);
   });

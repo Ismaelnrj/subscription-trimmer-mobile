@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { OfflineNotice } from "../../components/OfflineNotice";
+import { ScreenStage } from "../../components/ScreenStage";
 import apiClient from "../../lib/api";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
@@ -95,20 +96,26 @@ export default function AnalyticsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={c.primary} />
+      <View style={styles.container}>
+        <ScreenStage title={t("tabs.headerAnalytics")} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={c.primary} />
+        </View>
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
-        <Text style={styles.emptyStateText}>{t("analytics.couldntLoad")}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={onRefresh} accessibilityRole="button">
-          <Text style={styles.retryText}>{t("common.tryAgain")}</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <ScreenStage title={t("tabs.headerAnalytics")} />
+        <View style={styles.loadingContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={40} color={c.textMuted} style={{ marginBottom: space.m }} />
+          <Text style={styles.emptyStateText}>{t("analytics.couldntLoad")}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={onRefresh} accessibilityRole="button">
+            <Text style={styles.retryText}>{t("common.tryAgain")}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -176,21 +183,24 @@ export default function AnalyticsScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
+      {/* One figure leads, as on the dashboard, on the stage. The yearly
+          projection was a card of its own and is a line under it. */}
+      <ScreenStage
+        title={t("tabs.headerAnalytics")}
+        label={t("analytics.perMonth")}
+        figure={fmtTotal(monthly)}
+        meta={t("analytics.perYearMeta", { amount: fmtTotal(yearly) })}
+      />
       <View style={styles.scrollContent}>
         {isStale && <OfflineNotice />}
 
-        {/* One figure leads, as on the dashboard. The yearly projection was a
-            card of its own and is a line under it now. */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>{t("analytics.perMonth")}</Text>
-          <Text style={styles.summaryValue}>{fmtTotal(monthly)}</Text>
-          <Text style={styles.summaryMeta}>{t("analytics.perYearMeta", { amount: fmtTotal(yearly) })}</Text>
-          {budgetGoal != null && (
-            <Text style={[styles.budgetLine, { color: monthly > budgetGoal ? c.danger : c.textSecondary }]}>
-              {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
-            </Text>
-          )}
-        </View>
+        {/* Under the stage, on the ground: over budget is the theme's danger
+            colour, which was measured against the ground, not the navy. */}
+        {budgetGoal != null && (
+          <Text style={[styles.budgetLine, { color: monthly > budgetGoal ? c.danger : c.textSecondary }]}>
+            {monthly > budgetGoal ? t("analytics.overBudget") : t("analytics.budgetLeft", { amount: fmtTotal(budgetGoal - monthly) })}
+          </Text>
+        )}
 
         {/* "Per month" is said once, here, rather than as "/Monat" on every
             row, which pushed German category names into an ellipsis. */}
@@ -295,11 +305,7 @@ function makeStyles(c: AppColors) {
     scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80, paddingHorizontal: space.xl },
 
-    summary: { marginBottom: space.s },
-    summaryLabel: { ...typeScale.caption, color: c.textSecondary },
-    summaryValue: { ...typeScale.display, color: c.text, marginTop: space.xs },
-    summaryMeta: { ...typeScale.body, color: c.textSecondary, marginTop: space.xs },
-    budgetLine: { ...typeScale.label, marginTop: space.s },
+    budgetLine: { ...typeScale.label, marginBottom: space.s },
 
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     sectionHeader: {

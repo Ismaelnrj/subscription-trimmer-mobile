@@ -13,7 +13,7 @@ const de = require("../locales/de.json").priceRise;
 describe("the price rise card", () => {
   it("is on the dashboard, under the totals, for every account", () => {
     expect(dashboard).toMatch(/<PriceRiseCard subscriptions=\{subscriptions as any\} \/>/);
-    const summary = dashboard.indexOf("<View style={styles.summary}>");
+    const summary = dashboard.indexOf("<ScreenStage\n        lead={greetingLine}");
     const placed = dashboard.indexOf("<PriceRiseCard");
     const goal = dashboard.indexOf("{showGoal && (");
     expect(summary).toBeGreaterThan(0);

@@ -29,13 +29,17 @@ describe("the Calendar screen", () => {
     expect((SRC.match(/i > 0 && styles\.rowDivider/g) || []).length).toBe(3);
   });
 
-  it("leads the Month view with one figure and lists the rest as rows", () => {
-    expect(SRC).toMatch(/styles\.monthSummaryTotal\}>\{fmtSum\(monthSummary\.total/);
-    expect(SRC).toMatch(/monthSummaryTotal: \{ \.\.\.typeScale\.display/);
+  it("leads with the browsed month's figure on the stage and lists the rest as rows", () => {
+    expect(SRC).toMatch(/figure=\{isLoading \|\| isError \? undefined : fmtSum\(monthSummary\.total, monthSummary\.all\)\}/);
+    // Said once: the Month view no longer repeats the figure under the stage.
+    expect(SRC).not.toContain("monthSummaryTotal");
     expect(SRC).not.toContain("monthSummaryStatsRow");
     for (const l of ["en", "de"]) {
       expect(loc(l).monthSummary).toBeUndefined();
-      expect(loc(l).monthTotal).toBeTruthy();
+      expect(loc(l).monthTotal).toBeUndefined();
+      expect(loc(l).stageLabel).toContain("{{month}}");
+      expect(loc(l).stageCount_one).toContain("{{count}}");
+      expect(loc(l).stageCount_other).toContain("{{count}}");
     }
   });
 

@@ -281,7 +281,9 @@
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} renewal, {{total}}",
     "a11yDayRenewalsTotal_other": "{{date}}, {{count}} renewals, {{total}} total",
     "a11yLegend": "Dot colours this month: {{categories}}",
-    "monthTotal": "Due this month"
+    "stageLabel": "Total for {{month}}",
+    "stageCount_one": "{{count}} renewal",
+    "stageCount_other": "{{count}} renewals"
   },
   "review": {
     "title": "Enjoying Trimio?",
@@ -651,7 +653,7 @@
   },
   "whatsNew": {
     "title": "What's new in Trimio",
-    "look": "A fresh look, from the launch screen to sign in",
+    "look": "A new look, from sign in to every main screen, with your totals up front",
     "keep": "Mark a subscription as cancelled and see what you keep each year",
     "offline": "No connection? Your list still opens, and new subscriptions are added once you are back online",
     "gotIt": "Got it"

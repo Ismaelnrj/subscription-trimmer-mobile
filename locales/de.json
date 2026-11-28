@@ -281,7 +281,9 @@
     "a11yDayRenewalsTotal_one": "{{date}}, {{count}} Verlängerung, {{total}}",
     "a11yDayRenewalsTotal_other": "{{date}}, {{count}} Verlängerungen, {{total}} insgesamt",
     "a11yLegend": "Punktfarben in diesem Monat: {{categories}}",
-    "monthTotal": "Fällig in diesem Monat"
+    "stageLabel": "Gesamt im {{month}}",
+    "stageCount_one": "{{count}} Verlängerung",
+    "stageCount_other": "{{count}} Verlängerungen"
   },
   "review": {
     "title": "Gefällt dir Trimio?",
@@ -651,7 +653,7 @@
   },
   "whatsNew": {
     "title": "Neu in Trimio",
-    "look": "Ein frischer Look, vom Startbildschirm bis zur Anmeldung",
+    "look": "Ein neuer Look, von der Anmeldung bis zu jedem Hauptbildschirm, mit deinen Summen ganz oben",
     "keep": "Markiere ein Abo als gekündigt und sieh, was du jedes Jahr behältst",
     "offline": "Keine Verbindung? Deine Liste öffnet sich trotzdem, und neue Abos werden hinzugefügt, sobald du wieder online bist",
     "gotIt": "Verstanden"

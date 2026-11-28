@@ -21,9 +21,13 @@
 
 export type Announcement = { id: string; date: string; items: { icon: string; key: string }[] };
 
+/* 2026-11-28: the navy stage on every main screen joined the first card
+   (2026-11-27) before either reached a phone, so the look line now covers
+   both, under a new id: a phone that already saw the first card still hears
+   about the new look. */
 export const ANNOUNCEMENT: Announcement | null = {
-  id: "2026-11-27",
-  date: "2026-11-27",
+  id: "2026-11-28",
+  date: "2026-11-28",
   items: [
     { icon: "star-four-points-outline", key: "whatsNew.look" },
     { icon: "piggy-bank-outline", key: "whatsNew.keep" },

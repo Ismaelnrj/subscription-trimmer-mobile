@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { formatMoney } from "../../lib/currencies";
 import { OfflineNotice } from "../../components/OfflineNotice";
+import { ScreenStage } from "../../components/ScreenStage";
 import { format, differenceInCalendarDays, addMonths, subMonths, startOfDay } from "date-fns";
 import { fetchSubscriptionList } from "../../lib/subscription-list";
 import { useFmt, useCurrencyStore, sumMixedInBase, isMixedCurrency } from "../../lib/currency-store";
@@ -242,6 +243,16 @@ export default function CalendarScreen() {
   return (
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* The month being looked at, on the stage: what it costs and how many
+            renewals it holds, the same figures the grid's day amounts add up
+            to. It follows the month as you browse. Said only once the list has
+            loaded, so a failed fetch never reads as a month with nothing due. */}
+        <ScreenStage
+          title={t("tabs.headerCalendar")}
+          label={isLoading || isError ? undefined : t("calendar.stageLabel", { month: fmtD(month, "MMMM") })}
+          figure={isLoading || isError ? undefined : fmtSum(monthSummary.total, monthSummary.all)}
+          meta={isLoading || isError ? undefined : t("calendar.stageCount", { count: monthSummary.count })}
+        />
         <View style={styles.scrollContent}>
           {isStale && <OfflineNotice />}
           {/* A segmented control: exactly one view is always chosen. Chosen is
@@ -407,14 +418,9 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* One open figure, as on the dashboard and Stats, then rows.
+              {/* The month's figure is on the stage above; the rows follow.
                   Two columns truncated the highest charge's name. */}
-              <View style={styles.monthSummary}>
-                <Text style={styles.monthSummaryLabel}>{t("calendar.monthTotal")}</Text>
-                <Text style={styles.monthSummaryTotal}>{fmtSum(monthSummary.total, monthSummary.all)}</Text>
-              </View>
-
-              <View style={styles.card}>
+              <View style={[styles.card, styles.monthCard]}>
                 <View style={styles.row}>
                   <Text style={styles.statLabel}>{t("calendar.payments")}</Text>
                   <Text style={styles.subPrice}>{monthSummary.count}</Text>
@@ -477,9 +483,7 @@ function makeStyles(c: AppColors) {
     navButton: { minWidth: 48, minHeight: 48, alignItems: "center", justifyContent: "center" },
     monthHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
     monthTitle: { ...typeScale.heading, color: c.text },
-    monthSummary: { marginTop: space.m, marginBottom: space.xl },
-    monthSummaryLabel: { ...typeScale.caption, color: c.textSecondary },
-    monthSummaryTotal: { ...typeScale.display, color: c.text, marginTop: space.xs },
+    monthCard: { marginTop: space.m },
 
     calendarActions: { flexDirection: "row", marginTop: space.m },
     // A quiet secondary action beside the calendar, not a second floating

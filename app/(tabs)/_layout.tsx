@@ -1,31 +1,18 @@
 import { Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../lib/theme";
 import { CustomTabBar } from "../../components/CustomTabBar";
 import { GlobalFab } from "../../components/GlobalFab";
 
 export default function TabLayout() {
-  const c = useTheme();
   const { t } = useTranslation();
   return (
     <>
       <Tabs
         tabBar={(props) => <CustomTabBar {...props} />}
-        screenOptions={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: c.card,
-          },
-          /* A family, not a weight: fontWeight with no family falls back to
-             the system font, so every title bar was Roboto over Montserrat. */
-          headerTitleStyle: {
-            fontFamily: "Montserrat-SemiBold",
-            fontSize: 18,
-            color: c.text,
-          },
-          headerTintColor: c.text,
-        }}
+        /* No title bar: every tab opens on its navy stage, which carries the
+           screen's name (components/ScreenStage.tsx). */
+        screenOptions={{ headerShown: false }}
       >
         <Tabs.Screen
           name="index"
@@ -35,7 +22,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="home" size={24} color={color} />
             ),
-            headerTitle: "Trimio",
           }}
         />
         <Tabs.Screen
@@ -46,14 +32,12 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="calendar-month-outline" size={24} color={color} />
             ),
-            headerTitle: t("tabs.headerCalendar"),
           }}
         />
         <Tabs.Screen
           name="subscriptions"
           options={{
             title: t("tabs.subscriptions"),
-            headerTitle: t("tabs.headerSubscriptions"),
             href: null,
           }}
         />
@@ -65,7 +49,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="chart-bar" size={24} color={color} />
             ),
-            headerTitle: t("tabs.headerAnalytics"),
           }}
         />
         <Tabs.Screen
@@ -76,7 +59,6 @@ export default function TabLayout() {
             tabBarIcon: ({ color }) => (
               <MaterialCommunityIcons name="cog-outline" size={24} color={color} />
             ),
-            headerTitle: t("tabs.headerProfile"),
           }}
         />
       </Tabs>

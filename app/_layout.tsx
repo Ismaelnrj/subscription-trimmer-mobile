@@ -233,9 +233,10 @@ export default function RootLayout() {
      brings its own ground. React Native sets this from JavaScript, so it
      reaches every build with an update. */
   const headerless = ["onboarding", "login", "register", "forgot-password"].includes(segments[0] as string);
-  // Sign in and sign up open on the navy stage (components/AuthHeader.tsx),
-  // in both themes, so the bar takes the stage's top edge and light icons.
-  const onStage = ["login", "register"].includes(segments[0] as string);
+  // Sign in, sign up and the main tabs open on the navy stage
+  // (components/AuthHeader.tsx, components/ScreenStage.tsx), in both themes,
+  // so the bar takes the stage's top edge and light icons.
+  const onStage = ["login", "register", "(tabs)"].includes(segments[0] as string);
   const statusBar = (
     <StatusBar
       style={showAnimatedSplash || (!isDark && !onStage) ? "dark" : "light"}

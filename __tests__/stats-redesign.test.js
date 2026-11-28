@@ -42,7 +42,10 @@ describe("the Stats screen", () => {
   it("leads with one open figure and no gradient card", () => {
     expect(SRC).not.toContain("LinearGradient");
     expect(SRC).not.toMatch(/#245F52/i);
-    expect(styleBody(SRC, "summaryValue")).toContain("typeScale.display");
+    // The figure is on the stage (components/ScreenStage.tsx), set in display.
+    expect(SRC).toMatch(/<ScreenStage[\s\S]*?figure=\{fmtTotal\(monthly\)\}/);
+    const stage = fs.readFileSync(path.join(__dirname, "..", "components", "ScreenStage.tsx"), "utf8");
+    expect(stage).toMatch(/figure: \{ \.\.\.typeScale\.display/);
   });
 
   it("draws the split as a thin gapped bar, not a donut", () => {

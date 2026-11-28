@@ -7296,3 +7296,20 @@ last one left off without needing a recap typed out.
   and `new Date(null)` is 1970, so the card counted an unknown install as an old
   one. A phone does report the date, but unknown now stays unknown (null, the
   epoch or a failure); four cases in `whats-new.test.js`, negative tested.
+
+- THE NAVY STAGE ON THE MAIN SCREENS, 2026-11-28, phase 1 of the owner's "make
+  it premium, in flow, for each part of the app" (approved: "Yes, do it").
+  `components/ScreenStage.tsx` is the sign in flow's stage made general: the
+  white Tabs title bar is gone (`headerShown: false`), and Dashboard, Calendar,
+  Stats, the subscription list and Settings each open on the navy panel with
+  their name and one figure in STAGE ink. The status bar takes STAGE.top on
+  `(tabs)` too. No new money math: each stage shows a figure its screen already
+  computed (the list reads the dashboard's cached summary). Coloured states
+  (budget over, warnings) stay below the stage, on the ground their colours were
+  measured on. Calendar's label became "Total for November" rather than "Due
+  in", since on the 28th most of the month is already charged. The what's new
+  card moved to id 2026-11-28 with the look line covering both. Six structural
+  tests moved to the new layout; `auth-art` now requires a stage on every tab
+  (negative tested). Previewed EN/DE, light/dark, first run, budget, Month.
+  Known and left: the budget bar turns amber at 70% while its text says "On
+  track" until 80% (two thresholds in index.tsx), cosmetic.

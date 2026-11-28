@@ -57,9 +57,14 @@ describe("sign in art", () => {
 
   test("the status bar takes the stage's top on exactly the screens that show it", () => {
     const layout = read("app/_layout.tsx");
-    expect(layout).toMatch(/const onStage = \["login", "register"\]/);
+    expect(layout).toMatch(/const onStage = \["login", "register", "\(tabs\)"\]/);
     expect(layout).toMatch(/onStage \? STAGE\.top/);
     for (const f of ["app/login.tsx", "app/register.tsx"]) expect(read(f)).toMatch(/<AuthStage/);
+    // Every tab opens on the stage, since the bar is navy on all of them: a tab
+    // without it would show a navy strip over the light ground.
+    const tabs = fs.readdirSync(path.join(root, "app", "(tabs)")).filter((f) => f.endsWith(".tsx") && f !== "_layout.tsx");
+    expect(tabs.length).toBe(5);
+    for (const f of tabs) expect([f, /<ScreenStage\b/.test(read(`app/(tabs)/${f}`))]).toEqual([f, true]);
   });
 
   test("nothing in the sign in strings promises privacy, in either language", () => {

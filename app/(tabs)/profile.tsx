@@ -6,10 +6,11 @@ import { useAuthStore } from "../../lib/auth-store";
 import { freePremiumUntil } from "../../lib/premium-status";
 import { parseApiDate } from "../../lib/utils";
 import { useDateFormat } from "../../lib/date-locale";
-import { useTheme, AppColors, space, radius, type as typeScale } from "../../lib/theme";
+import { useTheme, AppColors, space, radius, STAGE, type as typeScale } from "../../lib/theme";
 import { useLanguageStore } from "../../lib/language-store";
 import { useThemeStore, ThemeMode } from "../../lib/theme-store";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
+import { ScreenStage } from "../../components/ScreenStage";
 
 /* Each language by its own name, never translated: somebody who cannot read
    the current language must still find theirs. */
@@ -97,7 +98,9 @@ export default function ProfileScreen() {
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.scrollContent}>
+      {/* Who is signed in, on the stage: light ink on the navy, the avatar
+          inverted so it reads as the same mark it was on the ground. */}
+      <ScreenStage title={t("tabs.headerProfile")}>
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{getInitials(user?.name, user?.email)}</Text>
@@ -109,6 +112,8 @@ export default function ProfileScreen() {
             ) : null}
           </View>
         </View>
+      </ScreenStage>
+      <View style={styles.scrollContent}>
 
         <View style={styles.card}>
           {freeUntil ? (
@@ -214,15 +219,15 @@ function makeStyles(c: AppColors) {
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
 
-    profileHeader: { flexDirection: "row", alignItems: "center", gap: space.l, marginBottom: space.xl },
+    profileHeader: { flexDirection: "row", alignItems: "center", gap: space.l, marginTop: space.xl },
     avatar: {
-      width: 56, height: 56, borderRadius: radius.pill, backgroundColor: c.text,
+      width: 56, height: 56, borderRadius: radius.pill, backgroundColor: STAGE.ink,
       justifyContent: "center", alignItems: "center",
     },
-    avatarText: { ...typeScale.title, color: c.bg },
+    avatarText: { ...typeScale.title, color: STAGE.top },
     profileText: { flex: 1 },
-    profileName: { ...typeScale.title, color: c.text },
-    profileEmail: { ...typeScale.caption, color: c.textSecondary, marginTop: 2 },
+    profileName: { ...typeScale.title, color: STAGE.ink },
+    profileEmail: { ...typeScale.caption, color: STAGE.lead, marginTop: 2 },
 
     sectionTitle: { ...typeScale.heading, color: c.text, marginTop: space.xl, marginBottom: space.s },
     card: {

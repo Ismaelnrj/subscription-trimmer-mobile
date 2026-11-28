@@ -16,7 +16,7 @@ import { rescheduleRemindersFromCache } from "../../lib/reminders-from-cache";
 import { isTransientFailure } from "../../lib/session-errors";
 import { PendingNotice } from "../../components/PendingNotice";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useFmt, useCurrencyStore } from "../../lib/currency-store";
+import { useFmt, useCurrencyStore, useMixedTotalInBase, isMixedCurrency } from "../../lib/currency-store";
 import { useCycleLabel, useCycleAdjective } from "../../lib/cycle-label";
 import { useCategoryLabel, canonicalCategory } from "../../lib/category-label";
 import { formatMoney } from "../../lib/currencies";
@@ -31,6 +31,7 @@ import { sendLocalNotification } from "../../lib/notifications";
 import { track } from "../../lib/analytics";
 import { ServiceTemplate, SERVICE_TEMPLATES, searchTemplates, formatTemplatePrice, getRegionalPopularTemplates, findTemplateByExactName, prefersDachCatalogue } from "../../lib/service-templates";
 import { SkeletonCard } from "../../components/SkeletonCard";
+import { ScreenStage } from "../../components/ScreenStage";
 import { LogoImage } from "../../components/LogoImage";
 import { marksFirst } from "../../lib/brand-marks";
 import { ReminderPrimer } from "../../components/ReminderPrimer";
@@ -271,6 +272,21 @@ export default function SubscriptionsScreen() {
   const allCategories = [...DEFAULT_CATEGORIES, ...customCategories];
 
   const total = subscriptions.length;
+
+  /* The stage's figure: the dashboard's own total, from the same cached
+     summary and the same conversion (see app/(tabs)/index.tsx for why each
+     currency is converted once and an estimate is marked). */
+  const { data: summary } = useQuery({
+    queryKey: ["analytics", "summary"],
+    queryFn: async () => (await apiClient.get("/trpc/analytics.summary")).data.result.data,
+  });
+  const mixedTotalInBase = useMixedTotalInBase();
+  const monthlyTotal = mixedTotalInBase(summary?.monthlyByCurrency, summary?.monthlyTotal ?? 0);
+  const fmtTotal = (n: number) => {
+    const text = fmtC(n);
+    return isMixedCurrency(summary?.monthlyByCurrency, currency.code) && !text.startsWith("~") ? `~${text}` : text;
+  };
+  const stageFigure = summary && total > 0;
   /* Number(...) rather than `?? FREE_LIMIT_FALLBACK` alone: the fallback has to
      catch a value that is present but unusable, not only an absent one. `?? `
      passes 0 and NaN straight through, and a limit of 0 locks the add button
@@ -910,6 +926,12 @@ export default function SubscriptionsScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
       >
+        <ScreenStage
+          title={t("tabs.headerSubscriptions")}
+          label={stageFigure ? t("dashboard.thisMonth") : undefined}
+          figure={stageFigure ? fmtTotal(monthlyTotal) : undefined}
+          meta={stageFigure ? t("dashboard.yearAndActive", { amount: fmtTotal(monthlyTotal * 12), count: summary.activeSubscriptions ?? 0 }) : undefined}
+        />
         <View style={styles.scrollContent}>
           {/* REDONE 2026-11-07 with the dashboard's scale. The top used to be a
               locked Add, two locked icon squares for the exports, a meter card

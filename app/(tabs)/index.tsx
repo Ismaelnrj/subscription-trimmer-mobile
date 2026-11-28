@@ -17,6 +17,7 @@ import { scheduleRenewalReminders } from "../../lib/notification-scheduler";
 import { useTheme, AppColors, space, radius, type as typeScale, tabular } from "../../lib/theme";
 import { FAB_SCROLL_CLEARANCE } from "../../components/GlobalFab";
 import { DashboardSkeleton } from "../../components/DashboardSkeleton";
+import { ScreenStage } from "../../components/ScreenStage";
 import { LogoImage } from "../../components/LogoImage";
 import { buildTips, DEFAULT_SINGLE_SUB_THRESHOLD } from "../insights";
 import { useCycleLabel } from "../../lib/cycle-label";
@@ -289,6 +290,7 @@ export default function DashboardScreen() {
   const greetingHour = new Date().getHours();
   const greeting = greetingHour < 12 ? t("dashboard.goodMorning") : greetingHour < 18 ? t("dashboard.goodAfternoon") : t("dashboard.goodEvening");
   const firstName = user?.name?.trim().split(/\s+/)[0];
+  const greetingLine = `${greeting}${firstName ? `, ${firstName}` : ""}`;
 
   /* The next charges in date order. Paused rows are already out (`planned`),
      and a row whose date cannot be read is left out rather than shown with a
@@ -344,7 +346,12 @@ export default function DashboardScreen() {
 
 
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <View style={styles.container}>
+        <ScreenStage lead={greetingLine} />
+        <DashboardSkeleton />
+      </View>
+    );
   }
 
   const isFirstRun = subscriptions.length === 0;
@@ -359,12 +366,15 @@ export default function DashboardScreen() {
 
   if (isError) {
     return (
-      <View style={styles.loadingContainer}>
-        <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
-        <Text style={styles.emptyStateText}>{t("dashboard.couldntLoad")}</Text>
-        <TouchableOpacity style={[styles.actionButton, { marginTop: 16, paddingHorizontal: 24 }]} onPress={onRefresh}>
-          <Text style={styles.actionButtonText}>{t("dashboard.tryAgain")}</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <ScreenStage lead={greetingLine} />
+        <View style={styles.loadingContainer}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={c.border} style={{ marginBottom: 12 }} />
+          <Text style={styles.emptyStateText}>{t("dashboard.couldntLoad")}</Text>
+          <TouchableOpacity style={[styles.actionButton, { marginTop: 16, paddingHorizontal: 24 }]} onPress={onRefresh}>
+            <Text style={styles.actionButtonText}>{t("dashboard.tryAgain")}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -375,12 +385,22 @@ export default function DashboardScreen() {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} />}
     >
+      {/* THE MONEY LEADS, on the stage. Redone 2026-11-07: the total used to
+          be the fourth card down, under a Premium upsell and behind a
+          monthly/yearly toggle, so the one number this app exists for was the
+          least visible thing on its first screen. Both figures show at once
+          and nothing sits above them; since 2026-11-28 they sit on the navy
+          stage. A first run has no total yet, so the stage only greets. */}
+      <ScreenStage
+        lead={greetingLine}
+        label={isFirstRun ? undefined : t("dashboard.thisMonth")}
+        figure={isFirstRun ? undefined : fmtTotal(monthlyTotal)}
+        meta={isFirstRun ? undefined : t("dashboard.yearAndActive", { amount: fmtTotal(displayYearly), count: summary?.activeSubscriptions ?? 0 })}
+        lens={!isFirstRun}
+      />
       <View style={styles.scrollContent}>
         {subsStale && <OfflineNotice />}
         <PendingNotice />
-        <Text style={styles.greeting}>
-          {greeting}{firstName ? `, ${firstName}` : ""}
-        </Text>
 
         {/* NOTHING ADDED YET: one focused card instead of a dashboard of zeros,
             an upsell and a warning. See components/FirstRunCard.tsx for the
@@ -398,36 +418,23 @@ export default function DashboardScreen() {
         )}
 
         {!isFirstRun && (<>
-        {/* THE MONEY LEADS. Redone 2026-11-07: the total used to be the fourth
-            card down, under a Premium upsell and behind a monthly/yearly
-            toggle, so the one number this app exists for was the least
-            visible thing on its first screen. Both figures now show at once and
-            nothing sits above them. */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryLabel}>{t("dashboard.thisMonth")}</Text>
-          <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-            {fmtTotal(monthlyTotal)}
-          </Text>
-          <Text style={styles.summaryMeta}>
-            {t("dashboard.yearAndActive", { amount: fmtTotal(displayYearly), count: summary?.activeSubscriptions ?? 0 })}
-          </Text>
-
-          {isPremium && budgetGoal != null && (
-            <View style={styles.budget}>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
-              </View>
-              <View style={styles.budgetFooter}>
-                <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
-                <Text style={styles.budgetRemaining}>
-                  {budgetRaw >= 100
-                    ? t("dashboard.overLimit", { amount: fmtTotal(monthlyTotal - budgetGoal) })
-                    : t("dashboard.remainingOf", { amount: fmtTotal(budgetGoal - monthlyTotal), goal: fmtC(budgetGoal) })}
-                </Text>
-              </View>
+        {/* The budget sits under the stage, on the ground: its colours (on
+            track, close, over) were measured against the theme, not the navy. */}
+        {isPremium && budgetGoal != null && (
+          <View style={[styles.card, styles.budget]}>
+            <View style={styles.progressTrack}>
+              <View style={[styles.progressFill, { width: `${budgetPct}%` as any, backgroundColor: budgetColor }]} />
             </View>
-          )}
-        </View>
+            <View style={styles.budgetFooter}>
+              <Text style={[styles.budgetStatus, { color: budgetColor }]}>{budgetStatus}</Text>
+              <Text style={styles.budgetRemaining}>
+                {budgetRaw >= 100
+                  ? t("dashboard.overLimit", { amount: fmtTotal(monthlyTotal - budgetGoal) })
+                  : t("dashboard.remainingOf", { amount: fmtTotal(budgetGoal - monthlyTotal), goal: fmtC(budgetGoal) })}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* A tracked price below the service's checked public price: the one
             warning allowed above everything else, since it is about money that
@@ -598,13 +605,8 @@ function makeStyles(c: AppColors) {
     container: { flex: 1, backgroundColor: c.bg },
     scrollContent: { paddingHorizontal: space.l, paddingTop: space.xl, paddingBottom: FAB_SCROLL_CLEARANCE },
     loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", paddingTop: 80 },
-    greeting: { ...typeScale.label, color: c.textSecondary, marginBottom: space.xs },
 
-    summary: { marginBottom: space.xl },
-    summaryLabel: { ...typeScale.caption, color: c.textSecondary },
-    summaryValue: { ...typeScale.display, ...tabular, color: c.text, marginTop: space.xs },
-    summaryMeta: { ...typeScale.body, ...tabular, color: c.textSecondary, marginTop: space.xs },
-    budget: { marginTop: space.l },
+    budget: { paddingVertical: space.l, marginBottom: space.l },
     progressTrack: { height: 6, borderRadius: radius.pill, backgroundColor: c.border, overflow: "hidden" },
     progressFill: { height: 6, borderRadius: radius.pill },
     budgetFooter: { flexDirection: "row", justifyContent: "space-between", marginTop: space.s },

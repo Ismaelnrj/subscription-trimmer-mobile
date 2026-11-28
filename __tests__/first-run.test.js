@@ -95,7 +95,9 @@ describe('an empty dashboard shows the first-run card instead of zeros', () => {
     expect(DASH).toContain('const isFirstRun = subscriptions.length === 0;');
     expect(DASH).toContain('{isFirstRun && <FirstRunCard verifyBanner={verifyBanner} />}');
     const wrapped = DASH.slice(DASH.indexOf('{!isFirstRun && (<>'), DASH.indexOf('</>)}'));
-    for (const piece of ['styles.summaryValue', 'dashboard.upcoming', 'styles.rowAmount', 'moreRows.map']) {
+    // The total is on the stage, which a first run shows without a figure.
+    expect(DASH).toContain('figure={isFirstRun ? undefined : fmtTotal(monthlyTotal)}');
+    for (const piece of ['dashboard.upcoming', 'styles.rowAmount', 'moreRows.map']) {
       expect(wrapped).toContain(piece);
     }
   });
