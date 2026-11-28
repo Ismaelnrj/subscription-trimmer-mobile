@@ -45,7 +45,7 @@ const ALLOWED = {
     "parsedPreviewText: {": "a pasted email was read: done",
   },
   "app/(tabs)/index.tsx": {
-    "budgetRaw >= 70 ? c.warning : c.success": "spending is well inside the budget",
+    "budgetRaw >= 80 ? c.warning : c.success": "spending is well inside the budget",
   },
   "app/notifications.tsx": {
     'case "payment_received": return c.success;': "a payment went through",
@@ -116,5 +116,16 @@ describe("mint is only used for good news", () => {
       const src = fs.readFileSync(path.join(ROOT, f), "utf8");
       expect(`${f}: ${src.match(/true:\s*c\.(success|accent)\b/) ? "green switch" : "ok"}`).toBe(`${f}: ok`);
     }
+  });
+});
+
+// The 2026-11-28 audit: the bar went amber at 70% under "On track" and red at
+// 90% under "Getting close". Colour and words now change at the same points,
+// the 80% Account settings promises and 100%.
+describe("the budget's colour and words change together", () => {
+  it("at 80% and at 100%", () => {
+    const dash = require("fs").readFileSync(require("path").join(__dirname, "..", "app", "(tabs)", "index.tsx"), "utf8");
+    expect(dash).toMatch(/budgetColor = budgetRaw >= 100 \? c\.danger : budgetRaw >= 80 \? c\.warning : c\.success;/);
+    expect(dash).toMatch(/budgetStatus = budgetRaw >= 100 \? t\("dashboard\.overBudget"\) : budgetRaw >= 80 \? t\("dashboard\.gettingClose"\)/);
   });
 });

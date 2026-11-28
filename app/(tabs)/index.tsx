@@ -162,7 +162,11 @@ export default function DashboardScreen() {
   };
   const budgetRaw = budgetGoal ? (monthlyTotal / budgetGoal) * 100 : 0;
   const budgetPct = Math.min(budgetRaw, 100);
-  const budgetColor = budgetRaw >= 90 ? c.danger : budgetRaw >= 70 ? c.warning : c.success;
+  /* The colour and the words change at the same points, the ones Account
+     settings promises ("a warning ... when you reach 80% of this limit"). They
+     used to differ: amber from 70% under "On track", red from 90% under
+     "Getting close". */
+  const budgetColor = budgetRaw >= 100 ? c.danger : budgetRaw >= 80 ? c.warning : c.success;
   const budgetStatus = budgetRaw >= 100 ? t("dashboard.overBudget") : budgetRaw >= 80 ? t("dashboard.gettingClose") : t("dashboard.onTrack");
 
   const activeSubIds = new Set((subscriptions as any[]).map((s) => s.id));
