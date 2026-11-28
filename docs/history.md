@@ -7391,3 +7391,11 @@ last one left off without needing a recap typed out.
   api.frankfurter.app (exchange rates, lib/currency-store.ts) are unlisted; it
   is dated 4 September. Legal copy that deploys on push, so it waits for the
   owner's yes on a draft.
+
+- THE AUDIT FIXES REACHED PHONES, 2026-11-28. Build Info off the owner's phone:
+  `Update ID: 01a22189-acd0-7f01-a641-3a8b9277e6f6`, published
+  `2026-11-28T09:43:20.528Z`, embedded launch false, runtime 1.0.1. Master had
+  `0b27b320` from 09:36:16Z (the master push's Checks run), nothing after, so
+  that is the baseline. The owner also said "Done" to setting
+  `MIN_ANDROID_VERSION_CODE=42` in Railway; a sandbox cannot read Railway, so
+  that rests on their word until `/api/trpc/appVersion.check` is read.

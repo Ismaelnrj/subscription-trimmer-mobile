@@ -528,15 +528,15 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 Keep this short and current. As of 2026-11-28.
 
-- PHONES run the update published `2026-11-28T08:17:45.675Z`, `Update ID:
-  01a2213b-52cb-7411-b939-490674154594`, read off the owner's build 42 phone
-  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0906ee0d` from
-  08:04:33Z and nothing later, so that is its baseline: the navy stage on the
-  main tabs (`c99c4cf9`, published 07:16Z) and on every inner screen. Nothing
-  is owed. It came without a what's new card; the owner then asked that every
-  update be announced, so its entry ships with the next publish. The owner may set `MIN_ANDROID_VERSION_CODE=42` in
-  Railway to switch the Play update popup on. The next confirmation must show
-  a different id and a later time.
+- PHONES run the update published `2026-11-28T09:43:20.528Z`, `Update ID:
+  01a22189-acd0-7f01-a641-3a8b9277e6f6`, read off the owner's build 42 phone
+  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0b27b320` from
+  09:36:16Z and nothing later, so that is its baseline: the navy stage on every
+  screen, what's new as a list (its inner screens line rides this publish) and
+  every fix of the 2026-11-28 audit. Nothing is owed. The owner reported
+  setting `MIN_ANDROID_VERSION_CODE=42` in Railway (not read from here), so
+  builds 40 and 41 are asked to update. The next confirmation must show a
+  different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
