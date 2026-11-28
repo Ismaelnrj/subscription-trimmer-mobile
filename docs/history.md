@@ -7355,3 +7355,39 @@ last one left off without needing a recap typed out.
   component, lib, locale or asset files without touching `lib/whats-new.ts`;
   checked on c99c4cf9..0906ee0d (warns) and a docs only gap (silent). Tests
   negative tested by showing seen entries again.
+
+- A DEEP AUDIT, 2026-11-28, at the owner's request ("see if something needs to
+  be fixed, implemented or improved"). Scope: every code change since the
+  2026-11-17 audit (`1f6b2198..a915a622`, 32 files, the per session tokens,
+  RevenueCat erasure, Age Signals, both redesign phases, the update prompt and
+  what's new), read by the code-review skill at high effort, every finding
+  re-checked against the code first; plus the repo's own checks.
+  FIXED, one commit each: `48bd00eb` THE ASK-FIRST HOOK LET COMMON FORMS
+  THROUGH (eas after `VAR=1`, indentation, `pnpm exec`, inside `bash -c` or a
+  heredoc fed to a shell; `git push -fu`; update_trigger turning a task back
+  on; /loop), all measured silent before, asking after, mentions still silent.
+  `df2efffe` the email form had no link to the other screen (a dead end when
+  Google is unavailable), and the keyboard's Go key could send twice.
+  `e673c85b` a logout after an hour idle left the session its own refresh
+  rotated in live for 90 days. `99bb77c2` four small defects in today's
+  screens (what's new dated to the minute, a cut short decision retried, the
+  list's pull refreshing the stage total, no navy strip over +not-found).
+  `d978fc31` the budget bar's colour now changes where its words do (80%,
+  100%). Each negative tested against the code before it.
+  CHECKED CLEAN: backend production dependencies 0 advisories; no secret shape
+  in the range; the payment findings deferred in September (F01, the restore
+  error) were fixed in October; the refresh controls that set `colors` set
+  `progressBackgroundColor`; no screen depends on the header's height.
+  LEFT, WITH REASONS: the shared daily ceiling on verification emails can be
+  spent by bogus signups, but it was a deliberate trade to protect the Brevo
+  account, and an unverified account uses the whole app (verification only
+  gates the referral reward). The app's 8 production advisories are 7 in
+  build tools that never reach a phone and decode-uri-component under
+  react-navigation's query-string, whose fix is an ESM major query-string 7
+  cannot load: it goes with the SDK upgrade.
+  STILL OPEN FROM 2026-11-17, now the most important: THE PRIVACY POLICY TEXT.
+  Measured today: it puts Sentry in the United States while the app's DSN is
+  `ingest.de`; Expo (EAS Update, which sees every phone's IP) and
+  api.frankfurter.app (exchange rates, lib/currency-store.ts) are unlisted; it
+  is dated 4 September. Legal copy that deploys on push, so it waits for the
+  owner's yes on a draft.
