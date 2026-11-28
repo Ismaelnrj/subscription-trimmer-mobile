@@ -7446,3 +7446,10 @@ last one left off without needing a recap typed out.
   cron-job.org. The same message reported the privacy policy publish
   (`a4352b5c`) done; it waits for a Build Info screenshot before being
   recorded as on phones.
+
+- THE PRIVACY POLICY PUBLISH, READ, 2026-11-28. Build Info off the owner's
+  phone: `Update ID: 01a221e3-6bde-74ab-a3fa-b80c3b62817c`, published
+  `2026-11-28T11:21:22.142Z`, embedded launch false, runtime 1.0.1. Master had
+  `a4352b5c` from 11:00:30Z (the master push's Checks run), nothing after, so
+  that is the baseline: the app's copy of the policy and its what's new line
+  are on phones.

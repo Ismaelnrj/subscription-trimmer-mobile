@@ -528,17 +528,15 @@ history. It had reached 505 KB, about 126,000 tokens read into every session.
 
 Keep this short and current. As of 2026-11-28.
 
-- PHONES run the update published `2026-11-28T09:43:20.528Z`, `Update ID:
-  01a22189-acd0-7f01-a641-3a8b9277e6f6`, read off the owner's build 42 phone
-  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0b27b320` from
-  09:36:16Z and nothing later, so that is its baseline: the navy stage on every
-  screen, what's new as a list (its inner screens line rides this publish) and
-  every fix of the 2026-11-28 audit. The owner reported publishing `a4352b5c`
-  (privacy policy, its what's new line) the same day; NOT yet read off Build
-  Info, so it is not recorded as on phones. The owner reported
-  setting `MIN_ANDROID_VERSION_CODE=42` in Railway (not read from here), so
-  builds 40 and 41 are asked to update. The next confirmation must show a
-  different id and a later time.
+- PHONES run the update published `2026-11-28T11:21:22.142Z`, `Update ID:
+  01a221e3-6bde-74ab-a3fa-b80c3b62817c`, read off the owner's build 42 phone
+  screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `a4352b5c` from
+  11:00:30Z and nothing later, so that is its baseline: the navy stage on
+  every screen, what's new as a list, every fix of the 2026-11-28 audit and
+  the privacy policy additions with their what's new line. Nothing is owed.
+  The owner reported setting `MIN_ANDROID_VERSION_CODE=42` in Railway (not
+  read from here), so builds 40 and 41 are asked to update. The next
+  confirmation must show a different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
   next is 43): 1.0.5, runtimeVersion KEPT at
   1.0.1, the launch screen on the light ground, the launch motion, Play Age
@@ -575,8 +573,8 @@ Keep this short and current. As of 2026-11-28.
 - PRIVACY POLICY additions made 2026-11-28 in `76d4ed93` at the owner's yes
   (name, language, Google id, referrals, IPs; the win-back email with its
   basis and the right to object; Expo; Frankfurter; dated 28 November), the
-  website copy live with the Railway deploy, the app copy with the next
-  publish. Sentry "United States" and export "regardless of tier" were left on
+  website copy live with the Railway deploy, the app copy on phones since the
+  11:21Z publish. Sentry "United States" and export "regardless of tier" were left on
   purpose [grep: TWO OF THE FIVE WERE NOT ISSUES]. Done: RevenueCat erasure 2026-11-23, one refresh
   token per session 2026-11-24 (rolling the backend back signs people out once).
 - OWNER'S DASHBOARD ITEMS, open: which Dockerfile Railway builds and its
