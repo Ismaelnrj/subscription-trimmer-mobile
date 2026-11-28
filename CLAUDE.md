@@ -570,9 +570,13 @@ Keep this short and current. As of 2026-11-28.
   Instagram post) fired once and ended, `run_once_fired`. The Part 2 and Part 3 posts
   (`trig_01GQy8Cut5TJYTWJ4LMZYscZ`, `trig_01BjGYp1RZ22eLJYRzwfHDSW`) are
   disabled, the 22 Nov reminder fired and ended.
-- RECOMMENDED, NOT DONE (2026-11-17 audit): a privacy policy text pass
-  (win-back basis, Expo and frankfurter unlisted, export promised to every
-  tier, Sentry region, date). Done: RevenueCat erasure 2026-11-23, one refresh
+- PRIVACY POLICY, re-checked 2026-11-28 (the 2026-11-17 list overstated it):
+  three small additions owed, none urgent, the owner's yes first: the win-back
+  email (purpose, legitimate interest, the right to object stated on its own;
+  it only reaches paying customers who cancel), Expo and api.frankfurter.app as
+  recipients of IP addresses, and name, Google id and language in section 2;
+  then the date. NOT issues: Sentry "United States" and export "regardless of
+  tier" [grep: TWO OF THE FIVE WERE NOT ISSUES]. Done: RevenueCat erasure 2026-11-23, one refresh
   token per session 2026-11-24 (rolling the backend back signs people out once).
 - OWNER'S DASHBOARD ITEMS, open: which Dockerfile Railway builds and its
   `/health` healthcheck; a backup restore test; PostHog "Discard client IP

@@ -7399,3 +7399,20 @@ last one left off without needing a recap typed out.
   that is the baseline. The owner also said "Done" to setting
   `MIN_ANDROID_VERSION_CODE=42` in Railway; a sandbox cannot read Railway, so
   that rests on their word until `/api/trpc/appVersion.check` is read.
+
+- THE PRIVACY POLICY, RE-CHECKED, 2026-11-28, after the owner asked whether it
+  really needed the pass the 2026-11-17 audit (and this morning's) urged. Read
+  line by line against the code: TWO OF THE FIVE WERE NOT ISSUES. "Sentry,
+  United States" while the app's DSN is ingest.de: Sentry is a US company and
+  stating a transfer with SCCs that may not happen is over-disclosure, which
+  harms nobody. "Export to every tier": section 11 states the Art. 20 right,
+  which is exercised by email and cannot be paywalled; the in-app CSV being
+  Premium does not contradict it. STILL OWED, small, none urgent: the win-back
+  email is not mentioned at all, and Art. 21(4) wants the right to object to
+  direct marketing stated explicitly and separately (latent: it only reaches
+  is_paid users who cancelled, with an unsubscribe in every mail); Expo (every
+  update check) and api.frankfurter.app (lib/currency-store.ts, straight from
+  the phone) receive IP addresses and are not among the listed recipients;
+  section 2 omits the name, the Google account id and the language. Three
+  sentences a language, plus the date. This morning's report called it the
+  most important open item; it was not, and was corrected the same day.
