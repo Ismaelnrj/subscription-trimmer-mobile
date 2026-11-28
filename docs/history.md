@@ -7416,3 +7416,26 @@ last one left off without needing a recap typed out.
   section 2 omits the name, the Google account id and the language. Three
   sentences a language, plus the date. This morning's report called it the
   most important open item; it was not, and was corrected the same day.
+
+- THE PRIVACY POLICY ADDITIONS, 2026-11-28, at the owner's "do it if it actually
+  needs to be done", after the re-check above. `76d4ed93`, additions only, the
+  app's English copy, the served English and `backend/legal-de.json` alike:
+  section 2 names the account name, app language, Google identifier (with the
+  name and email Google shares) and referral codes, and says servers process
+  IP addresses without storing them (true: only the in memory rate limiters
+  read `req.ip`); section 3 and 4 the one win-back email, its basis (Art.
+  6(1)(f), direct marketing to customers); section 11 the right to object to
+  it, stated as its own sentence (Art. 21(4)); section 5 Expo (app updates,
+  US) and that the phone asks api.frankfurter.app directly; section 6 Expo
+  among the US transfers. Dated 28 November in all three places.
+  CHECKED: all 18 sections identical word for word between app and server
+  (compared by evaluating both arrays, since `check-legal-sync.py` compared
+  only the first 60 characters, now whole sections in `27e56d68`, negative
+  tested); both pages rendered by the real server with the new text; a single
+  quote in the new section 5 broke server.js and `node --check` caught it
+  before anything ran. The review-fixes guard that keeps rate fetching off the
+  server banned the word "frankfurter" and now bans a request to it instead
+  (negative tested with a fetch). A What's new line ("names every service")
+  keeps section 17's promise to say so in the app.
+  OWNER TO CONFIRM: that Expo's terms include a data processing agreement, as
+  section 5 says of every provider listed there.
