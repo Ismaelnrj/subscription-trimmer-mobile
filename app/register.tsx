@@ -52,6 +52,7 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
+    if (loading) return;
     if (!email || !password) {
       Alert.alert(t("common.error"), t("register.errEmptyFields"));
       return;
@@ -122,9 +123,6 @@ export default function RegisterScreen() {
             <TouchableOpacity style={styles.button} onPress={() => setMode("email")} disabled={loading} accessibilityRole="button">
               <MaterialCommunityIcons name="email-outline" size={20} color={c.bg} />
               <Text style={styles.buttonText}>{t("auth.continueEmail")}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
-              <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -203,6 +201,11 @@ export default function RegisterScreen() {
             </TouchableOpacity>
           </>
         )}
+        {/* Both modes, so the email form is never a dead end: with Google
+            unavailable the screen opens on it and has no way back. */}
+        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/login")}>
+          <Text style={styles.linkText}>{t("register.alreadyHaveAccount")} <Text style={styles.linkBold}>{t("register.signIn")}</Text></Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

@@ -29,6 +29,7 @@ export default function LoginScreen() {
   const { t } = useTranslation();
 
   const handleLogin = async () => {
+    if (loading) return;
     if (!email || !password) {
       Alert.alert(t("common.error"), t("login.errEmptyFields"));
       return;
@@ -101,9 +102,6 @@ export default function LoginScreen() {
               <MaterialCommunityIcons name="email-outline" size={20} color={c.bg} />
               <Text style={styles.buttonText}>{t("auth.continueEmail")}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
-              <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
-            </TouchableOpacity>
           </>
         ) : (
           <>
@@ -160,6 +158,11 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </>
         )}
+        {/* Both modes, so the email form is never a dead end: with Google
+            unavailable the screen opens on it and has no way back. */}
+        <TouchableOpacity style={styles.link} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} onPress={() => router.push("/register")}>
+          <Text style={styles.linkText}>{t("login.noAccount")} <Text style={styles.linkBold}>{t("login.signUp")}</Text></Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );

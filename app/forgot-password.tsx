@@ -22,6 +22,7 @@ export default function ForgotPasswordScreen() {
   const { t } = useTranslation();
 
   const handleSendCode = async () => {
+    if (loading) return;
     if (!email.trim()) { Alert.alert(t("common.error"), t("forgotPassword.errEmail")); return; }
     setLoading(true);
     try {
@@ -35,6 +36,7 @@ export default function ForgotPasswordScreen() {
   };
 
   const handleReset = async () => {
+    if (loading) return;
     if (code.length !== 6) { Alert.alert(t("common.error"), t("forgotPassword.errCode")); return; }
     if (!isPasswordValid(newPassword)) {
       Alert.alert(t("common.error"), t("forgotPassword.errWeakPassword"));

@@ -78,6 +78,21 @@ describe("sign in art", () => {
     for (const f of tabs) expect([f, /<ScreenStage\b/.test(read(`app/(tabs)/${f}`))]).toEqual([f, true]);
   });
 
+  // The 2026-11-28 audit: with Google unavailable the screen opens on the email
+  // form, which had no link to the other screen; and the keyboard's Go key,
+  // unlike the button, could send a second request while one was running.
+  test("the email form links to the other screen, and a second Go sends nothing", () => {
+    for (const [f, other, handlers] of [
+      ["app/login.tsx", "/register", ["handleLogin"]],
+      ["app/register.tsx", "/login", ["handleRegister"]],
+      ["app/forgot-password.tsx", null, ["handleSendCode", "handleReset"]],
+    ]) {
+      const src = read(f);
+      if (other) expect(src.slice(src.lastIndexOf("        )}\n"))).toContain(`router.push("${other}")`);
+      for (const h of handlers) expect([f, h, new RegExp(`const ${h} = async \\(\\) => \\{\\s*if \\(loading\\) return;`).test(src)]).toEqual([f, h, true]);
+    }
+  });
+
   test("nothing in the sign in strings promises privacy, in either language", () => {
     for (const lang of ["en", "de"]) {
       const json = JSON.parse(read(`locales/${lang}.json`));
