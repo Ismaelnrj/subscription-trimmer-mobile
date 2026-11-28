@@ -7439,3 +7439,10 @@ last one left off without needing a recap typed out.
   keeps section 17's promise to say so in the app.
   OWNER TO CONFIRM: that Expo's terms include a data processing agreement, as
   section 5 says of every provider listed there.
+
+- EXPO TWO FACTOR IS ON, 2026-11-28, the owner's report ("the 2FA on Expo is
+  done"). It mattered most of the open account items: Play's upload key lives
+  in Expo's keystore. Left: Codemagic, Claude, ChatGPT, RevenueCat,
+  cron-job.org. The same message reported the privacy policy publish
+  (`a4352b5c`) done; it waits for a Build Info screenshot before being
+  recorded as on phones.

@@ -533,7 +533,9 @@ Keep this short and current. As of 2026-11-28.
   screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0b27b320` from
   09:36:16Z and nothing later, so that is its baseline: the navy stage on every
   screen, what's new as a list (its inner screens line rides this publish) and
-  every fix of the 2026-11-28 audit. Nothing is owed. The owner reported
+  every fix of the 2026-11-28 audit. The owner reported publishing `a4352b5c`
+  (privacy policy, its what's new line) the same day; NOT yet read off Build
+  Info, so it is not recorded as on phones. The owner reported
   setting `MIN_ANDROID_VERSION_CODE=42` in Railway (not read from here), so
   builds 40 and 41 are asked to update. The next confirmation must show a
   different id and a later time.
@@ -579,8 +581,8 @@ Keep this short and current. As of 2026-11-28.
   token per session 2026-11-24 (rolling the backend back signs people out once).
 - OWNER'S DASHBOARD ITEMS, open: which Dockerfile Railway builds and its
   `/health` healthcheck; a backup restore test; PostHog "Discard client IP
-  data"; 2FA on Expo first, then Codemagic, Claude, ChatGPT, RevenueCat and
-  cron-job.org; disconnecting the personal YouTube channel from vidIQ; the
+  data"; 2FA on Codemagic, Claude, ChatGPT, RevenueCat and cron-job.org
+  (Expo's is ON, owner's report 2026-11-28); disconnecting the personal YouTube channel from vidIQ; the
   keystore move to `$HOME\trimio-keys` (unconfirmed).
 - READ DATES: Search Console guide impressions, at least 100 a week by the end
   of November; store listing conversion around 2026-12-08; by 2026-12-13 one
