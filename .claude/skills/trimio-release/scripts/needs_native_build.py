@@ -367,6 +367,14 @@ def main():
             print("\n    Console only, neither a build nor an OTA carries these:")
             for f, why in console:
                 print(f"      {f}   {why}")
+        # The owner, 2026-11-28: every update users can see is announced in
+        # the app ("in order to be up to date always"), so a publish that
+        # ships screens or strings without a new What's new entry is flagged.
+        shipped = [f for f, _ in ota if f.startswith(("app/", "components/", "lib/", "locales/", "assets/"))]
+        if shipped and "lib/whats-new.ts" not in changed:
+            print("\n  NO WHAT'S NEW ENTRY. Every update people can see is announced")
+            print("  (owner, 2026-11-28). Add one at the top of ANNOUNCEMENTS in")
+            print("  lib/whats-new.ts, its lines in both locale files, then publish.")
         print("\n  Publish with:")
         print('    eas update --channel production --message "..."')
         print("\n  Channel, not branch. app.json sends expo-channel-name: "

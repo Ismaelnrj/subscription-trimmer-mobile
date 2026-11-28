@@ -7,7 +7,7 @@ import { useAuthStore } from "../lib/auth-store";
 import apiClient from "../lib/api";
 import { nativeBuild } from "../lib/app-build";
 import { readSnooze, shouldPromptUpdate, snoozeUpdatePrompt } from "../lib/update-prompt";
-import { ANNOUNCEMENT, installedAt, markSeen, readSeen, shouldShowWhatsNew } from "../lib/whats-new";
+import { ANNOUNCEMENTS, installedAt, markSeen, readSeen, whatsNewFor, WhatsNew } from "../lib/whats-new";
 import { useTheme, AppColors, space, radius, type as typeScale } from "../lib/theme";
 
 /* Two notices, at most one per launch, never over the launch screen (`ready`):
@@ -21,7 +21,7 @@ export function UpdateAvailableModal({ ready }: { ready: boolean }) {
   const [visible, setVisible] = useState(false);
   const [minimum, setMinimum] = useState(0);
   const [checked, setChecked] = useState(false);
-  const [news, setNews] = useState(false);
+  const [news, setNews] = useState<WhatsNew | null>(null);
   const storeAsked = useRef(false);
   const newsDecided = useRef(false);
   const { isAuthenticated } = useAuthStore();
@@ -62,13 +62,14 @@ export function UpdateAvailableModal({ ready }: { ready: boolean }) {
   // settled, and only if the Play prompt did not ask this launch.
   useEffect(() => {
     if (!ready || !checked || storeAsked.current || newsDecided.current) return;
-    if (!isAuthenticated || !onMainScreens || !ANNOUNCEMENT) return;
+    if (!isAuthenticated || !onMainScreens || !ANNOUNCEMENTS.length) return;
     newsDecided.current = true;
     let cancelled = false;
     (async () => {
       const [seen, installed] = await Promise.all([readSeen(), installedAt()]);
       if (cancelled || seen === "unknown") return;
-      if (shouldShowWhatsNew(ANNOUNCEMENT, seen, installed, Date.now())) setNews(true);
+      // Everything this phone has not seen yet, as one card.
+      setNews(whatsNewFor(ANNOUNCEMENTS, seen, installed, Date.now()));
     })();
     return () => {
       cancelled = true;
@@ -76,8 +77,8 @@ export function UpdateAvailableModal({ ready }: { ready: boolean }) {
   }, [ready, checked, isAuthenticated, onMainScreens]);
 
   const gotIt = () => {
-    setNews(false);
-    if (ANNOUNCEMENT) markSeen(ANNOUNCEMENT.id);
+    if (news) markSeen(news.id);
+    setNews(null);
   };
 
   const later = () => {
@@ -102,12 +103,12 @@ export function UpdateAvailableModal({ ready }: { ready: boolean }) {
         </View>
       </View>
     </Modal>
-    <Modal visible={news && ready} transparent animationType="fade" onRequestClose={gotIt}>
+    <Modal visible={!!news && ready} transparent animationType="fade" onRequestClose={gotIt}>
       <View style={styles.overlay}>
         <View style={[styles.card, styles.newsCard]} accessibilityViewIsModal>
           <Text style={styles.title} accessibilityRole="header">{t("whatsNew.title")}</Text>
           <View style={styles.items}>
-            {ANNOUNCEMENT?.items.map((item) => (
+            {news?.items.map((item) => (
               <View key={item.key} style={styles.item}>
                 <MaterialCommunityIcons name={item.icon as any} size={24} color={c.text} />
                 <Text style={styles.itemText}>{t(item.key)}</Text>

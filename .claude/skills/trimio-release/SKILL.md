@@ -121,6 +121,15 @@ not one, so a new token never fixes it.
 remote. Publishing from a stale clone succeeds, reports success, and ships the
 old bundle.
 
+**Every publish is announced in the app.** The owner, 2026-11-28: once an
+update is there, people should see it, "in order to be up to date always". So
+before asking for a publish that changes anything people can see, add an entry
+at the TOP of `ANNOUNCEMENTS` in `lib/whats-new.ts` (new `id`, the day it is
+published as `date`, its lines in both locale files). A fix counts: say what
+works now. Somebody who missed several updates gets one card with all of it.
+`needs_native_build.py` prints NO WHAT'S NEW ENTRY when screens or strings ship
+without one.
+
 ## Confirming an update actually landed
 
 A successful publish and a delivered update are different claims. Help &

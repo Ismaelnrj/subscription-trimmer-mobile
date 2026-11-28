@@ -1,19 +1,22 @@
-/* WHAT'S NEW: one short announcement, shown once, to people who had Trimio
-   before it. The owner's request, 2026-11-27: people should know when an
-   update has come.
+/* WHAT'S NEW: what changed, told once, to people who had Trimio before it.
+   The owner's request, 2026-11-27: people should know when an update has come.
+   And 2026-11-28: EVERY update is announced, "in order to be up to date always".
 
    Over the air updates land without a sound, so this is the only way anybody
-   hears about one. It must not become noise, hence the rules in
-   shouldShowWhatsNew: once per announcement, never to somebody who installed
-   after it (they never had the old version), and not at all once it is
-   SHOW_FOR_DAYS old. components/UpdateAvailableModal.tsx shows it, and never in
-   the same launch as the "new version on Google Play" prompt.
+   hears about one. It must not become noise, hence the rules in whatsNewFor:
+   each announcement once, never to somebody who installed after it (they never
+   had the old version), not at all once it is SHOW_FOR_DAYS old, and ONE card
+   however many were missed: somebody back after three updates sees one card
+   with what is new since they last looked, newest first, at most MAX_LINES.
+   components/UpdateAvailableModal.tsx shows it, and never in the same launch
+   as the "new version on Google Play" prompt.
 
-   TO ANNOUNCE SOMETHING NEW: give ANNOUNCEMENT a new `id` and `date` (the day
-   it is published), list its lines, and write each line in BOTH locale files
-   under `whatsNew`. __tests__/whats-new.test.js checks the keys exist in both.
-   Only what the app really does, in the app's own words. `null` announces
-   nothing.
+   EVERY PUBLISH ADDS AN ENTRY AT THE TOP of ANNOUNCEMENTS: a new `id`, the
+   `date` it is published, its lines, and each line in BOTH locale files under
+   `whatsNew`. __tests__/whats-new.test.js checks the keys exist in both and
+   that the list runs newest first. Only what the app really does, in the
+   app's own words. Remove entries only from the bottom (the oldest), once
+   they are past SHOW_FOR_DAYS.
 
    Storage and expo-application are loaded inside a try, for the reason
    lib/offline-cache.ts gives. Without either, nothing is shown: a popup that
@@ -21,31 +24,48 @@
 
 export type Announcement = { id: string; date: string; items: { icon: string; key: string }[] };
 
-/* 2026-11-28: the navy stage on every main screen joined the first card
-   (2026-11-27) before either reached a phone, so the look line now covers
-   both, under a new id: a phone that already saw the first card still hears
-   about the new look. */
-export const ANNOUNCEMENT: Announcement | null = {
-  id: "2026-11-28",
-  date: "2026-11-28",
-  items: [
-    { icon: "star-four-points-outline", key: "whatsNew.look" },
-    { icon: "piggy-bank-outline", key: "whatsNew.keep" },
-    { icon: "wifi-off", key: "whatsNew.offline" },
-  ],
-};
+export const ANNOUNCEMENTS: Announcement[] = [
+  {
+    // Phase 2 of the new look, published 2026-11-28 08:17Z without a card;
+    // the owner asked that every update be announced.
+    id: "2026-11-28-screens",
+    date: "2026-11-28",
+    items: [{ icon: "palette-outline", key: "whatsNew.screens" }],
+  },
+  {
+    id: "2026-11-28",
+    date: "2026-11-28",
+    items: [
+      { icon: "star-four-points-outline", key: "whatsNew.look" },
+      { icon: "piggy-bank-outline", key: "whatsNew.keep" },
+      { icon: "wifi-off", key: "whatsNew.offline" },
+    ],
+  },
+];
 
 export const SHOW_FOR_DAYS = 45;
+export const MAX_LINES = 5;
 const KEY = "whats_new_seen";
 const DAY_MS = 86400000;
 
-export function shouldShowWhatsNew(a: Announcement | null, seenId: string | null, installedAt: number | null, now: number): boolean {
-  if (!a || !a.items.length) return false;
-  if (seenId === a.id) return false;
-  const published = Date.parse(a.date);
-  if (!Number.isFinite(published) || installedAt === null) return false;
-  if (installedAt >= published) return false;
-  return now < published + SHOW_FOR_DAYS * DAY_MS;
+export type WhatsNew = { id: string; items: Announcement["items"] };
+
+/* What to show, or null. `list` is newest first and `seenId` the newest id this
+   phone has already shown, so everything above it is unseen. An id it does not
+   know (nothing seen yet, or an entry since removed from the bottom) means all
+   of it is. The card is remembered as the NEWEST id, so it never comes back. */
+export function whatsNewFor(list: Announcement[], seenId: string | null, installedAt: number | null, now: number): WhatsNew | null {
+  if (!list.length || installedAt === null) return null;
+  const seenAt = seenId ? list.findIndex((a) => a.id === seenId) : -1;
+  const unseen = seenAt === -1 ? list : list.slice(0, seenAt);
+  const items: Announcement["items"] = [];
+  for (const a of unseen) {
+    const published = Date.parse(a.date);
+    if (!Number.isFinite(published) || installedAt >= published) continue;
+    if (now >= published + SHOW_FOR_DAYS * DAY_MS) continue;
+    for (const item of a.items) if (!items.some((i) => i.key === item.key)) items.push(item);
+  }
+  return items.length ? { id: list[0].id, items: items.slice(0, MAX_LINES) } : null;
 }
 
 type Storage = {

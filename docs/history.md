@@ -7342,3 +7342,16 @@ last one left off without needing a recap typed out.
   by design, since the card is shown once per id and phase 2 reused 2026-11-28
   (said in the report before the publish). An announcement shows again only
   with a new id in `lib/whats-new.ts`.
+
+- EVERY UPDATE IS ANNOUNCED, the owner, 2026-11-28, after phase 2 reached their
+  phone with no card: "once an update is there, should be visible for the people
+  in order to be up to date always". `lib/whats-new.ts` now holds a list,
+  `ANNOUNCEMENTS`, newest first, and `whatsNewFor` shows ONE card with every
+  entry the phone has not seen (only those it had the old version for, none
+  older than 45 days, five lines at most, each line once), then remembers the
+  newest id. Phones that already saw the 2026-11-28 card see only what came
+  after. The first new entry is phase 2 ("Now every screen has the new look").
+  `needs_native_build.py` prints NO WHAT'S NEW ENTRY when a publish ships app,
+  component, lib, locale or asset files without touching `lib/whats-new.ts`;
+  checked on c99c4cf9..0906ee0d (warns) and a docs only gap (silent). Tests
+  negative tested by showing seen entries again.

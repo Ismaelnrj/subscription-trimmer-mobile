@@ -533,8 +533,8 @@ Keep this short and current. As of 2026-11-28.
   screenshot 2026-11-28 (1.0.5, runtime 1.0.1). Master held `0906ee0d` from
   08:04:33Z and nothing later, so that is its baseline: the navy stage on the
   main tabs (`c99c4cf9`, published 07:16Z) and on every inner screen. Nothing
-  is owed. No new what's new card came with it, on purpose: the 2026-11-28 card
-  is shown once per phone. The owner may set `MIN_ANDROID_VERSION_CODE=42` in
+  is owed. It came without a what's new card; the owner then asked that every
+  update be announced, so its entry ships with the next publish. The owner may set `MIN_ANDROID_VERSION_CODE=42` in
   Railway to switch the Play update popup on. The next confirmation must show
   a different id and a later time.
 - BUILD 42 IS LIVE ON PLAY (owner's report 2026-11-26; versionCode 42 SPENT,
@@ -619,6 +619,8 @@ One line each; the grep phrase finds the full reasoning in `docs/history.md`.
   removes: move it before upgrading. [grep: was REMOVED from useQuery in v5]
 - Fix 9 in `fix-gradle.sh` (native Sentry) stays. [grep: only ever visible because of Fix 9]
 - The ask-first list is also a hook; change both together. [grep: THE ASK-FIRST LIST IS A HOOK NOW]
+- Every publish people can see adds a What's new entry at the top of
+  `ANNOUNCEMENTS`. [grep: EVERY UPDATE IS ANNOUNCED, the owner]
 
 ### The money path
 
